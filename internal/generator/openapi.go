@@ -23,31 +23,31 @@ func NewGenerator(outputDir string) *Generator {
 }
 
 // Generate creates an OpenAPI specification from parsed endpoints
-func (g *Generator) Generate(exchange string, endpoints []parser.Endpoint, baseURL string) error {
+func (g *Generator) Generate(exchange string, apiType string, endpoints []parser.Endpoint, baseURL string) error {
 	spec := &openapi3.T{
 		OpenAPI: "3.0.3",
 		Info: &openapi3.Info{
-			Title:       fmt.Sprintf("%s API", exchange),
-			Description: fmt.Sprintf("OpenAPI specification for %s cryptocurrency exchange", exchange),
+			Title:       fmt.Sprintf("%s %s API", exchange, apiType),
+			Description: fmt.Sprintf("OpenAPI specification for %s cryptocurrency exchange - %s API", exchange, apiType),
 			Version:     "1.0.0",
 		},
 		Servers: openapi3.Servers{
 			&openapi3.Server{
 				URL:         baseURL,
-				Description: fmt.Sprintf("%s API Server", exchange),
+				Description: fmt.Sprintf("%s %s API Server", exchange, apiType),
 			},
 		},
-		Paths:      openapi3.Paths{},
+		Paths:      openapi3.NewPaths(),
 		Components: &openapi3.Components{
-			Schemas:    make(openapi3.Schemas),
-			Responses: make(openapi3.Responses),
+			Schemas:   make(openapi3.Schemas),
+			Responses: make(openapi3.ResponseBodies),
 		},
 	}
 
 	// Convert endpoints to OpenAPI paths
 	for _, endpoint := range endpoints {
 		path := g.convertEndpointToPath(endpoint)
-		spec.Paths[endpoint.Path] = path
+		spec.Paths.Set(endpoint.Path, path)
 	}
 
 	// Ensure output directory exists
@@ -56,7 +56,7 @@ func (g *Generator) Generate(exchange string, endpoints []parser.Endpoint, baseU
 	}
 
 	// Write specification to file
-	outputPath := filepath.Join(g.outputDir, fmt.Sprintf("%s.json", exchange))
+	outputPath := filepath.Join(g.outputDir, fmt.Sprintf("%s_%s.json", exchange, apiType))
 	if err := g.writeSpec(spec, outputPath); err != nil {
 		return fmt.Errorf("writing specification: %w", err)
 	}
@@ -71,7 +71,12 @@ func (g *Generator) convertEndpointToPath(endpoint parser.Endpoint) *openapi3.Pa
 		Description: endpoint.Description,
 		Tags:        endpoint.Tags,
 		Parameters:  g.convertParameters(endpoint.Parameters),
-		Responses:   g.convertResponses(endpoint.Responses),
+		Responses:   openapi3.NewResponses(),
+	}
+	
+	// Add responses to the operation
+	for code, resp := range g.convertResponses(endpoint.Responses) {
+		operation.Responses.Set(code, resp)
 	}
 
 	if endpoint.RequestBody != nil {
@@ -105,7 +110,7 @@ func (g *Generator) convertParameters(params []parser.Parameter) openapi3.Parame
 				In:          param.In,
 				Description: param.Description,
 				Required:    param.Required,
-				Schema:     g.convertSchema(param.Schema),
+				Schema:      g.convertSchema(param.Schema),
 			},
 		})
 	}
@@ -131,8 +136,8 @@ func (g *Generator) convertRequestBody(body *parser.RequestBody) *openapi3.Reque
 }
 
 // convertResponses converts parser responses to OpenAPI responses
-func (g *Generator) convertResponses(responses map[string]parser.Response) openapi3.Responses {
-	result := make(openapi3.Responses)
+func (g *Generator) convertResponses(responses map[string]parser.Response) map[string]*openapi3.ResponseRef {
+	result := make(map[string]*openapi3.ResponseRef)
 	for code, response := range responses {
 		content := make(openapi3.Content)
 		for mediaType, mt := range response.Content {
@@ -153,6 +158,11 @@ func (g *Generator) convertResponses(responses map[string]parser.Response) opena
 
 // convertSchema converts a parser schema to an OpenAPI schema
 func (g *Generator) convertSchema(schema parser.Schema) *openapi3.SchemaRef {
+	// Return nil if schema is empty/default
+	if schema.Type == "" && schema.Properties == nil && schema.Items == nil {
+		return nil
+	}
+	
 	result := &openapi3.Schema{
 		Type:        schema.Type,
 		Format:      schema.Format,
@@ -162,6 +172,41 @@ func (g *Generator) convertSchema(schema parser.Schema) *openapi3.SchemaRef {
 		Required:    schema.Required,
 	}
 
+	// Handle numeric constraints
+	if schema.Minimum != nil {
+		min := float64(*schema.Minimum)
+		result.Min = &min
+	}
+	if schema.Maximum != nil {
+		max := float64(*schema.Maximum)
+		result.Max = &max
+	}
+	if schema.MultipleOf != nil {
+		result.MultipleOf = schema.MultipleOf
+	}
+	
+	// Handle string constraints
+	if schema.MinLength != nil {
+		result.MinLength = *schema.MinLength
+	}
+	if schema.MaxLength != nil {
+		result.MaxLength = schema.MaxLength
+	}
+	if schema.Pattern != "" {
+		result.Pattern = schema.Pattern
+	}
+
+	// Handle array constraints
+	if schema.MinItems != nil {
+		result.MinItems = *schema.MinItems
+	}
+	if schema.MaxItems != nil {
+		result.MaxItems = schema.MaxItems
+	}
+	if schema.UniqueItems {
+		result.UniqueItems = true
+	}
+
 	if schema.Items != nil {
 		result.Items = g.convertSchema(*schema.Items)
 	}
@@ -169,7 +214,20 @@ func (g *Generator) convertSchema(schema parser.Schema) *openapi3.SchemaRef {
 	if schema.Properties != nil {
 		result.Properties = make(openapi3.Schemas)
 		for name, prop := range schema.Properties {
-			result.Properties[name] = g.convertSchema(prop)
+			propSchemaRef := g.convertSchema(prop)
+			if propSchemaRef != nil {
+				result.Properties[name] = propSchemaRef
+			}
+		}
+	}
+
+	// Handle additionalProperties
+	if schema.AdditionalProperties != nil {
+		additionalPropsSchema := g.convertSchema(*schema.AdditionalProperties)
+		if additionalPropsSchema != nil {
+			result.AdditionalProperties = openapi3.AdditionalProperties{
+				Schema: additionalPropsSchema,
+			}
 		}
 	}
 
@@ -190,4 +248,4 @@ func (g *Generator) writeSpec(spec *openapi3.T, path string) error {
 	}
 
 	return nil
-} 
+}

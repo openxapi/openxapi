@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
-	"path/filepath"
 
+	"github.com/adshao/openxapi/internal/exchange/binance"
+	"github.com/adshao/openxapi/internal/generator"
+	"github.com/adshao/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -16,38 +19,32 @@ var (
 )
 
 func init() {
-	flag.StringVar(&configFile, "config", "configs/exchanges.yaml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "configs/config.yaml", "Path to configuration file")
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (debug, info, warn, error)")
 }
 
 type Config struct {
 	Exchanges map[string]Exchange `yaml:"exchanges"`
-	Settings  Settings           `yaml:"settings"`
+	Settings  Settings            `yaml:"settings"`
 }
 
 type Exchange struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description"`
 	Docs        []Documentation   `yaml:"docs"`
-	VersionCheck VersionCheck     `yaml:"version_check"`
 	BaseURLs    map[string]string `yaml:"base_urls"`
 }
 
 type Documentation struct {
-	URL    string `yaml:"url"`
-	Type   string `yaml:"type"`
-	Format string `yaml:"format"`
-}
-
-type VersionCheck struct {
-	Selector string `yaml:"selector"`
+	Type string   `yaml:"type"`
+	URLs []string `yaml:"urls"`
 }
 
 type Settings struct {
 	UpdateInterval string `yaml:"update_interval"`
-	OutputDir     string `yaml:"output_dir"`
-	HistoryDir    string `yaml:"history_dir"`
-	LogLevel      string `yaml:"log_level"`
+	OutputDir      string `yaml:"output_dir"`
+	HistoryDir     string `yaml:"history_dir"`
+	LogLevel       string `yaml:"log_level"`
 }
 
 func main() {
@@ -55,7 +52,7 @@ func main() {
 
 	// Setup logging
 	level, err := logrus.ParseLevel(logLevel)
-	if err != nil {
+	if (err != nil) {
 		fmt.Printf("Invalid log level: %v\n", err)
 		os.Exit(1)
 	}
@@ -72,8 +69,59 @@ func main() {
 		logrus.Fatalf("Failed to create directories: %v", err)
 	}
 
-	// TODO: Implement main logic
-	logrus.Info("OpenXAPI started")
+	// Create OpenAPI generator
+	gen := generator.NewGenerator(config.Settings.OutputDir)
+
+	// Process each exchange
+	ctx := context.Background()
+	for exchangeName, exchange := range config.Exchanges {
+		logrus.Infof("Processing exchange: %s", exchangeName)
+
+		// Create exchange-specific parser
+		var p parser.Parser
+		switch exchangeName {
+		case "binance":
+			p = binance.NewParser()
+		default:
+			logrus.Warnf("Unsupported exchange: %s", exchangeName)
+			continue
+		}
+
+		// Process each API type
+		for _, doc := range exchange.Docs {
+			logrus.Infof("Processing API type: %s", doc.Type)
+
+			 // Convert config Documentation to parser.Documentation
+			parserDoc := parser.Documentation{
+				Type: doc.Type,
+				URLs: doc.URLs,
+			}
+
+			// Parse endpoints
+			endpoints, err := p.Parse(ctx, parserDoc)
+			if err != nil {
+				logrus.Errorf("Failed to parse %s %s API: %v", exchangeName, doc.Type, err)
+				continue
+			}
+
+			// Get base URL for this API type
+			baseURL, ok := exchange.BaseURLs[doc.Type]
+			if !ok {
+				logrus.Errorf("No base URL found for %s %s API", exchangeName, doc.Type)
+				continue
+			}
+
+			// Generate OpenAPI specification
+			if err := gen.Generate(exchangeName, doc.Type, endpoints, baseURL); err != nil {
+				logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type)
+				continue
+			}
+
+			logrus.Infof("Successfully generated OpenAPI spec for %s %s API", exchangeName, doc.Type)
+		}
+	}
+
+	logrus.Info("OpenXAPI completed")
 }
 
 func loadConfig(path string) (*Config, error) {
