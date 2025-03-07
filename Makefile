@@ -1,4 +1,4 @@
-.PHONY: all build clean format lint vet test unit-test coverage help
+.PHONY: all build clean format lint vet test unit-test coverage help test-with-samples
 
 # Go parameters
 GOCMD=go
@@ -38,6 +38,9 @@ test: unit-test
 unit-test:
 	$(GOTEST) -v -race ./...
 
+test-with-samples:
+	TEST_WITH_SAMPLES=1 $(GOTEST) -v ./...
+
 coverage:
 	$(GOTEST) -coverprofile=coverage.out ./...
 	$(GOCMD) tool cover -html=coverage.out
@@ -48,14 +51,15 @@ deps:
 
 help:
 	@echo "Available targets:"
-	@echo "  all        - Format, lint, vet, test, and build"
-	@echo "  build      - Build the binary"
-	@echo "  clean      - Clean build files"
-	@echo "  format     - Format code and tidy modules"
-	@echo "  lint       - Run golangci-lint"
-	@echo "  vet        - Run go vet"
-	@echo "  test       - Run all tests"
-	@echo "  unit-test  - Run unit tests"
-	@echo "  coverage   - Generate test coverage report"
-	@echo "  deps       - Download and verify dependencies"
-	@echo "  help       - Show this help message" 
+	@echo "  all              - Format, lint, vet, test, and build"
+	@echo "  build            - Build the binary"
+	@echo "  clean            - Clean build files"
+	@echo "  format           - Format code and tidy modules"
+	@echo "  lint             - Run golangci-lint"
+	@echo "  vet              - Run go vet"
+	@echo "  test             - Run all tests"
+	@echo "  unit-test        - Run unit tests"
+	@echo "  test-with-samples - Run tests with sample files"
+	@echo "  coverage         - Generate test coverage report"
+	@echo "  deps             - Download and verify dependencies"
+	@echo "  help             - Show this help message" 

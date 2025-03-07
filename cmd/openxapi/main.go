@@ -10,17 +10,21 @@ import (
 	"github.com/adshao/openxapi/internal/generator"
 	"github.com/adshao/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 var (
 	configFile string
 	logLevel   string
+	useSamples bool
+	samplesDir string
 )
 
 func init() {
 	flag.StringVar(&configFile, "config", "configs/config.yaml", "Path to configuration file")
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (debug, info, warn, error)")
+	flag.BoolVar(&useSamples, "use-samples", false, "Use sample files instead of making HTTP requests")
+	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/webpage/<exchange>)")
 }
 
 type Config struct {
@@ -52,7 +56,7 @@ func main() {
 
 	// Setup logging
 	level, err := logrus.ParseLevel(logLevel)
-	if (err != nil) {
+	if err != nil {
 		fmt.Printf("Invalid log level: %v\n", err)
 		os.Exit(1)
 	}
@@ -77,11 +81,21 @@ func main() {
 	for exchangeName, exchange := range config.Exchanges {
 		logrus.Infof("Processing exchange: %s", exchangeName)
 
+		exchangeSamplesDir := samplesDir
+		if exchangeSamplesDir == "" {
+			exchangeSamplesDir = fmt.Sprintf("samples/webpage/%s", exchangeName)
+		}
+
 		// Create exchange-specific parser
 		var p parser.Parser
 		switch exchangeName {
 		case "binance":
-			p = binance.NewParser()
+			if useSamples {
+				p = binance.NewParserWithOptions(useSamples, exchangeSamplesDir)
+				logrus.Infof("Using sample files from %s", exchangeSamplesDir)
+			} else {
+				p = binance.NewParser()
+			}
 		default:
 			logrus.Warnf("Unsupported exchange: %s", exchangeName)
 			continue
@@ -91,7 +105,7 @@ func main() {
 		for _, doc := range exchange.Docs {
 			logrus.Infof("Processing API type: %s", doc.Type)
 
-			 // Convert config Documentation to parser.Documentation
+			// Convert config Documentation to parser.Documentation
 			parserDoc := parser.Documentation{
 				Type: doc.Type,
 				URLs: doc.URLs,

@@ -10,6 +10,7 @@ OpenXAPI is a Go program that automatically generates OpenAPI Specifications fro
 - Change detection and automatic spec regeneration
 - Version history tracking
 - Multi-language SDK generation support
+- Sample file support for offline development and testing
 
 ## Project Structure
 
@@ -24,7 +25,9 @@ OpenXAPI is a Go program that automatically generates OpenAPI Specifications fro
 │   └── exchange/         # Exchange-specific implementations
 ├── pkg/                   # Public library code
 │   └── models/           # Shared data models
-└── configs/              # Configuration files
+├── configs/              # Configuration files
+└── samples/              # Sample API documentation files
+    └── webpage/          # HTML samples of exchange documentation
 ```
 
 ## Getting Started
@@ -58,6 +61,32 @@ go build ./cmd/openxapi
 2. Run the OpenAPI specification generator:
 ```bash
 ./openxapi generate
+```
+
+### Using Sample Files
+
+The program can save API documentation to sample files and use them for offline development and testing:
+
+1. Generate sample files by running the program normally:
+```bash
+./openxapi
+```
+
+2. Use the generated sample files instead of making HTTP requests:
+```bash
+./openxapi --use-samples
+```
+
+3. Specify a custom directory for sample files:
+```bash
+./openxapi --use-samples --samples-dir=/path/to/samples
+```
+
+### Testing with Samples
+
+Run tests with sample files:
+```bash
+make test-with-samples
 ```
 
 ## Contributing

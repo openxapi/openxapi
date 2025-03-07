@@ -37,7 +37,7 @@ func (g *Generator) Generate(exchange string, apiType string, endpoints []parser
 				Description: fmt.Sprintf("%s %s API Server", exchange, apiType),
 			},
 		},
-		Paths:      openapi3.NewPaths(),
+		Paths: openapi3.NewPaths(),
 		Components: &openapi3.Components{
 			Schemas:   make(openapi3.Schemas),
 			Responses: make(openapi3.ResponseBodies),
@@ -71,9 +71,11 @@ func (g *Generator) convertEndpointToPath(endpoint parser.Endpoint) *openapi3.Pa
 		Description: endpoint.Description,
 		Tags:        endpoint.Tags,
 		Parameters:  g.convertParameters(endpoint.Parameters),
-		Responses:   openapi3.NewResponses(),
+		OperationID: endpoint.OperationID,
+		Responses:   &openapi3.Responses{},
+		Deprecated:  endpoint.Deprecated,
 	}
-	
+
 	// Add responses to the operation
 	for code, resp := range g.convertResponses(endpoint.Responses) {
 		operation.Responses.Set(code, resp)
@@ -162,7 +164,7 @@ func (g *Generator) convertSchema(schema parser.Schema) *openapi3.SchemaRef {
 	if schema.Type == "" && schema.Properties == nil && schema.Items == nil {
 		return nil
 	}
-	
+
 	result := &openapi3.Schema{
 		Type:        schema.Type,
 		Format:      schema.Format,
@@ -184,7 +186,7 @@ func (g *Generator) convertSchema(schema parser.Schema) *openapi3.SchemaRef {
 	if schema.MultipleOf != nil {
 		result.MultipleOf = schema.MultipleOf
 	}
-	
+
 	// Handle string constraints
 	if schema.MinLength != nil {
 		result.MinLength = *schema.MinLength
