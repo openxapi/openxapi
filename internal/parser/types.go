@@ -2,9 +2,10 @@ package parser
 
 // Documentation represents information about API documentation
 type Documentation struct {
-	URLs    []string          // URLs to the documentation
-	Type    string            // Type of documentation (e.g., "html", "md")
-	Options map[string]string // Additional options for parsing
+	URLs               []string          // URLs to the documentation
+	Type               string            // Type of documentation (e.g., "html", "md")
+	ProtectedEndpoints []string          // List of protected endpoints
+	Options            map[string]string // Additional options for parsing
 }
 
 // Schema represents a JSON Schema definition
@@ -63,6 +64,7 @@ type Endpoint struct {
 	Deprecated  bool                   // Whether the endpoint is deprecated
 	OperationID string                 // Operation ID
 	Schemas     []*Schema              // Schemas for the endpoint
+	Protected   bool                   // Whether the endpoint is protected
 }
 
 // Parameter represents an endpoint parameter

@@ -6,6 +6,7 @@ import (
 	"io"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
@@ -20,7 +21,7 @@ type DocumentParser struct {
 }
 
 // Parse parses an HTML document and extracts API endpoints
-func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string) ([]parser.Endpoint, error) {
+func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string, protectedEndpoints []string) ([]parser.Endpoint, error) {
 	p.docType = docType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
@@ -44,15 +45,6 @@ func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string) ([]parser
 		if isNonEndpointHeader(headerText) {
 			return
 		}
-
-		// Initialize endpoint data
-		var endpoint parser.Endpoint
-		endpoint.Summary = headerText
-		endpoint.Tags = []string{category}
-
-		// Create maps for extensions and responses
-		endpoint.Extensions = make(map[string]interface{})
-		endpoint.Responses = make(map[string]*parser.Response)
 
 		// Collect all content elements after the header until we find the next h3
 		var content []string
@@ -88,7 +80,7 @@ func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string) ([]parser
 
 		// Only add valid endpoints
 		if valid && endpointData.Path != "" && endpointData.Method != "" {
-			p.processEndpoint(endpointData)
+			p.processEndpoint(endpointData, protectedEndpoints)
 			endpoints = append(endpoints, *endpointData)
 		}
 	})
@@ -106,7 +98,7 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 	fmt.Printf("sourceURL: %s\n", sourceURL)
 	fmt.Println("--------------------------------")
 	var endpoint = &parser.Endpoint{}
-	endpoint.Tags = []string{"Binance", category}
+	endpoint.Tags = []string{category}
 	endpoint.Extensions = make(map[string]interface{})
 	endpoint.Responses = make(map[string]*parser.Response)
 
@@ -126,6 +118,7 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 	parametersRegex := regexp.MustCompile(`^Parameters:$`)
 	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
 	responseRegex := regexp.MustCompile(`^Response:\s*(.*)$`)
+	apiVersionRegex := regexp.MustCompile(`/(v\d+)/`)
 
 	// Process each line of content
 	for i, line := range content {
@@ -146,6 +139,13 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 				endpoint.Method = matches[1]
 				endpoint.Path = matches[2]
 				foundEndpoint = true
+
+				// Extract the API version from the path
+				apiVersionMatches := apiVersionRegex.FindStringSubmatch(endpoint.Path)
+				if len(apiVersionMatches) == 2 {
+					apiVersion := apiVersionMatches[1]
+					endpoint.Tags = append(endpoint.Tags, fmt.Sprintf("%s APIs", strings.ToUpper(apiVersion)))
+				}
 				continue
 			}
 		}
@@ -208,13 +208,9 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 
 	// Set the description
 	endpoint.Description = strings.TrimSpace(description.String())
-
 	p.extractParameters(endpoint)
-
 	fmt.Printf("Response content: %s\n", responseContent.String())
-
 	p.extractResponse(endpoint, foundResponse, responseContent.String())
-
 	endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
 
 	return endpoint, foundEndpoint
@@ -418,12 +414,14 @@ func (p *DocumentParser) createSchema(paramType string) *parser.Schema {
 		// For ARRAY OF STRING, set items type to string
 		if strings.Contains(strings.ToUpper(paramType), "ARRAY OF STRING") {
 			schema.Items = &parser.Schema{
-				Type: "string",
+				Type:    "string",
+				Default: "",
 			}
 		} else if strings.Contains(strings.ToUpper(paramType), "ARRAY") {
 			// Default to string items for other arrays
 			schema.Items = &parser.Schema{
-				Type: "string",
+				Type:    "string",
+				Default: "",
 			}
 		}
 	}
@@ -568,22 +566,9 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 	}
 }
 
-func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint) {
-	if p.docType == "spot" {
-		// Process special cases if it's hard to parse from the document
-		if endpoint.Method == "GET" && endpoint.Path == "/api/v3/exchangeInfo" {
-			for _, param := range endpoint.Parameters {
-				if param.Name == "permissions" {
-					param.Type = "array"
-					param.Schema = &parser.Schema{
-						Type: "array",
-						Items: &parser.Schema{
-							Type:    "string",
-							Default: "",
-						},
-					}
-				}
-			}
-		}
+func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEndpoints []string) {
+	// Check if the endpoint is protected
+	if slices.Contains(protectedEndpoints, fmt.Sprintf("%s %s", strings.ToUpper(endpoint.Method), endpoint.Path)) {
+		endpoint.Protected = true
 	}
 }

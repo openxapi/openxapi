@@ -2,12 +2,14 @@ package generator
 
 import (
 	"fmt"
-	"github.com/adshao/openxapi/internal/parser"
-	"github.com/getkin/kin-openapi/openapi3"
-	yaml "gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
+
+	"github.com/adshao/openxapi/internal/parser"
+	"github.com/getkin/kin-openapi/openapi3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // Generator handles the generation of OpenAPI specifications
@@ -22,19 +24,69 @@ func NewGenerator(outputDir string) *Generator {
 	}
 }
 
+func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoints []parser.Endpoint, baseURL string) error {
+	endpointDir := filepath.Join(g.outputDir, "endpoints")
+	if err := os.MkdirAll(endpointDir, 0755); err != nil {
+		return fmt.Errorf("creating endpoints directory: %w", err)
+	}
+
+	for _, endpoint := range endpoints {
+		if endpoint.Protected {
+			continue
+		}
+		endpointPath := filepath.Join(endpointDir, fmt.Sprintf("%s_%s.yaml", strings.ToLower(endpoint.Method), strings.ReplaceAll(endpoint.Path, "/", "_")))
+		spec := &openapi3.T{
+			OpenAPI: "3.0.3",
+			Info: &openapi3.Info{
+				Title:       fmt.Sprintf("%s %s API", strings.Title(exchange), strings.Title(apiType)),
+				Description: fmt.Sprintf("OpenAPI specification for %s cryptocurrency exchange - %s API", strings.Title(exchange), strings.Title(apiType)),
+				Version:     version,
+			},
+			Servers: openapi3.Servers{
+				&openapi3.Server{
+					URL:         baseURL,
+					Description: fmt.Sprintf("%s %s API Server", strings.Title(exchange), strings.Title(apiType)),
+				},
+			},
+			Paths: openapi3.NewPaths(),
+			Components: &openapi3.Components{
+				Schemas:   make(openapi3.Schemas),
+				Responses: make(openapi3.ResponseBodies),
+			},
+		}
+
+		path := g.convertEndpointToPath(endpoint)
+		spec.Paths.Set(endpoint.Path, path)
+
+		var schemaTitles []string
+		for _, schema := range endpoint.Schemas {
+			if !slices.Contains(schemaTitles, schema.Title) {
+				schemaTitles = append(schemaTitles, schema.Title)
+				spec.Components.Schemas[schema.Title] = g.convertSchema(schema)
+			}
+		}
+
+		if err := g.writeSpec(spec, endpointPath); err != nil {
+			return fmt.Errorf("writing specification: %w", err)
+		}
+	}
+
+	return nil
+}
+
 // Generate creates an OpenAPI specification from parsed endpoints
-func (g *Generator) Generate(exchange string, version, apiType string, endpoints []parser.Endpoint, baseURL string) error {
+func (g *Generator) Generate(exchange, version, apiType string, endpoints []parser.Endpoint, baseURL string) error {
 	spec := &openapi3.T{
 		OpenAPI: "3.0.3",
 		Info: &openapi3.Info{
-			Title:       fmt.Sprintf("%s %s API", exchange, apiType),
-			Description: fmt.Sprintf("OpenAPI specification for %s cryptocurrency exchange - %s API", exchange, apiType),
+			Title:       fmt.Sprintf("%s %s API", strings.Title(exchange), strings.Title(apiType)),
+			Description: fmt.Sprintf("OpenAPI specification for %s cryptocurrency exchange - %s API", strings.Title(exchange), strings.Title(apiType)),
 			Version:     version,
 		},
 		Servers: openapi3.Servers{
 			&openapi3.Server{
 				URL:         baseURL,
-				Description: fmt.Sprintf("%s %s API Server", exchange, apiType),
+				Description: fmt.Sprintf("%s %s API Server", strings.Title(exchange), strings.Title(apiType)),
 			},
 		},
 		Paths: openapi3.NewPaths(),

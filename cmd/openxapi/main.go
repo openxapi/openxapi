@@ -41,8 +41,9 @@ type Exchange struct {
 }
 
 type Documentation struct {
-	Type string   `yaml:"type"`
-	URLs []string `yaml:"urls"`
+	Type               string   `yaml:"type"`
+	URLs               []string `yaml:"urls"`
+	ProtectedEndpoints []string `yaml:"protected_endpoints"`
 }
 
 type Settings struct {
@@ -108,8 +109,9 @@ func main() {
 
 			// Convert config Documentation to parser.Documentation
 			parserDoc := parser.Documentation{
-				Type: doc.Type,
-				URLs: doc.URLs,
+				Type:               doc.Type,
+				URLs:               doc.URLs,
+				ProtectedEndpoints: doc.ProtectedEndpoints,
 			}
 
 			// Parse endpoints
@@ -123,6 +125,11 @@ func main() {
 			baseURL, ok := exchange.BaseURLs[doc.Type]
 			if !ok {
 				logrus.Errorf("No base URL found for %s %s API", exchangeName, doc.Type)
+				continue
+			}
+			// Generate OpenAPI specification for each endpoint
+			if err := gen.GenerateEndpoints(exchangeName, exchange.Version, doc.Type, endpoints, baseURL); err != nil {
+				logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
 				continue
 			}
 
