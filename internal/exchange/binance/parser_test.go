@@ -99,7 +99,7 @@ func TestParser_Parse(t *testing.T) {
 
 			for i, param := range exchangeInfoEndpoint.Parameters {
 				if param.Name == "symbol" {
-					symbolParam = &exchangeInfoEndpoint.Parameters[i]
+					symbolParam = exchangeInfoEndpoint.Parameters[i]
 					break
 				}
 			}

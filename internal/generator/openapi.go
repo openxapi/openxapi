@@ -54,7 +54,7 @@ func (g *Generator) Generate(exchange string, version, apiType string, endpoints
 			// If the schema is not in schemaTitles, add it
 			if !slices.Contains(schemaTitles, schema.Title) {
 				schemaTitles = append(schemaTitles, schema.Title)
-				spec.Components.Schemas[schema.Title] = g.convertSchema(&schema)
+				spec.Components.Schemas[schema.Title] = g.convertSchema(schema)
 			}
 		}
 	}
@@ -161,7 +161,7 @@ func (g *Generator) convertEndpointToPath(endpoint parser.Endpoint) *openapi3.Pa
 }
 
 // convertParameters converts parser parameters to OpenAPI parameters
-func (g *Generator) convertParameters(params []parser.Parameter) openapi3.Parameters {
+func (g *Generator) convertParameters(params []*parser.Parameter) openapi3.Parameters {
 	result := make(openapi3.Parameters, 0, len(params))
 	for _, param := range params {
 		result = append(result, &openapi3.ParameterRef{
@@ -170,7 +170,7 @@ func (g *Generator) convertParameters(params []parser.Parameter) openapi3.Parame
 				In:          param.In,
 				Description: param.Description,
 				Required:    param.Required,
-				Schema:      g.convertSchema(&param.Schema),
+				Schema:      g.convertSchema(param.Schema),
 			},
 		})
 	}
@@ -182,7 +182,7 @@ func (g *Generator) convertRequestBody(body *parser.RequestBody) *openapi3.Reque
 	content := make(openapi3.Content)
 	for mediaType, mt := range body.Content {
 		content[mediaType] = &openapi3.MediaType{
-			Schema: g.convertSchema(&mt.Schema),
+			Schema: g.convertSchema(mt.Schema),
 		}
 	}
 
@@ -196,13 +196,13 @@ func (g *Generator) convertRequestBody(body *parser.RequestBody) *openapi3.Reque
 }
 
 // convertResponses converts parser responses to OpenAPI responses
-func (g *Generator) convertResponses(responses map[string]parser.Response) map[string]*openapi3.ResponseRef {
+func (g *Generator) convertResponses(responses map[string]*parser.Response) map[string]*openapi3.ResponseRef {
 	result := make(map[string]*openapi3.ResponseRef)
 	for code, response := range responses {
 		content := make(openapi3.Content)
 		for mediaType, mt := range response.Content {
 			content[mediaType] = &openapi3.MediaType{
-				Schema: g.convertSchema(&mt.Schema),
+				Schema: g.convertSchema(mt.Schema),
 			}
 		}
 

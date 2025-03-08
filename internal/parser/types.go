@@ -54,42 +54,42 @@ type Endpoint struct {
 	Method      string                 // HTTP method
 	Description string                 // Description of the endpoint
 	Summary     string                 // Short summary of the endpoint
-	Parameters  []Parameter            // Parameters accepted by the endpoint
-	Responses   map[string]Response    // Responses by status code
+	Parameters  []*Parameter           // Parameters accepted by the endpoint
+	Responses   map[string]*Response   // Responses by status code
 	Metadata    map[string]interface{} // Additional metadata
 	Tags        []string               // Tags for categorizing the endpoint
 	Extensions  map[string]interface{} // OpenAPI extensions
 	RequestBody *RequestBody           // Request body definition
 	Deprecated  bool                   // Whether the endpoint is deprecated
 	OperationID string                 // Operation ID
-	Schemas     []Schema               // Schemas for the endpoint
+	Schemas     []*Schema              // Schemas for the endpoint
 }
 
 // Parameter represents an endpoint parameter
 type Parameter struct {
-	Name        string // Parameter name
-	Type        string // Parameter type
-	Required    bool   // Whether the parameter is required
-	Description string // Description of the parameter
-	In          string // Parameter location (query, path, header, cookie)
-	Schema      Schema // Parameter schema
+	Name        string  // Parameter name
+	Type        string  // Parameter type
+	Required    bool    // Whether the parameter is required
+	Description string  // Description of the parameter
+	In          string  // Parameter location (query, path, header, cookie)
+	Schema      *Schema // Parameter schema
 }
 
 // MediaType represents a media type in request or response
 type MediaType struct {
-	Schema Schema `json:"schema,omitempty"`
+	Schema *Schema `json:"schema,omitempty"`
 }
 
 // RequestBody represents the body of a request
 type RequestBody struct {
-	Description string               `json:"description,omitempty"`
-	Content     map[string]MediaType `json:"content,omitempty"`
-	Required    bool                 `json:"required,omitempty"`
+	Description string                `json:"description,omitempty"`
+	Content     map[string]*MediaType `json:"content,omitempty"`
+	Required    bool                  `json:"required,omitempty"`
 }
 
 // Response represents an API response
 type Response struct {
-	Description string               // Description of the response
-	Schema      string               // Response schema
-	Content     map[string]MediaType // Response content by media type
+	Description string                // Description of the response
+	Schema      string                // Response schema
+	Content     map[string]*MediaType // Response content by media type
 }

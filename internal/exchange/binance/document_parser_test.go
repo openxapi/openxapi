@@ -61,7 +61,7 @@ func TestExtractParameters(t *testing.T) {
 		Path:        "/api/v3/exchangeInfo",
 		Summary:     "Exchange Information",
 		Description: "Current exchange trading rules and symbol information",
-		Parameters:  []parser.Parameter{},
+		Parameters:  []*parser.Parameter{},
 		Extensions:  map[string]interface{}{"x-weight": "20", "x-data-source": "Memory"},
 	}
 
@@ -74,7 +74,7 @@ func TestExtractParameters(t *testing.T) {
 	assert.Equal(t, 5, len(endpoint.Parameters), "Should have extracted 5 parameters")
 
 	// Check each parameter by name
-	paramMap := make(map[string]parser.Parameter)
+	paramMap := make(map[string]*parser.Parameter)
 	for _, param := range endpoint.Parameters {
 		paramMap[param.Name] = param
 	}
@@ -128,8 +128,8 @@ func TestExtractResponse(t *testing.T) {
 		Path:        "/api/v3/exchangeInfo",
 		Summary:     "Exchange Information",
 		Description: "Current exchange trading rules and symbol information",
-		Parameters:  []parser.Parameter{},
-		Responses:   map[string]parser.Response{},
+		Parameters:  []*parser.Parameter{},
+		Responses:   map[string]*parser.Response{},
 	}
 
 	docParser.extractResponse(endpoint, true, "{ \"message\": \"Success\" }")
@@ -141,21 +141,23 @@ func TestExtractResponse(t *testing.T) {
 func TestOperationID(t *testing.T) {
 	tests := []struct {
 		docType string
+		method  string
 		path    string
 		want    string
 	}{
-		{"Spot", "/api/v3/exchangeInfo", "SpotExchangeInfoV3"},
-		{"Spot", "/api/v3/account", "SpotAccountV3"},
-		{"Spot", "/api/v3/order", "SpotOrderV3"},
-		{"Spot", "/api/v3/order/oco", "SpotOrderOcoV3"},
-		{"Spot", "/api/v3/order/oco", "SpotOrderOcoV3"},
-		{"Future", "/fapi/v1/exchangeInfo", "FutureExchangeInfoV1"},
+		{"Spot", "GET", "/api/v3/exchangeInfo", "SpotGetExchangeInfoV3"},
+		{"Spot", "POST", "/api/v3/account", "SpotCreateAccountV3"},
+		{"Spot", "PUT", "/api/v3/order", "SpotUpdateOrderV3"},
+		{"Spot", "DELETE", "/api/v3/order/oco", "SpotDeleteOrderOcoV3"},
+		{"Spot", "GET", "/api/v3/order/oco", "SpotGetOrderOcoV3"},
+		{"Future", "GET", "/fapi/v1/exchangeInfo", "FutureGetExchangeInfoV1"},
+		{"Future", "POST", "/fapi/v1/order", "FutureCreateOrderV1"},
 	}
 
 	for _, test := range tests {
-		got := operationID(test.docType, test.path)
+		got := operationID(test.docType, test.method, test.path)
 		if got != test.want {
-			t.Errorf("operationID(%q, %q) = %q; want %q", test.docType, test.path, got, test.want)
+			t.Errorf("operationID(%q, %q, %q) = %q; want %q", test.docType, test.method, test.path, got, test.want)
 		}
 	}
 }

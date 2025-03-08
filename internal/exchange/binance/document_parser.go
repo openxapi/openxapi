@@ -48,11 +48,11 @@ func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string) ([]parser
 		// Initialize endpoint data
 		var endpoint parser.Endpoint
 		endpoint.Summary = headerText
-		endpoint.Tags = []string{"Binance", category}
+		endpoint.Tags = []string{category}
 
 		// Create maps for extensions and responses
 		endpoint.Extensions = make(map[string]interface{})
-		endpoint.Responses = make(map[string]parser.Response)
+		endpoint.Responses = make(map[string]*parser.Response)
 
 		// Collect all content elements after the header until we find the next h3
 		var content []string
@@ -108,7 +108,7 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 	var endpoint = &parser.Endpoint{}
 	endpoint.Tags = []string{"Binance", category}
 	endpoint.Extensions = make(map[string]interface{})
-	endpoint.Responses = make(map[string]parser.Response)
+	endpoint.Responses = make(map[string]*parser.Response)
 
 	// Set the summary from the first content item if available
 	if len(content) > 0 {
@@ -215,13 +215,13 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 
 	p.extractResponse(endpoint, foundResponse, responseContent.String())
 
-	endpoint.OperationID = operationID(p.docType, endpoint.Path)
+	endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
 
 	return endpoint, foundEndpoint
 }
 
-func operationID(docType, path string) string {
-	// GET /api/v3/exchangeInfo -> SpotExchangeInfoV3
+func operationID(docType, method, path string) string {
+	// GET /api/v3/exchangeInfo -> SpotGetExchangeInfoV3
 	// Spot is the capitalized version of the docType
 	// ExchangeInfoV3 is the method capitalized + the path capitalized
 	title := func(s string) string {
@@ -237,7 +237,21 @@ func operationID(docType, path string) string {
 		}
 		path = fmt.Sprintf("%sV%s", action, matches[2])
 	}
-	return fmt.Sprintf("%s%s", title(docType), path)
+	return fmt.Sprintf("%s%s%s", title(docType), methodToAction(method), path)
+}
+
+func methodToAction(method string) string {
+	switch strings.ToUpper(method) {
+	case "GET":
+		return "Get"
+	case "POST":
+		return "Create"
+	case "PUT", "PATCH":
+		return "Update"
+	case "DELETE":
+		return "Delete"
+	}
+	return ""
 }
 
 // extractParameters extracts parameters from the endpoint description
@@ -298,7 +312,7 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) {
 		}
 
 		// Create the parameter
-		param := parser.Parameter{
+		param := &parser.Parameter{
 			Name:        paramName,
 			Type:        normalizeType(paramType),
 			Required:    required,
@@ -315,26 +329,26 @@ func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, foundRespons
 	// Process response content if we found it
 	if foundResponse {
 		// Create a default 200 OK response
-		response := parser.Response{
+		response := &parser.Response{
 			Description: "Successful operation",
 		}
 
 		// Try to parse the response example as JSON schema
 		if responseContent != "" {
-			mediaType := parser.MediaType{
+			mediaType := &parser.MediaType{
 				Schema: p.createResponseSchema(responseContent),
 			}
-			response.Content = map[string]parser.MediaType{
+			response.Content = map[string]*parser.MediaType{
 				"application/json": mediaType,
 			}
 		} else {
 			// If no response content, still create a default response
-			mediaType := parser.MediaType{
-				Schema: parser.Schema{
+			mediaType := &parser.MediaType{
+				Schema: &parser.Schema{
 					Type: "object",
 				},
 			}
-			response.Content = map[string]parser.MediaType{
+			response.Content = map[string]*parser.MediaType{
 				"application/json": mediaType,
 			}
 		}
@@ -342,11 +356,11 @@ func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, foundRespons
 		endpoint.Responses["200"] = response
 	} else {
 		// Always create a default response even if none was found
-		endpoint.Responses["200"] = parser.Response{
+		endpoint.Responses["200"] = &parser.Response{
 			Description: "Successful operation",
-			Content: map[string]parser.MediaType{
+			Content: map[string]*parser.MediaType{
 				"application/json": {
-					Schema: parser.Schema{
+					Schema: &parser.Schema{
 						Type: "object",
 					},
 				},
@@ -356,13 +370,13 @@ func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, foundRespons
 }
 
 // createResponseSchema attempts to create a schema from response example text
-func (p *DocumentParser) createResponseSchema(responseText string) parser.Schema {
+func (p *DocumentParser) createResponseSchema(responseText string) *parser.Schema {
 	fmt.Printf("responseText: %s\n", responseText)
 	// Unmarshal the responseText into a Response struct, create a schema from the Response struct
 	var response interface{}
 	err := json.Unmarshal([]byte(responseText), &response)
 	if err != nil {
-		return parser.Schema{
+		return &parser.Schema{
 			Type: "object",
 		}
 	}
@@ -394,8 +408,8 @@ func extractEnumValues(description string) []interface{} {
 }
 
 // createSchema creates a schema based on the parameter type
-func (p *DocumentParser) createSchema(paramType string) parser.Schema {
-	schema := parser.Schema{
+func (p *DocumentParser) createSchema(paramType string) *parser.Schema {
+	schema := &parser.Schema{
 		Type: normalizeType(paramType),
 	}
 
@@ -555,6 +569,21 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 }
 
 func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint) {
-	// Process special cases if it's hard to parse from the document
-
+	if p.docType == "spot" {
+		// Process special cases if it's hard to parse from the document
+		if endpoint.Method == "GET" && endpoint.Path == "/api/v3/exchangeInfo" {
+			for _, param := range endpoint.Parameters {
+				if param.Name == "permissions" {
+					param.Type = "array"
+					param.Schema = &parser.Schema{
+						Type: "array",
+						Items: &parser.Schema{
+							Type:    "string",
+							Default: "",
+						},
+					}
+				}
+			}
+		}
+	}
 }
