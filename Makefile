@@ -6,24 +6,25 @@ GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 GOVET=$(GOCMD) vet
-BINARY_NAME=openxapi
+BIN_DIR=bin
+BINARY_NAME=$(BIN_DIR)/openxapi
 
 all: format lint vet test build
 
 build:
-	$(GOBUILD) -o $(BINARY_NAME) -v ./...
+	@$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/openxapi
 
 clean:
-	rm -f $(BINARY_NAME)
-	rm -f coverage.out
+	@rm -rf $(BIN_DIR)
+	@rm -f coverage.out
 
 format:
-	gofmt -s -w .
-	$(GOCMD) mod tidy
+	@gofmt -s -w .
+	@$(GOCMD) mod tidy
 
 lint:
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run ./...; \
+		@golangci-lint run ./...; \
 	else \
 		echo "golangci-lint is not installed. Please install it using:"; \
 		echo "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
@@ -31,23 +32,23 @@ lint:
 	fi
 
 vet:
-	$(GOVET) ./...
+	@$(GOVET) ./...
 
 test: unit-test
 
 unit-test:
-	$(GOTEST) -v -race ./...
+	@$(GOTEST) -v -race ./...
 
 test-with-samples:
-	TEST_WITH_SAMPLES=1 $(GOTEST) -v ./...
+	@TEST_WITH_SAMPLES=1 $(GOTEST) -v ./...
 
 coverage:
-	$(GOTEST) -coverprofile=coverage.out ./...
-	$(GOCMD) tool cover -html=coverage.out
+	@$(GOTEST) -coverprofile=coverage.out ./...
+	@$(GOCMD) tool cover -html=coverage.out
 
 deps:
-	$(GOCMD) mod download
-	$(GOCMD) mod verify
+	@$(GOCMD) mod download
+	@$(GOCMD) mod verify
 
 help:
 	@echo "Available targets:"

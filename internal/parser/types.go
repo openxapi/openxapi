@@ -9,34 +9,43 @@ type Documentation struct {
 
 // Schema represents a JSON Schema definition
 type Schema struct {
-	Type                 string            `json:"type,omitempty"`
-	Format               string            `json:"format,omitempty"`
-	Description          string            `json:"description,omitempty"`
-	Example              interface{}       `json:"example,omitempty"`
-	Enum                 []interface{}     `json:"enum,omitempty"`
-	Required             []string          `json:"required,omitempty"`
-	Properties           map[string]Schema `json:"properties,omitempty"`
-	Items                *Schema           `json:"items,omitempty"`
-	AdditionalProperties *Schema           `json:"additionalProperties,omitempty"`
+	OneOf       []*Schema     `json:"oneOf,omitempty"`
+	Type        string        `json:"type,omitempty"`
+	Title       string        `json:"title,omitempty"`
+	Format      string        `json:"format,omitempty"`
+	Description string        `json:"description,omitempty"`
+	Enum        []interface{} `json:"enum,omitempty"`
+	Default     interface{}   `json:"default,omitempty"`
+	Example     interface{}   `json:"example,omitempty"`
+
+	UniqueItems  bool `json:"uniqueItems,omitempty"`
+	ExclusiveMin bool `json:"exclusiveMinimum,omitempty"`
+	ExclusiveMax bool `json:"exclusiveMaximum,omitempty"`
+
+	Nullable   bool `json:"nullable,omitempty"`
+	Deprecated bool `json:"deprecated,omitempty"`
 
 	// Numeric constraints
-	Minimum    *int64   `json:"minimum,omitempty"`
-	Maximum    *int64   `json:"maximum,omitempty"`
+	Min        *float64 `json:"minimum,omitempty"`
+	Max        *float64 `json:"maximum,omitempty"`
 	MultipleOf *float64 `json:"multipleOf,omitempty"`
 
 	// String constraints
-	MinLength *uint64 `json:"minLength,omitempty"`
+	MinLength uint64  `json:"minLength,omitempty"`
 	MaxLength *uint64 `json:"maxLength,omitempty"`
 	Pattern   string  `json:"pattern,omitempty"`
 
 	// Array constraints
-	MinItems    *uint64 `json:"minItems,omitempty"`
-	MaxItems    *uint64 `json:"maxItems,omitempty"`
-	UniqueItems bool    `json:"uniqueItems,omitempty"`
+	MinItems uint64  `json:"minItems,omitempty"`
+	MaxItems *uint64 `json:"maxItems,omitempty"`
+	Items    *Schema `json:"items,omitempty"`
+
+	// Object constraints
+	Required []string `json:"required,omitempty"`
 
 	// Additional fields
-	Nullable   bool `json:"nullable,omitempty"`
-	Deprecated bool `json:"deprecated,omitempty"`
+	Properties           map[string]*Schema `json:"properties,omitempty"`
+	AdditionalProperties *Schema            `json:"additionalProperties,omitempty"`
 }
 
 // Endpoint represents an API endpoint
@@ -53,6 +62,7 @@ type Endpoint struct {
 	RequestBody *RequestBody           // Request body definition
 	Deprecated  bool                   // Whether the endpoint is deprecated
 	OperationID string                 // Operation ID
+	Schemas     []Schema               // Schemas for the endpoint
 }
 
 // Parameter represents an endpoint parameter

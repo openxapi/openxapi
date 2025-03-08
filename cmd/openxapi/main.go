@@ -34,6 +34,7 @@ type Config struct {
 
 type Exchange struct {
 	Name        string            `yaml:"name"`
+	Version     string            `yaml:"version"`
 	Description string            `yaml:"description"`
 	Docs        []Documentation   `yaml:"docs"`
 	BaseURLs    map[string]string `yaml:"base_urls"`
@@ -126,7 +127,7 @@ func main() {
 			}
 
 			// Generate OpenAPI specification
-			if err := gen.Generate(exchangeName, doc.Type, endpoints, baseURL); err != nil {
+			if err := gen.Generate(exchangeName, exchange.Version, doc.Type, endpoints, baseURL); err != nil {
 				logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
 				continue
 			}
