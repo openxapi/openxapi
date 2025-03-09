@@ -63,4 +63,4 @@ help:
 	@echo "  test-with-samples - Run tests with sample files"
 	@echo "  coverage         - Generate test coverage report"
 	@echo "  deps             - Download and verify dependencies"
-	@echo "  help             - Show this help message" 
+	@echo "  help             - Show this help message"

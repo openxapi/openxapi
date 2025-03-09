@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/adshao/openxapi/internal/parser"
@@ -24,50 +25,33 @@ func NewGenerator(outputDir string) *Generator {
 	}
 }
 
+// GenerateEndpoints generates an OpenAPI specification for each endpoint
 func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoints []parser.Endpoint, baseURL string) error {
-	endpointDir := filepath.Join(g.outputDir, "endpoints")
-	if err := os.MkdirAll(endpointDir, 0755); err != nil {
-		return fmt.Errorf("creating endpoints directory: %w", err)
+	baseDir := filepath.Join(g.outputDir, exchange, apiType)
+	if err := os.MkdirAll(baseDir, 0755); err != nil {
+		return fmt.Errorf("creating directory: %w", err)
 	}
 
 	for _, endpoint := range endpoints {
 		if endpoint.Protected {
 			continue
 		}
-		endpointPath := filepath.Join(endpointDir, fmt.Sprintf("%s_%s.yaml", strings.ToLower(endpoint.Method), strings.ReplaceAll(endpoint.Path, "/", "_")))
-		spec := &openapi3.T{
-			OpenAPI: "3.0.3",
-			Info: &openapi3.Info{
-				Title:       fmt.Sprintf("%s %s API", strings.Title(exchange), strings.Title(apiType)),
-				Description: fmt.Sprintf("OpenAPI specification for %s cryptocurrency exchange - %s API", strings.Title(exchange), strings.Title(apiType)),
-				Version:     version,
-			},
-			Servers: openapi3.Servers{
-				&openapi3.Server{
-					URL:         baseURL,
-					Description: fmt.Sprintf("%s %s API Server", strings.Title(exchange), strings.Title(apiType)),
-				},
-			},
+		pathItemPath := filepath.Join(baseDir, fmt.Sprintf("%s%s.yaml", strings.ToLower(endpoint.Method), strings.ReplaceAll(endpoint.Path, "/", "_")))
+		pathItem := g.convertEndpointToPathItem(endpoint)
+		// Write spec to file so that we can restore from the file content later
+		endpointSpec := &openapi3.T{
+			Info:  &openapi3.Info{},
 			Paths: openapi3.NewPaths(),
 			Components: &openapi3.Components{
-				Schemas:   make(openapi3.Schemas),
-				Responses: make(openapi3.ResponseBodies),
+				Schemas: make(openapi3.Schemas),
 			},
 		}
-
-		path := g.convertEndpointToPath(endpoint)
-		spec.Paths.Set(endpoint.Path, path)
-
-		var schemaTitles []string
+		endpointSpec.Paths.Set(endpoint.Path, pathItem)
 		for _, schema := range endpoint.Schemas {
-			if !slices.Contains(schemaTitles, schema.Title) {
-				schemaTitles = append(schemaTitles, schema.Title)
-				spec.Components.Schemas[schema.Title] = g.convertSchema(schema)
-			}
+			endpointSpec.Components.Schemas[schema.Title] = g.convertSchema(schema)
 		}
-
-		if err := g.writeSpec(spec, endpointPath); err != nil {
-			return fmt.Errorf("writing specification: %w", err)
+		if err := g.writeSpec(endpointSpec, pathItemPath); err != nil {
+			return fmt.Errorf("writing endpoint spec: %w", err)
 		}
 	}
 
@@ -75,7 +59,7 @@ func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoin
 }
 
 // Generate creates an OpenAPI specification from parsed endpoints
-func (g *Generator) Generate(exchange, version, apiType string, endpoints []parser.Endpoint, baseURL string) error {
+func (g *Generator) Generate(exchange, version, apiType, baseURL string) error {
 	spec := &openapi3.T{
 		OpenAPI: "3.0.3",
 		Info: &openapi3.Info{
@@ -96,18 +80,70 @@ func (g *Generator) Generate(exchange, version, apiType string, endpoints []pars
 		},
 	}
 
-	// Convert endpoints to OpenAPI paths
-	for _, endpoint := range endpoints {
-		path := g.convertEndpointToPath(endpoint)
-		spec.Paths.Set(endpoint.Path, path)
+	// Read all endpoint specs from the endpoints directory
+	baseDir := filepath.Join(g.outputDir, exchange, apiType)
+	// Read all files in the paths directory
+	files, err := os.ReadDir(baseDir)
+	if err != nil {
+		return fmt.Errorf("reading paths directory: %w", err)
+	}
+	// Sort files by name
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Name() < files[j].Name()
+	})
 
-		var schemaTitles []string
-		for _, schema := range endpoint.Schemas {
-			// If the schema is not in schemaTitles, add it
-			if !slices.Contains(schemaTitles, schema.Title) {
-				schemaTitles = append(schemaTitles, schema.Title)
-				spec.Components.Schemas[schema.Title] = g.convertSchema(schema)
+	for _, file := range files {
+		// Read each pathItem spec, load yaml file into map[string]*openapi3.PathItem
+		endpointSpec, err := openapi3.NewLoader().LoadFromFile(filepath.Join(baseDir, file.Name()))
+		if err != nil {
+			return fmt.Errorf("opening endpoint spec: %w", err)
+		}
+
+		// Update spec with paths
+		for k, v := range endpointSpec.Paths.Map() {
+			if pathItem := spec.Paths.Value(k); pathItem != nil {
+				if v.Get != nil {
+					if pathItem.Get != nil {
+						return fmt.Errorf("duplicate path: GET %s", k)
+					}
+					pathItem.Get = v.Get
+				}
+				if v.Post != nil {
+					if pathItem.Post != nil {
+						return fmt.Errorf("duplicate path: POST %s", k)
+					}
+					pathItem.Post = v.Post
+				}
+				if v.Put != nil {
+					if pathItem.Put != nil {
+						return fmt.Errorf("duplicate path: PUT %s", k)
+					}
+					pathItem.Put = v.Put
+				}
+				if v.Delete != nil {
+					if pathItem.Delete != nil {
+						return fmt.Errorf("duplicate path: DELETE %s", k)
+					}
+					pathItem.Delete = v.Delete
+				}
+				if v.Patch != nil {
+					if pathItem.Patch != nil {
+						return fmt.Errorf("duplicate path: PATCH %s", k)
+					}
+					pathItem.Patch = v.Patch
+				}
+			} else {
+				spec.Paths.Set(k, v)
 			}
+		}
+
+		var schemas []string
+		for k, v := range endpointSpec.Components.Schemas {
+			if slices.Contains(schemas, k) {
+				return fmt.Errorf("duplicate schema: %s", k)
+			}
+			schemas = append(schemas, k)
+			spec.Components.Schemas[k] = v
 		}
 	}
 
@@ -116,7 +152,6 @@ func (g *Generator) Generate(exchange, version, apiType string, endpoints []pars
 		return fmt.Errorf("creating output directory: %w", err)
 	}
 
-	// Write specification to file
 	outputPath := filepath.Join(g.outputDir, fmt.Sprintf("%s_%s.yaml", exchange, apiType))
 	if err := g.writeSpec(spec, outputPath); err != nil {
 		return fmt.Errorf("writing specification: %w", err)
@@ -174,8 +209,8 @@ func (g *Generator) convertSchema(schema *parser.Schema) *openapi3.SchemaRef {
 	}
 }
 
-// convertEndpointToPath converts a parser.Endpoint to an OpenAPI path
-func (g *Generator) convertEndpointToPath(endpoint parser.Endpoint) *openapi3.PathItem {
+// convertEndpointToPathItem converts a parser.Endpoint to an OpenAPI path item
+func (g *Generator) convertEndpointToPathItem(endpoint parser.Endpoint) *openapi3.PathItem {
 	operation := &openapi3.Operation{
 		Summary:     endpoint.Summary,
 		Description: endpoint.Description,
