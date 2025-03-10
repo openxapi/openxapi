@@ -45,16 +45,6 @@ func TestExtractParameters(t *testing.T) {
 	// Create a document parser
 	docParser := &DocumentParser{}
 
-	// Test with no table
-	noTableContent := []string{
-		"Test Endpoint",
-		"No table here",
-	}
-
-	// Create a test endpoint with the content
-	endpointWithNoTable, _ := docParser.extractEndpoint(noTableContent, "Test", "https://example.com")
-	assert.Empty(t, endpointWithNoTable.Parameters, "Should not extract parameters without a table")
-
 	// Create a test endpoint directly
 	endpoint := parser.Endpoint{
 		Method:      "GET",

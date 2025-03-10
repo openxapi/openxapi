@@ -139,6 +139,7 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 				endpoint.Method = matches[1]
 				endpoint.Path = matches[2]
 				foundEndpoint = true
+				endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
 
 				// Extract the API version from the path
 				apiVersionMatches := apiVersionRegex.FindStringSubmatch(endpoint.Path)
@@ -205,13 +206,15 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 			description.WriteString("\n")
 		}
 	}
+	if endpoint.OperationID == "" {
+		return nil, false
+	}
 
 	// Set the description
 	endpoint.Description = strings.TrimSpace(description.String())
 	p.extractParameters(endpoint)
 	fmt.Printf("Response content: %s\n", responseContent.String())
 	p.extractResponse(endpoint, foundResponse, responseContent.String())
-	endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
 
 	return endpoint, foundEndpoint
 }
@@ -251,10 +254,10 @@ func methodToAction(method string) string {
 }
 
 // extractParameters extracts parameters from the endpoint description
-func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) {
+func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader("<table>" + p.tableContent + "</table>"))
 	if err != nil {
-		return
+		return fmt.Errorf("creating document from reader: %w", err)
 	}
 
 	// Process each row in the table
@@ -292,7 +295,10 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) {
 		}
 
 		// Create schema based on parameter type
-		schema := p.createSchema(paramType)
+		schema, err := createSchema(fmt.Sprintf("%sParam%s", endpoint.OperationID, strings.Title(paramName)), paramType, "")
+		if err != nil {
+			return
+		}
 
 		// Extract enum values from description if present
 		if strings.Contains(description, "Supported values") ||
@@ -310,7 +316,6 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) {
 		// Create the parameter
 		param := &parser.Parameter{
 			Name:        paramName,
-			Type:        normalizeType(paramType),
 			Required:    required,
 			Description: description,
 			In:          paramIn,
@@ -319,70 +324,50 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) {
 
 		endpoint.Parameters = append(endpoint.Parameters, param)
 	})
+	return nil
 }
 
-func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, foundResponse bool, responseContent string) {
+func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, foundResponse bool, responseContent string) error {
+	// Create a default 200 OK response
+	response := &parser.Response{
+		Description: "Successful operation",
+	}
 	// Process response content if we found it
-	if foundResponse {
-		// Create a default 200 OK response
-		response := &parser.Response{
-			Description: "Successful operation",
+	if foundResponse && responseContent != "" {
+		schema, err := p.createResponseSchema(fmt.Sprintf("%sResp", endpoint.OperationID), responseContent)
+		if err != nil {
+			return fmt.Errorf("creating response schema: %w", err)
 		}
-
-		// Try to parse the response example as JSON schema
-		if responseContent != "" {
-			mediaType := &parser.MediaType{
-				Schema: p.createResponseSchema(responseContent),
-			}
-			response.Content = map[string]*parser.MediaType{
-				"application/json": mediaType,
-			}
-		} else {
-			// If no response content, still create a default response
-			mediaType := &parser.MediaType{
-				Schema: &parser.Schema{
-					Type: "object",
-				},
-			}
-			response.Content = map[string]*parser.MediaType{
-				"application/json": mediaType,
-			}
+		response.Content = map[string]*parser.MediaType{
+			"application/json": {
+				Schema: schema,
+			},
 		}
-
-		endpoint.Responses["200"] = response
 	} else {
-		// Always create a default response even if none was found
-		endpoint.Responses["200"] = &parser.Response{
-			Description: "Successful operation",
-			Content: map[string]*parser.MediaType{
-				"application/json": {
-					Schema: &parser.Schema{
-						Type: "object",
-					},
+		// If no response content, still create a default response
+		response.Content = map[string]*parser.MediaType{
+			"application/json": {
+				Schema: &parser.Schema{
+					Type: parser.NullType,
 				},
 			},
 		}
 	}
+	endpoint.Responses["200"] = response
+	return nil
 }
 
 // createResponseSchema attempts to create a schema from response example text
-func (p *DocumentParser) createResponseSchema(responseText string) *parser.Schema {
+func (p *DocumentParser) createResponseSchema(name, responseText string) (*parser.Schema, error) {
+	responseText = strings.TrimSpace(responseText)
 	fmt.Printf("responseText: %s\n", responseText)
-	// Unmarshal the responseText into a Response struct, create a schema from the Response struct
-	var response interface{}
-	err := json.Unmarshal([]byte(responseText), &response)
+	schema, err := createSchema(name, "", responseText)
 	if err != nil {
-		return &parser.Schema{
-			Type: "object",
-		}
+		return nil, fmt.Errorf("creating response schema: %w", err)
 	}
-	// Create a schema from the Response struct
-	schema := p.createSchema(reflect.TypeOf(response).String())
-
 	// Add the example text
 	schema.Example = responseText
-
-	return schema
+	return schema, nil
 }
 
 // extractEnumValues extracts valid enum values from a parameter description
@@ -404,35 +389,111 @@ func extractEnumValues(description string) []interface{} {
 }
 
 // createSchema creates a schema based on the parameter type
-func (p *DocumentParser) createSchema(paramType string) *parser.Schema {
-	schema := &parser.Schema{
-		Type: normalizeType(paramType),
-	}
-
-	// If the type is array, add an items field
-	if schema.Type == "array" {
-		// For ARRAY OF STRING, set items type to string
-		if strings.Contains(strings.ToUpper(paramType), "ARRAY OF STRING") {
-			schema.Items = &parser.Schema{
-				Type:    "string",
-				Default: "",
-			}
-		} else if strings.Contains(strings.ToUpper(paramType), "ARRAY") {
-			// Default to string items for other arrays
-			schema.Items = &parser.Schema{
-				Type:    "string",
-				Default: "",
-			}
+func createSchema(name, paramType string, content string) (*parser.Schema, error) {
+	typ, content := normalizeType(paramType, content)
+	switch typ {
+	case parser.ObjectType:
+		// If the content is a JSON object, unmarshal it into the map
+		v := make(map[string]interface{})
+		err := json.Unmarshal([]byte(content), &v)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshalling JSON: %w", err)
 		}
+		schema, err := createSchemaWithValue(v)
+		if err != nil {
+			return nil, fmt.Errorf("creating schema with value: %w", err)
+		}
+		schema.Title = name
+		return schema, nil
+	case parser.ArrayType:
+		// If the content is a JSON array, unmarshal it into the array
+		v := make([]interface{}, 0)
+		err := json.Unmarshal([]byte(content), &v)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshalling JSON: %w", err)
+		}
+		schema, err := createSchemaWithValue(v)
+		if err != nil {
+			return nil, fmt.Errorf("creating schema with value: %w", err)
+		}
+		schema.Title = name
+		return schema, nil
+	case parser.StringType:
+		schema := &parser.Schema{
+			Type:    typ,
+			Default: "",
+			Title:   name,
+		}
+		return schema, nil
+	default:
+		schema := &parser.Schema{
+			Type:  typ,
+			Title: name,
+		}
+		return schema, nil
 	}
+}
 
-	// For ENUM types, add enum values if available in the description
-	if strings.ToUpper(paramType) == "ENUM" {
-		// We'll handle enum values in the extractParameters function
-		// by looking at the description field
+func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
+	typ := reflect.TypeOf(v)
+	if typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
 	}
-
-	return schema
+	if typ.Kind() == reflect.Slice {
+		schema := &parser.Schema{
+			Type: parser.ArrayType,
+		}
+		if reflect.ValueOf(v).Len() > 0 {
+			itemsSchema, err := createSchemaWithValue(reflect.ValueOf(v).Index(0).Interface())
+			if err != nil {
+				return nil, fmt.Errorf("creating schema for items: %w", err)
+			}
+			schema.Items = itemsSchema
+		}
+		// TODO: handle empty array
+		return schema, nil
+	}
+	if typ.Kind() == reflect.Map {
+		schema := &parser.Schema{
+			Type:       parser.ObjectType,
+			Properties: make(map[string]*parser.Schema),
+		}
+		// create a schema for each k, v pair
+		keys := reflect.ValueOf(v).MapKeys()
+		for _, key := range keys {
+			valueSchema, err := createSchemaWithValue(reflect.ValueOf(v).MapIndex(key).Interface())
+			if err != nil {
+				return nil, fmt.Errorf("creating schema for value: %w", err)
+			}
+			schema.Properties[key.String()] = valueSchema
+		}
+		return schema, nil
+	}
+	if typ.Kind() == reflect.String {
+		schema := &parser.Schema{
+			Type: parser.StringType,
+		}
+		return schema, nil
+	}
+	if typ.Kind() == reflect.Bool {
+		schema := &parser.Schema{
+			Type: parser.BooleanType,
+		}
+		return schema, nil
+	}
+	if typ.Kind() == reflect.Int || typ.Kind() == reflect.Int8 || typ.Kind() == reflect.Int16 || typ.Kind() == reflect.Int32 || typ.Kind() == reflect.Int64 {
+		schema := &parser.Schema{
+			Type: parser.IntegerType,
+		}
+		return schema, nil
+	}
+	if typ.Kind() == reflect.Float32 || typ.Kind() == reflect.Float64 {
+		schema := &parser.Schema{
+			Type: parser.NumberType,
+		}
+		return schema, nil
+	}
+	return nil, fmt.Errorf("unsupported type: %s", typ.String())
 }
 
 // isNonEndpointHeader returns true if the header is not an API endpoint
@@ -460,21 +521,44 @@ func extractCategory(title string) string {
 }
 
 // normalizeType converts Binance types to OpenAPI types
-func normalizeType(binanceType string) string {
-	switch strings.ToUpper(binanceType) {
+func normalizeType(typ, content string) (string, string) {
+	switch strings.ToUpper(typ) {
 	case "INT", "LONG", "INTEGER":
-		return "integer"
+		return parser.IntegerType, content
 	case "FLOAT", "DECIMAL", "DOUBLE":
-		return "number"
+		return parser.NumberType, content
 	case "STRING", "ENUM":
-		return "string"
+		return parser.StringType, content
 	case "BOOLEAN", "BOOL":
-		return "boolean"
+		return parser.BooleanType, content
 	case "ARRAY", "ARRAY OF STRING":
-		return "array"
+		if content == "" {
+			content = "[\"\"]"
+		}
+		return parser.ArrayType, content
+	case "OBJECT":
+		if content == "" {
+			content = "{}"
+		}
+		return parser.ObjectType, content
 	default:
-		return "object"
+		return guessType(content)
 	}
+}
+
+func guessType(content string) (string, string) {
+	// If the content starts with "{", then it's a JSON object;
+	// If the content starts with "[", then it's a JSON array;
+	content = strings.TrimSpace(content)
+	if strings.HasPrefix(content, "{") {
+		return parser.ObjectType, content
+	} else if strings.HasPrefix(content, "[") {
+		return parser.ArrayType, content
+	}
+	if content == "" {
+		content = "{}"
+	}
+	return parser.ObjectType, content
 }
 
 // cleanText removes invisible Unicode characters and trims whitespace

@@ -70,7 +70,6 @@ type Endpoint struct {
 // Parameter represents an endpoint parameter
 type Parameter struct {
 	Name        string  // Parameter name
-	Type        string  // Parameter type
 	Required    bool    // Whether the parameter is required
 	Description string  // Description of the parameter
 	In          string  // Parameter location (query, path, header, cookie)

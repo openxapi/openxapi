@@ -129,7 +129,7 @@ func main() {
 			}
 			// Generate OpenAPI specification for each endpoint
 			if err := gen.GenerateEndpoints(exchangeName, exchange.Version, doc.Type, endpoints, baseURL); err != nil {
-				logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
+				logrus.Errorf("Failed to generate OpenAPI endpoint specs for %s %s API: %v", exchangeName, doc.Type, err)
 				continue
 			}
 
