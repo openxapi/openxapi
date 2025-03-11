@@ -1,0 +1,117 @@
+components:
+    schemas:
+        SpotCreateOrderOcoV3Resp:
+            example: '{    "orderListId": 1,    "contingencyType": "OCO",    "listStatusType": "EXEC_STARTED",    "listOrderStatus": "EXECUTING",    "listClientOrderId": "lH1YDkuQKWiXVXHPSKYEIp",    "transactionTime": 1710485608839,    "symbol": "LTCBTC",    "orders": [        {            "symbol": "LTCBTC",            "orderId": 10,            "clientOrderId": "44nZvqpemY7sVYgPYbvPih"        },        {            "symbol": "LTCBTC",            "orderId": 11,            "clientOrderId": "NuMp0nVYnciDiFmVqfpBqK"        }    ],    "orderReports": [        {            "symbol": "LTCBTC",            "orderId": 10,            "orderListId": 1,            "clientOrderId": "44nZvqpemY7sVYgPYbvPih",            "transactTime": 1710485608839,            "price": "1.00000000",            "origQty": "5.00000000",            "executedQty": "0.00000000",            "origQuoteOrderQty": "0.000000",            "cummulativeQuoteQty": "0.00000000",            "status": "NEW",            "timeInForce": "GTC",            "type": "STOP_LOSS_LIMIT",            "side": "SELL",            "stopPrice": "1.00000000",            "workingTime": -1,            "icebergQty": "1.00000000",            "selfTradePreventionMode": "NONE"        },        {            "symbol": "LTCBTC",            "orderId": 11,            "orderListId": 1,            "clientOrderId": "NuMp0nVYnciDiFmVqfpBqK",            "transactTime": 1710485608839,            "price": "3.00000000",            "origQty": "5.00000000",            "executedQty": "0.00000000",            "origQuoteOrderQty": "0.000000",            "cummulativeQuoteQty": "0.00000000",            "status": "NEW",            "timeInForce": "GTC",            "type": "LIMIT_MAKER",            "side": "SELL",            "workingTime": 1710485608839,            "selfTradePreventionMode": "NONE"        }    ]}'
+            properties:
+                contingencyType:
+                    type: string
+                listClientOrderId:
+                    type: string
+                listOrderStatus:
+                    type: string
+                listStatusType:
+                    type: string
+                orderListId:
+                    type: number
+                orderReports:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            cummulativeQuoteQty:
+                                type: string
+                            executedQty:
+                                type: string
+                            icebergQty:
+                                type: string
+                            orderId:
+                                type: number
+                            orderListId:
+                                type: number
+                            origQty:
+                                type: string
+                            origQuoteOrderQty:
+                                type: string
+                            price:
+                                type: string
+                            selfTradePreventionMode:
+                                type: string
+                            side:
+                                type: string
+                            status:
+                                type: string
+                            stopPrice:
+                                type: string
+                            symbol:
+                                type: string
+                            timeInForce:
+                                type: string
+                            transactTime:
+                                type: number
+                            type:
+                                type: string
+                            workingTime:
+                                type: number
+                        type: object
+                    type: array
+                orders:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            orderId:
+                                type: number
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                symbol:
+                    type: string
+                transactionTime:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/order/oco:
+        post:
+            description: |-
+                Send in a new OCO.
+                - Price Restrictions:
+
+                SELL: Limit Price > Last Price > Stop Price
+                BUY: Limit Price < Last Price < Stop Price
+                - SELL: Limit Price > Last Price > Stop Price
+                - BUY: Limit Price < Last Price < Stop Price
+                - Quantity Restrictions:
+
+                Both legs must have the same quantity.
+                ICEBERG quantities however do not have to be the same
+                - Both legs must have the same quantity.
+                - ICEBERG quantities however do not have to be the same
+                - OCO adds 2 orders to the unfilled order count, EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
+            operationId: SpotCreateOrderOcoV3
+            parameters:
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotCreateOrderOcoV3Resp'
+                    description: Successful operation
+            summary: Order lists
+            tags:
+                - Trading endpoints
+                - V3 APIs

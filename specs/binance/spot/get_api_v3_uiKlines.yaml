@@ -1,0 +1,82 @@
+components:
+    schemas:
+        SpotGetUiKlinesV3RespItem:
+            example: |
+              [
+                1499040000000,      // Kline open time
+                "0.01634790",       // Open price
+                "0.80000000",       // High price
+                "0.01575800",       // Low price
+                "0.01577100",       // Close price
+                "148976.11427815",  // Volume
+                1499644799999,      // Kline close time
+                "2434.19055334",    // Quote asset volume
+                308,                // Number of trades
+                "1756.87402397",    // Taker buy base asset volume
+                "28.46694368",      // Taker buy quote asset volume
+                "0"                 // Unused field. Ignore.
+              ]
+            type: array
+            items:
+                oneOf:
+                    - type: string
+                    - type: number
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/uiKlines:
+        get:
+            description: |-
+                The request is similar to klines having the same parameters and response.
+                uiKlines return modified kline data, optimized for presentation of candlestick charts.
+            operationId: SpotGetUiKlinesV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: See <a href="/docs/binance-spot-api-docs/rest-api/market-data-endpoints#kline-intervals">`klines`</a>
+                  in: query
+                  name: interval
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    type: integer
+                - description: 'Default: 0 (UTC)'
+                  in: query
+                  name: timeZone
+                  schema:
+                    default: 0
+                    type: string
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/SpotGetUiKlinesV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: UIKlines
+            tags:
+                - Market Data endpoints
+                - V3 APIs

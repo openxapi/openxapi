@@ -1,0 +1,108 @@
+components:
+    schemas:
+        SpotGetTickerTradingDayV3RespItem:
+            example: |
+                {
+                    "symbol":             "BTCUSDT",
+                    "priceChange":        "-83.13000000",         // Absolute price change
+                    "priceChangePercent": "-0.317",               // Relative price change in percent
+                    "weightedAvgPrice":   "26234.58803036",       // quoteVolume / volume
+                    "openPrice":          "26304.80000000",
+                    "highPrice":          "26397.46000000",
+                    "lowPrice":           "26088.34000000",
+                    "lastPrice":          "26221.67000000",
+                    "volume":             "18495.35066000",       // Volume in base asset
+                    "quoteVolume":        "485217905.04210480",   // Volume in quote asset
+                    "openTime":           1695686400000,
+                    "closeTime":          1695772799999,
+                    "firstId":            3220151555,             // Trade ID of the first trade in the interval
+                    "lastId":             3220849281,             // Trade ID of the last trade in the interval
+                    "count":              697727                  // Number of trades in the interval
+                }
+            type: object
+            properties:
+                symbol:
+                    type: string
+                priceChange:
+                    type: string
+                priceChangePercent:
+                    type: string
+                weightedAvgPrice:
+                    type: string
+                openPrice:
+                    type: string
+                highPrice:
+                    type: string
+                lowPrice:
+                    type: string
+                lastPrice:
+                    type: string
+                volume:
+                    type: string
+                quoteVolume:
+                    type: string
+                openTime:
+                    type: number
+                closeTime:
+                    type: number
+                firstId:
+                    type: number
+                lastId:
+                    type: number
+                count:
+                    type: number
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/ticker/tradingDay:
+        get:
+            description: |-
+                Price change statistics for a trading day.
+                Weight:
+                4 for each requested symbol.  The weight for this request will cap at 200 once the number of symbols in the request is more than 50.
+            operationId: SpotGetTickerTradingDayV3
+            parameters:
+                - description: 'Either `symbol` or `symbols` must be provided <br/><br/> Examples of accepted format for the `symbols` parameter: <br/> [&#34;BTCUSDT&#34;,&#34;BNBUSDT&#34;] <br/>or <br/>%5B%22BTCUSDT%22,%22BNBUSDT%22%5D <br/><br/> The maximum number of `symbols` allowed in a request is 100.'
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Either `symbol` or `symbols` must be provided <br/><br/> Examples of accepted format for the `symbols` parameter: <br/> [&#34;BTCUSDT&#34;,&#34;BNBUSDT&#34;] <br/>or <br/>%5B%22BTCUSDT%22,%22BNBUSDT%22%5D <br/><br/> The maximum number of `symbols` allowed in a request is 100.'
+                  in: query
+                  name: symbols
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Default: 0 (UTC)'
+                  in: query
+                  name: timeZone
+                  schema:
+                    default: 0
+                    type: string
+                - description: 'Supported values: `FULL` or `MINI`. <br/>If none provided, the default is `FULL`'
+                  in: query
+                  name: type
+                  schema:
+                    default: "FULL"
+                    enum:
+                        - FULL
+                        - MINI
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                oneOf:
+                                    - type: array
+                                      items:
+                                        $ref: '#/components/schemas/SpotGetTickerTradingDayV3RespItem'
+                                    - $ref: '#/components/schemas/SpotGetTickerTradingDayV3RespItem'
+                    description: Successful operation
+            summary: Trading Day Ticker
+            tags:
+                - Market Data endpoints
+                - V3 APIs

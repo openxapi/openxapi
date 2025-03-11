@@ -1,0 +1,83 @@
+components:
+    schemas:
+        SpotGetAggTradesV3RespItem:
+            example: |
+              {
+                a: 26129,         // Aggregate tradeId
+                p: "0.01633102",  // Price
+                q: "4.70443515",  // Quantity
+                f: 27781,         // First tradeId
+                l: 27781,         // Last tradeId
+                T: 1498793709153, // Timestamp
+                m: true,          // Was the buyer the maker?
+                M: true           // Was the trade the best price match?
+              }
+            type: object
+            properties: # TODO: maybe we should use additionalProperties here because m and M are the same letters
+                a:
+                    type: integer
+                p:
+                    type: string
+                q:
+                    type: string
+                f:
+                    type: integer
+                l:
+                    type: integer
+                T:
+                    type: integer
+                m:
+                    type: boolean
+                M:
+                    type: boolean
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/aggTrades:
+        get:
+            description: Get compressed, aggregate trades. Trades that fill at the time, from the same taker order, with the same price will have the quantity aggregated.
+            operationId: SpotGetAggTradesV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: ID to get aggregate trades from INCLUSIVE.
+                  in: query
+                  name: fromId
+                  schema:
+                    type: integer
+                - description: Timestamp in ms to get aggregate trades from INCLUSIVE.
+                  in: query
+                  name: startTime
+                  schema:
+                    type: integer
+                - description: Timestamp in ms to get aggregate trades until INCLUSIVE.
+                  in: query
+                  name: endTime
+                  schema:
+                    type: integer
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/SpotGetAggTradesV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: Compressed/Aggregate trades list
+            tags:
+                - Market Data endpoints
+                - V3 APIs

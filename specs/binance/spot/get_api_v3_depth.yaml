@@ -1,0 +1,68 @@
+components:
+    schemas:
+        GetDepthV3Resp:
+            example: |
+                {
+                    "lastUpdateId": 1027024,
+                    "bids": [
+                        [
+                        "4.00000000",     // PRICE
+                        "431.00000000"    // QTY
+                        ]
+                    ],
+                    "asks": [
+                        [
+                        "4.00000200",
+                        "12.00000000"
+                        ]
+                    ]
+                }
+            type: object
+            properties:
+                lastUpdateId:
+                    type: integer
+                bids:
+                    type: array
+                    items:
+                        type: array
+                        items:
+                            type: string
+                asks:
+                    type: array
+                    items:
+                        type: array
+                        items:
+                            type: string
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/depth:
+        get:
+            operationId: SpotGetDepthV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 100; max 5000. <br/> If limit &gt; 5000. then the response will truncate to 5000.
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                    default: 100
+                    maximum: 5000
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/GetDepthV3Resp"
+                    description: Successful operation
+            summary: Order book
+            tags:
+                - Market Data endpoints
+                - V3 APIs

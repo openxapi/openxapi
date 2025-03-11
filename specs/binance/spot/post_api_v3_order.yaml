@@ -1,0 +1,219 @@
+components:
+    schemas:
+        SpotCreateOrderV3Resp:
+            example: |
+              {
+                "symbol": "BTCUSDT",
+                "orderId": 28,
+                "orderListId": -1, // Unless it's part of an order list, value will be -1
+                "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP",
+                "transactTime": 1507725176595,
+                "price": "0.00000000",
+                "origQty": "10.00000000",
+                "executedQty": "10.00000000",
+                "origQuoteOrderQty": "0.000000",
+                "cummulativeQuoteQty": "10.00000000",
+                "status": "FILLED",
+                "timeInForce": "GTC",
+                "type": "MARKET",
+                "side": "SELL",
+                "workingTime": 1507725176595,
+                "selfTradePreventionMode": "NONE",
+                "fills": [
+                  {
+                    "price": "4000.00000000",
+                    "qty": "1.00000000",
+                    "commission": "4.00000000",
+                    "commissionAsset": "USDT",
+                    "tradeId": 56
+                  },
+                  {
+                    "price": "3999.00000000",
+                    "qty": "5.00000000",
+                    "commission": "19.99500000",
+                    "commissionAsset": "USDT",
+                    "tradeId": 57
+                  },
+                  {
+                    "price": "3998.00000000",
+                    "qty": "2.00000000",
+                    "commission": "7.99600000",
+                    "commissionAsset": "USDT",
+                    "tradeId": 58
+                  },
+                  {
+                    "price": "3997.00000000",
+                    "qty": "1.00000000",
+                    "commission": "3.99700000",
+                    "commissionAsset": "USDT",
+                    "tradeId": 59
+                  },
+                  {
+                    "price": "3995.00000000",
+                    "qty": "1.00000000",
+                    "commission": "3.99500000",
+                    "commissionAsset": "USDT",
+                    "tradeId": 60
+                  }
+                ]
+              }
+            type: object
+            properties:
+                symbol:
+                    type: string
+                orderId:
+                    type: number
+                orderListId:
+                    type: number
+                clientOrderId:
+                    type: string
+                transactTime:
+                    type: number
+                price:
+                    type: string
+                origQty:
+                    type: string
+                executedQty:
+                    type: string
+                origQuoteOrderQty:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                status:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                side:
+                    type: string
+                workingTime:
+                    type: number
+                selfTradePreventionMode:
+                    type: string
+                fills:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            price:
+                                type: string
+                            qty:
+                                type: string
+                            commission:
+                                type: string
+                            commissionAsset:
+                                type: string
+                            tradeId:
+                                type: number
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/order:
+        post:
+            description: Send in a new order.
+            operationId: SpotCreateOrderV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Please see <a href="/docs/binance-spot-api-docs/enums#side">Enums</a> for supported values.
+                  in: query
+                  name: side
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Please see <a href="/docs/binance-spot-api-docs/enums#ordertypes">Enums</a> for supported values
+                  in: query
+                  name: type
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Please see <a href="/docs/binance-spot-api-docs/enums#timeinforce">Enums</a> for supported values.
+                  in: query
+                  name: timeInForce
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: quantity
+                  schema:
+                    type: number
+                - in: query
+                  name: quoteOrderQty
+                  schema:
+                    type: number
+                - in: query
+                  name: price
+                  schema:
+                    type: number
+                - description: A unique id among open orders. Automatically generated if not sent.<br/> Orders with the same `newClientOrderID` can be accepted only when the previous one is filled, otherwise the order will be rejected.
+                  in: query
+                  name: newClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: strategyId
+                  schema:
+                    type: integer
+                - description: The value cannot be less than `1000000`.
+                  in: query
+                  name: strategyType
+                  schema:
+                    type: integer
+                - description: Used with `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, and `TAKE_PROFIT_LIMIT` orders.
+                  in: query
+                  name: stopPrice
+                  schema:
+                    type: number
+                - description: Used with `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, and `TAKE_PROFIT_LIMIT` orders.
+                  in: query
+                  name: trailingDelta
+                  schema:
+                    type: integer
+                - description: Used with `LIMIT`, `STOP_LOSS_LIMIT`, and `TAKE_PROFIT_LIMIT` to create an iceberg order.
+                  in: query
+                  name: icebergQty
+                  schema:
+                    type: number
+                - description: Set the response JSON. `ACK`, `RESULT`, or `FULL`; `MARKET` and `LIMIT` order types default to `FULL`, all other orders default to `ACK`.
+                  in: query
+                  name: newOrderRespType
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#stpmodes">STP Modes</a>.'
+                  in: query
+                  name: selfTradePreventionMode
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                  "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotCreateOrderV3Resp'
+                    description: Successful operation
+            summary: New order (TRADE)
+            tags:
+                - Trading endpoints
+                - V3 APIs
