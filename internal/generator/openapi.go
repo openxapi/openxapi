@@ -250,11 +250,14 @@ func (g *Generator) convertParameters(params []*parser.Parameter, schemas *[]*pa
 	result := make(openapi3.Parameters, 0, len(params))
 	for _, param := range params {
 		var schema *openapi3.SchemaRef
-		if param.Schema != nil && param.Schema.Type == parser.ObjectType {
-			*schemas = append(*schemas, param.Schema)
-			schema = toSchemaRef(param.Schema.Title)
-		} else {
-			schema = g.convertSchema(param.Schema)
+		if param.Schema != nil {
+			if param.Schema.Type == parser.ObjectType {
+				*schemas = append(*schemas, param.Schema)
+				schema = toSchemaRef(param.Schema.Title)
+			}
+			if schema == nil {
+				schema = g.convertSchema(param.Schema)
+			}
 		}
 		result = append(result, &openapi3.ParameterRef{
 			Value: &openapi3.Parameter{
@@ -309,7 +312,14 @@ func (g *Generator) convertResponses(responses map[string]*parser.Response, sche
 			if mt.Schema != nil && mt.Schema.Type == parser.ObjectType {
 				*schemas = append(*schemas, mt.Schema)
 				schema = toSchemaRef(mt.Schema.Title)
-			} else {
+			} else if mt.Schema.Type == parser.ArrayType {
+				if mt.Schema.Items != nil && mt.Schema.Items.Type == parser.ObjectType {
+					*schemas = append(*schemas, mt.Schema.Items)
+					schema = g.convertSchema(mt.Schema)
+					schema.Value.Items = toSchemaRef(mt.Schema.Items.Title)
+				}
+			}
+			if schema == nil {
 				schema = g.convertSchema(mt.Schema)
 			}
 			content[mediaType] = &openapi3.MediaType{

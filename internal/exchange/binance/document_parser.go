@@ -418,6 +418,7 @@ func createSchema(name, paramType string, content string) (*parser.Schema, error
 			return nil, fmt.Errorf("creating schema with value: %w", err)
 		}
 		schema.Title = name
+		schema.Items.Title = fmt.Sprintf("%sItem", name)
 		return schema, nil
 	case parser.StringType:
 		schema := &parser.Schema{
