@@ -261,25 +261,36 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 		return fmt.Errorf("creating document from reader: %w", err)
 	}
 
+	var paramName, paramType, requiredText, html string
 	// Process each row in the table
 	doc.Find("tr").Each(func(i int, row *goquery.Selection) {
 		// Skip header row
 		if i == 0 {
 			return
 		}
+		paramName = ""
 
 		cells := row.Find("td")
-		if cells.Length() < 3 {
-			return
+		// FIXME: we should identify each column name
+		if cells.Length() >= 3 {
+			// Reset the variables
+			paramType = ""
+			requiredText = ""
+		}
+		if cells.Length() >= 4 {
+			html = ""
 		}
 
 		// Extract parameter information
-		paramName := cleanText(cells.Eq(0).Text())
-		paramType := cleanText(cells.Eq(1).Text())
+		if paramName == "" {
+			paramName = cleanText(cells.Eq(0).Text())
+		}
+		if paramType == "" {
+			paramType = cleanText(cells.Eq(1).Text())
+		}
 
 		// Determine if parameter is required
-		requiredText := ""
-		if cells.Length() >= 3 {
+		if requiredText == "" {
 			requiredText = cleanText(cells.Eq(2).Text())
 		}
 		required := strings.Contains(strings.ToLower(requiredText), "yes") ||
@@ -287,11 +298,15 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 
 		// Extract description
 		description := ""
-		if cells.Length() >= 4 {
+		if html == "" && cells.Length() >= 4 {
 			// Replace <code></code> with `
-			html, _ := cells.Eq(3).Html()
+			html, _ = cells.Eq(3).Html()
 			html = strings.ReplaceAll(html, "<code>", "`")
 			html = strings.ReplaceAll(html, "</code>", "`")
+			html = strings.ReplaceAll(html, "<tt>", "`")
+			html = strings.ReplaceAll(html, "</tt>", "`")
+		}
+		if html != "" {
 			description = cleanText(html)
 		}
 
@@ -306,6 +321,18 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 			strings.Contains(description, "Possible values") ||
 			strings.Contains(description, "Valid values") {
 			schema.Enum = extractEnumValues(description)
+		}
+
+		// Extract max, min, and default values from description if present
+		maxValue, minValue, defaultValue := extractMaxMinDefault(description)
+		if maxValue != nil {
+			schema.Max = maxValue
+		}
+		if minValue != nil {
+			schema.Min = minValue
+		}
+		if defaultValue != nil {
+			schema.Default = defaultValue
 		}
 
 		// Determine parameter location (in)
@@ -385,8 +412,51 @@ func extractEnumValues(description string) []interface{} {
 		for _, item := range items {
 			values = append(values, strings.Trim(strings.TrimSpace(item), "`"))
 		}
+		return values
+	}
+	// Supported values: `FULL` or `MINI`. <br/>If none provided, the default is `FULL`
+	regex = regexp.MustCompile(`Supported values: (.*) <br/>`)
+	matches = regex.FindStringSubmatch(description)
+	if len(matches) > 1 {
+		s := matches[1]
+		// remove `.` at the end of the string
+		s = strings.TrimSuffix(s, ".")
+		var items []string
+		items = strings.Split(s, " or ")
+		for _, item := range items {
+			values = append(values, strings.Trim(strings.TrimSpace(item), "`"))
+		}
+		return values
 	}
 	return values
+}
+
+func extractMaxMinDefault(description string) (*float64, *float64, *float64) {
+	var defaultValue, minValue, maxValue *float64
+	DefaultRegex := regexp.MustCompile(`(Default|default):? (\d+)`)
+	MinRegex := regexp.MustCompile(`(Min|min):? (\d+)`)
+	MaxRegex := regexp.MustCompile(`(Max|max):? (\d+)`)
+
+	matches := DefaultRegex.FindStringSubmatch(description)
+	if len(matches) > 2 {
+		// convert to float
+		if value, err := strconv.ParseFloat(matches[2], 64); err == nil {
+			defaultValue = &value
+		}
+	}
+	matches = MinRegex.FindStringSubmatch(description)
+	if len(matches) > 2 {
+		if value, err := strconv.ParseFloat(matches[2], 64); err == nil {
+			minValue = &value
+		}
+	}
+	matches = MaxRegex.FindStringSubmatch(description)
+	if len(matches) > 2 {
+		if value, err := strconv.ParseFloat(matches[2], 64); err == nil {
+			maxValue = &value
+		}
+	}
+	return maxValue, minValue, defaultValue
 }
 
 // createSchema creates a schema based on the parameter type

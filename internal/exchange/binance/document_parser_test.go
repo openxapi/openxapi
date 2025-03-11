@@ -110,6 +110,12 @@ func TestExtractEnumValues(t *testing.T) {
 	assert.Equal(t, []interface{}{"TRADING", "HALT", "BREAK"}, values)
 }
 
+func TestExtractEnumWithSupportedValues(t *testing.T) {
+	description := "Supported values: `FULL` or `MINI`. <br/>If none provided, the default is `FULL`"
+	values := extractEnumValues(description)
+	assert.Equal(t, []interface{}{"FULL", "MINI"}, values)
+}
+
 func TestExtractResponse(t *testing.T) {
 	docParser := &DocumentParser{}
 
@@ -181,4 +187,20 @@ func TestExtractContent(t *testing.T) {
 	assert.Equal(t, "Memory", endpoint.Extensions["x-data-source"])
 	assert.Equal(t, "SpotGetDepthV3", endpoint.OperationID)
 	assert.Equal(t, []string{"Market Data endpoints", "V3 APIs"}, endpoint.Tags)
+}
+
+func TestExtractMaxMinDefault(t *testing.T) {
+	maxValue, minValue, defaultValue := extractMaxMinDefault("Default 500; max 1000.")
+	assert.NotNil(t, maxValue, "maxValue should not be nil")
+	assert.InDelta(t, 1000, *maxValue, 0.001, "maxValue should be 1000")
+	assert.Nil(t, minValue, "minValue should be nil")
+	assert.NotNil(t, defaultValue, "defaultValue should not be nil")
+	assert.InDelta(t, 500, *defaultValue, 0.001, "defaultValue should be 500")
+
+	maxValue, minValue, defaultValue = extractMaxMinDefault("Default 100; max 5000. If limit > 5000. then the response will truncate to 5000.")
+	assert.NotNil(t, maxValue, "maxValue should not be nil")
+	assert.InDelta(t, 5000, *maxValue, 0.001, "maxValue should be 5000")
+	assert.Nil(t, minValue, "minValue should be nil")
+	assert.NotNil(t, defaultValue, "defaultValue should not be nil")
+	assert.InDelta(t, 100, *defaultValue, 0.001, "defaultValue should be 100")
 }
