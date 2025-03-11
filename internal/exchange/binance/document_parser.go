@@ -117,7 +117,7 @@ func (p *DocumentParser) extractContent(endpoint *parser.Endpoint, content []str
 
 	// Regular expressions to identify different sections
 	endpointRegex := regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH) (.+)$`)
-	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)$`)
+	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)?$`)
 	parametersRegex := regexp.MustCompile(`^Parameters:$`)
 	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
 	responseRegex := regexp.MustCompile(`^Response:\s*(.*)$`)
@@ -324,16 +324,7 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 		}
 
 		// Extract max, min, and default values from description if present
-		maxValue, minValue, defaultValue := extractMaxMinDefault(description)
-		if maxValue != nil {
-			schema.Max = maxValue
-		}
-		if minValue != nil {
-			schema.Min = minValue
-		}
-		if defaultValue != nil {
-			schema.Default = defaultValue
-		}
+		extractMaxMinDefault(schema, description)
 
 		// Determine parameter location (in)
 		paramIn := "query" // Default to query for REST APIs
@@ -431,32 +422,75 @@ func extractEnumValues(description string) []interface{} {
 	return values
 }
 
-func extractMaxMinDefault(description string) (*float64, *float64, *float64) {
-	var defaultValue, minValue, maxValue *float64
-	DefaultRegex := regexp.MustCompile(`(Default|default):? (\d+)`)
-	MinRegex := regexp.MustCompile(`(Min|min):? (\d+)`)
-	MaxRegex := regexp.MustCompile(`(Max|max):? (\d+)`)
+func extractMaxMinDefault(schema *parser.Schema, description string) {
+	var defaultValue, minValue, maxValue string
+	DefaultRegex := regexp.MustCompile(`(Default|default):? ` + "`?" + `(\d+|true|false)` + "`?" + `?`)
+	MinRegex := regexp.MustCompile(`(Min|min):? ` + "`?" + `(\d+)` + "`?" + `?`)
+	MaxRegex := regexp.MustCompile(`(Max|max):? ` + "`?" + `(\d+)` + "`?" + `?`)
 
 	matches := DefaultRegex.FindStringSubmatch(description)
 	if len(matches) > 2 {
-		// convert to float
-		if value, err := strconv.ParseFloat(matches[2], 64); err == nil {
-			defaultValue = &value
-		}
+		defaultValue = matches[2]
 	}
 	matches = MinRegex.FindStringSubmatch(description)
 	if len(matches) > 2 {
-		if value, err := strconv.ParseFloat(matches[2], 64); err == nil {
-			minValue = &value
-		}
+		minValue = matches[2]
 	}
 	matches = MaxRegex.FindStringSubmatch(description)
 	if len(matches) > 2 {
-		if value, err := strconv.ParseFloat(matches[2], 64); err == nil {
-			maxValue = &value
+		maxValue = matches[2]
+	}
+	switch schema.Type {
+	case parser.IntegerType:
+		if defaultValue != "" {
+			defaultInt, err := strconv.Atoi(defaultValue)
+			if err == nil {
+				schema.Default = defaultInt
+			}
+		}
+		if minValue != "" {
+			minFloat, err := strconv.ParseFloat(minValue, 64)
+			if err == nil {
+				schema.Min = &minFloat
+			}
+		}
+		if maxValue != "" {
+			maxFloat, err := strconv.ParseFloat(maxValue, 64)
+			if err == nil {
+				schema.Max = &maxFloat
+			}
+		}
+	case parser.NumberType:
+		if defaultValue != "" {
+			defaultFloat, err := strconv.ParseFloat(defaultValue, 64)
+			if err == nil {
+				schema.Default = defaultFloat
+			}
+		}
+		if minValue != "" {
+			minFloat, err := strconv.ParseFloat(minValue, 64)
+			if err == nil {
+				schema.Min = &minFloat
+			}
+		}
+		if maxValue != "" {
+			maxFloat, err := strconv.ParseFloat(maxValue, 64)
+			if err == nil {
+				schema.Max = &maxFloat
+			}
+		}
+	case parser.StringType:
+		if defaultValue != "" {
+			schema.Default = defaultValue
+		}
+	case parser.BooleanType:
+		if defaultValue != "" {
+			defaultBool, err := strconv.ParseBool(defaultValue)
+			if err == nil {
+				schema.Default = defaultBool
+			}
 		}
 	}
-	return maxValue, minValue, defaultValue
 }
 
 // createSchema creates a schema based on the parameter type

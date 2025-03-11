@@ -1,4 +1,60 @@
-components: {}
+components:
+    schemas:
+        SpotDeleteOrderV3Resp:
+            example: |-
+              {
+                "symbol": "LTCBTC",
+                "origClientOrderId": "myOrder1",
+                "orderId": 4,
+                "orderListId": -1, // Unless it's part of an order list, value will be -1
+                "clientOrderId": "cancelMyOrder1",
+                "transactTime": 1684804350068,
+                "price": "2.00000000",
+                "origQty": "1.00000000",
+                "executedQty": "0.00000000",
+                "cummulativeQuoteQty": "0.00000000",
+                "status": "CANCELED",
+                "timeInForce": "GTC",
+                "type": "LIMIT",
+                "side": "BUY",
+                "selfTradePreventionMode": "NONE"
+              }
+            type: object
+            properties:
+                symbol:
+                    type: string
+                origClientOrderId:
+                    type: string
+                orderId:
+                    type: integer
+                orderListId:
+                    type: integer
+                clientOrderId:
+                    type: string
+                transactTime:
+                    type: integer
+                price:
+                    type: string
+                    format: double
+                origQty:
+                    type: string
+                    format: double
+                executedQty:
+                    type: string
+                    format: double
+                cummulativeQuoteQty:
+                    type: string
+                    format: double
+                status:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                side:
+                    type: string
+                selfTradePreventionMode:
+                    type: string                    
 info:
     title: ""
     version: ""
@@ -36,17 +92,27 @@ paths:
                   schema:
                     default: ""
                     type: string
+                    enum:
+                      - ONLY_NEW
+                      - ONLY_PARTIALLY_FILLED
                 - description: The value cannot be greater than `60000`.
                   in: query
                   name: recvWindow
                   schema:
                     type: integer
+                    maximum: 60000
                 - in: query
                   name: timestamp
                   required: true
                   schema:
                     type: integer
-            responses: {}
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotDeleteOrderV3Resp'
+                    description: Successful operation
             summary: Cancel order (TRADE)
             tags:
                 - Trading endpoints

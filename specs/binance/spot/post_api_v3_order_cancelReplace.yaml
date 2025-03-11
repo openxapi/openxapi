@@ -1,4 +1,133 @@
-components: {}
+components:
+    schemas:
+        SpotCreateOrderCancelReplaceV3Resp:
+            example: |-
+                // Both the cancel order placement and new order placement succeeded.
+                {
+                  "cancelResult": "SUCCESS",
+                  "newOrderResult": "SUCCESS",
+                  "cancelResponse": {
+                    "symbol": "BTCUSDT",
+                    "origClientOrderId": "DnLo3vTAQcjha43lAZhZ0y",
+                    "orderId": 9,
+                    "orderListId": -1,
+                    "clientOrderId": "osxN3JXAtJvKvCqGeMWMVR",
+                    "transactTime": 1684804350068,
+                    "price": "0.01000000",
+                    "origQty": "0.000100",
+                    "executedQty": "0.00000000",
+                    "origQuoteOrderQty": "0.000000",
+                    "cummulativeQuoteQty": "0.00000000",
+                    "status": "CANCELED",
+                    "timeInForce": "GTC",
+                    "type": "LIMIT",
+                    "side": "SELL",
+                    "selfTradePreventionMode": "NONE"
+                  },
+                  "newOrderResponse": {
+                    "symbol": "BTCUSDT",
+                    "orderId": 10,
+                    "orderListId": -1,
+                    "clientOrderId": "wOceeeOzNORyLiQfw7jd8S",
+                    "transactTime": 1652928801803,
+                    "price": "0.02000000",
+                    "origQty": "0.040000",
+                    "executedQty": "0.00000000",
+                    "cummulativeQuoteQty": "0.00000000",
+                    "origQuoteOrderQty": "0.000000",
+                    "status": "NEW",
+                    "timeInForce": "GTC",
+                    "type": "LIMIT",
+                    "side": "BUY",
+                    "workingTime": 1669277163808,
+                    "fills": [],
+                    "selfTradePreventionMode": "NONE"
+                  }
+                }
+            type: object
+            properties:
+                cancelResult:
+                    type: string
+                newOrderResult:
+                    type: string
+                cancelResponse:
+                    type: object
+                    $ref: '#/components/schemas/SpotCreateOrderCancelReplaceV3RespCancelResponse'
+                newOrderResponse:
+                    type: object
+                    $ref: '#/components/schemas/SpotCreateOrderCancelReplaceV3RespNewOrderResponse'
+        SpotCreateOrderCancelReplaceV3RespCancelResponse:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                origClientOrderId:
+                    type: string
+                orderId:
+                    type: integer
+                orderListId:
+                    type: integer
+                clientOrderId:
+                    type: string
+                transactTime:
+                    type: integer
+                price:
+                    type: string
+                origQty:
+                    type: string
+                executedQty:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                status:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                side:
+                    type: string
+                selfTradePreventionMode:
+                    type: string
+        SpotCreateOrderCancelReplaceV3RespNewOrderResponse:
+            type: object
+            properties:
+                symbol:
+                    type: string
+                orderId:
+                    type: integer
+                orderListId:
+                    type: integer
+                clientOrderId:
+                    type: string
+                transactTime:
+                    type: integer
+                price:
+                    type: string
+                origQty:
+                    type: string
+                executedQty:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                origQuoteOrderQty:
+                    type: string
+                status:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                side:
+                    type: string
+                workingTime:
+                    type: integer
+                fills:
+                    type: array
+                    items:
+                        type: object
+                selfTradePreventionMode:
+                    type: string
 info:
     title: ""
     version: ""
@@ -37,6 +166,9 @@ paths:
                   schema:
                     default: ""
                     type: string
+                    enum:
+                      - STOP_ON_FAILURE
+                      - ALLOW_FAILURE
                 - in: query
                   name: timeInForce
                   schema:
@@ -86,6 +218,7 @@ paths:
                   name: strategyType
                   schema:
                     type: integer
+                    minimum: 1000000
                 - in: query
                   name: stopPrice
                   schema:
@@ -104,6 +237,10 @@ paths:
                   schema:
                     default: ""
                     type: string
+                    enum:
+                      - ACK
+                      - RESULT
+                      - FULL
                 - description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#stpmodes">STP Modes</a>.'
                   in: query
                   name: selfTradePreventionMode
@@ -116,23 +253,36 @@ paths:
                   schema:
                     default: ""
                     type: string
+                    enum:
+                      - ONLY_NEW
+                      - ONLY_PARTIALLY_FILLED
                 - description: 'Supported values: <br/> `DO_NOTHING` (default)- will only attempt to cancel the order if account has not exceeded the unfilled order rate limit<br/> `CANCEL_ONLY` - will always cancel the order'
                   in: query
                   name: orderRateLimitExceededMode
                   schema:
                     default: ""
                     type: string
+                    enum:
+                      - DO_NOTHING
+                      - CANCEL_ONLY
                 - description: The value cannot be greater than `60000`
                   in: query
                   name: recvWindow
                   schema:
                     type: integer
+                    maximum: 60000
                 - in: query
                   name: timestamp
                   required: true
                   schema:
                     type: integer
-            responses: {}
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotCreateOrderCancelReplaceV3Resp'
+                    description: Successful operation
             summary: Cancel an Existing Order and Send a New Order (TRADE)
             tags:
                 - Trading endpoints

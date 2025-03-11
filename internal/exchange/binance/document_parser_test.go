@@ -190,17 +190,30 @@ func TestExtractContent(t *testing.T) {
 }
 
 func TestExtractMaxMinDefault(t *testing.T) {
-	maxValue, minValue, defaultValue := extractMaxMinDefault("Default 500; max 1000.")
-	assert.NotNil(t, maxValue, "maxValue should not be nil")
-	assert.InDelta(t, 1000, *maxValue, 0.001, "maxValue should be 1000")
-	assert.Nil(t, minValue, "minValue should be nil")
-	assert.NotNil(t, defaultValue, "defaultValue should not be nil")
-	assert.InDelta(t, 500, *defaultValue, 0.001, "defaultValue should be 500")
+	schema := &parser.Schema{
+		Type: parser.IntegerType,
+	}
+	extractMaxMinDefault(schema, "Default 500; max 1000.")
+	assert.NotNil(t, schema.Max, "maxValue should not be nil")
+	assert.InDelta(t, 1000, *schema.Max, 0.001, "maxValue should be 1000")
+	assert.Nil(t, schema.Min, "minValue should be nil")
+	assert.NotNil(t, schema.Default, "defaultValue should not be nil")
+	assert.Equal(t, 500, schema.Default.(int), "defaultValue should be 500")
 
-	maxValue, minValue, defaultValue = extractMaxMinDefault("Default 100; max 5000. If limit > 5000. then the response will truncate to 5000.")
-	assert.NotNil(t, maxValue, "maxValue should not be nil")
-	assert.InDelta(t, 5000, *maxValue, 0.001, "maxValue should be 5000")
-	assert.Nil(t, minValue, "minValue should be nil")
-	assert.NotNil(t, defaultValue, "defaultValue should not be nil")
-	assert.InDelta(t, 100, *defaultValue, 0.001, "defaultValue should be 100")
+	schema = &parser.Schema{
+		Type: parser.NumberType,
+	}
+	extractMaxMinDefault(schema, "Default 100; max 5000. If limit > 5000. then the response will truncate to 5000.")
+	assert.NotNil(t, schema.Max, "maxValue should not be nil")
+	assert.InDelta(t, 5000, *schema.Max, 0.001, "maxValue should be 5000")
+	assert.Nil(t, schema.Min, "minValue should be nil")
+	assert.NotNil(t, schema.Default, "defaultValue should not be nil")
+	assert.Equal(t, 100.0, schema.Default.(float64), "defaultValue should be 100")
+
+	schema = &parser.Schema{
+		Type: parser.BooleanType,
+	}
+	extractMaxMinDefault(schema, "Default `false`")
+	assert.NotNil(t, schema.Default, "defaultValue should not be nil")
+	assert.Equal(t, false, schema.Default.(bool), "defaultValue should be false")
 }
