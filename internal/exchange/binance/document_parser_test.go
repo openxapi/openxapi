@@ -22,7 +22,7 @@ func TestExtractEndpoint(t *testing.T) {
 		"Response: {}",
 	}
 
-	endpoint, ok := docParser.extractEndpoint(content, "General", "https://example.com")
+	endpoint, ok := docParser.extractEndpoint(content, "General")
 
 	assert.True(t, ok, "Should have extracted the endpoint")
 	assert.Equal(t, "GET", endpoint.Method)
@@ -150,4 +150,35 @@ func TestOperationID(t *testing.T) {
 			t.Errorf("operationID(%q, %q, %q) = %q; want %q", test.docType, test.method, test.path, got, test.want)
 		}
 	}
+}
+
+func TestExtractContent(t *testing.T) {
+	docParser := &DocumentParser{
+		docType: "spot",
+	}
+	endpoint := &parser.Endpoint{
+		Tags:       []string{"Market Data endpoints"},
+		Extensions: make(map[string]interface{}),
+	}
+	content := []string{
+		"Order book",
+		"GET /api/v3/depth",
+		"Weight: Adjusted based on the limit:",
+		"Parameters:",
+		"TABLE:<thead><tr><th>Name</th><th>Type</th><th>Mandatory</th><th>Description</th></tr></thead><tbody><tr><td>symbol</td><td>STRING</td><td>YES</td><td></td></tr><tr><td>limit</td><td>INT</td><td>NO</td><td>Default 100; max 5000. <br/> If limit &gt; 5000. then the response will truncate to 5000.</td></tr></tbody>",
+		"Data Source: Memory",
+		"Response: {  \"lastUpdateId\": 1027024,  \"bids\": [    [      \"4.00000000\",     // PRICE      \"431.00000000\"    // QTY    ]  ],  \"asks\": [    [      \"4.00000200\",      \"12.00000000\"    ]  ]}",
+	}
+
+	foundEndpoint, foundResponse, _ := docParser.extractContent(endpoint, content)
+	assert.True(t, foundEndpoint)
+	assert.True(t, foundResponse)
+	assert.Equal(t, "GET", endpoint.Method)
+	assert.Equal(t, "/api/v3/depth", endpoint.Path)
+	assert.Equal(t, "Order book", endpoint.Summary)
+	assert.Equal(t, "", endpoint.Description)
+	assert.Equal(t, nil, endpoint.Extensions["x-weight"])
+	assert.Equal(t, "Memory", endpoint.Extensions["x-data-source"])
+	assert.Equal(t, "SpotGetDepthV3", endpoint.OperationID)
+	assert.Equal(t, []string{"Market Data endpoints", "V3 APIs"}, endpoint.Tags)
 }

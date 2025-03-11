@@ -28,7 +28,7 @@ func TestParser_Parse(t *testing.T) {
 
 	// Parse the document directly using DocumentParser
 	docParser := &DocumentParser{}
-	endpoints, err := docParser.Parse(file, "spot", "https://developers.binance.com/docs/binance-spot-api-docs/rest-api/general-endpoints", []string{})
+	endpoints, err := docParser.Parse(file, "spot", []string{})
 	require.NoError(t, err, "Should parse document without error")
 	require.NotEmpty(t, endpoints, "Should have extracted at least one endpoint")
 

@@ -37,7 +37,6 @@ func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoin
 			continue
 		}
 		pathItemPath := filepath.Join(baseDir, fmt.Sprintf("%s%s.yaml", strings.ToLower(endpoint.Method), strings.ReplaceAll(endpoint.Path, "/", "_")))
-		fmt.Printf("pathItemPath: %+v\n", pathItemPath)
 		pathItem := g.convertEndpointToPathItem(&endpoint)
 		// Write spec to file so that we can restore from the file content later
 		endpointSpec := &openapi3.T{
@@ -49,7 +48,6 @@ func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoin
 		}
 		endpointSpec.Paths.Set(endpoint.Path, pathItem)
 		for _, schema := range endpoint.Schemas {
-			fmt.Printf("schema title: %+v\n", schema)
 			endpointSpec.Components.Schemas[schema.Title] = g.convertSchema(schema)
 		}
 		if err := g.writeSpec(endpointSpec, pathItemPath); err != nil {
@@ -213,7 +211,6 @@ func (g *Generator) convertSchema(schema *parser.Schema) *openapi3.SchemaRef {
 
 // convertEndpointToPathItem converts a parser.Endpoint to an OpenAPI path item
 func (g *Generator) convertEndpointToPathItem(endpoint *parser.Endpoint) *openapi3.PathItem {
-	fmt.Printf("schemas before converting parameters: %+v\n", endpoint.Schemas)
 	operation := &openapi3.Operation{
 		Summary:     endpoint.Summary,
 		Description: endpoint.Description,
@@ -223,18 +220,13 @@ func (g *Generator) convertEndpointToPathItem(endpoint *parser.Endpoint) *openap
 		Responses:   &openapi3.Responses{},
 		Deprecated:  endpoint.Deprecated,
 	}
-	fmt.Printf("schemas before converting parameters: %+v\n", endpoint.Schemas)
-	fmt.Printf("converting responses for endpoint: %+v\n", endpoint.OperationID)
 	// Add responses to the operation
 	for code, resp := range g.convertResponses(endpoint.Responses, &endpoint.Schemas) {
 		operation.Responses.Set(code, resp)
 	}
-	fmt.Printf("schemas after converting responses: %+v\n", endpoint.Schemas)
-	fmt.Printf("converting request for endpoint: %+v\n", endpoint.OperationID)
 	if endpoint.RequestBody != nil {
 		operation.RequestBody = g.convertRequestBody(endpoint.RequestBody, &endpoint.Schemas)
 	}
-	fmt.Printf("schemas after converting request: %+v\n", endpoint.Schemas)
 
 	pathItem := &openapi3.PathItem{}
 	switch endpoint.Method {
@@ -257,7 +249,6 @@ func (g *Generator) convertEndpointToPathItem(endpoint *parser.Endpoint) *openap
 func (g *Generator) convertParameters(params []*parser.Parameter, schemas *[]*parser.Schema) openapi3.Parameters {
 	result := make(openapi3.Parameters, 0, len(params))
 	for _, param := range params {
-		fmt.Printf("converting parameters for endpoint: %+v\n", param.Name)
 		var schema *openapi3.SchemaRef
 		if param.Schema != nil && param.Schema.Type == parser.ObjectType {
 			*schemas = append(*schemas, param.Schema)
@@ -286,7 +277,6 @@ func toSchemaRef(name string) *openapi3.SchemaRef {
 
 // convertRequestBody converts a parser request body to an OpenAPI request body
 func (g *Generator) convertRequestBody(body *parser.RequestBody, schemas *[]*parser.Schema) *openapi3.RequestBodyRef {
-	fmt.Printf("converting request body for endpoint: %+v\n", body)
 	content := make(openapi3.Content)
 	for mediaType, mt := range body.Content {
 		var schema *openapi3.SchemaRef
@@ -317,7 +307,6 @@ func (g *Generator) convertResponses(responses map[string]*parser.Response, sche
 		for mediaType, mt := range response.Content {
 			var schema *openapi3.SchemaRef
 			if mt.Schema != nil && mt.Schema.Type == parser.ObjectType {
-				fmt.Printf("adding schema: %+v\n", mt.Schema)
 				*schemas = append(*schemas, mt.Schema)
 				schema = toSchemaRef(mt.Schema.Title)
 			} else {

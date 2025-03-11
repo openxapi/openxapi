@@ -7,10 +7,12 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/adshao/openxapi/internal/parser"
+	"github.com/sirupsen/logrus"
 )
 
 // DocumentParser is a parser for Binance documents
@@ -21,7 +23,7 @@ type DocumentParser struct {
 }
 
 // Parse parses an HTML document and extracts API endpoints
-func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string, protectedEndpoints []string) ([]parser.Endpoint, error) {
+func (p *DocumentParser) Parse(r io.Reader, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
 	p.docType = docType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
@@ -40,7 +42,6 @@ func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string, protected
 	document.Find("h3.anchor").Each(func(i int, header *goquery.Selection) {
 		// Get the header text and clean it
 		headerText := cleanText(header.Text())
-
 		// Skip headers that are not endpoints (like "Terminology")
 		if isNonEndpointHeader(headerText) {
 			return
@@ -48,16 +49,13 @@ func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string, protected
 
 		// Collect all content elements after the header until we find the next h3
 		var content []string
-
 		// Add the header text as the first item in content
 		content = append(content, headerText)
 
 		// Find all elements between this h3 and the next h3
 		var nextElements []*goquery.Selection
-
 		// Get the next h3 element
 		nextH3 := header.NextAll().Filter("h3").First()
-
 		if nextH3.Length() > 0 {
 			// If there's a next h3, get all elements between current h3 and next h3
 			header.NextUntil("h3").Each(func(j int, el *goquery.Selection) {
@@ -69,14 +67,13 @@ func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string, protected
 				nextElements = append(nextElements, el)
 			})
 		}
-
 		// Process each element to extract content
 		for _, el := range nextElements {
 			p.collectElementContent(el, &content)
 		}
 
 		// Process the collected content to extract endpoint information
-		endpointData, valid := p.extractEndpoint(content, category, sourceURL)
+		endpointData, valid := p.extractEndpoint(content, category)
 
 		// Only add valid endpoints
 		if valid && endpointData.Path != "" && endpointData.Method != "" {
@@ -89,24 +86,30 @@ func (p *DocumentParser) Parse(r io.Reader, docType, sourceURL string, protected
 }
 
 // extractEndpoint processes the content following an API header to extract endpoint information
-func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL string) (*parser.Endpoint, bool) {
-	fmt.Println("--------------------------------")
-	for _, line := range content {
-		fmt.Println(line)
+func (p *DocumentParser) extractEndpoint(content []string, category string) (*parser.Endpoint, bool) {
+	for i, line := range content {
+		logrus.Debugf("line %d: %s", i, line)
 	}
-	fmt.Printf("category: %s\n", category)
-	fmt.Printf("sourceURL: %s\n", sourceURL)
-	fmt.Println("--------------------------------")
 	var endpoint = &parser.Endpoint{}
 	endpoint.Tags = []string{category}
 	endpoint.Extensions = make(map[string]interface{})
 	endpoint.Responses = make(map[string]*parser.Response)
 
+	foundEndpoint, foundResponse, responseContent := p.extractContent(endpoint, content)
+	if !foundEndpoint {
+		return nil, false
+	}
+	p.extractParameters(endpoint)
+	p.extractResponse(endpoint, foundResponse, responseContent)
+
+	return endpoint, foundEndpoint
+}
+
+func (p *DocumentParser) extractContent(endpoint *parser.Endpoint, content []string) (bool, bool, string) {
 	// Set the summary from the first content item if available
 	if len(content) > 0 {
 		endpoint.Summary = content[0]
 	}
-
 	// Initialize variables to track what we've found
 	var description strings.Builder
 	var foundEndpoint, foundWeight, foundParameters, foundDataSource, foundResponse bool
@@ -114,7 +117,7 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 
 	// Regular expressions to identify different sections
 	endpointRegex := regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH) (.+)$`)
-	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+)$`)
+	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)$`)
 	parametersRegex := regexp.MustCompile(`^Parameters:$`)
 	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
 	responseRegex := regexp.MustCompile(`^Response:\s*(.*)$`)
@@ -155,8 +158,11 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 		if !foundWeight {
 			matches := weightRegex.FindStringSubmatch(line)
 			if len(matches) == 2 {
-				endpoint.Extensions["x-weight"] = matches[1]
-				foundWeight = true
+				// if weight is a number, set it
+				if _, err := strconv.Atoi(matches[1]); err == nil {
+					endpoint.Extensions["x-weight"] = matches[1]
+					foundWeight = true
+				}
 				continue
 			}
 		}
@@ -207,16 +213,11 @@ func (p *DocumentParser) extractEndpoint(content []string, category, sourceURL s
 		}
 	}
 	if endpoint.OperationID == "" {
-		return nil, false
+		return false, false, ""
 	}
-
 	// Set the description
 	endpoint.Description = strings.TrimSpace(description.String())
-	p.extractParameters(endpoint)
-	fmt.Printf("Response content: %s\n", responseContent.String())
-	p.extractResponse(endpoint, foundResponse, responseContent.String())
-
-	return endpoint, foundEndpoint
+	return foundEndpoint, foundResponse, responseContent.String()
 }
 
 func operationID(docType, method, path string) string {
@@ -360,7 +361,7 @@ func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, foundRespons
 // createResponseSchema attempts to create a schema from response example text
 func (p *DocumentParser) createResponseSchema(name, responseText string) (*parser.Schema, error) {
 	responseText = strings.TrimSpace(responseText)
-	fmt.Printf("responseText: %s\n", responseText)
+	logrus.Debugf("responseText: %s", responseText)
 	schema, err := createSchema(name, "", responseText)
 	if err != nil {
 		return nil, fmt.Errorf("creating response schema: %w", err)
