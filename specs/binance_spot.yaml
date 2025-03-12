@@ -2113,6 +2113,72 @@ components:
                 transactionTime:
                     type: number
             type: object
+        SpotGetOpenOrdersV3RespItem:
+            example: |
+                {
+                  "symbol": "LTCBTC",
+                  "orderId": 1,
+                  "orderListId": -1, // Unless it's part of an order list, value will be -1
+                  "clientOrderId": "myOrder1",
+                  "price": "0.1",
+                  "origQty": "1.0",
+                  "executedQty": "0.0",
+                  "cummulativeQuoteQty": "0.0",
+                  "status": "NEW",
+                  "timeInForce": "GTC",
+                  "type": "LIMIT",
+                  "side": "BUY",
+                  "stopPrice": "0.0",
+                  "icebergQty": "0.0",
+                  "time": 1499827319559,
+                  "updateTime": 1499827319559,
+                  "isWorking": true,
+                  "origQuoteOrderQty": "0.000000",
+                  "workingTime": 1499827319559,
+                  "selfTradePreventionMode": "NONE"
+                }
+            properties:
+                clientOrderId:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                executedQty:
+                    type: string
+                icebergQty:
+                    type: string
+                isWorking:
+                    type: boolean
+                orderId:
+                    type: number
+                orderListId:
+                    type: number
+                origQty:
+                    type: string
+                origQuoteOrderQty:
+                    type: string
+                price:
+                    type: string
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    type: number
+                workingTime:
+                    type: number
+            type: object
         SpotGetOrderListV3Resp:
             example: '{  "orderListId": 27,  "contingencyType": "OCO",  "listStatusType": "EXEC_STARTED",  "listOrderStatus": "EXECUTING",  "listClientOrderId": "h2USkA5YQpaXHPIrkd96xE",  "transactionTime": 1565245656253,  "symbol": "LTCBTC",  "orders": [    {      "symbol": "LTCBTC",      "orderId": 4,      "clientOrderId": "qD1gy3kc3Gx0rihm9Y3xwS"    },    {      "symbol": "LTCBTC",      "orderId": 5,      "clientOrderId": "ARzZ9I00CPM8i3NhmU9Ega"    }  ]}'
             properties:
@@ -3132,7 +3198,15 @@ paths:
                   required: true
                   schema:
                     type: integer
-            responses: {}
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                items:
+                                    $ref: '#/components/schemas/SpotGetOpenOrdersV3RespItem'
+                                type: array
+                    description: Successful operation
             summary: Current open orders (USER_DATA)
             tags:
                 - Trading endpoints
@@ -3167,7 +3241,7 @@ paths:
                   in: query
                   name: cancelRestrictions
                   schema:
-                    default: ""
+                    default: ONLY_NEW
                     enum:
                         - ONLY_NEW
                         - ONLY_PARTIALLY_FILLED
@@ -3371,7 +3445,7 @@ paths:
                   name: cancelReplaceMode
                   required: true
                   schema:
-                    default: ""
+                    default: STOP_ON_FAILURE
                     enum:
                         - STOP_ON_FAILURE
                         - ALLOW_FAILURE
@@ -3442,7 +3516,7 @@ paths:
                   in: query
                   name: newOrderRespType
                   schema:
-                    default: ""
+                    default: FULL
                     enum:
                         - ACK
                         - RESULT
@@ -3458,7 +3532,7 @@ paths:
                   in: query
                   name: cancelRestrictions
                   schema:
-                    default: ""
+                    default: ONLY_NEW
                     enum:
                         - ONLY_NEW
                         - ONLY_PARTIALLY_FILLED
@@ -3467,7 +3541,7 @@ paths:
                   in: query
                   name: orderRateLimitExceededMode
                   schema:
-                    default: ""
+                    default: DO_NOTHING
                     enum:
                         - DO_NOTHING
                         - CANCEL_ONLY
@@ -3880,7 +3954,7 @@ paths:
                   name: aboveType
                   required: true
                   schema:
-                    default: ""
+                    default: STOP_LOSS_LIMIT
                     enum:
                         - STOP_LOSS_LIMIT
                         - STOP_LOSS
@@ -3934,7 +4008,7 @@ paths:
                   name: belowType
                   required: true
                   schema:
-                    default: ""
+                    default: STOP_LOSS
                     enum:
                         - STOP_LOSS
                         - STOP_LOSS_LIMIT
@@ -3987,7 +4061,7 @@ paths:
                   in: query
                   name: newOrderRespType
                   schema:
-                    default: ""
+                    default: FULL
                     enum:
                         - ACK
                         - RESULT
@@ -3998,8 +4072,6 @@ paths:
                   name: selfTradePreventionMode
                   schema:
                     default: ""
-                    enum:
-                        - <a href="/docs/binance-spot-api-docs/rest-api/enums.md#stpmodes">STP Modes</a>
                     type: string
                 - description: The value cannot be greater than `60000`.
                   in: query
@@ -4051,7 +4123,7 @@ paths:
                   in: query
                   name: newOrderRespType
                   schema:
-                    default: ""
+                    default: FULL
                     enum:
                         - ACK
                         - RESULT
@@ -4068,7 +4140,7 @@ paths:
                   name: workingType
                   required: true
                   schema:
-                    default: ""
+                    default: LIMIT
                     enum:
                         - LIMIT
                         - LIMIT_MAKER
@@ -4242,7 +4314,7 @@ paths:
                   name: workingType
                   required: true
                   schema:
-                    default: ""
+                    default: LIMIT
                     enum:
                         - LIMIT
                         - LIMIT_MAKER
@@ -4308,7 +4380,7 @@ paths:
                   name: pendingAboveType
                   required: true
                   schema:
-                    default: ""
+                    default: STOP_LOSS_LIMIT
                     enum:
                         - STOP_LOSS_LIMIT
                         - STOP_LOSS
@@ -4361,7 +4433,7 @@ paths:
                   in: query
                   name: pendingBelowType
                   schema:
-                    default: ""
+                    default: STOP_LOSS
                     enum:
                         - STOP_LOSS
                         - STOP_LOSS_LIMIT

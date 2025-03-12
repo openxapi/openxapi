@@ -336,6 +336,11 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 		// Extract max, min, and default values from description if present
 		extractMaxMinDefault(schema, description)
 
+		if len(schema.Enum) > 0 && schema.Default == nil {
+			// If the default value is not in the enum, set it to the first enum value
+			schema.Default = schema.Enum[0]
+		}
+
 		// Determine parameter location (in)
 		paramIn := "query" // Default to query for REST APIs
 		if strings.Contains(endpoint.Path, "{"+paramName+"}") {
