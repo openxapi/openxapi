@@ -1,0 +1,249 @@
+components:
+    schemas:
+        SpotCreateOrderListOtoV3Resp:
+            example: '{    "orderListId": 0,    "contingencyType": "OTO",    "listStatusType": "EXEC_STARTED",    "listOrderStatus": "EXECUTING",    "listClientOrderId": "yl2ERtcar1o25zcWtqVBTC",    "transactionTime": 1712289389158,    "symbol": "ABCDEF",    "orders": [        {            "symbol": "LTCBTC",            "orderId": 4,            "clientOrderId": "Bq17mn9fP6vyCn75Jw1xya"        },        {            "symbol": "LTCBTC",            "orderId": 5,            "clientOrderId": "arLFo0zGJVDE69cvGBaU0d"        }    ],    "orderReports": [        {            "symbol": "LTCBTC",            "orderId": 4,            "orderListId": 0,            "clientOrderId": "Bq17mn9fP6vyCn75Jw1xya",            "transactTime": 1712289389158,            "price": "1.00000000",            "origQty": "1.00000000",            "executedQty": "0.00000000",            "origQuoteOrderQty": "0.000000",            "cummulativeQuoteQty": "0.00000000",            "status": "NEW",            "timeInForce": "GTC",            "type": "LIMIT",            "side": "SELL",            "workingTime": 1712289389158,            "selfTradePreventionMode": "NONE"        },        {            "symbol": "LTCBTC",            "orderId": 5,            "orderListId": 0,            "clientOrderId": "arLFo0zGJVDE69cvGBaU0d",            "transactTime": 1712289389158,            "price": "0.00000000",            "origQty": "5.00000000",            "executedQty": "0.00000000",            "origQuoteOrderQty": "0.000000",            "cummulativeQuoteQty": "0.00000000",            "status": "PENDING_NEW",            "timeInForce": "GTC",            "type": "MARKET",            "side": "BUY",            "workingTime": -1,            "selfTradePreventionMode": "NONE"        }    ]}'
+            properties:
+                contingencyType:
+                    type: string
+                listClientOrderId:
+                    type: string
+                listOrderStatus:
+                    type: string
+                listStatusType:
+                    type: string
+                orderListId:
+                    type: number
+                orderReports:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            cummulativeQuoteQty:
+                                type: string
+                            executedQty:
+                                type: string
+                            orderId:
+                                type: number
+                            orderListId:
+                                type: number
+                            origQty:
+                                type: string
+                            origQuoteOrderQty:
+                                type: string
+                            price:
+                                type: string
+                            selfTradePreventionMode:
+                                type: string
+                            side:
+                                type: string
+                            status:
+                                type: string
+                            symbol:
+                                type: string
+                            timeInForce:
+                                type: string
+                            transactTime:
+                                type: number
+                            type:
+                                type: string
+                            workingTime:
+                                type: number
+                        type: object
+                    type: array
+                orders:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            orderId:
+                                type: number
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                symbol:
+                    type: string
+                transactionTime:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/orderList/oto:
+        post:
+            description: |-
+                Places an OTO.
+                - An OTO (One-Triggers-the-Other) is an order list comprised of 2 orders.
+                - The first order is called the working order and must be LIMIT or LIMIT_MAKER. Initially, only the working order goes on the order book.
+                - The second order is called the pending order. It can be any order type except for MARKET orders using parameter quoteOrderQty. The pending order is only placed on the order book when the working order gets fully filled.
+                - If either the working order or the pending order is cancelled individually, the other order in the order list will also be canceled or expired.
+                - When the order list is placed, if the working order gets immediately fully filled, the placement response will show the working order as FILLED but the pending order will still appear as PENDING_NEW. You need to query the status of the pending order again to see its updated status.
+                - OTOs add 2 orders to the unfilled order count, EXCHANGE_MAX_NUM_ORDERS filter and MAX_NUM_ORDERS filter.
+            operationId: SpotCreateOrderListOtoV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Arbitrary unique ID among open order lists. Automatically generated if not sent. <br/>A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired. <br/> `listClientOrderId` is distinct from the `workingClientOrderId` and the `pendingClientOrderId`.
+                  in: query
+                  name: listClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Format of the JSON response. Supported values: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#orderresponsetype">Order Response Type</a>'
+                  in: query
+                  name: newOrderRespType
+                  schema:
+                    default: ""
+                    enum:
+                        - ACK
+                        - RESULT
+                        - FULL
+                    type: string
+                - description: 'The allowed values are dependent on what is configured on the symbol. Supported values: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#stpmodes">STP Modes</a>'
+                  in: query
+                  name: selfTradePreventionMode
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Supported values: `LIMIT`,`LIMIT_MAKER`'
+                  in: query
+                  name: workingType
+                  required: true
+                  schema:
+                    default: ""
+                    enum:
+                        - LIMIT
+                        - LIMIT_MAKER
+                    type: string
+                - description: 'Supported values: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#side">Order Side</a>'
+                  in: query
+                  name: workingSide
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Arbitrary unique ID among open orders for the working order.<br/> Automatically generated if not sent.
+                  in: query
+                  name: workingClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: workingPrice
+                  required: true
+                  schema:
+                    type: number
+                - description: Sets the quantity for the working order.
+                  in: query
+                  name: workingQuantity
+                  required: true
+                  schema:
+                    type: number
+                - description: This can only be used if `workingTimeInForce` is `GTC`, or if `workingType` is `LIMIT_MAKER`.
+                  in: query
+                  name: workingIcebergQty
+                  schema:
+                    type: number
+                - description: 'Supported values: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#timeinforce">Time In Force</a>'
+                  in: query
+                  name: workingTimeInForce
+                  schema:
+                    default: ""
+                    type: string
+                - description: Arbitrary numeric value identifying the working order within an order strategy.
+                  in: query
+                  name: workingStrategyId
+                  schema:
+                    type: integer
+                - description: Arbitrary numeric value identifying the working order strategy. <br/> Values smaller than 1000000 are reserved and cannot be used.
+                  in: query
+                  name: workingStrategyType
+                  schema:
+                    type: integer
+                - description: 'Supported values: <a href="/docs/binance-spot-api-docs/rest-api/trading-endpoints#order-type">Order Types</a><br/> Note that `MARKET` orders using `quoteOrderQty` are not supported.'
+                  in: query
+                  name: pendingType
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Supported values: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#side">Order Side</a>'
+                  in: query
+                  name: pendingSide
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Arbitrary unique ID among open orders for the pending order.<br/> Automatically generated if not sent.
+                  in: query
+                  name: pendingClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: pendingPrice
+                  schema:
+                    type: number
+                - in: query
+                  name: pendingStopPrice
+                  schema:
+                    type: number
+                - in: query
+                  name: pendingTrailingDelta
+                  schema:
+                    type: number
+                - description: Sets the quantity for the pending order.
+                  in: query
+                  name: pendingQuantity
+                  required: true
+                  schema:
+                    type: number
+                - description: This can only be used if `pendingTimeInForce` is `GTC` or if `pendingType` is `LIMIT_MAKER`.
+                  in: query
+                  name: pendingIcebergQty
+                  schema:
+                    type: number
+                - description: 'Supported values: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#timeinforce">Time In Force</a>'
+                  in: query
+                  name: pendingTimeInForce
+                  schema:
+                    default: ""
+                    type: string
+                - description: Arbitrary numeric value identifying the pending order within an order strategy.
+                  in: query
+                  name: pendingStrategyId
+                  schema:
+                    type: integer
+                - description: Arbitrary numeric value identifying the pending order strategy. <br/> Values smaller than 1000000 are reserved and cannot be used.
+                  in: query
+                  name: pendingStrategyType
+                  schema:
+                    type: integer
+                - description: The value cannot be greater than `60000`.
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                    maximum: 60000
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotCreateOrderListOtoV3Resp'
+                    description: Successful operation
+            summary: New Order list - OTO (TRADE)
+            tags:
+                - Trading endpoints
+                - V3 APIs

@@ -1,7 +1,7 @@
 components:
     schemas:
         SpotCreateOrderOcoV3Resp:
-            example: '{    "orderListId": 1,    "contingencyType": "OCO",    "listStatusType": "EXEC_STARTED",    "listOrderStatus": "EXECUTING",    "listClientOrderId": "lH1YDkuQKWiXVXHPSKYEIp",    "transactionTime": 1710485608839,    "symbol": "LTCBTC",    "orders": [        {            "symbol": "LTCBTC",            "orderId": 10,            "clientOrderId": "44nZvqpemY7sVYgPYbvPih"        },        {            "symbol": "LTCBTC",            "orderId": 11,            "clientOrderId": "NuMp0nVYnciDiFmVqfpBqK"        }    ],    "orderReports": [        {            "symbol": "LTCBTC",            "orderId": 10,            "orderListId": 1,            "clientOrderId": "44nZvqpemY7sVYgPYbvPih",            "transactTime": 1710485608839,            "price": "1.00000000",            "origQty": "5.00000000",            "executedQty": "0.00000000",            "origQuoteOrderQty": "0.000000",            "cummulativeQuoteQty": "0.00000000",            "status": "NEW",            "timeInForce": "GTC",            "type": "STOP_LOSS_LIMIT",            "side": "SELL",            "stopPrice": "1.00000000",            "workingTime": -1,            "icebergQty": "1.00000000",            "selfTradePreventionMode": "NONE"        },        {            "symbol": "LTCBTC",            "orderId": 11,            "orderListId": 1,            "clientOrderId": "NuMp0nVYnciDiFmVqfpBqK",            "transactTime": 1710485608839,            "price": "3.00000000",            "origQty": "5.00000000",            "executedQty": "0.00000000",            "origQuoteOrderQty": "0.000000",            "cummulativeQuoteQty": "0.00000000",            "status": "NEW",            "timeInForce": "GTC",            "type": "LIMIT_MAKER",            "side": "SELL",            "workingTime": 1710485608839,            "selfTradePreventionMode": "NONE"        }    ]}'
+            example: '{  "orderListId": 0,  "contingencyType": "OCO",  "listStatusType": "EXEC_STARTED",  "listOrderStatus": "EXECUTING",  "listClientOrderId": "JYVpp3F0f5CAG15DhtrqLp",  "transactionTime": 1563417480525,  "symbol": "LTCBTC",  "orders": [    {      "symbol": "LTCBTC",      "orderId": 2,      "clientOrderId": "Kk7sqHb9J6mJWTMDVW7Vos"    },    {      "symbol": "LTCBTC",      "orderId": 3,      "clientOrderId": "xTXKaGYd4bluPVp78IVRvl"    }  ],  "orderReports": [    {      "symbol": "LTCBTC",      "orderId": 2,      "orderListId": 0,      "clientOrderId": "Kk7sqHb9J6mJWTMDVW7Vos",      "transactTime": 1563417480525,      "price": "0.000000",      "origQty": "0.624363",      "executedQty": "0.000000",      "origQuoteOrderQty": "0.000000",      "cummulativeQuoteQty": "0.000000",      "status": "NEW",      "timeInForce": "GTC",      "type": "STOP_LOSS",      "side": "BUY",      "stopPrice": "0.960664",      "workingTime": -1,      "selfTradePreventionMode": "NONE"    },    {      "symbol": "LTCBTC",      "orderId": 3,      "orderListId": 0,      "clientOrderId": "xTXKaGYd4bluPVp78IVRvl",      "transactTime": 1563417480525,      "price": "0.036435",      "origQty": "0.624363",      "executedQty": "0.000000",      "origQuoteOrderQty": "0.000000",      "cummulativeQuoteQty": "0.000000",      "status": "NEW",      "timeInForce": "GTC",      "type": "LIMIT_MAKER",      "side": "BUY",      "workingTime": 1563417480525,      "selfTradePreventionMode": "NONE"    }  ]}'
             properties:
                 contingencyType:
                     type: string
@@ -21,8 +21,6 @@ components:
                             cummulativeQuoteQty:
                                 type: string
                             executedQty:
-                                type: string
-                            icebergQty:
                                 type: string
                             orderId:
                                 type: number
@@ -83,17 +81,113 @@ paths:
 
                 SELL: Limit Price > Last Price > Stop Price
                 BUY: Limit Price < Last Price < Stop Price
-                - SELL: Limit Price > Last Price > Stop Price
-                - BUY: Limit Price < Last Price < Stop Price
                 - Quantity Restrictions:
 
                 Both legs must have the same quantity.
                 ICEBERG quantities however do not have to be the same
-                - Both legs must have the same quantity.
-                - ICEBERG quantities however do not have to be the same
                 - OCO adds 2 orders to the unfilled order count, EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
             operationId: SpotCreateOrderOcoV3
             parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: A unique Id for the entire orderList
+                  in: query
+                  name: listClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: side
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: quantity
+                  required: true
+                  schema:
+                    type: number
+                - description: A unique Id for the limit order
+                  in: query
+                  name: limitClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: price
+                  required: true
+                  schema:
+                    type: number
+                - in: query
+                  name: limitStrategyId
+                  schema:
+                    type: integer
+                - description: The value cannot be less than `1000000`.
+                  in: query
+                  name: limitStrategyType
+                  schema:
+                    type: integer
+                - description: Used to make the `LIMIT_MAKER` leg an iceberg order.
+                  in: query
+                  name: limitIcebergQty
+                  schema:
+                    type: number
+                - in: query
+                  name: trailingDelta
+                  schema:
+                    type: integer
+                - description: A unique Id for the stop loss/stop loss limit leg
+                  in: query
+                  name: stopClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: stopPrice
+                  required: true
+                  schema:
+                    type: number
+                - in: query
+                  name: stopStrategyId
+                  schema:
+                    type: integer
+                - description: The value cannot be less than `1000000`.
+                  in: query
+                  name: stopStrategyType
+                  schema:
+                    type: integer
+                - description: If provided, `stopLimitTimeInForce` is required.
+                  in: query
+                  name: stopLimitPrice
+                  schema:
+                    type: number
+                - description: Used with `STOP_LOSS_LIMIT` leg to make an iceberg order.
+                  in: query
+                  name: stopIcebergQty
+                  schema:
+                    type: number
+                - description: Valid values are `GTC`/`FOK`/`IOC`
+                  in: query
+                  name: stopLimitTimeInForce
+                  schema:
+                    default: ""
+                    type: string
+                - description: Set the response JSON.
+                  in: query
+                  name: newOrderRespType
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#stpmodes">STP Modes</a>.'
+                  in: query
+                  name: selfTradePreventionMode
+                  schema:
+                    default: ""
+                    type: string
                 - description: The value cannot be greater than `60000`
                   in: query
                   name: recvWindow
@@ -111,7 +205,7 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/SpotCreateOrderOcoV3Resp'
                     description: Successful operation
-            summary: Order lists
+            summary: New OCO - Deprecated (TRADE)
             tags:
                 - Trading endpoints
                 - V3 APIs

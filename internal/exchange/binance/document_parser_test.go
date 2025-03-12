@@ -114,6 +114,22 @@ func TestExtractEnumWithSupportedValues(t *testing.T) {
 	description := "Supported values: `FULL` or `MINI`. <br/>If none provided, the default is `FULL`"
 	values := extractEnumValues(description)
 	assert.Equal(t, []interface{}{"FULL", "MINI"}, values)
+
+	description = "Supported values: `STOP_LOSS_LIMIT`, `STOP_LOSS`, `LIMIT_MAKER`, `TAKE_PROFIT`, `TAKE_PROFIT_LIMIT`"
+	values = extractEnumValues(description)
+	assert.Equal(t, []interface{}{"STOP_LOSS_LIMIT", "STOP_LOSS", "LIMIT_MAKER", "TAKE_PROFIT", "TAKE_PROFIT_LIMIT"}, values)
+
+	description = "Supported values: `STOP_LOSS_LIMIT`, `STOP_LOSS`, `LIMIT_MAKER`, `TAKE_PROFIT`, `TAKE_PROFIT_LIMIT`"
+	values = extractEnumValues(description)
+	assert.Equal(t, []interface{}{"STOP_LOSS_LIMIT", "STOP_LOSS", "LIMIT_MAKER", "TAKE_PROFIT", "TAKE_PROFIT_LIMIT"}, values)
+
+	description = "'Supported values: `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`,`TAKE_PROFIT_LIMIT`'"
+	values = extractEnumValues(description)
+	assert.Equal(t, []interface{}{"STOP_LOSS", "STOP_LOSS_LIMIT", "TAKE_PROFIT", "TAKE_PROFIT_LIMIT"}, values)
+
+	description = "'Select response format: `ACK`, `RESULT`, `FULL`'"
+	values = extractEnumValues(description)
+	assert.Equal(t, []interface{}{"ACK", "RESULT", "FULL"}, values)
 }
 
 func TestExtractResponse(t *testing.T) {

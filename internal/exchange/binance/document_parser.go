@@ -18,8 +18,9 @@ import (
 // DocumentParser is a parser for Binance documents
 type DocumentParser struct {
 	parser.HTTPDocumentParser
-	docType      string
-	tableContent string
+	docType           string
+	tableContent      string
+	collectedElements map[string]*goquery.Selection
 }
 
 // Parse parses an HTML document and extracts API endpoints
@@ -37,50 +38,56 @@ func (p *DocumentParser) Parse(r io.Reader, docType string, protectedEndpoints [
 
 	var endpoints []parser.Endpoint
 
+	parseEndpoint := func(headerElement string) func(i int, header *goquery.Selection) {
+		return func(i int, header *goquery.Selection) {
+			// Get the header text and clean it
+			headerText := cleanText(header.Text())
+			// Skip headers that are not endpoints (like "Terminology")
+			if isNonEndpointHeader(headerText) {
+				return
+			}
+
+			// Collect all content elements after the header until we find the next h3
+			var content []string
+			// Add the header text as the first item in content
+			content = append(content, headerText)
+
+			// Find all elements between this h3 and the next h3
+			var nextElements []*goquery.Selection
+			// Get the next h3 element
+			nextH3 := header.NextAll().Filter(headerElement).First()
+			if nextH3.Length() > 0 {
+				// If there's a next h3, get all elements between current h3 and next h3
+				header.NextUntil(headerElement).Each(func(j int, el *goquery.Selection) {
+					nextElements = append(nextElements, el)
+				})
+			} else {
+				// If there's no next h3, get all elements after current h3
+				header.NextAll().Each(func(j int, el *goquery.Selection) {
+					nextElements = append(nextElements, el)
+				})
+			}
+			// Process each element to extract content
+			for _, el := range nextElements {
+				p.collectElementContent(el, &content)
+			}
+
+			// Process the collected content to extract endpoint information
+			endpointData, valid := p.extractEndpoint(content, category)
+
+			// Only add valid endpoints
+			if valid && endpointData.Path != "" && endpointData.Method != "" {
+				p.processEndpoint(endpointData, protectedEndpoints)
+				endpoints = append(endpoints, *endpointData)
+			}
+		}
+	}
+
 	// Find all API endpoint sections
 	// In the Binance docs, each endpoint is under an h3 with class "anchor"
-	document.Find("h3.anchor").Each(func(i int, header *goquery.Selection) {
-		// Get the header text and clean it
-		headerText := cleanText(header.Text())
-		// Skip headers that are not endpoints (like "Terminology")
-		if isNonEndpointHeader(headerText) {
-			return
-		}
-
-		// Collect all content elements after the header until we find the next h3
-		var content []string
-		// Add the header text as the first item in content
-		content = append(content, headerText)
-
-		// Find all elements between this h3 and the next h3
-		var nextElements []*goquery.Selection
-		// Get the next h3 element
-		nextH3 := header.NextAll().Filter("h3").First()
-		if nextH3.Length() > 0 {
-			// If there's a next h3, get all elements between current h3 and next h3
-			header.NextUntil("h3").Each(func(j int, el *goquery.Selection) {
-				nextElements = append(nextElements, el)
-			})
-		} else {
-			// If there's no next h3, get all elements after current h3
-			header.NextAll().Each(func(j int, el *goquery.Selection) {
-				nextElements = append(nextElements, el)
-			})
-		}
-		// Process each element to extract content
-		for _, el := range nextElements {
-			p.collectElementContent(el, &content)
-		}
-
-		// Process the collected content to extract endpoint information
-		endpointData, valid := p.extractEndpoint(content, category)
-
-		// Only add valid endpoints
-		if valid && endpointData.Path != "" && endpointData.Method != "" {
-			p.processEndpoint(endpointData, protectedEndpoints)
-			endpoints = append(endpoints, *endpointData)
-		}
-	})
+	document.Find("h3.anchor").Each(parseEndpoint("h3"))
+	// sometimes the endpoints are under h4
+	document.Find("h4.anchor").Each(parseEndpoint("h4"))
 
 	return endpoints, nil
 }
@@ -319,7 +326,8 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 		// Extract enum values from description if present
 		if strings.Contains(description, "Supported values") ||
 			strings.Contains(description, "Possible values") ||
-			strings.Contains(description, "Valid values") {
+			strings.Contains(description, "Valid values") ||
+			strings.Contains(description, "Select response format") {
 			schema.Enum = extractEnumValues(description)
 		}
 
@@ -406,16 +414,36 @@ func extractEnumValues(description string) []interface{} {
 		return values
 	}
 	// Supported values: `FULL` or `MINI`. <br/>If none provided, the default is `FULL`
-	regex = regexp.MustCompile(`Supported values: (.*) <br/>`)
+	if strings.Contains(description, "<br/>") {
+		description = strings.Split(description, "<br/>")[0]
+	}
+	description = strings.Trim(description, " .'")
+	regex = regexp.MustCompile(`(Supported values:|Select response format:) (.*)`)
 	matches = regex.FindStringSubmatch(description)
-	if len(matches) > 1 {
-		s := matches[1]
-		// remove `.` at the end of the string
-		s = strings.TrimSuffix(s, ".")
+	if len(matches) > 2 {
+		s := matches[2]
 		var items []string
-		items = strings.Split(s, " or ")
+		if strings.Contains(s, " or ") {
+			items = strings.Split(s, " or ")
+		} else if strings.Contains(s, ", ") {
+			items = strings.Split(s, ", ")
+		} else {
+			items = []string{s}
+		}
 		for _, item := range items {
-			values = append(values, strings.Trim(strings.TrimSpace(item), "`"))
+			if strings.Contains(item, ",") {
+				for _, subItem := range strings.Split(item, ",") {
+					if strings.HasPrefix(subItem, "<") {
+						continue
+					}
+					values = append(values, strings.Trim(strings.TrimSpace(subItem), "`"))
+				}
+			} else {
+				if strings.HasPrefix(item, "<") {
+					continue
+				}
+				values = append(values, strings.Trim(strings.TrimSpace(item), "`"))
+			}
 		}
 		return values
 	}
@@ -706,7 +734,7 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 	}
 
 	// Extract response examples from code blocks
-	if s.HasClass("language-javascript") {
+	if s.HasClass("language-javascript") || s.HasClass("language-json") {
 		responseText := s.Find("code").Text()
 		if responseText != "" {
 			*content = append(*content, "Response: "+responseText)
@@ -718,7 +746,7 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 	if s.Is("p") && strings.Contains(s.Text(), "Parameters:") {
 		// Find the next table that is a direct sibling
 		var foundTable bool
-		s.NextUntil("h3").Each(func(i int, el *goquery.Selection) {
+		s.NextUntil("p").Each(func(i int, el *goquery.Selection) {
 			if !foundTable && el.Is("table") {
 				tableHtml, _ := el.Html()
 				if tableHtml != "" {
@@ -747,7 +775,7 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 
 	// Extract content from unordered lists
 	if s.Is("ul") {
-		s.Find("li").Each(func(i int, li *goquery.Selection) {
+		s.Children().Each(func(i int, li *goquery.Selection) {
 			text := cleanText(li.Text())
 			if text != "" {
 				*content = append(*content, "- "+text)
