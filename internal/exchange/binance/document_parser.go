@@ -121,6 +121,7 @@ func (p *DocumentParser) extractContent(endpoint *parser.Endpoint, content []str
 	var description strings.Builder
 	var foundEndpoint, foundWeight, foundParameters, foundDataSource, foundResponse bool
 	var responseContent strings.Builder
+	p.tableContent = ""
 
 	// Regular expressions to identify different sections
 	endpointRegex := regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH) (.+)$`)
@@ -263,6 +264,7 @@ func methodToAction(method string) string {
 
 // extractParameters extracts parameters from the endpoint description
 func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
+	logrus.Debugf("tableContent: %s", p.tableContent)
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader("<table>" + p.tableContent + "</table>"))
 	if err != nil {
 		return fmt.Errorf("creating document from reader: %w", err)

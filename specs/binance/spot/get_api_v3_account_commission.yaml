@@ -1,0 +1,89 @@
+components:
+    schemas:
+        SpotGetAccountCommissionV3Resp:
+            example: |
+                {
+                    "symbol": "BTCUSDT",
+                    "standardCommission": {         //Commission rates on trades from the order.
+                        "maker": "0.00000010",
+                        "taker": "0.00000020",
+                        "buyer": "0.00000030",
+                        "seller": "0.00000040" 
+                    },
+                    "taxCommission": {              //Tax commission rates for trades from the order.
+                        "maker": "0.00000112",
+                        "taker": "0.00000114",
+                        "buyer": "0.00000118",
+                        "seller": "0.00000116" 
+                    },
+                    "discount": {                   //Discount commission when paying in BNB
+                        "enabledForAccount": true,
+                        "enabledForSymbol": true,
+                        "discountAsset": "BNB",
+                        "discount": "0.75000000"      //Standard commission is reduced by this rate when paying commission in BNB.
+                    }
+                }
+            properties:
+                symbol:
+                    type: string
+                standardCommission:
+                    type: object
+                    properties:
+                        maker:
+                            type: string
+                        taker:
+                            type: string
+                        buyer:
+                            type: string
+                        seller:
+                            type: string
+                taxCommission:
+                    type: object
+                    properties:
+                        maker:
+                            type: string
+                        taker:
+                            type: string
+                        buyer:
+                            type: string
+                        seller:
+                            type: string
+                discount:
+                    type: object
+                    properties:
+                        enabledForAccount:
+                            type: boolean
+                        enabledForSymbol:
+                            type: boolean
+                        discountAsset:
+                            type: string
+                        discount:
+                            type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/account/commission:
+        get:
+            description: Get current account commission rates.
+            operationId: SpotGetAccountCommissionV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotGetAccountCommissionV3Resp'
+                    description: Successful operation
+            summary: Query Commission Rates (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs

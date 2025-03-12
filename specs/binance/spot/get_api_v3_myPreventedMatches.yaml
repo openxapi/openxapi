@@ -1,0 +1,90 @@
+components:
+    schemas:
+        SpotGetMyPreventedMatchesV3RespItem:
+            properties:
+                makerOrderId:
+                    type: number
+                makerPreventedQuantity:
+                    type: string
+                makerSymbol:
+                    type: string
+                preventedMatchId:
+                    type: number
+                price:
+                    type: string
+                selfTradePreventionMode:
+                    type: string
+                symbol:
+                    type: string
+                takerOrderId:
+                    type: number
+                tradeGroupId:
+                    type: number
+                transactTime:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/myPreventedMatches:
+        get:
+            description: |-
+                Displays the list of orders that were expired due to STP.
+                These are the combinations supported:
+                - symbol + preventedMatchId
+                - symbol + orderId
+                - symbol + orderId + fromPreventedMatchId (limit will default to 500)
+                - symbol + orderId + fromPreventedMatchId + limit
+            operationId: SpotGetMyPreventedMatchesV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: preventedMatchId
+                  schema:
+                    type: integer
+                - in: query
+                  name: orderId
+                  schema:
+                    type: integer
+                - in: query
+                  name: fromPreventedMatchId
+                  schema:
+                    type: integer
+                - description: 'Default: `500`; Max: `1000`'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[  {    "symbol": "BTCUSDT",    "preventedMatchId": 1,    "takerOrderId": 5,    "makerSymbol": "BTCUSDT",    "makerOrderId": 3,    "tradeGroupId": 1,    "selfTradePreventionMode": "EXPIRE_MAKER",    "price": "1.100000",    "makerPreventedQuantity": "1.300000",    "transactTime": 1669101687094  }]'
+                                items:
+                                    $ref: '#/components/schemas/SpotGetMyPreventedMatchesV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: Query Prevented Matches (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs

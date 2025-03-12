@@ -585,6 +585,37 @@ components:
                 workingTime:
                     type: number
             type: object
+        SpotCreateSorOrderTestV3Resp:
+            example: |
+                {
+                  "standardCommissionForOrder": {  //Standard commission rates on trades from the order.
+                    "maker": "0.00000112",
+                    "taker": "0.00000114"
+                  },
+                  "taxCommissionForOrder": {       //Tax commission rates for trades from the order
+                    "maker": "0.00000112",
+                    "taker": "0.00000114"
+                  },
+                  "discount": {                    //Discount on standard commissions when paying in BNB.
+                    "enabledForAccount": true,
+                    "enabledForSymbol": true,
+                    "discountAsset": "BNB",
+                    "discount": "0.25000000"       //Standard commission is reduced by this rate when paying commission in BNB.
+                  }
+                }
+            properties:
+                discount:
+                    type: object
+                standardCommissionForOrder:
+                    properties:
+                        maker:
+                            type: string
+                        taker:
+                            type: string
+                    type: object
+                taxCommissionForOrder:
+                    type: object
+            type: object
         SpotCreateSorOrderV3Resp:
             example: '{  "symbol": "BTCUSDT",  "orderId": 2,  "orderListId": -1,  "clientOrderId": "sBI1KM6nNtOfj5tccZSKly",  "transactTime": 1689149087774,  "price": "31000.00000000",  "origQty": "0.50000000",  "executedQty": "0.50000000",  "origQuoteOrderQty": "0.000000",  "cummulativeQuoteQty": "14000.00000000",  "status": "FILLED",  "timeInForce": "GTC",  "type": "LIMIT",  "side": "BUY",  "workingTime": 1689149087774,  "fills": [    {      "matchType": "ONE_PARTY_TRADE_REPORT",      "price": "28000.00000000",      "qty": "0.50000000",      "commission": "0.00000000",      "commissionAsset": "BTC",      "tradeId": -1,      "allocId": 0    }  ],  "workingFloor": "SOR",                "selfTradePreventionMode": "NONE",  "usedSor": true}'
             properties:
@@ -643,6 +674,12 @@ components:
                     type: string
                 workingTime:
                     type: number
+            type: object
+        SpotCreateUserDataStreamV3Resp:
+            example: '{  "listenKey": "pqia91ma19a5s61cv6a81va65sdf19v8a65a1a5s61cv6a81va65sdf19v8a65a1"}'
+            properties:
+                listenKey:
+                    type: string
             type: object
         SpotDeleteOpenOrdersV3RespItem:
             example: |-
@@ -897,6 +934,104 @@ components:
                     type: integer
                 type:
                     type: string
+            type: object
+        SpotDeleteUserDataStreamV3Resp:
+            example: '{}'
+            type: object
+        SpotGetAccountCommissionV3Resp:
+            example: "{\n    \"symbol\": \"BTCUSDT\",\n    \"standardCommission\": {         //Commission rates on trades from the order.\n        \"maker\": \"0.00000010\",\n        \"taker\": \"0.00000020\",\n        \"buyer\": \"0.00000030\",\n        \"seller\": \"0.00000040\" \n    },\n    \"taxCommission\": {              //Tax commission rates for trades from the order.\n        \"maker\": \"0.00000112\",\n        \"taker\": \"0.00000114\",\n        \"buyer\": \"0.00000118\",\n        \"seller\": \"0.00000116\" \n    },\n    \"discount\": {                   //Discount commission when paying in BNB\n        \"enabledForAccount\": true,\n        \"enabledForSymbol\": true,\n        \"discountAsset\": \"BNB\",\n        \"discount\": \"0.75000000\"      //Standard commission is reduced by this rate when paying commission in BNB.\n    }\n}\n"
+            properties:
+                discount:
+                    properties:
+                        discount:
+                            type: string
+                        discountAsset:
+                            type: string
+                        enabledForAccount:
+                            type: boolean
+                        enabledForSymbol:
+                            type: boolean
+                    type: object
+                standardCommission:
+                    properties:
+                        buyer:
+                            type: string
+                        maker:
+                            type: string
+                        seller:
+                            type: string
+                        taker:
+                            type: string
+                    type: object
+                symbol:
+                    type: string
+                taxCommission:
+                    properties:
+                        buyer:
+                            type: string
+                        maker:
+                            type: string
+                        seller:
+                            type: string
+                        taker:
+                            type: string
+                    type: object
+            type: object
+        SpotGetAccountV3Resp:
+            example: '{  "makerCommission": 15,  "takerCommission": 15,  "buyerCommission": 0,  "sellerCommission": 0,  "commissionRates": {    "maker": "0.00150000",    "taker": "0.00150000",    "buyer": "0.00000000",    "seller": "0.00000000"  },  "canTrade": true,  "canWithdraw": true,  "canDeposit": true,  "brokered": false,  "requireSelfTradePrevention": false,  "preventSor": false,  "updateTime": 123456789,  "accountType": "SPOT",  "balances": [    {      "asset": "BTC",      "free": "4723846.89208129",      "locked": "0.00000000"    },    {      "asset": "LTC",      "free": "4763368.68006011",      "locked": "0.00000000"    }  ],  "permissions": [    "SPOT"  ],  "uid": 354937868}'
+            properties:
+                accountType:
+                    type: string
+                balances:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            free:
+                                type: string
+                            locked:
+                                type: string
+                        type: object
+                    type: array
+                brokered:
+                    type: boolean
+                buyerCommission:
+                    type: number
+                canDeposit:
+                    type: boolean
+                canTrade:
+                    type: boolean
+                canWithdraw:
+                    type: boolean
+                commissionRates:
+                    properties:
+                        buyer:
+                            type: string
+                        maker:
+                            type: string
+                        seller:
+                            type: string
+                        taker:
+                            type: string
+                    type: object
+                makerCommission:
+                    type: number
+                permissions:
+                    items:
+                        type: string
+                    type: array
+                preventSor:
+                    type: boolean
+                requireSelfTradePrevention:
+                    type: boolean
+                sellerCommission:
+                    type: number
+                takerCommission:
+                    type: number
+                uid:
+                    type: number
+                updateTime:
+                    type: number
             type: object
         SpotGetAggTradesV3RespItem:
             example: |
@@ -1867,6 +2002,89 @@ components:
                     - type: string
                     - type: number
             type: array
+        SpotGetMyAllocationsV3RespItem:
+            properties:
+                allocationId:
+                    type: number
+                allocationType:
+                    type: string
+                commission:
+                    type: string
+                commissionAsset:
+                    type: string
+                isAllocator:
+                    type: boolean
+                isBuyer:
+                    type: boolean
+                isMaker:
+                    type: boolean
+                orderId:
+                    type: number
+                orderListId:
+                    type: number
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+            type: object
+        SpotGetMyPreventedMatchesV3RespItem:
+            properties:
+                makerOrderId:
+                    type: number
+                makerPreventedQuantity:
+                    type: string
+                makerSymbol:
+                    type: string
+                preventedMatchId:
+                    type: number
+                price:
+                    type: string
+                selfTradePreventionMode:
+                    type: string
+                symbol:
+                    type: string
+                takerOrderId:
+                    type: number
+                tradeGroupId:
+                    type: number
+                transactTime:
+                    type: number
+            type: object
+        SpotGetMyTradesV3RespItem:
+            properties:
+                commission:
+                    type: string
+                commissionAsset:
+                    type: string
+                id:
+                    type: number
+                isBestMatch:
+                    type: boolean
+                isBuyer:
+                    type: boolean
+                isMaker:
+                    type: boolean
+                orderId:
+                    type: number
+                orderListId:
+                    type: number
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+            type: object
         SpotGetOpenOrderListV3RespItem:
             properties:
                 contingencyType:
@@ -1999,6 +2217,19 @@ components:
             type: object
         SpotGetPingV3Resp:
             example: '{}'
+            type: object
+        SpotGetRateLimitOrderV3RespItem:
+            properties:
+                count:
+                    type: number
+                interval:
+                    type: string
+                intervalNum:
+                    type: number
+                limit:
+                    type: number
+                rateLimitType:
+                    type: string
             type: object
         SpotGetTicker24hrV3RespItem:
             example: |
@@ -2237,12 +2468,68 @@ components:
                     - type: string
                     - type: number
             type: array
+        SpotUpdateUserDataStreamV3Resp:
+            example: '{}'
+            type: object
 info:
     description: OpenAPI specification for Binance cryptocurrency exchange - Spot API
     title: Binance Spot API
     version: 1.0.0
 openapi: 3.0.3
 paths:
+    /api/v3/account:
+        get:
+            description: Get current account information.
+            operationId: SpotGetAccountV3
+            parameters:
+                - description: 'When set to `true`, emits only the non-zero balances of an account. <br/>Default value: `false`'
+                  in: query
+                  name: omitZeroBalances
+                  schema:
+                    type: boolean
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotGetAccountV3Resp'
+                    description: Successful operation
+            summary: Account information (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs
+    /api/v3/account/commission:
+        get:
+            description: Get current account commission rates.
+            operationId: SpotGetAccountCommissionV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotGetAccountCommissionV3Resp'
+                    description: Successful operation
+            summary: Query Commission Rates (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs
     /api/v3/aggTrades:
         get:
             description: Get compressed, aggregate trades. Trades that fill at the time, from the same taker order, with the same price will have the quantity aggregated.
@@ -2579,6 +2866,183 @@ paths:
             summary: Kline/Candlestick data
             tags:
                 - Market Data endpoints
+                - V3 APIs
+    /api/v3/myAllocations:
+        get:
+            description: Retrieves allocations resulting from SOR order placement.
+            operationId: SpotGetMyAllocationsV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    type: integer
+                - in: query
+                  name: fromAllocationId
+                  schema:
+                    type: integer
+                - description: Default 500;Max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: orderId
+                  schema:
+                    type: integer
+                - description: The value cannot be greater than `60000`.
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[  {    "symbol": "BTCUSDT",    "allocationId": 0,    "allocationType": "SOR",    "orderId": 1,    "orderListId": -1,    "price": "1.00000000",    "qty": "5.00000000",    "quoteQty": "5.00000000",    "commission": "0.00000000",    "commissionAsset": "BTC",    "time": 1687506878118,    "isBuyer": true,    "isMaker": false,    "isAllocator": false  }]'
+                                items:
+                                    $ref: '#/components/schemas/SpotGetMyAllocationsV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: Query Allocations (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs
+    /api/v3/myPreventedMatches:
+        get:
+            description: |-
+                Displays the list of orders that were expired due to STP.
+                These are the combinations supported:
+                - symbol + preventedMatchId
+                - symbol + orderId
+                - symbol + orderId + fromPreventedMatchId (limit will default to 500)
+                - symbol + orderId + fromPreventedMatchId + limit
+            operationId: SpotGetMyPreventedMatchesV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: preventedMatchId
+                  schema:
+                    type: integer
+                - in: query
+                  name: orderId
+                  schema:
+                    type: integer
+                - in: query
+                  name: fromPreventedMatchId
+                  schema:
+                    type: integer
+                - description: 'Default: `500`; Max: `1000`'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[  {    "symbol": "BTCUSDT",    "preventedMatchId": 1,    "takerOrderId": 5,    "makerSymbol": "BTCUSDT",    "makerOrderId": 3,    "tradeGroupId": 1,    "selfTradePreventionMode": "EXPIRE_MAKER",    "price": "1.100000",    "makerPreventedQuantity": "1.300000",    "transactTime": 1669101687094  }]'
+                                items:
+                                    $ref: '#/components/schemas/SpotGetMyPreventedMatchesV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: Query Prevented Matches (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs
+    /api/v3/myTrades:
+        get:
+            description: Get trades for a specific account and symbol.
+            operationId: SpotGetMyTradesV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: This can only be used in combination with `symbol`.
+                  in: query
+                  name: orderId
+                  schema:
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    type: integer
+                - description: TradeId to fetch from. Default gets most recent trades.
+                  in: query
+                  name: fromId
+                  schema:
+                    type: integer
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[  {    "symbol": "BNBBTC",    "id": 28457,    "orderId": 100234,    "orderListId": -1,    "price": "4.00000100",    "qty": "12.00000000",    "quoteQty": "48.000012",    "commission": "10.10000000",    "commissionAsset": "BNB",    "time": 1499865549590,    "isBuyer": true,    "isMaker": false,    "isBestMatch": true  }]'
+                                items:
+                                    $ref: '#/components/schemas/SpotGetMyTradesV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: Account trade list (USER_DATA)
+            tags:
+                - Account Endpoints
                 - V3 APIs
     /api/v3/openOrderList:
         get:
@@ -3981,6 +4445,35 @@ paths:
             tags:
                 - General endpoints
                 - V3 APIs
+    /api/v3/rateLimit/order:
+        get:
+            description: Displays the user's unfilled order count for all intervals.
+            operationId: SpotGetRateLimitOrderV3
+            parameters:
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[  {    "rateLimitType": "ORDERS",    "interval": "SECOND",    "intervalNum": 10,    "limit": 50,    "count": 0  },  {    "rateLimitType": "ORDERS",    "interval": "DAY",    "intervalNum": 1,    "limit": 160000,    "count": 0  }]'
+                                items:
+                                    $ref: '#/components/schemas/SpotGetRateLimitOrderV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: Query Unfilled Order Count (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs
     /api/v3/sor/order:
         post:
             description: Places an order using smart order routing (SOR).
@@ -4152,7 +4645,17 @@ paths:
                   required: true
                   schema:
                     type: integer
-            responses: {}
+                - in: query
+                  name: computeCommissionRates
+                  schema:
+                    type: boolean
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotCreateSorOrderTestV3Resp'
+                    description: Successful operation
             summary: Test new order using SOR (TRADE)
             tags:
                 - Trading endpoints
@@ -4504,6 +5007,63 @@ paths:
             summary: UIKlines
             tags:
                 - Market Data endpoints
+                - V3 APIs
+    /api/v3/userDataStream:
+        delete:
+            description: Close out a user data stream.
+            operationId: SpotDeleteUserDataStreamV3
+            parameters:
+                - in: query
+                  name: listenKey
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotDeleteUserDataStreamV3Resp'
+                    description: Successful operation
+            summary: Close user data stream (USER_STREAM)
+            tags:
+                - User data stream endpoints
+                - V3 APIs
+        post:
+            description: Start a new user data stream. The stream will close after 60 minutes unless a keepalive is sent.
+            operationId: SpotCreateUserDataStreamV3
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotCreateUserDataStreamV3Resp'
+                    description: Successful operation
+            summary: Start user data stream (USER_STREAM)
+            tags:
+                - User data stream endpoints
+                - V3 APIs
+        put:
+            description: Keepalive a user data stream to prevent a time out. User data streams will close after 60 minutes. It's recommended to send a ping about every 30 minutes.
+            operationId: SpotUpdateUserDataStreamV3
+            parameters:
+                - in: query
+                  name: listenKey
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotUpdateUserDataStreamV3Resp'
+                    description: Successful operation
+            summary: Keepalive user data stream (USER_STREAM)
+            tags:
+                - User data stream endpoints
                 - V3 APIs
 servers:
     - description: Binance Spot API Server

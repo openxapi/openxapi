@@ -1,0 +1,96 @@
+components:
+    schemas:
+        SpotGetMyTradesV3RespItem:
+            properties:
+                commission:
+                    type: string
+                commissionAsset:
+                    type: string
+                id:
+                    type: number
+                isBestMatch:
+                    type: boolean
+                isBuyer:
+                    type: boolean
+                isMaker:
+                    type: boolean
+                orderId:
+                    type: number
+                orderListId:
+                    type: number
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/myTrades:
+        get:
+            description: Get trades for a specific account and symbol.
+            operationId: SpotGetMyTradesV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: This can only be used in combination with `symbol`.
+                  in: query
+                  name: orderId
+                  schema:
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    type: integer
+                - description: TradeId to fetch from. Default gets most recent trades.
+                  in: query
+                  name: fromId
+                  schema:
+                    type: integer
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[  {    "symbol": "BNBBTC",    "id": 28457,    "orderId": 100234,    "orderListId": -1,    "price": "4.00000100",    "qty": "12.00000000",    "quoteQty": "48.000012",    "commission": "10.10000000",    "commissionAsset": "BNB",    "time": 1499865549590,    "isBuyer": true,    "isMaker": false,    "isBestMatch": true  }]'
+                                items:
+                                    $ref: '#/components/schemas/SpotGetMyTradesV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: Account trade list (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs

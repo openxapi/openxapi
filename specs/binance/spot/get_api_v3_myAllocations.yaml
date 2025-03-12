@@ -1,0 +1,95 @@
+components:
+    schemas:
+        SpotGetMyAllocationsV3RespItem:
+            properties:
+                allocationId:
+                    type: number
+                allocationType:
+                    type: string
+                commission:
+                    type: string
+                commissionAsset:
+                    type: string
+                isAllocator:
+                    type: boolean
+                isBuyer:
+                    type: boolean
+                isMaker:
+                    type: boolean
+                orderId:
+                    type: number
+                orderListId:
+                    type: number
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/myAllocations:
+        get:
+            description: Retrieves allocations resulting from SOR order placement.
+            operationId: SpotGetMyAllocationsV3
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    type: integer
+                - in: query
+                  name: fromAllocationId
+                  schema:
+                    type: integer
+                - description: Default 500;Max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: orderId
+                  schema:
+                    type: integer
+                - description: The value cannot be greater than `60000`.
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[  {    "symbol": "BTCUSDT",    "allocationId": 0,    "allocationType": "SOR",    "orderId": 1,    "orderListId": -1,    "price": "1.00000000",    "qty": "5.00000000",    "quoteQty": "5.00000000",    "commission": "0.00000000",    "commissionAsset": "BTC",    "time": 1687506878118,    "isBuyer": true,    "isMaker": false,    "isAllocator": false  }]'
+                                items:
+                                    $ref: '#/components/schemas/SpotGetMyAllocationsV3RespItem'
+                                type: array
+                    description: Successful operation
+            summary: Query Allocations (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs

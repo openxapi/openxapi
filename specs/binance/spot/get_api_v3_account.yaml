@@ -1,0 +1,94 @@
+components:
+    schemas:
+        SpotGetAccountV3Resp:
+            example: '{  "makerCommission": 15,  "takerCommission": 15,  "buyerCommission": 0,  "sellerCommission": 0,  "commissionRates": {    "maker": "0.00150000",    "taker": "0.00150000",    "buyer": "0.00000000",    "seller": "0.00000000"  },  "canTrade": true,  "canWithdraw": true,  "canDeposit": true,  "brokered": false,  "requireSelfTradePrevention": false,  "preventSor": false,  "updateTime": 123456789,  "accountType": "SPOT",  "balances": [    {      "asset": "BTC",      "free": "4723846.89208129",      "locked": "0.00000000"    },    {      "asset": "LTC",      "free": "4763368.68006011",      "locked": "0.00000000"    }  ],  "permissions": [    "SPOT"  ],  "uid": 354937868}'
+            properties:
+                accountType:
+                    type: string
+                balances:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            free:
+                                type: string
+                            locked:
+                                type: string
+                        type: object
+                    type: array
+                brokered:
+                    type: boolean
+                buyerCommission:
+                    type: number
+                canDeposit:
+                    type: boolean
+                canTrade:
+                    type: boolean
+                canWithdraw:
+                    type: boolean
+                commissionRates:
+                    properties:
+                        buyer:
+                            type: string
+                        maker:
+                            type: string
+                        seller:
+                            type: string
+                        taker:
+                            type: string
+                    type: object
+                makerCommission:
+                    type: number
+                permissions:
+                    items:
+                        type: string
+                    type: array
+                preventSor:
+                    type: boolean
+                requireSelfTradePrevention:
+                    type: boolean
+                sellerCommission:
+                    type: number
+                takerCommission:
+                    type: number
+                uid:
+                    type: number
+                updateTime:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v3/account:
+        get:
+            description: Get current account information.
+            operationId: SpotGetAccountV3
+            parameters:
+                - description: 'When set to `true`, emits only the non-zero balances of an account. <br/>Default value: `false`'
+                  in: query
+                  name: omitZeroBalances
+                  schema:
+                    type: boolean
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotGetAccountV3Resp'
+                    description: Successful operation
+            summary: Account information (USER_DATA)
+            tags:
+                - Account Endpoints
+                - V3 APIs
