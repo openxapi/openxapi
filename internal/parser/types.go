@@ -3,7 +3,7 @@ package parser
 // Documentation represents information about API documentation
 type Documentation struct {
 	URLs               []string          // URLs to the documentation
-	Type               string            // Type of documentation (e.g., "html", "md")
+	Type               string            // Type of documentation (e.g., "spot", "futures")
 	ProtectedEndpoints []string          // List of protected endpoints
 	Options            map[string]string // Additional options for parsing
 }

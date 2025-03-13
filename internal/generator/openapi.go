@@ -26,7 +26,7 @@ func NewGenerator(outputDir string) *Generator {
 }
 
 // GenerateEndpoints generates an OpenAPI specification for each endpoint
-func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoints []parser.Endpoint, baseURL string) error {
+func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoints []parser.Endpoint) error {
 	baseDir := filepath.Join(g.outputDir, exchange, apiType)
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		return fmt.Errorf("creating directory: %w", err)
@@ -59,7 +59,17 @@ func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoin
 }
 
 // Generate creates an OpenAPI specification from parsed endpoints
-func (g *Generator) Generate(exchange, version, apiType, baseURL string) error {
+func (g *Generator) Generate(exchange, version, apiType string, servers []string) error {
+	if len(servers) == 0 {
+		return fmt.Errorf("no servers found for %s %s API", exchange, apiType)
+	}
+	openapiServers := make(openapi3.Servers, len(servers))
+	for i, server := range servers {
+		openapiServers[i] = &openapi3.Server{
+			URL:         server,
+			Description: fmt.Sprintf("%s %s API Server", strings.Title(exchange), strings.Title(apiType)),
+		}
+	}
 	spec := &openapi3.T{
 		OpenAPI: "3.0.3",
 		Info: &openapi3.Info{
@@ -67,12 +77,7 @@ func (g *Generator) Generate(exchange, version, apiType, baseURL string) error {
 			Description: fmt.Sprintf("OpenAPI specification for %s cryptocurrency exchange - %s API", strings.Title(exchange), strings.Title(apiType)),
 			Version:     version,
 		},
-		Servers: openapi3.Servers{
-			&openapi3.Server{
-				URL:         baseURL,
-				Description: fmt.Sprintf("%s %s API Server", strings.Title(exchange), strings.Title(apiType)),
-			},
-		},
+		Servers: openapiServers,
 		Paths: openapi3.NewPaths(),
 		Components: &openapi3.Components{
 			Schemas:   make(openapi3.Schemas),

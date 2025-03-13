@@ -1,15 +1,36 @@
-# OpenXAPI
+# OpenXAPI - Open eXchange API
+
+### Write APIs in Specification.
+
+### One Spec. All Exchanges. Any Language.
+
+OpenXAPI provides standardized OpenAPI and AsyncAPI specifications for cryptocurrency exchanges and DeFi protocols, enabling seamless integration and SDK generation across multiple programming languages.
+
+## Implementations
+
+### REST API
 
 OpenXAPI is a Go program that automatically generates OpenAPI Specifications from various cryptocurrency exchange API documentation. It enables automatic SDK generation for multiple programming languages using the generated OpenAPI Specs.
 
+### WebSocket API
+
+OpenXAPI also maintains AsyncAPI Specifications for cryptocurrency exchanges and DeFi protocols.
+So that you can use the same specification to generate websocket client SDKs for multiple programming languages.
+
 ## Features
 
+### Everything in one place
+
 - Automatic OpenAPI 3.0 specification generation from exchange API docs
-- Support for multiple cryptocurrency exchanges
+- AsyncAPI specification for exchanges and DeFi protocols
+- Multi-language SDK generation support
+
+### Full coverage
+
+- Support for multiple cryptocurrency exchanges and DeFi protocols
 - Configurable API documentation URL management
 - Change detection and automatic spec regeneration
 - Version history tracking
-- Multi-language SDK generation support
 - Sample file support for offline development and testing
 
 ## Project Structure
@@ -52,12 +73,12 @@ go mod download
 
 3. Build the project:
 ```bash
-go build ./cmd/openxapi
+make build
 ```
 
 ## Usage
 
-1. Configure exchange API documentation URLs in `configs/exchanges.yaml`
+1. Configure exchange API documentation URLs in `configs/config.yaml`
 2. Run the OpenAPI specification generator:
 ```bash
 ./openxapi generate
@@ -67,17 +88,11 @@ go build ./cmd/openxapi
 
 The program can save API documentation to sample files and use them for offline development and testing:
 
-1. Generate sample files by running the program normally:
-```bash
-./openxapi
-```
-
-2. Use the generated sample files instead of making HTTP requests:
 ```bash
 ./openxapi --use-samples
 ```
 
-3. Specify a custom directory for sample files:
+Specify a custom directory for sample files:
 ```bash
 ./openxapi --use-samples --samples-dir=/path/to/samples
 ```

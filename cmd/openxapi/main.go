@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/adshao/openxapi/internal/config"
 	"github.com/adshao/openxapi/internal/exchange/binance"
 	"github.com/adshao/openxapi/internal/generator"
 	"github.com/adshao/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v3"
 )
 
 var (
@@ -27,32 +27,6 @@ func init() {
 	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/webpage/<exchange>)")
 }
 
-type Config struct {
-	Exchanges map[string]Exchange `yaml:"exchanges"`
-	Settings  Settings            `yaml:"settings"`
-}
-
-type Exchange struct {
-	Name        string            `yaml:"name"`
-	Version     string            `yaml:"version"`
-	Description string            `yaml:"description"`
-	Docs        []Documentation   `yaml:"docs"`
-	BaseURLs    map[string]string `yaml:"base_urls"`
-}
-
-type Documentation struct {
-	Type               string   `yaml:"type"`
-	URLs               []string `yaml:"urls"`
-	ProtectedEndpoints []string `yaml:"protected_endpoints"`
-}
-
-type Settings struct {
-	UpdateInterval string `yaml:"update_interval"`
-	OutputDir      string `yaml:"output_dir"`
-	HistoryDir     string `yaml:"history_dir"`
-	LogLevel       string `yaml:"log_level"`
-}
-
 func main() {
 	flag.Parse()
 
@@ -65,7 +39,7 @@ func main() {
 	logrus.SetLevel(level)
 
 	// Read configuration
-	config, err := loadConfig(configFile)
+	config, err := config.LoadConfig(configFile)
 	if err != nil {
 		logrus.Fatalf("Failed to load configuration: %v", err)
 	}
@@ -121,20 +95,14 @@ func main() {
 				continue
 			}
 
-			// Get base URL for this API type
-			baseURL, ok := exchange.BaseURLs[doc.Type]
-			if !ok {
-				logrus.Errorf("No base URL found for %s %s API", exchangeName, doc.Type)
-				continue
-			}
 			// Generate OpenAPI specification for each endpoint
-			if err := gen.GenerateEndpoints(exchangeName, exchange.Version, doc.Type, endpoints, baseURL); err != nil {
+			if err := gen.GenerateEndpoints(exchangeName, exchange.Version, doc.Type, endpoints); err != nil {
 				logrus.Errorf("Failed to generate OpenAPI endpoint specs for %s %s API: %v", exchangeName, doc.Type, err)
 				continue
 			}
 
 			// Generate OpenAPI specification
-			if err := gen.Generate(exchangeName, exchange.Version, doc.Type, baseURL); err != nil {
+			if err := gen.Generate(exchangeName, exchange.Version, doc.Type, doc.Servers); err != nil {
 				logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
 				continue
 			}
@@ -146,21 +114,7 @@ func main() {
 	logrus.Info("OpenXAPI completed")
 }
 
-func loadConfig(path string) (*Config, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, fmt.Errorf("reading config file: %w", err)
-	}
-
-	var config Config
-	if err := yaml.Unmarshal(data, &config); err != nil {
-		return nil, fmt.Errorf("parsing config file: %w", err)
-	}
-
-	return &config, nil
-}
-
-func createDirectories(settings Settings) error {
+func createDirectories(settings config.Settings) error {
 	dirs := []string{settings.OutputDir, settings.HistoryDir}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0755); err != nil {

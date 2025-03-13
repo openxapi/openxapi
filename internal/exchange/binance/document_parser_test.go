@@ -179,7 +179,7 @@ func TestExtractContent(t *testing.T) {
 		docType: "spot",
 	}
 	endpoint := &parser.Endpoint{
-		Tags:       []string{"Market Data endpoints"},
+		Tags:       []string{"Market Data"},
 		Extensions: make(map[string]interface{}),
 	}
 	content := []string{
@@ -202,7 +202,7 @@ func TestExtractContent(t *testing.T) {
 	assert.Equal(t, nil, endpoint.Extensions["x-weight"])
 	assert.Equal(t, "Memory", endpoint.Extensions["x-data-source"])
 	assert.Equal(t, "SpotGetDepthV3", endpoint.OperationID)
-	assert.Equal(t, []string{"Market Data endpoints", "V3 APIs"}, endpoint.Tags)
+	assert.Equal(t, []string{"Market Data", "V3"}, endpoint.Tags)
 }
 
 func TestExtractMaxMinDefault(t *testing.T) {
