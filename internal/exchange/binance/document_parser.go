@@ -156,7 +156,7 @@ func (p *DocumentParser) extractContent(endpoint *parser.Endpoint, content []str
 				apiVersionMatches := apiVersionRegex.FindStringSubmatch(endpoint.Path)
 				if len(apiVersionMatches) == 2 {
 					apiVersion := apiVersionMatches[1]
-					endpoint.Tags = append(endpoint.Tags, fmt.Sprintf("%s APIs", strings.ToUpper(apiVersion)))
+					endpoint.Tags = append(endpoint.Tags, strings.ToUpper(apiVersion))
 				}
 				continue
 			}
@@ -656,7 +656,7 @@ func isNonEndpointHeader(text string) bool {
 func extractCategory(title string) string {
 	parts := strings.Split(title, "|")
 	if len(parts) > 0 {
-		return strings.TrimSpace(parts[0])
+		return strings.TrimSuffix(strings.TrimSuffix(strings.TrimSpace(parts[0]), " endpoints"), " Endpoints")
 	}
 	return "General"
 }
