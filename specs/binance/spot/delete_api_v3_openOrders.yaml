@@ -1,5 +1,20 @@
 components:
     schemas:
+        SpotDeleteOpenOrdersV3Req:
+            type: object
+            properties:
+                symbol:
+                    default: ""
+                    type: string
+                recvWindow:
+                    default: 5000
+                    type: integer
+                    maximum: 60000
+                timestamp:
+                    type: integer
+            required:
+                - symbol
+                - timestamp
         SpotDeleteOpenOrdersV3RespItem:
             example: |-
                 {
@@ -142,24 +157,13 @@ paths:
                 Cancels all active orders on a symbol.
                 This includes orders that are part of an order list.
             operationId: SpotDeleteOpenOrdersV3
-            parameters:
-                - in: query
-                  name: symbol
-                  required: true
-                  schema:
-                    default: ""
-                    type: string
-                - description: The value cannot be greater than `60000`
-                  in: query
-                  name: recvWindow
-                  schema:
-                    type: integer
-                    maximum: 60000
-                - in: query
-                  name: timestamp
-                  required: true
-                  schema:
-                    type: integer
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/SpotDeleteOpenOrdersV3Req'
+                description: The request body for SpotDeleteOpenOrdersV3
+                required: true
             responses:
                 "200":
                     content:

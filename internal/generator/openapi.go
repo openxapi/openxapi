@@ -101,7 +101,7 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 		// Read each pathItem spec, load yaml file into map[string]*openapi3.PathItem
 		endpointSpec, err := openapi3.NewLoader().LoadFromFile(filepath.Join(baseDir, file.Name()))
 		if err != nil {
-			return fmt.Errorf("opening endpoint spec: %w", err)
+			return fmt.Errorf("opening endpoint spec %s: %w", file.Name(), err)
 		}
 
 		// Update spec with paths
@@ -235,15 +235,15 @@ func (g *Generator) convertEndpointToPathItem(endpoint *parser.Endpoint) *openap
 
 	pathItem := &openapi3.PathItem{}
 	switch endpoint.Method {
-	case "GET":
+	case parser.MethodGet:
 		pathItem.Get = operation
-	case "POST":
+	case parser.MethodPost:
 		pathItem.Post = operation
-	case "PUT":
+	case parser.MethodPut:
 		pathItem.Put = operation
-	case "DELETE":
+	case parser.MethodDelete:
 		pathItem.Delete = operation
-	case "PATCH":
+	case parser.MethodPatch:
 		pathItem.Patch = operation
 	}
 

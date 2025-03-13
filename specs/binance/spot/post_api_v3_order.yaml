@@ -1,5 +1,65 @@
 components:
     schemas:
+        SpotCreateOrderV3Req:
+            type: object
+            properties:
+                symbol:
+                    default: ""
+                    type: string
+                side:
+                    description: Please see <a href="/docs/binance-spot-api-docs/enums#side">Enums</a> for supported values.
+                    default: ""
+                    type: string
+                type:
+                    description: Please see <a href="/docs/binance-spot-api-docs/enums#ordertypes">Enums</a> for supported values
+                    default: ""
+                    type: string
+                timeInForce:
+                    description: Please see <a href="/docs/binance-spot-api-docs/enums#timeinforce">Enums</a> for supported values.
+                    default: ""
+                    type: string
+                quantity:
+                    type: number
+                quoteOrderQty:
+                    type: number
+                price:
+                    type: number
+                newClientOrderId:
+                    description: A unique id among open orders. Automatically generated if not sent.<br/> Orders with the same `newClientOrderID` can be accepted only when the previous one is filled, otherwise the order will be rejected.
+                    default: ""
+                    type: string
+                strategyId:
+                    type: integer
+                strategyType:
+                    description: The value cannot be less than `1000000`.
+                    type: integer
+                stopPrice:
+                    description: Used with `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, and `TAKE_PROFIT_LIMIT` orders.
+                    type: number
+                trailingDelta:
+                    description: Used with `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, and `TAKE_PROFIT_LIMIT` orders.
+                    type: integer
+                icebergQty:
+                    description: Used with `LIMIT`, `STOP_LOSS_LIMIT`, and `TAKE_PROFIT_LIMIT` to create an iceberg order.
+                    type: number
+                newOrderRespType:
+                    description: Set the response JSON. `ACK`, `RESULT`, or `FULL`; `MARKET` and `LIMIT` order types default to `FULL`, all other orders default to `ACK`.
+                    default: ""
+                    type: string
+                selfTradePreventionMode:
+                    description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#stpmodes">STP Modes</a>.'
+                    default: ""
+                    type: string
+                recvWindow:
+                    description: The value cannot be greater than `60000`
+                    type: integer
+                timestamp:
+                    type: integer
+            required:
+                - symbol
+                - side
+                - type
+                - timestamp
         SpotCreateOrderV3Resp:
             example: |
               {
@@ -115,97 +175,11 @@ paths:
         post:
             description: Send in a new order.
             operationId: SpotCreateOrderV3
-            parameters:
-                - in: query
-                  name: symbol
-                  required: true
-                  schema:
-                    default: ""
-                    type: string
-                - description: Please see <a href="/docs/binance-spot-api-docs/enums#side">Enums</a> for supported values.
-                  in: query
-                  name: side
-                  required: true
-                  schema:
-                    default: ""
-                    type: string
-                - description: Please see <a href="/docs/binance-spot-api-docs/enums#ordertypes">Enums</a> for supported values
-                  in: query
-                  name: type
-                  required: true
-                  schema:
-                    default: ""
-                    type: string
-                - description: Please see <a href="/docs/binance-spot-api-docs/enums#timeinforce">Enums</a> for supported values.
-                  in: query
-                  name: timeInForce
-                  schema:
-                    default: ""
-                    type: string
-                - in: query
-                  name: quantity
-                  schema:
-                    type: number
-                - in: query
-                  name: quoteOrderQty
-                  schema:
-                    type: number
-                - in: query
-                  name: price
-                  schema:
-                    type: number
-                - description: A unique id among open orders. Automatically generated if not sent.<br/> Orders with the same `newClientOrderID` can be accepted only when the previous one is filled, otherwise the order will be rejected.
-                  in: query
-                  name: newClientOrderId
-                  schema:
-                    default: ""
-                    type: string
-                - in: query
-                  name: strategyId
-                  schema:
-                    type: integer
-                - description: The value cannot be less than `1000000`.
-                  in: query
-                  name: strategyType
-                  schema:
-                    type: integer
-                - description: Used with `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, and `TAKE_PROFIT_LIMIT` orders.
-                  in: query
-                  name: stopPrice
-                  schema:
-                    type: number
-                - description: Used with `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, and `TAKE_PROFIT_LIMIT` orders.
-                  in: query
-                  name: trailingDelta
-                  schema:
-                    type: integer
-                - description: Used with `LIMIT`, `STOP_LOSS_LIMIT`, and `TAKE_PROFIT_LIMIT` to create an iceberg order.
-                  in: query
-                  name: icebergQty
-                  schema:
-                    type: number
-                - description: Set the response JSON. `ACK`, `RESULT`, or `FULL`; `MARKET` and `LIMIT` order types default to `FULL`, all other orders default to `ACK`.
-                  in: query
-                  name: newOrderRespType
-                  schema:
-                    default: ""
-                    type: string
-                - description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#stpmodes">STP Modes</a>.'
-                  in: query
-                  name: selfTradePreventionMode
-                  schema:
-                    default: ""
-                    type: string
-                - description: The value cannot be greater than `60000`
-                  in: query
-                  name: recvWindow
-                  schema:
-                    type: integer
-                - in: query
-                  name: timestamp
-                  required: true
-                  schema:
-                    type: integer
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/SpotCreateOrderV3Req'
             responses:
                   "200":
                     content:

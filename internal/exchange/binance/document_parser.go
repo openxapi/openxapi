@@ -341,22 +341,45 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 			schema.Default = schema.Enum[0]
 		}
 
-		// Determine parameter location (in)
-		paramIn := "query" // Default to query for REST APIs
-		if strings.Contains(endpoint.Path, "{"+paramName+"}") {
-			paramIn = "path"
+		// We use query parameters for GET, DELETE requests
+		// As per https://www.rfc-editor.org/rfc/rfc7231#section-4.3.5, DELETE requests should not use request body
+		if endpoint.Method == parser.MethodGet || endpoint.Method == parser.MethodDelete {
+			// Determine parameter location (in)
+			paramIn := "query" // Default to query for REST APIs
+			if strings.Contains(endpoint.Path, "{"+paramName+"}") {
+				paramIn = "path"
+			}
+			// Create the parameter
+			param := &parser.Parameter{
+				Name:        paramName,
+				Required:    required,
+				Description: description,
+				In:          paramIn,
+				Schema:      schema,
+			}
+			endpoint.Parameters = append(endpoint.Parameters, param)
+		} else {
+			// Otherwise, we use request body for POST, PUT, PATCH
+			if endpoint.RequestBody == nil {
+				endpoint.RequestBody = &parser.RequestBody{
+					Content: map[string]*parser.MediaType{
+						parser.ContentTypeFormUrlencoded: {
+							Schema: &parser.Schema{
+								Title:      fmt.Sprintf("%sReq", endpoint.OperationID),
+								Type:       parser.ObjectType,
+								Properties: make(map[string]*parser.Schema),
+							},
+						},
+					},
+					Required:    true,
+					Description: fmt.Sprintf("The request body for %s", endpoint.OperationID),
+				}
+			}
+			endpoint.RequestBody.Content[parser.ContentTypeFormUrlencoded].Schema.Properties[paramName] = schema
+			if required {
+				endpoint.RequestBody.Content[parser.ContentTypeFormUrlencoded].Schema.Required = append(endpoint.RequestBody.Content[parser.ContentTypeFormUrlencoded].Schema.Required, paramName)
+			}
 		}
-
-		// Create the parameter
-		param := &parser.Parameter{
-			Name:        paramName,
-			Required:    required,
-			Description: description,
-			In:          paramIn,
-			Schema:      schema,
-		}
-
-		endpoint.Parameters = append(endpoint.Parameters, param)
 	})
 	return nil
 }
