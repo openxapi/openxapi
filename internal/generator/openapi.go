@@ -78,7 +78,7 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 			Version:     version,
 		},
 		Servers: openapiServers,
-		Paths: openapi3.NewPaths(),
+		Paths:   openapi3.NewPaths(),
 		Components: &openapi3.Components{
 			Schemas:   make(openapi3.Schemas),
 			Responses: make(openapi3.ResponseBodies),
