@@ -1,22 +1,7 @@
 components:
     schemas:
-        SpotDeleteOpenOrdersV3Req:
-            type: object
-            properties:
-                symbol:
-                    default: ""
-                    type: string
-                recvWindow:
-                    default: 5000
-                    type: integer
-                    maximum: 60000
-                timestamp:
-                    type: integer
-            required:
-                - symbol
-                - timestamp
         SpotDeleteOpenOrdersV3RespItem:
-            example: |-
+            example: |
                 {
                     "orderListId": 1929,
                     "contingencyType": "OCO",
@@ -74,11 +59,12 @@ components:
                         "side": "BUY",
                         "icebergQty": "0.639962",
                         "selfTradePreventionMode": "NONE"
-                    }]
+                    }
+                    ]
                 }
             properties:
                 orderListId:
-                    type: integer
+                    type: number
                 contingencyType:
                     type: string
                 listStatusType:
@@ -88,64 +74,60 @@ components:
                 listClientOrderId:
                     type: string
                 transactionTime:
-                    type: integer
+                    type: number
                 symbol:
                     type: string
                 orders:
-                    type: array
                     items:
-                        $ref: '#/components/schemas/SpotDeleteOpenOrdersV3RespItemOrder'
+                        type: object
+                        properties:
+                            symbol:
+                                type: string
+                            orderId:
+                                type: number
+                            clientOrderId:
+                                type: string
+                    type: array
                 orderReports:
-                    type: array
                     items:
-                        $ref: '#/components/schemas/SpotDeleteOpenOrdersV3RespItemOrderReport'
+                        type: object
+                        properties:
+                            symbol:
+                                type: string
+                            origClientOrderId:
+                                type: string
+                            orderId:
+                                type: number
+                            orderListId:
+                                type: number
+                            clientOrderId:
+                                type: string
+                            transactTime:
+                                type: number
+                            price:
+                                type: string
+                            origQty:
+                                type: string
+                            executedQty:
+                                type: string
+                            cummulativeQuoteQty:
+                                type: string
+                            status:
+                                type: string
+                            timeInForce:
+                                type: string
+                            type:
+                                type: string
+                            side:
+                                type: string
+                            stopPrice:
+                                type: string
+                            icebergQty:
+                                type: string
+                            selfTradePreventionMode:
+                                type: string
+                    type: array
             type: object
-        SpotDeleteOpenOrdersV3RespItemOrder:
-            type: object
-            properties:
-                symbol:
-                    type: string
-                orderId:
-                    type: integer
-                clientOrderId:
-                    type: string
-        SpotDeleteOpenOrdersV3RespItemOrderReport:
-            type: object
-            properties:
-                symbol:
-                    type: string
-                origClientOrderId:
-                    type: string
-                orderId:
-                    type: integer
-                orderListId:
-                    type: integer
-                clientOrderId:
-                    type: string
-                transactTime:
-                    type: integer
-                price:
-                    type: string
-                origQty:
-                    type: string
-                executedQty:
-                    type: string
-                cummulativeQuoteQty:
-                    type: string
-                status:
-                    type: string
-                timeInForce:
-                    type: string
-                type:
-                    type: string
-                side:
-                    type: string
-                stopPrice:
-                    type: string
-                icebergQty:
-                    type: string
-                selfTradePreventionMode:
-                    type: string
 info:
     title: ""
     version: ""
@@ -157,13 +139,23 @@ paths:
                 Cancels all active orders on a symbol.
                 This includes orders that are part of an order list.
             operationId: SpotDeleteOpenOrdersV3
-            requestBody:
-                content:
-                    application/x-www-form-urlencoded:
-                        schema:
-                            $ref: '#/components/schemas/SpotDeleteOpenOrdersV3Req'
-                description: The request body for SpotDeleteOpenOrdersV3
-                required: true
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
             responses:
                 "200":
                     content:
