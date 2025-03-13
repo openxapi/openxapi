@@ -819,4 +819,39 @@ func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEnd
 	if slices.Contains(protectedEndpoints, fmt.Sprintf("%s %s", strings.ToUpper(endpoint.Method), endpoint.Path)) {
 		endpoint.Protected = true
 	}
+	// Add default responses for 4XX and 5XX
+	endpoint.Responses["4XX"] = &parser.Response{
+		Description: "Client Error",
+		Content: map[string]*parser.MediaType{
+			parser.ContentTypeJSON: {
+				Schema: &parser.Schema{
+					Title: "APIError",
+				},
+			},
+		},
+	}
+	endpoint.Responses["5XX"] = &parser.Response{
+		Description: "Server Error",
+		Content: map[string]*parser.MediaType{
+			parser.ContentTypeJSON: {
+				Schema: &parser.Schema{
+					Title: "APIError",
+				},
+			},
+		},
+	}
+	// Add APIError schema
+	endpoint.Schemas = append(endpoint.Schemas, &parser.Schema{
+		Title:       "APIError",
+		Description: "binance API error",
+		Type:        parser.ObjectType,
+		Properties: map[string]*parser.Schema{
+			"code": {
+				Type: parser.IntegerType,
+			},
+			"msg": {
+				Type: parser.StringType,
+			},
+		},
+	})
 }

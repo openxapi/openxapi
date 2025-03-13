@@ -10,6 +10,7 @@ import (
 
 	"github.com/adshao/openxapi/internal/parser"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -145,7 +146,8 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 		var schemas []string
 		for k, v := range endpointSpec.Components.Schemas {
 			if slices.Contains(schemas, k) {
-				return fmt.Errorf("duplicate schema: %s", k)
+				logrus.Debugf("duplicate schema found: %s", k)
+				continue
 			}
 			schemas = append(schemas, k)
 			spec.Components.Schemas[k] = v
@@ -256,7 +258,9 @@ func (g *Generator) convertParameters(params []*parser.Parameter, schemas *[]*pa
 	for _, param := range params {
 		var schema *openapi3.SchemaRef
 		if param.Schema != nil {
-			if param.Schema.Type == parser.ObjectType {
+			if param.Schema.Type == "" && param.Schema.Title != "" {
+				schema = toSchemaRef(param.Schema.Title)
+			} else if param.Schema.Type == parser.ObjectType {
 				*schemas = append(*schemas, param.Schema)
 				schema = toSchemaRef(param.Schema.Title)
 			}
@@ -288,14 +292,18 @@ func (g *Generator) convertRequestBody(body *parser.RequestBody, schemas *[]*par
 	content := make(openapi3.Content)
 	for mediaType, mt := range body.Content {
 		var schema *openapi3.SchemaRef
-		if mt.Schema != nil && mt.Schema.Type == parser.ObjectType {
-			*schemas = append(*schemas, mt.Schema)
-			schema = toSchemaRef(mt.Schema.Title)
-		} else {
-			schema = g.convertSchema(mt.Schema)
-		}
-		content[mediaType] = &openapi3.MediaType{
-			Schema: schema,
+		if mt.Schema != nil {
+			if mt.Schema.Type == "" && mt.Schema.Title == "" {
+				schema = toSchemaRef(mt.Schema.Title)
+			} else if mt.Schema.Type == parser.ObjectType {
+				*schemas = append(*schemas, mt.Schema)
+				schema = toSchemaRef(mt.Schema.Title)
+			} else {
+				schema = g.convertSchema(mt.Schema)
+			}
+			content[mediaType] = &openapi3.MediaType{
+				Schema: schema,
+			}
 		}
 	}
 	return &openapi3.RequestBodyRef{
@@ -314,14 +322,18 @@ func (g *Generator) convertResponses(responses map[string]*parser.Response, sche
 		content := make(openapi3.Content)
 		for mediaType, mt := range response.Content {
 			var schema *openapi3.SchemaRef
-			if mt.Schema != nil && mt.Schema.Type == parser.ObjectType {
-				*schemas = append(*schemas, mt.Schema)
-				schema = toSchemaRef(mt.Schema.Title)
-			} else if mt.Schema.Type == parser.ArrayType {
-				if mt.Schema.Items != nil && mt.Schema.Items.Type == parser.ObjectType {
-					*schemas = append(*schemas, mt.Schema.Items)
-					schema = g.convertSchema(mt.Schema)
-					schema.Value.Items = toSchemaRef(mt.Schema.Items.Title)
+			if mt.Schema != nil {
+				if mt.Schema.Type == "" && mt.Schema.Title != "" {
+					schema = toSchemaRef(mt.Schema.Title)
+				} else if mt.Schema.Type == parser.ObjectType {
+					*schemas = append(*schemas, mt.Schema)
+					schema = toSchemaRef(mt.Schema.Title)
+				} else if mt.Schema.Type == parser.ArrayType {
+					if mt.Schema.Items != nil && mt.Schema.Items.Type == parser.ObjectType {
+						*schemas = append(*schemas, mt.Schema.Items)
+						schema = g.convertSchema(mt.Schema)
+						schema.Value.Items = toSchemaRef(mt.Schema.Items.Title)
+					}
 				}
 			}
 			if schema == nil {
