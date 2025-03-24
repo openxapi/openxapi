@@ -44,12 +44,18 @@ func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoin
 			Info:  &openapi3.Info{},
 			Paths: openapi3.NewPaths(),
 			Components: &openapi3.Components{
-				Schemas: make(openapi3.Schemas),
+				Schemas:         make(openapi3.Schemas),
+				SecuritySchemes: make(openapi3.SecuritySchemes),
 			},
 		}
 		endpointSpec.Paths.Set(endpoint.Path, pathItem)
 		for _, schema := range endpoint.Schemas {
 			endpointSpec.Components.Schemas[schema.Title] = g.convertSchema(schema)
+		}
+		if endpoint.SecuritySchemas != nil {
+			for name, schema := range endpoint.SecuritySchemas {
+				endpointSpec.Components.SecuritySchemes[name] = g.convertSecuritySchema(schema)
+			}
 		}
 		if err := g.writeSpec(endpointSpec, pathItemPath); err != nil {
 			return fmt.Errorf("writing endpoint spec: %w", err)
@@ -81,8 +87,9 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 		Servers: openapiServers,
 		Paths:   openapi3.NewPaths(),
 		Components: &openapi3.Components{
-			Schemas:   make(openapi3.Schemas),
-			Responses: make(openapi3.ResponseBodies),
+			Schemas:         make(openapi3.Schemas),
+			Responses:       make(openapi3.ResponseBodies),
+			SecuritySchemes: make(openapi3.SecuritySchemes),
 		},
 	}
 
@@ -151,6 +158,15 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 			}
 			schemas = append(schemas, k)
 			spec.Components.Schemas[k] = v
+		}
+		var securitySchemas []string
+		for k, v := range endpointSpec.Components.SecuritySchemes {
+			if slices.Contains(securitySchemas, k) {
+				logrus.Debugf("duplicate security schema found: %s", k)
+				continue
+			}
+			securitySchemas = append(securitySchemas, k)
+			spec.Components.SecuritySchemes[k] = v
 		}
 	}
 
@@ -231,8 +247,13 @@ func (g *Generator) convertEndpointToPathItem(endpoint *parser.Endpoint) *openap
 	for code, resp := range g.convertResponses(endpoint.Responses, &endpoint.Schemas) {
 		operation.Responses.Set(code, resp)
 	}
+	// Add request body to the operation
 	if endpoint.RequestBody != nil {
 		operation.RequestBody = g.convertRequestBody(endpoint.RequestBody, &endpoint.Schemas)
+	}
+	// Add security requirements to the operation
+	if endpoint.Security != nil {
+		operation.Security = g.convertSecurityRequirements(endpoint.Security)
 	}
 
 	pathItem := &openapi3.PathItem{}
@@ -351,6 +372,29 @@ func (g *Generator) convertResponses(responses map[string]*parser.Response, sche
 		}
 	}
 	return result
+}
+
+func (g *Generator) convertSecurityRequirements(securityRequirements []map[string][]string) *openapi3.SecurityRequirements {
+	var result openapi3.SecurityRequirements
+	for _, requirement := range securityRequirements {
+		securityRequirement := make(openapi3.SecurityRequirement)
+		for name, scopes := range requirement {
+			securityRequirement[name] = scopes
+		}
+		result = append(result, securityRequirement)
+	}
+	return &result
+}
+
+// convertSecuritySchema converts parser security schema to OpenAPI security schema
+func (g *Generator) convertSecuritySchema(securitySchema *parser.SecuritySchema) *openapi3.SecuritySchemeRef {
+	return &openapi3.SecuritySchemeRef{
+		Value: &openapi3.SecurityScheme{
+			Type: securitySchema.Type,
+			In:   securitySchema.In,
+			Name: securitySchema.Name,
+		},
+	}
 }
 
 // writeSpec writes the OpenAPI specification to a file

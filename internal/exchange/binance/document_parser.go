@@ -819,6 +819,11 @@ func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEnd
 	if slices.Contains(protectedEndpoints, fmt.Sprintf("%s %s", strings.ToUpper(endpoint.Method), endpoint.Path)) {
 		endpoint.Protected = true
 	}
+	p.processResponses(endpoint)
+	p.processSecurities(endpoint)
+}
+
+func (p *DocumentParser) processResponses(endpoint *parser.Endpoint) {
 	// Add default responses for 4XX and 5XX
 	endpoint.Responses["4XX"] = &parser.Response{
 		Description: "Client Error",
@@ -853,5 +858,27 @@ func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEnd
 				Type: parser.StringType,
 			},
 		},
+	})
+}
+
+func (p *DocumentParser) processSecurities(endpoint *parser.Endpoint) {
+	if endpoint.SecuritySchemas == nil {
+		endpoint.SecuritySchemas = make(map[string]*parser.SecuritySchema)
+	}
+	// Extract the security type from the endpoint summary
+	summary := strings.TrimSpace(endpoint.Summary)
+	// TODO: no need to sign for USER_STREAM endpoints
+	if strings.HasSuffix(summary, "(USER_DATA)") || strings.HasSuffix(summary, "(USER_STREAM)") || strings.HasSuffix(summary, "(TRADE)") {
+		endpoint.SecuritySchemas["ApiKey"] = &parser.SecuritySchema{
+			Type: parser.SecurityTypeApiKey,
+			In:   parser.SecurityLocationHeader,
+			Name: "X-MBX-APIKEY",
+		}
+	}
+	if endpoint.Security == nil {
+		endpoint.Security = make([]map[string][]string, 0)
+	}
+	endpoint.Security = append(endpoint.Security, map[string][]string{
+		"ApiKey": {},
 	})
 }

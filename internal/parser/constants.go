@@ -22,6 +22,18 @@ const (
 	MethodOptions = "OPTIONS"
 )
 
+// Security types
+const (
+	SecurityTypeApiKey = "apiKey"
+)
+
+// Security locations
+const (
+	SecurityLocationHeader = "header"
+	SecurityLocationQuery  = "query"
+	SecurityLocationCookie = "cookie"
+)
+
 // Content types
 const (
 	ContentTypeFormUrlencoded = "application/x-www-form-urlencoded"

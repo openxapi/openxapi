@@ -49,22 +49,31 @@ type Schema struct {
 	AdditionalProperties *Schema            `json:"additionalProperties,omitempty"`
 }
 
+// Security represents a security requirement for an endpoint
+type SecuritySchema struct {
+	Type string `json:"type,omitempty"`
+	In   string `json:"in,omitempty"`
+	Name string `json:"name,omitempty"`
+}
+
 // Endpoint represents an API endpoint
 type Endpoint struct {
-	Path        string                 // API path
-	Method      string                 // HTTP method
-	Description string                 // Description of the endpoint
-	Summary     string                 // Short summary of the endpoint
-	Parameters  []*Parameter           // Parameters accepted by the endpoint
-	Responses   map[string]*Response   // Responses by status code
-	Metadata    map[string]interface{} // Additional metadata
-	Tags        []string               // Tags for categorizing the endpoint
-	Extensions  map[string]interface{} // OpenAPI extensions
-	RequestBody *RequestBody           // Request body definition
-	Deprecated  bool                   // Whether the endpoint is deprecated
-	OperationID string                 // Operation ID
-	Schemas     []*Schema              // Schemas for the endpoint
-	Protected   bool                   // Whether the endpoint is protected
+	Path            string                     // API path
+	Method          string                     // HTTP method
+	Description     string                     // Description of the endpoint
+	Summary         string                     // Short summary of the endpoint
+	Security        []map[string][]string      // Security requirements for the endpoint
+	Parameters      []*Parameter               // Parameters accepted by the endpoint
+	Responses       map[string]*Response       // Responses by status code
+	Metadata        map[string]interface{}     // Additional metadata
+	Tags            []string                   // Tags for categorizing the endpoint
+	Extensions      map[string]interface{}     // OpenAPI extensions
+	RequestBody     *RequestBody               // Request body definition
+	Deprecated      bool                       // Whether the endpoint is deprecated
+	OperationID     string                     // Operation ID
+	Schemas         []*Schema                  // Schemas for the endpoint
+	SecuritySchemas map[string]*SecuritySchema // Security schemas for the endpoint
+	Protected       bool                       // Whether the endpoint is protected
 }
 
 // Parameter represents an endpoint parameter
