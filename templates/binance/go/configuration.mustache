@@ -38,6 +38,8 @@ var (
 	// ContextAPIKeys takes a string apikey as authentication for the request
 	ContextAPIKeys = contextKey("apiKeys")
 
+	ContextBinanceAuth = contextKey("binanceAuth")
+
 	{{/hasApiKeyMethods}}
 	{{#withAWSV4Signature}}
 	// ContextAWSv4 takes an Access Key and a Secret Key for signing AWS Signature v4
@@ -95,9 +97,9 @@ type ServerVariable struct {
 
 // ServerConfiguration stores the information about a server
 type ServerConfiguration struct {
-	URL string
+	URL         string
 	Description string
-	Variables map[string]ServerVariable
+	Variables   map[string]ServerVariable
 }
 
 // ServerConfigurations stores multiple ServerConfiguration items
@@ -134,7 +136,7 @@ type Configuration struct {
 // NewConfiguration returns a new Configuration object
 func NewConfiguration() *Configuration {
 	cfg := &Configuration{
-		DefaultHeader:    make(map[string]string),
+		DefaultHeader: make(map[string]string),
 		UserAgent:        "{{{httpUserAgent}}}{{^httpUserAgent}}OpenAPI-Generator/{{{packageVersion}}}/go{{/httpUserAgent}}",
 		Debug:            false,
 		{{#servers}}
@@ -142,14 +144,14 @@ func NewConfiguration() *Configuration {
 		Servers:          ServerConfigurations{
 		{{/-first}}
 			{
-				URL: "{{{url}}}",
+				URL:         "{{{url}}}",
 				Description: "{{{description}}}{{^description}}No description provided{{/description}}",
 				{{#variables}}
 				{{#-first}}
 				Variables: map[string]ServerVariable{
 				{{/-first}}
 					"{{{name}}}": ServerVariable{
-						Description: "{{{description}}}{{^description}}No description provided{{/description}}",
+						Description:  "{{{description}}}{{^description}}No description provided{{/description}}",
 						DefaultValue: "{{{defaultValue}}}",
 						{{#enumValues}}
 						{{#-first}}
