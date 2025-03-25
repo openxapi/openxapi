@@ -233,3 +233,36 @@ func TestExtractMaxMinDefault(t *testing.T) {
 	assert.NotNil(t, schema.Default, "defaultValue should not be nil")
 	assert.Equal(t, false, schema.Default.(bool), "defaultValue should be false")
 }
+
+func TestProcessSecurities(t *testing.T) {
+	docParser := &DocumentParser{}
+	endpoint := &parser.Endpoint{
+		Summary: "Create a new order (TRADE)",
+	}
+	docParser.processSecurities(endpoint)
+	assert.Equal(t, parser.SecurityTypeApiKey, endpoint.SecuritySchemas["ApiKey"].Type)
+	assert.Equal(t, parser.SecurityLocationHeader, endpoint.SecuritySchemas["ApiKey"].In)
+	assert.Equal(t, "X-MBX-APIKEY", endpoint.SecuritySchemas["ApiKey"].Name)
+
+	endpoint = &parser.Endpoint{
+		Summary: "Get account information (USER_DATA)",
+	}
+	docParser.processSecurities(endpoint)
+	assert.Equal(t, parser.SecurityTypeApiKey, endpoint.SecuritySchemas["ApiKey"].Type)
+	assert.Equal(t, parser.SecurityLocationHeader, endpoint.SecuritySchemas["ApiKey"].In)
+	assert.Equal(t, "X-MBX-APIKEY", endpoint.SecuritySchemas["ApiKey"].Name)
+
+	endpoint = &parser.Endpoint{
+		Summary: "Get account information (USER_STREAM)",
+	}
+	docParser.processSecurities(endpoint)
+	assert.Equal(t, parser.SecurityTypeApiKey, endpoint.SecuritySchemas["ApiKey"].Type)
+	assert.Equal(t, parser.SecurityLocationHeader, endpoint.SecuritySchemas["ApiKey"].In)
+	assert.Equal(t, "X-MBX-APIKEY", endpoint.SecuritySchemas["ApiKey"].Name)
+
+	endpoint = &parser.Endpoint{
+		Summary: "Get account information",
+	}
+	docParser.processSecurities(endpoint)
+	assert.Nil(t, endpoint.SecuritySchemas["ApiKey"], "ApiKey should not be added")
+}
