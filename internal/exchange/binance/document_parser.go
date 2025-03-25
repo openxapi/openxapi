@@ -874,11 +874,11 @@ func (p *DocumentParser) processSecurities(endpoint *parser.Endpoint) {
 			In:   parser.SecurityLocationHeader,
 			Name: "X-MBX-APIKEY",
 		}
+		if endpoint.Security == nil {
+			endpoint.Security = make([]map[string][]string, 0)
+		}
+		endpoint.Security = append(endpoint.Security, map[string][]string{
+			"ApiKey": {},
+		})
 	}
-	if endpoint.Security == nil {
-		endpoint.Security = make([]map[string][]string, 0)
-	}
-	endpoint.Security = append(endpoint.Security, map[string][]string{
-		"ApiKey": {},
-	})
 }
