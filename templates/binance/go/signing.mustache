@@ -18,25 +18,24 @@ import (
 	"os"
 )
 
-type BinanceKeyType string
+type KeyType string
 
 const (
-	BinanceKeyTypeHMAC    BinanceKeyType = "HMAC"
-	BinanceKeyTypeRSA                    = "RSA"
-	BinanceKeyTypeED25519                = "ED25519"
+	KeyTypeHMAC     KeyType = "HMAC"
+	KeyTypeRSA              = "RSA"
+	KeyTypeED25519          = "ED25519"
 )
 
-func NewBinanceAuth(apiKey string, keyType BinanceKeyType) *BinanceAuth {
-	return &BinanceAuth{
+func NewAuth(apiKey string) *Auth {
+	return &Auth{
 		APIKey:  apiKey,
-		KeyType: keyType,
 	}
 }
 
-// BinanceAuth provides Binance API key based authentication to a request passed via context using ContextBinanceAuth
-type BinanceAuth struct {
+// Auth provides Binance API key based authentication to a request passed via context using ContextBinanceAuth
+type Auth struct {
 	APIKey           string
-    KeyType          BinanceKeyType
+    KeyType          KeyType
     PrivateKeyPath   string    // The path to the private key.
     PrivateKeyReader io.Reader // provide the APIKey using the types which implement io.Reader interface.
     Passphrase       string    // The passphrase to decrypt the private key, if the key is encrypted.
@@ -44,26 +43,21 @@ type BinanceAuth struct {
     secretKey        string
 }
 
-func (b *BinanceAuth) SetSecretKey(secretKey string) {
+func (b *Auth) SetSecretKey(secretKey string) {
 	b.secretKey = secretKey
+	b.KeyType = KeyTypeHMAC
 }
 
 // SetPrivateKey accepts a private key string and sets it.
-func (b *BinanceAuth) SetPrivateKey(privateKey []byte) error {
+func (b *Auth) SetPrivateKey(privateKey []byte) error {
 	return b.parsePrivateKey(privateKey)
 }
 
-// ContextWithValue validates the BinanceAuth configuration parameters and returns a context
-// suitable for HTTP signature. An error is returned if the BinanceAuth configuration parameters
+// ContextWithValue validates the Auth configuration parameters and returns a context
+// suitable for HTTP signature. An error is returned if the Auth configuration parameters
 // are invalid.
-func (b *BinanceAuth) ContextWithValue(ctx context.Context) (context.Context, error) {
-	if b.APIKey == "" {
-		return nil, fmt.Errorf("APIKey must be specified")
-	}
-	if b.KeyType == BinanceKeyTypeHMAC && len(b.secretKey) == 0 {
-		return nil, fmt.Errorf("secretKey must be specified for %s API key", BinanceKeyTypeHMAC)
-	}
-	if b.KeyType == BinanceKeyTypeRSA || b.KeyType == BinanceKeyTypeED25519 {
+func (b *Auth) ContextWithValue(ctx context.Context) (context.Context, error) {
+	if b.KeyType == "" {
 		if (len(b.PrivateKeyPath) == 0 && b.PrivateKeyReader == nil) && b.privateKey == nil {
 			return nil, fmt.Errorf("private key path must be specified")
 		}
@@ -77,9 +71,9 @@ func (b *BinanceAuth) ContextWithValue(ctx context.Context) (context.Context, er
 	return context.WithValue(ctx, ContextBinanceAuth, *b), nil
 }
 
-// loadPrivateKey reads the private key from the file specified in the BinanceAPIKey.
+// loadPrivateKey reads the private key from the file specified in the Binance Auth.
 // The key is loaded only when privateKey is not already set.
-func (b *BinanceAuth) loadPrivateKey() (err error) {
+func (b *Auth) loadPrivateKey() (err error) {
 	if b.privateKey != nil {
 		return nil
 	}
@@ -104,7 +98,7 @@ func (b *BinanceAuth) loadPrivateKey() (err error) {
 }
 
 // parsePrivateKey decodes privateKey byte array to crypto.PrivateKey type.
-func (b *BinanceAuth) parsePrivateKey(priv []byte) error {
+func (b *Auth) parsePrivateKey(priv []byte) error {
 	pemBlock, _ := pem.Decode(priv)
 	if pemBlock == nil {
 		// No PEM data has been found.
@@ -128,10 +122,18 @@ func (b *BinanceAuth) parsePrivateKey(priv []byte) error {
 		if b.privateKey, err = x509.ParsePKCS1PrivateKey(privKey); err != nil {
 			return err
 		}
+		b.KeyType = KeyTypeRSA
 	case "EC PRIVATE KEY", "PRIVATE KEY":
 		// https://tools.ietf.org/html/rfc5915 section 4.
 		if b.privateKey, err = x509.ParsePKCS8PrivateKey(privKey); err != nil {
 			return err
+		}
+		if _, ok := b.privateKey.(*rsa.PrivateKey); ok {
+			b.KeyType = KeyTypeRSA
+		} else if _, ok := b.privateKey.(ed25519.PrivateKey); ok {
+			b.KeyType = KeyTypeED25519
+		} else {
+			return fmt.Errorf("private key '%s' is not supported", pemBlock.Type)
 		}
 	default:
 		return fmt.Errorf("key '%s' is not supported", pemBlock.Type)
@@ -139,7 +141,7 @@ func (b *BinanceAuth) parsePrivateKey(priv []byte) error {
 	return nil
 }
 
-func (b *BinanceAuth) Sign(r *http.Request) (err error) {
+func (b *Auth) Sign(r *http.Request) (err error) {
 	q := r.URL.Query()
 	queryString := q.Encode()
 	var dataToSign []byte
@@ -167,14 +169,14 @@ func (b *BinanceAuth) Sign(r *http.Request) (err error) {
 	}
 	var signature string
 	switch b.KeyType {
-	case BinanceKeyTypeHMAC:
+	case KeyTypeHMAC:
 		mac := hmac.New(sha256.New, []byte(b.secretKey))
 		_, err = mac.Write(dataToSign)
 		if err != nil {
 			return err
 		}
 		signature = fmt.Sprintf("%x", (mac.Sum(nil)))
-	case BinanceKeyTypeRSA:
+	case KeyTypeRSA:
 		privKey, ok := b.privateKey.(*rsa.PrivateKey)
 		if !ok {
 			return fmt.Errorf("invalid RSA privateKey")
@@ -185,7 +187,7 @@ func (b *BinanceAuth) Sign(r *http.Request) (err error) {
 			return err
 		}
 		signature = base64.StdEncoding.EncodeToString(bs)
-	case BinanceKeyTypeED25519:
+	case KeyTypeED25519:
 		privKey, ok := b.privateKey.(ed25519.PrivateKey)
 		if !ok {
 			return fmt.Errorf("invalid Ed25519 privateKey")

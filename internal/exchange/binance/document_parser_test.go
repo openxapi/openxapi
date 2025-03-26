@@ -266,3 +266,172 @@ func TestProcessSecurities(t *testing.T) {
 	docParser.processSecurities(endpoint)
 	assert.Nil(t, endpoint.SecuritySchemas["ApiKey"], "ApiKey should not be added")
 }
+
+func TestCreateSchema(t *testing.T) {
+	tests := []struct {
+		name      string
+		paramType string
+		content   string
+		want      *parser.Schema
+		wantErr   bool
+	}{
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "STRING",
+			content:   "",
+			want: &parser.Schema{
+				Type:    parser.StringType,
+				Default: "",
+				Title:   "SpotGetAccountV4Resp",
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "INT",
+			content:   "",
+			want: &parser.Schema{
+				Type:  parser.IntegerType,
+				Title: "SpotGetAccountV4Resp",
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "LONG",
+			content:   "",
+			want: &parser.Schema{
+				Type:   parser.IntegerType,
+				Title:  "SpotGetAccountV4Resp",
+				Format: "int64",
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "FLOAT",
+			content:   "",
+			want: &parser.Schema{
+				Type:  parser.NumberType,
+				Title: "SpotGetAccountV4Resp",
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "BOOLEAN",
+			content:   "",
+			want: &parser.Schema{
+				Type:  parser.BooleanType,
+				Title: "SpotGetAccountV4Resp",
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "ARRAY",
+			content:   "[\"test\"]",
+			want: &parser.Schema{
+				Type:  parser.ArrayType,
+				Title: "SpotGetAccountV4Resp",
+				Items: &parser.Schema{
+					Type:  parser.StringType,
+					Title: "SpotGetAccountV4RespItem",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "ARRAY OF STRING",
+			content:   "[\"test\"]",
+			want: &parser.Schema{
+				Type:  parser.ArrayType,
+				Title: "SpotGetAccountV4Resp",
+				Items: &parser.Schema{
+					Type:  parser.StringType,
+					Title: "SpotGetAccountV4RespItem",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "OBJECT",
+			content:   "{\"key\": \"value\"}",
+			want: &parser.Schema{
+				Type:  parser.ObjectType,
+				Title: "SpotGetAccountV4Resp",
+				Properties: map[string]*parser.Schema{
+					"key": {
+						Type:  parser.StringType,
+						Title: "",
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "ENUM",
+			content:   "",
+			want: &parser.Schema{
+				Type:  parser.StringType,
+				Title: "SpotGetAccountV4Resp",
+			},
+			wantErr: false,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "OBJECT",
+			content:   "invalid json",
+			want:      nil,
+			wantErr:   true,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "ARRAY",
+			content:   "invalid json",
+			want:      nil,
+			wantErr:   true,
+		},
+		{
+			name:      "SpotGetAccountV4Resp",
+			paramType: "UNKNOWN",
+			content:   "{}",
+			want: &parser.Schema{
+				Type:  parser.ObjectType,
+				Title: "SpotGetAccountV4Resp",
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := createSchema(tt.name, tt.paramType, tt.content)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("createSchema() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if tt.wantErr {
+				return
+			}
+			assert.Equal(t, tt.want.Type, got.Type)
+			assert.Equal(t, tt.want.Title, got.Title)
+			assert.Equal(t, tt.want.Format, got.Format)
+			if tt.want.Items != nil {
+				assert.Equal(t, tt.want.Items.Type, got.Items.Type)
+				assert.Equal(t, tt.want.Items.Title, got.Items.Title)
+			}
+			if tt.want.Properties != nil {
+				assert.Equal(t, len(tt.want.Properties), len(got.Properties))
+				for key, value := range tt.want.Properties {
+					assert.Contains(t, got.Properties, key)
+					assert.Equal(t, value.Type, got.Properties[key].Type)
+					assert.Equal(t, value.Title, got.Properties[key].Title)
+				}
+			}
+		})
+	}
+}

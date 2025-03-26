@@ -590,6 +590,13 @@ func createSchema(name, paramType string, content string) (*parser.Schema, error
 		}
 		return schema, nil
 	default:
+		if typ == parser.IntegerType && strings.ToUpper(paramType) == "LONG" {
+			return &parser.Schema{
+				Type:   typ,
+				Title:  name,
+				Format: "int64",
+			}, nil
+		}
 		schema := &parser.Schema{
 			Type:  typ,
 			Title: name,
