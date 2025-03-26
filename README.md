@@ -33,23 +33,67 @@ So that you can use the same specification to generate websocket client SDKs for
 - Version history tracking
 - Sample file support for offline development and testing
 
+## Supported Exchanges
+
+| Exchange | Product | Supported | Production Ready |
+|----------|---------|-------------------|-----------------|
+| Binance | Spot     | ✅         |            |
+| Binance | Futures |||
+| OKX | Spot |||
+| OKX | Futures |||
+| OKX | Options |||
+
+## Specs
+
+| Exchange | REST API Spec | Websocket API Spec |
+|----------|------------|----|
+| Binance | [OpenAPI](https://github.com/openxapi/openxapi/blob/main/specs/binance/spot/openapi.yaml) | |
+
+## SDKs
+
+| Exchange | Javascript | Go | Python | Rust |
+|----------|------------|----|----|----|
+| Binance | | [github](https://github.com/openxapi/binance-go) | | |
+
 ## Project Structure
 
 ```
 .
+├── bin/                    # Compiled binaries
 ├── cmd/                    # Command-line applications
-│   └── openxapi/          # Main application
-├── internal/              # Private application code
-│   ├── config/           # Configuration management
-│   ├── parser/           # API documentation parsers
-│   ├── generator/        # OpenAPI spec generation
-│   └── exchange/         # Exchange-specific implementations
-├── pkg/                   # Public library code
-│   └── models/           # Shared data models
-├── configs/              # Configuration files
-└── samples/              # Sample API documentation files
-    └── webpage/          # HTML samples of exchange documentation
+│   └── openxapi/          # Main application entry point
+├── configs/               # Configuration files
+│   └── config.yaml        # Exchange API documentation URLs and settings
+├── generator-configs/     # Generator-specific configurations
+├── history/              # Version history of generated specs
+├── internal/             # Private application code
+│   ├── config/          # Configuration management
+│   ├── exchange/        # Exchange-specific implementations
+│   ├── generator/       # OpenAPI spec generation logic
+│   └── parser/          # API documentation parsers
+├── samples/             # Sample API documentation files
+│   └── webpage/        # HTML samples of exchange documentation
+├── specs/              # Generated OpenAPI specifications
+├── templates/          # Template files for spec generation
+├── go.mod              # Go module definition
+├── go.sum              # Go module dependencies checksum
+└── Makefile           # Build and development commands
 ```
+
+Key directories and their purposes:
+
+- `cmd/`: Contains the main application entry points
+- `internal/`: Houses the core application logic
+  - `config/`: Manages application configuration
+  - `exchange/`: Exchange-specific implementations and parsers
+  - `generator/`: OpenAPI specification generation logic
+  - `parser/`: Documentation parsing and extraction
+- `configs/`: Configuration files for exchange URLs and settings
+- `generator-configs/`: Specific configurations for OpenAPI generation
+- `history/`: Tracks version history of generated specifications
+- `samples/`: Contains webpage samples of exchange documentation
+- `specs/`: Stores generated OpenAPI specifications
+- `templates/`: Template files used in SDK generation
 
 ## Getting Started
 
@@ -62,7 +106,7 @@ So that you can use the same specification to generate websocket client SDKs for
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/adshao/openxapi.git
+git clone https://github.com/openxapi/openxapi.git
 cd openxapi
 ```
 
@@ -76,7 +120,7 @@ go mod download
 make build
 ```
 
-## Usage
+## Generate OpenAPI Specification
 
 1. Configure exchange API documentation URLs in `configs/config.yaml`
 2. Run the OpenAPI specification generator:
@@ -84,9 +128,11 @@ make build
 ./openxapi generate
 ```
 
+The generated OpenAPI specification will be saved in `specs/` directory.
+
 ### Using Sample Files
 
-The program can save API documentation to sample files and use them for offline development and testing:
+The program can save API documentation to sample files and use them for regenerate the OpenAPI specification offline, that said, you don't need to access the HTTP API documentation online, this is the recommended way to generate the OpenAPI specification after the first generation:
 
 ```bash
 ./openxapi --use-samples
@@ -97,12 +143,35 @@ Specify a custom directory for sample files:
 ./openxapi --use-samples --samples-dir=/path/to/samples
 ```
 
-### Testing with Samples
+### Mannual maintenance on OpenAPI Specification
 
-Run tests with sample files:
+If you find there are some issues on the generated OpenAPI specification, please check with the exchange's official API documentation, because we try to parse the API documentation from the exchange's website automatically, there are some API documentation that is not structured well, so we need to maintain the OpenAPI specification manually.
+
+Please follow the steps below to mannually update the OpenAPI specification:
+
+1. Find the OpenAPI specification for an exchange in `specs/` directory, for example, `specs/binance/spot/delete_api_v3_openOrders.yaml`.
+2. Add the endpoint to the `protected_endpoints` section in `configs/exchanges/binance.yaml`, this will make sure the endpoint will be ignored by the automatic generation.
+3. Update the OpenAPI specification in `specs/binance/spot/delete_api_v3_openOrders.yaml`.
+4. Regenerate the OpenAPI specification by the steps in [Generate OpenAPI Specification](#generate-openapi-specification) section.
+
+## Generate SDKs for OpenAPI Specification
+
+We use [OpenAPI Generator](https://openapi-generator.tech/) to generate SDKs for OpenAPI Specification.
+
+Following is an example of generating Go SDK for Binance REST API:
+
 ```bash
-make test-with-samples
+openapi-generator-cli generate \
+  -g go \
+  -c generator-configs/binance/go/config.yaml \
+  -o ../binance-go
 ```
+
+### Update the SDK code
+
+If you need to update the genereated SDK code, do not edit the generated code directly. Instead, update the templates in `templates/` and regenerate the SDK code.
+
+After updating the templates, you can regenerate the SDK code by the steps in [Generate SDKs for OpenAPI Specification](#generate-sdks-for-openapi-specification) section.
 
 ## Contributing
 
@@ -111,6 +180,8 @@ make test-with-samples
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+Make sure to `make format && make test` before committing your changes.
 
 ## License
 
