@@ -666,6 +666,9 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 			if (strings.HasSuffix(key.String(), "Time") || strings.HasSuffix(key.String(), "time")) && valueSchema.Type == parser.IntegerType {
 				schema.Properties[key.String()].Format = "int64"
 			}
+			if strings.HasSuffix(key.String(), "Id") && valueSchema.Type == parser.IntegerType {
+				schema.Properties[key.String()].Format = "int64"
+			}
 		}
 		return schema, nil
 	}
@@ -738,9 +741,9 @@ func normalizeType(typ, content string) (string, string) {
 	switch strings.ToUpper(typ) {
 	case "INT", "LONG", "INTEGER":
 		return parser.IntegerType, content
-	case "FLOAT", "DECIMAL", "DOUBLE":
+	case "FLOAT", "DOUBLE":
 		return parser.NumberType, content
-	case "STRING", "ENUM":
+	case "STRING", "ENUM", "DECIMAL":
 		return parser.StringType, content
 	case "BOOLEAN", "BOOL":
 		return parser.BooleanType, content

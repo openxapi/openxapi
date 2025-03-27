@@ -11,7 +11,9 @@ components:
         UfuturesCreateBatchOrdersV1Req:
             properties:
                 batchOrders:
-                    type: object
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/UfuturesCreateBatchOrdersV1ReqBatchOrdersItem'
                 recvWindow:
                     format: int64
                     type: integer
@@ -22,6 +24,64 @@ components:
                 - batchOrders
                 - timestamp
             type: object
+        UfuturesCreateBatchOrdersV1ReqBatchOrdersItem:
+            properties:
+                activationPrice:
+                    type: number
+                callbackRate:
+                    maximum: 4
+                    minimum: 0
+                    type: number
+                goodTillDate:
+                    format: int64
+                    type: integer
+                newClientOrderId:
+                    default: ""
+                    type: string
+                newOrderRespType:
+                    default: ""
+                    type: string
+                positionSide:
+                    default: ""
+                    type: string
+                price:
+                    type: number
+                priceMatch:
+                    default: ""
+                    type: string
+                priceProtect:
+                    default: ""
+                    type: string
+                quantity:
+                    type: number
+                reduceOnly:
+                    default: ""
+                    type: string
+                selfTradePreventionMode:
+                    default: ""
+                    type: string
+                side:
+                    default: ""
+                    type: string
+                stopPrice:
+                    type: number
+                symbol:
+                    default: ""
+                    type: string
+                timeInForce:
+                    default: ""
+                    type: string
+                type:
+                    default: ""
+                    type: string
+                workingType:
+                    default: ""
+                    type: string
+            required:
+                - symbol
+                - side
+                - type
+                - quantity
         UfuturesCreateBatchOrdersV1RespItem:
             properties:
                 activatePrice:
@@ -39,6 +99,7 @@ components:
                 goodTillDate:
                     type: integer
                 orderId:
+                    format: int64
                     type: integer
                 origQty:
                     type: string
@@ -116,7 +177,9 @@ paths:
                             schema:
                                 example: '[ { "clientOrderId": "testOrder", "cumQty": "0", "cumQuote": "0", "executedQty": "0", "orderId": 22542179, "avgPrice": "0.00000", "origQty": "10", "price": "0", "reduceOnly": false, "side": "BUY", "positionSide": "SHORT", "status": "NEW", "stopPrice": "9300", "symbol": "BTCUSDT", "timeInForce": "GTC", "type": "TRAILING_STOP_MARKET", "origType": "TRAILING_STOP_MARKET", "activatePrice": "9020", "priceRate": "0.3", "updateTime": 1566818724722, "workingType": "CONTRACT_PRICE", "priceProtect": false,       "priceMatch": "NONE",               "selfTradePreventionMode": "NONE",  "goodTillDate": 1693207680000       }, { "code": -2022, "msg": "ReduceOnly Order is rejected." } ]'
                                 items:
-                                    $ref: '#/components/schemas/UfuturesCreateBatchOrdersV1RespItem'
+                                    oneOf:
+                                        - $ref: '#/components/schemas/UfuturesCreateBatchOrdersV1RespItem'
+                                        - $ref: '#/components/schemas/APIError'
                                 type: array
                     description: Successful operation
             security:
