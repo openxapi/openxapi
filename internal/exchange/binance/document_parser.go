@@ -126,8 +126,12 @@ func (p *SpotDocumentParser) extractEndpoint(content []string, category string) 
 	if !foundEndpoint {
 		return nil, false
 	}
-	p.extractParameters(endpoint)
-	p.extractResponse(endpoint, foundResponse, responseContent)
+	if err := p.extractParameters(endpoint); err != nil {
+		logrus.Debugf("extractParameters error: %s", err)
+	}
+	if err := p.extractResponse(endpoint, foundResponse, responseContent); err != nil {
+		logrus.Debugf("extractResponse error: %s", err)
+	}
 
 	return endpoint, foundEndpoint
 }
@@ -658,6 +662,10 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 				return nil, fmt.Errorf("creating schema for value: %w", err)
 			}
 			schema.Properties[key.String()] = valueSchema
+			// FIXME: this is a hack to fix the format of the time fields
+			if strings.HasSuffix(key.String(), "Time") || strings.HasSuffix(key.String(), "time") || valueSchema.Type == parser.IntegerType {
+				schema.Properties[key.String()].Format = "int64"
+			}
 		}
 		return schema, nil
 	}
@@ -813,6 +821,8 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 		code.Children().Each(func(i int, child *goquery.Selection) {
 			text := cleanText(child.Text())
 			text = commentRegex.ReplaceAllString(text, "")
+			// remove `\t`
+			text = strings.ReplaceAll(text, "\t", "")
 			if text != "" {
 				lines = append(lines, text)
 			}

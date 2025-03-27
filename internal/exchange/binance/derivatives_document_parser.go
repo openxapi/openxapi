@@ -9,12 +9,11 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/adshao/openxapi/internal/parser"
+	"github.com/sirupsen/logrus"
 )
 
 type DerivativesDocumentParser struct {
 	*SpotDocumentParser
-	tableContent      string
-	collectedElements map[string]*goquery.Selection
 }
 
 // Parse parses an HTML document and extracts API endpoints
@@ -122,6 +121,8 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 		code.Children().Each(func(i int, child *goquery.Selection) {
 			text := cleanText(child.Text())
 			text = commentRegex.ReplaceAllString(text, "")
+			// remove `\t`
+			text = strings.ReplaceAll(text, "\t", "")
 			if text != "" {
 				lines = append(lines, text)
 			}
@@ -129,6 +130,13 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 		responseText := strings.Join(lines, " ")
 		if responseText != "" {
 			*content = append(*content, "Response: "+responseText)
+		}
+	}
+	if s.Is("h2") && strings.Contains(s.Text(), "API Description") {
+		// get the next p element
+		nextP := s.Next()
+		if nextP.Length() > 0 {
+			*content = append(*content, "API Description: "+nextP.Text())
 		}
 	}
 
@@ -194,6 +202,30 @@ func (p *DerivativesDocumentParser) extractCategory(url string) string {
 	return ""
 }
 
+// extractEndpoint processes the content following an API header to extract endpoint information
+func (p *DerivativesDocumentParser) extractEndpoint(content []string, category string) (*parser.Endpoint, bool) {
+	for i, line := range content {
+		logrus.Debugf("line %d: %s", i, line)
+	}
+	var endpoint = &parser.Endpoint{}
+	endpoint.Tags = []string{category}
+	endpoint.Extensions = make(map[string]interface{})
+	endpoint.Responses = make(map[string]*parser.Response)
+
+	foundEndpoint, foundResponse, responseContent := p.extractContent(endpoint, content)
+	if !foundEndpoint {
+		return nil, false
+	}
+	if err := p.extractParameters(endpoint); err != nil {
+		logrus.Debugf("extractParameters error: %s", err)
+	}
+	if err := p.extractResponse(endpoint, foundResponse, responseContent); err != nil {
+		logrus.Debugf("extractResponse error: %s", err)
+	}
+
+	return endpoint, foundEndpoint
+}
+
 func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, content []string) (bool, bool, string) {
 	// Set the summary from the first content item if available
 	if len(content) > 0 {
@@ -202,7 +234,7 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 
 	// Initialize variables to track what we've found
 	var description strings.Builder
-	var foundEndpoint, foundWeight, foundParameters, foundDataSource, foundResponse bool
+	var foundEndpoint, foundWeight, foundParameters, foundDataSource, foundResponse, foundDescription bool
 	var responseContent strings.Builder
 	p.tableContent = ""
 
@@ -211,7 +243,7 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)?$`)
 	parametersRegex := regexp.MustCompile(`^Request Parameters\s*$`)
 	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
-	responseRegex := regexp.MustCompile(`^Response Example\s*(.*)$`)
+	responseRegex := regexp.MustCompile(`^Response:\s*(.*)$`)
 	apiVersionRegex := regexp.MustCompile(`/(v\d+)/`)
 
 	// Process each line of content
@@ -293,20 +325,29 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 			continue
 		}
 
-		// If we haven't found the endpoint yet, this is part of the description
-		if !foundEndpoint {
-			description.WriteString(line)
-			description.WriteString("\n")
-		} else if !foundParameters && !foundWeight && !foundDataSource && !foundResponse {
-			// If we've found the endpoint but not other sections, this is still part of the description
-			description.WriteString(line)
-			description.WriteString("\n")
+		if !foundDescription && strings.HasPrefix(line, "API Description: ") {
+			endpoint.Description = strings.TrimSpace(strings.TrimPrefix(line, "API Description: "))
+			foundDescription = true
+			continue
+		}
+
+		if !foundDescription {
+			// If we haven't found the endpoint yet, this is part of the description
+			if !foundEndpoint {
+				description.WriteString(line)
+				description.WriteString("\n")
+			} else if !foundParameters && !foundWeight && !foundDataSource && !foundResponse {
+				// If we've found the endpoint but not other sections, this is still part of the description
+				description.WriteString(line)
+				description.WriteString("\n")
+			}
 		}
 	}
 	if endpoint.OperationID == "" {
 		return false, false, ""
 	}
-	// Set the description
-	endpoint.Description = strings.TrimSpace(description.String())
+	if endpoint.Description == "" {
+		endpoint.Description = strings.TrimSpace(description.String())
+	}
 	return foundEndpoint, foundResponse, responseContent.String()
 }
