@@ -8,6 +8,20 @@ components:
                 msg:
                     type: string
             type: object
+        UfuturesGetAdlQuantileV1RespItem:
+            properties:
+                adlQuantile:
+                    properties:
+                        HEDGE:
+                            type: number
+                        LONG:
+                            type: number
+                        SHORT:
+                            type: number
+                    type: object
+                symbol:
+                    type: string
+            type: object
     securitySchemes:
         ApiKey:
             in: header
@@ -20,9 +34,7 @@ openapi: ""
 paths:
     /fapi/v1/adlQuantile:
         get:
-            description: |-
-                Position ADL Quantile Estimation
-                5
+            description: Position ADL Quantile Estimation
             operationId: UfuturesGetAdlQuantileV1
             parameters:
                 - in: query
@@ -54,6 +66,15 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/APIError'
                     description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: "[ { \"symbol\": \"ETHUSDT\", \"adlQuantile\": { \"LONG\": 3, \"SHORT\": 3, \"HEDGE\": 0    } }, { \"symbol\": \"BTCUSDT\", \"adlQuantile\": { \"LONG\": 1, \t \"SHORT\": 2, \t \"BOTH\": 0\t\t } } ]"
+                                items:
+                                    $ref: '#/components/schemas/UfuturesGetAdlQuantileV1RespItem'
+                                type: array
+                    description: Successful operation
             security:
                 - ApiKey: []
             summary: Position ADL Quantile Estimation(USER_DATA)

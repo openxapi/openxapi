@@ -677,6 +677,9 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 		schema := &parser.Schema{
 			Type: parser.IntegerType,
 		}
+		if typ.Kind() == reflect.Int64 {
+			schema.Format = "int64"
+		}
 		return schema, nil
 	}
 	if typ.Kind() == reflect.Float32 || typ.Kind() == reflect.Float64 {
@@ -793,7 +796,18 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 
 	// Extract response examples from code blocks
 	if s.HasClass("language-javascript") || s.HasClass("language-json") {
-		responseText := s.Find("code").Text()
+		var lines []string
+		var commentRegex = regexp.MustCompile(`//.*`)
+		code := s.Find("code")
+		// for each child of code, get the text
+		code.Children().Each(func(i int, child *goquery.Selection) {
+			text := cleanText(child.Text())
+			text = commentRegex.ReplaceAllString(text, "")
+			if text != "" {
+				lines = append(lines, text)
+			}
+		})
+		responseText := strings.Join(lines, " ")
 		if responseText != "" {
 			*content = append(*content, "Response: "+responseText)
 		}

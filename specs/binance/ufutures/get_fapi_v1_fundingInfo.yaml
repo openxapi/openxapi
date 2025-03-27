@@ -8,6 +8,19 @@ components:
                 msg:
                     type: string
             type: object
+        UfuturesGetFundingInfoV1RespItem:
+            properties:
+                adjustedFundingRateCap:
+                    type: string
+                adjustedFundingRateFloor:
+                    type: string
+                disclaimer:
+                    type: boolean
+                fundingIntervalHours:
+                    type: number
+                symbol:
+                    type: string
+            type: object
 info:
     title: ""
     version: ""
@@ -17,6 +30,8 @@ paths:
         get:
             description: |-
                 Query funding rate info for symbols that had FundingRateCap/ FundingRateFloor / fundingIntervalHours adjustment
+                Weight: 0
+                share 500/5min/IP rate limit with GET /fapi/v1/fundingInfo
                 0
                 share 500/5min/IP rate limit with GET /fapi/v1/fundingInfo
             operationId: UfuturesGetFundingInfoV1
@@ -33,6 +48,15 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/APIError'
                     description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[ { "symbol": "BLZUSDT", "adjustedFundingRateCap": "0.02500000", "adjustedFundingRateFloor": "-0.02500000", "fundingIntervalHours": 8, "disclaimer": false    } ]'
+                                items:
+                                    $ref: '#/components/schemas/UfuturesGetFundingInfoV1RespItem'
+                                type: array
+                    description: Successful operation
             summary: Get Funding Rate Info
             tags:
                 - Market Data

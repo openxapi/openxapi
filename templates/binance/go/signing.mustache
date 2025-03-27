@@ -16,6 +16,9 @@ import (
 	"net/http"
 	"io"
 	"os"
+	"strings"
+	"bytes"
+	"net/url"
 )
 
 type KeyType string
@@ -144,6 +147,8 @@ func (b *Auth) parsePrivateKey(priv []byte) error {
 func (b *Auth) Sign(r *http.Request) (err error) {
 	q := r.URL.Query()
 	queryString := q.Encode()
+	// FIXME: binance uses @ for '%40' in the query string, so we need to replace it with %40 as a workaround
+	queryString = strings.ReplaceAll(queryString, "%40", "@")
 	var dataToSign []byte
 	if r.Body != nil {
 		reader, err := r.GetBody()
@@ -154,6 +159,8 @@ func (b *Auth) Sign(r *http.Request) (err error) {
 		if err != nil {
 			return fmt.Errorf("failed to read request body: %s", err)
 		}
+		// FIXME: binance uses @ for '%40' in the request body, so we need to replace it with %40 as a workaround
+		bodyData = bytes.ReplaceAll(bodyData, []byte("%40"), []byte("@"))
 		// If we have both query parameters and body data, concatenate them properly
 		if queryString != "" {
 			dataToSign = []byte(queryString)
@@ -196,7 +203,13 @@ func (b *Auth) Sign(r *http.Request) (err error) {
 	default:
 	    return fmt.Errorf("unsupported binance key type: %s", b.KeyType)
 	}
-	q.Add("signature", signature)
-	r.URL.RawQuery = q.Encode()
+	// Make sure signature is added to the end of the query string
+	v := url.Values{}
+	v.Add("signature", signature)
+	if queryString != "" {
+		r.URL.RawQuery = fmt.Sprintf("%s&%s", queryString, v.Encode())
+	} else {
+		r.URL.RawQuery = v.Encode()
+	}
 	return nil
 }

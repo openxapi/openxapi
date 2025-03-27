@@ -8,6 +8,28 @@ components:
                 msg:
                     type: string
             type: object
+        UfuturesGetIndexInfoV1RespItem:
+            properties:
+                baseAssetList:
+                    items:
+                        properties:
+                            baseAsset:
+                                type: string
+                            quoteAsset:
+                                type: string
+                            weightInPercentage:
+                                type: string
+                            weightInQuantity:
+                                type: string
+                        type: object
+                    type: array
+                component:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+            type: object
 info:
     title: ""
     version: ""
@@ -15,9 +37,7 @@ openapi: ""
 paths:
     /fapi/v1/indexInfo:
         get:
-            description: |-
-                Query composite index symbol information
-                1
+            description: Query composite index symbol information
             operationId: UfuturesGetIndexInfoV1
             parameters:
                 - in: query
@@ -38,6 +58,15 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/APIError'
                     description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[ { "symbol": "DEFIUSDT", "time": 1589437530011,     "component": "baseAsset",  "baseAssetList":[ { "baseAsset":"BAL", "quoteAsset": "USDT", "weightInQuantity":"1.04406228", "weightInPercentage":"0.02783900" }, { "baseAsset":"BAND", "quoteAsset": "USDT", "weightInQuantity":"3.53782729", "weightInPercentage":"0.03935200" } ] } ]'
+                                items:
+                                    $ref: '#/components/schemas/UfuturesGetIndexInfoV1RespItem'
+                                type: array
+                    description: Successful operation
             summary: Composite Index Symbol Information
             tags:
                 - Market Data

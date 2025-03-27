@@ -104,14 +104,29 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 	// Extract text from paragraphs
 	if s.Is("p") {
 		text := cleanText(s.Text())
+		// ignore weight information with only a number
 		if text != "" {
+			if _, err := strconv.Atoi(text); err == nil {
+				return
+			}
 			*content = append(*content, text)
 		}
 	}
 
 	// Extract response examples from code blocks
 	if s.HasClass("language-javascript") || s.HasClass("language-json") {
-		responseText := s.Find("code").Text()
+		var lines []string
+		var commentRegex = regexp.MustCompile(`//.*`)
+		code := s.Find("code")
+		// for each child of code, get the text
+		code.Children().Each(func(i int, child *goquery.Selection) {
+			text := cleanText(child.Text())
+			text = commentRegex.ReplaceAllString(text, "")
+			if text != "" {
+				lines = append(lines, text)
+			}
+		})
+		responseText := strings.Join(lines, " ")
 		if responseText != "" {
 			*content = append(*content, "Response: "+responseText)
 		}
@@ -131,6 +146,14 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 				}
 			}
 		})
+	}
+	if s.Is("h2") && strings.Contains(s.Text(), "Request Weight") {
+		// Extract the weight from the next line
+		weight := s.Next().Text()
+		weight = strings.TrimSpace(weight)
+		if weight != "" {
+			*content = append(*content, "Weight: "+weight)
+		}
 	}
 
 	// Extract content from divs that might contain important information
@@ -185,8 +208,8 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 
 	// Regular expressions to identify different sections
 	endpointRegex := regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH) (.+)$`)
-	weightRegex := regexp.MustCompile(`^Request Weight\s*(\d+|[a-zA-Z].*)?$`)
-	parametersRegex := regexp.MustCompile(`^Request Parameters\s*(.*)$`)
+	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)?$`)
+	parametersRegex := regexp.MustCompile(`^Request Parameters\s*$`)
 	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
 	responseRegex := regexp.MustCompile(`^Response Example\s*(.*)$`)
 	apiVersionRegex := regexp.MustCompile(`/(v\d+)/`)

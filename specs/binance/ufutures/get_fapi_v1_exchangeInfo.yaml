@@ -8,6 +8,112 @@ components:
                 msg:
                     type: string
             type: object
+        UfuturesGetExchangeInfoV1Resp:
+            example: "{ \"exchangeFilters\": [], \"rateLimits\": [ { \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 2400, \"rateLimitType\": \"REQUEST_WEIGHT\" }, { \"interval\": \"MINUTE\", \"intervalNum\": 1, \"limit\": 1200, \"rateLimitType\": \"ORDERS\" } ], \"serverTime\": 1565613908500,     \"assets\": [  { \"asset\": \"BUSD\", \"marginAvailable\": true,  \"autoAssetExchange\": 0  }, { \"asset\": \"USDT\", \"marginAvailable\": true, \"autoAssetExchange\": 0 }, { \"asset\": \"BNB\", \"marginAvailable\": false, \"autoAssetExchange\": null } ], \"symbols\": [ { \"symbol\": \"BLZUSDT\", \"pair\": \"BLZUSDT\", \"contractType\": \"PERPETUAL\", \"deliveryDate\": 4133404800000, \"onboardDate\": 1598252400000, \"status\": \"TRADING\", \"maintMarginPercent\": \"2.5000\",    \"requiredMarginPercent\": \"5.0000\",   \"baseAsset\": \"BLZ\", \"quoteAsset\": \"USDT\", \"marginAsset\": \"USDT\", \"pricePrecision\": 5,\t \"quantityPrecision\": 0,  \"baseAssetPrecision\": 8, \"quotePrecision\": 8, \"underlyingType\": \"COIN\", \"underlyingSubType\": [\"STORAGE\"], \"settlePlan\": 0, \"triggerProtect\": \"0.15\",  \"filters\": [ { \"filterType\": \"PRICE_FILTER\", \"maxPrice\": \"300\", \"minPrice\": \"0.0001\", \"tickSize\": \"0.0001\" }, { \"filterType\": \"LOT_SIZE\", \"maxQty\": \"10000000\", \"minQty\": \"1\", \"stepSize\": \"1\" }, { \"filterType\": \"MARKET_LOT_SIZE\", \"maxQty\": \"590119\", \"minQty\": \"1\", \"stepSize\": \"1\" }, { \"filterType\": \"MAX_NUM_ORDERS\", \"limit\": 200 }, { \"filterType\": \"MAX_NUM_ALGO_ORDERS\", \"limit\": 10 }, { \"filterType\": \"MIN_NOTIONAL\", \"notional\": \"5.0\" }, { \"filterType\": \"PERCENT_PRICE\", \"multiplierUp\": \"1.1500\", \"multiplierDown\": \"0.8500\", \"multiplierDecimal\": 4 } ], \"OrderType\": [ \"LIMIT\", \"MARKET\", \"STOP\", \"STOP_MARKET\", \"TAKE_PROFIT\", \"TAKE_PROFIT_MARKET\", \"TRAILING_STOP_MARKET\" ], \"timeInForce\": [ \"GTC\", \"IOC\", \"FOK\", \"GTX\" ], \"liquidationFee\": \"0.010000\",\t \"marketTakeBound\": \"0.30\"\t } ], \"timezone\": \"UTC\" }"
+            properties:
+                assets:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            autoAssetExchange:
+                                type: number
+                            marginAvailable:
+                                type: boolean
+                        type: object
+                    type: array
+                exchangeFilters:
+                    type: array
+                    items:
+                        type: string
+                rateLimits:
+                    items:
+                        properties:
+                            interval:
+                                type: string
+                            intervalNum:
+                                type: number
+                            limit:
+                                type: number
+                            rateLimitType:
+                                type: string
+                        type: object
+                    type: array
+                serverTime:
+                    type: number
+                symbols:
+                    items:
+                        properties:
+                            OrderType:
+                                items:
+                                    type: string
+                                type: array
+                            baseAsset:
+                                type: string
+                            baseAssetPrecision:
+                                type: number
+                            contractType:
+                                type: string
+                            deliveryDate:
+                                type: number
+                            filters:
+                                items:
+                                    properties:
+                                        filterType:
+                                            type: string
+                                        maxPrice:
+                                            type: string
+                                        minPrice:
+                                            type: string
+                                        tickSize:
+                                            type: string
+                                    type: object
+                                type: array
+                            liquidationFee:
+                                type: string
+                            maintMarginPercent:
+                                type: string
+                            marginAsset:
+                                type: string
+                            marketTakeBound:
+                                type: string
+                            onboardDate:
+                                type: number
+                            pair:
+                                type: string
+                            pricePrecision:
+                                type: number
+                            quantityPrecision:
+                                type: number
+                            quoteAsset:
+                                type: string
+                            quotePrecision:
+                                type: number
+                            requiredMarginPercent:
+                                type: string
+                            settlePlan:
+                                type: number
+                            status:
+                                type: string
+                            symbol:
+                                type: string
+                            timeInForce:
+                                items:
+                                    type: string
+                                type: array
+                            triggerProtect:
+                                type: string
+                            underlyingSubType:
+                                items:
+                                    type: string
+                                type: array
+                            underlyingType:
+                                type: string
+                        type: object
+                    type: array
+                timezone:
+                    type: string
+            type: object
 info:
     title: ""
     version: ""
@@ -15,10 +121,7 @@ openapi: ""
 paths:
     /fapi/v1/exchangeInfo:
         get:
-            description: |-
-                Current exchange trading rules and symbol information
-                1
-                NONE
+            description: Current exchange trading rules and symbol information
             operationId: UfuturesGetExchangeInfoV1
             responses:
                 4XX:
@@ -33,6 +136,12 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/APIError'
                     description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UfuturesGetExchangeInfoV1Resp'
+                    description: Successful operation
             summary: Exchange Information
             tags:
                 - Market Data

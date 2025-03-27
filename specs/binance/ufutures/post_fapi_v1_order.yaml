@@ -76,6 +76,62 @@ components:
                 - type
                 - timestamp
             type: object
+        UfuturesCreateOrderV1Resp:
+            example: "{ \"clientOrderId\": \"testOrder\", \"cumQty\": \"0\", \"cumQuote\": \"0\", \"executedQty\": \"0\", \"orderId\": 22542179, \"avgPrice\": \"0.00000\", \"origQty\": \"10\", \"price\": \"0\", \"reduceOnly\": false, \"side\": \"BUY\", \"positionSide\": \"SHORT\", \"status\": \"NEW\", \"stopPrice\": \"9300\",\t\t \"closePosition\": false,    \"symbol\": \"BTCUSDT\", \"timeInForce\": \"GTD\", \"type\": \"TRAILING_STOP_MARKET\", \"origType\": \"TRAILING_STOP_MARKET\", \"activatePrice\": \"9020\",\t \"priceRate\": \"0.3\",\t\t\t \"updateTime\": 1566818724722, \"workingType\": \"CONTRACT_PRICE\", \"priceProtect\": false,       \"priceMatch\": \"NONE\",               \"selfTradePreventionMode\": \"NONE\",  \"goodTillDate\": 1693207680000       }"
+            properties:
+                activatePrice:
+                    type: string
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                closePosition:
+                    type: boolean
+                cumQty:
+                    type: string
+                cumQuote:
+                    type: string
+                executedQty:
+                    type: string
+                goodTillDate:
+                    type: number
+                orderId:
+                    type: number
+                origQty:
+                    type: string
+                origType:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                priceMatch:
+                    type: string
+                priceProtect:
+                    type: boolean
+                priceRate:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    type: number
+                workingType:
+                    type: string
+            type: object
     securitySchemes:
         ApiKey:
             in: header
@@ -90,6 +146,9 @@ paths:
         post:
             description: |-
                 Send in a new order.
+                Weight: 1 on 10s order rate limit(X-MBX-ORDER-COUNT-10S);
+                1 on 1min order rate limit(X-MBX-ORDER-COUNT-1M);
+                0 on IP rate limit(x-mbx-used-weight-1m)
                 1 on 10s order rate limit(X-MBX-ORDER-COUNT-10S);
                 1 on 1min order rate limit(X-MBX-ORDER-COUNT-1M);
                 0 on IP rate limit(x-mbx-used-weight-1m)
@@ -115,6 +174,12 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/APIError'
                     description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UfuturesCreateOrderV1Resp'
+                    description: Successful operation
             security:
                 - ApiKey: []
             summary: New Order(TRADE)
