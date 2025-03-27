@@ -1,0 +1,58 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/historicalTrades:
+        get:
+            description: |-
+                Get older market historical trades.
+                20
+            operationId: UfuturesGetHistoricalTradesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 100; max 500.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 100
+                    maximum: 500
+                    type: integer
+                - description: TradeId to fetch from. Default gets most recent trades.
+                  in: query
+                  name: fromId
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+            summary: Old Trades Lookup (MARKET_DATA)
+            tags:
+                - Market Data
+                - V1

@@ -1,0 +1,77 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesGetAssetIndexV1Resp:
+            example: "{\t\"symbol\": \"ADAUSD\",\t\"time\": 1635740268004,\t\"index\": \"1.92957370\",\t\"bidBuffer\": \"0.10000000\", \t\"askBuffer\": \"0.10000000\", \t\"bidRate\": \"1.73661633\",\t\"askRate\": \"2.12253107\",\t\"autoExchangeBidBuffer\": \"0.05000000\",\t\"autoExchangeAskBuffer\": \"0.05000000\",\t\"autoExchangeBidRate\": \"1.83309501\",\t\"autoExchangeAskRate\": \"2.02605238\"}"
+            properties:
+                askBuffer:
+                    type: string
+                askRate:
+                    type: string
+                autoExchangeAskBuffer:
+                    type: string
+                autoExchangeAskRate:
+                    type: string
+                autoExchangeBidBuffer:
+                    type: string
+                autoExchangeBidRate:
+                    type: string
+                bidBuffer:
+                    type: string
+                bidRate:
+                    type: string
+                index:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/assetIndex:
+        get:
+            description: |-
+                asset index for Multi-Assets mode
+                1 for a single symbol; 10 when the symbol parameter is omitted
+            operationId: UfuturesGetAssetIndexV1
+            parameters:
+                - description: Asset pair
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UfuturesGetAssetIndexV1Resp'
+                    description: Successful operation
+            summary: Multi-Assets Mode Asset Index
+            tags:
+                - Market Data
+                - V1

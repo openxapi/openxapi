@@ -1,0 +1,88 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesUpdateOrderV1Req:
+            properties:
+                orderId:
+                    format: int64
+                    type: integer
+                origClientOrderId:
+                    default: ""
+                    type: string
+                price:
+                    type: number
+                priceMatch:
+                    default: ""
+                    type: string
+                quantity:
+                    type: number
+                recvWindow:
+                    format: int64
+                    type: integer
+                side:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - symbol
+                - side
+                - quantity
+                - price
+                - timestamp
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/order:
+        put:
+            description: |-
+                Order modify function, currently only LIMIT order modification is supported, modified orders will be reordered in the match queue
+                1 on 10s order rate limit(X-MBX-ORDER-COUNT-10S);
+                1 on 1min order rate limit(X-MBX-ORDER-COUNT-1M);
+                1 on IP rate limit(x-mbx-used-weight-1m)
+            operationId: UfuturesUpdateOrderV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UfuturesUpdateOrderV1Req'
+                description: The request body for UfuturesUpdateOrderV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+            security:
+                - ApiKey: []
+            summary: Modify Order (TRADE)
+            tags:
+                - Trade
+                - V1

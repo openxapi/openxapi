@@ -21,14 +21,19 @@ type DocumentParser struct {
 	docType string
 }
 
-func (p *DocumentParser) Parse(r io.Reader, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
+func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
 	switch docType {
 	case "spot":
 		sp := &SpotDocumentParser{DocumentParser: p}
-		return sp.Parse(r, docType, protectedEndpoints)
+		return sp.Parse(r, url, docType, protectedEndpoints)
+	case "ufutures":
+		uf := &DerivativesDocumentParser{
+			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
+		}
+		return uf.Parse(r, url, docType, protectedEndpoints)
 	default:
 		sp := &SpotDocumentParser{DocumentParser: p}
-		return sp.Parse(r, docType, protectedEndpoints)
+		return sp.Parse(r, url, docType, protectedEndpoints)
 	}
 }
 
@@ -39,7 +44,7 @@ type SpotDocumentParser struct {
 }
 
 // Parse parses an HTML document and extracts API endpoints
-func (p *SpotDocumentParser) Parse(r io.Reader, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
+func (p *SpotDocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
 	p.docType = docType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
@@ -250,7 +255,7 @@ func operationID(docType, method, path string) string {
 	title := func(s string) string {
 		return strings.Title(strings.ToLower(s))
 	}
-	pathRegex := regexp.MustCompile(`^/(api|fapi)/v(\d+)/(.+)$`)
+	pathRegex := regexp.MustCompile(`^/(.*api)/v(\d+)/(.+)$`)
 	matches := pathRegex.FindStringSubmatch(path)
 	if len(matches) == 4 {
 		var action string
@@ -260,6 +265,7 @@ func operationID(docType, method, path string) string {
 		}
 		path = fmt.Sprintf("%sV%s", action, matches[2])
 	}
+	path = strings.Join(strings.Split(strings.Title(strings.ReplaceAll(path, "/", " ")), " "), "")
 	return fmt.Sprintf("%s%s%s", title(docType), methodToAction(method), path)
 }
 

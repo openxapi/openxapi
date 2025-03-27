@@ -1,0 +1,71 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesCreateBatchOrdersV1Req:
+            properties:
+                batchOrders:
+                    type: object
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - batchOrders
+                - timestamp
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/batchOrders:
+        post:
+            description: |-
+                Place Multiple Orders
+                5 on 10s order rate limit(X-MBX-ORDER-COUNT-10S);
+                1 on 1min order rate limit(X-MBX-ORDER-COUNT-1M);
+                5 on IP rate limit(x-mbx-used-weight-1m);
+                Where batchOrders is the list of order parameters in JSON
+                - Example: /fapi/v1/batchOrders?batchOrders=[{"type":"LIMIT","timeInForce":"GTC",
+                "symbol":"BTCUSDT","side":"BUY","price":"10001","quantity":"0.001"}]
+            operationId: UfuturesCreateBatchOrdersV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UfuturesCreateBatchOrdersV1Req'
+                description: The request body for UfuturesCreateBatchOrdersV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+            security:
+                - ApiKey: []
+            summary: Place Multiple Orders(TRADE)
+            tags:
+                - Trade
+                - V1

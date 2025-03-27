@@ -12,7 +12,7 @@ import (
 
 // HTTPDocumentParser defines the interface for HTTP document parsers
 type HTTPDocumentParser interface {
-	Parse(io.Reader, string, []string) ([]Endpoint, error)
+	Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]Endpoint, error)
 }
 
 // HTTPParser is an implementation of the Parser interface for HTTP-based APIs
@@ -72,7 +72,7 @@ func (p *HTTPParser) Parse(ctx context.Context, doc Documentation) ([]Endpoint, 
 		}
 
 		// Parse the document and extract endpoints
-		docEndpoints, err := p.DocParser.Parse(r, doc.Type, doc.ProtectedEndpoints)
+		docEndpoints, err := p.DocParser.Parse(r, url, doc.Type, doc.ProtectedEndpoints)
 		if err != nil {
 			return nil, err
 		}

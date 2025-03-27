@@ -1,0 +1,85 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesCreateMarginTypeV1Req:
+            properties:
+                marginType:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - symbol
+                - marginType
+                - timestamp
+            type: object
+        UfuturesCreateMarginTypeV1Resp:
+            example: "{\t\"code\": 200,\t\"msg\": \"success\"}"
+            properties:
+                code:
+                    type: number
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/marginType:
+        post:
+            description: |-
+                Change symbol level margin type
+                1
+            operationId: UfuturesCreateMarginTypeV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UfuturesCreateMarginTypeV1Req'
+                description: The request body for UfuturesCreateMarginTypeV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UfuturesCreateMarginTypeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Change Margin Type(TRADE)
+            tags:
+                - Trade
+                - V1

@@ -9,7 +9,9 @@ import (
 
 func TestExtractEndpoint(t *testing.T) {
 	// Create a document parser
-	docParser := &DocumentParser{}
+	docParser := &SpotDocumentParser{
+		DocumentParser: &DocumentParser{},
+	}
 
 	// Test with a simple endpoint
 	content := []string{
@@ -43,7 +45,9 @@ func TestExtractEndpoint(t *testing.T) {
 
 func TestExtractParameters(t *testing.T) {
 	// Create a document parser
-	docParser := &DocumentParser{}
+	docParser := &SpotDocumentParser{
+		DocumentParser: &DocumentParser{},
+	}
 
 	// Create a test endpoint directly
 	endpoint := parser.Endpoint{
@@ -133,7 +137,9 @@ func TestExtractEnumWithSupportedValues(t *testing.T) {
 }
 
 func TestExtractResponse(t *testing.T) {
-	docParser := &DocumentParser{}
+	docParser := &SpotDocumentParser{
+		DocumentParser: &DocumentParser{},
+	}
 
 	endpoint := &parser.Endpoint{
 		Method:      "GET",
@@ -164,6 +170,7 @@ func TestOperationID(t *testing.T) {
 		{"Spot", "GET", "/api/v3/order/oco", "SpotGetOrderOcoV3"},
 		{"Future", "GET", "/fapi/v1/exchangeInfo", "FutureGetExchangeInfoV1"},
 		{"Future", "POST", "/fapi/v1/order", "FutureCreateOrderV1"},
+		{"Ufutures", "GET", "/futures/data/basis", "UfuturesGetFuturesDataBasis"},
 	}
 
 	for _, test := range tests {
@@ -175,8 +182,10 @@ func TestOperationID(t *testing.T) {
 }
 
 func TestExtractContent(t *testing.T) {
-	docParser := &DocumentParser{
-		docType: "spot",
+	docParser := &SpotDocumentParser{
+		DocumentParser: &DocumentParser{
+			docType: "spot",
+		},
 	}
 	endpoint := &parser.Endpoint{
 		Tags:       []string{"Market Data"},
@@ -235,7 +244,9 @@ func TestExtractMaxMinDefault(t *testing.T) {
 }
 
 func TestProcessSecurities(t *testing.T) {
-	docParser := &DocumentParser{}
+	docParser := &SpotDocumentParser{
+		DocumentParser: &DocumentParser{},
+	}
 	endpoint := &parser.Endpoint{
 		Summary: "Create a new order (TRADE)",
 	}

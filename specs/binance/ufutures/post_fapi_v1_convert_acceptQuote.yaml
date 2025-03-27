@@ -1,0 +1,67 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesCreateConvertAcceptQuoteV1Req:
+            properties:
+                quoteId:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - quoteId
+                - timestamp
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/convert/acceptQuote:
+        post:
+            description: |-
+                Accept the offered quote by quote ID.
+                200(IP)
+            operationId: UfuturesCreateConvertAcceptQuoteV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UfuturesCreateConvertAcceptQuoteV1Req'
+                description: The request body for UfuturesCreateConvertAcceptQuoteV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+            security:
+                - ApiKey: []
+            summary: Accept the offered quote (USER_DATA)
+            tags:
+                - Convert
+                - V1

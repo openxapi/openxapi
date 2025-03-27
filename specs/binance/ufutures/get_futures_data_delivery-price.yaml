@@ -1,0 +1,61 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesGetFuturesDataDelivery-PriceRespItem:
+            properties:
+                deliveryPrice:
+                    type: number
+                deliveryTime:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /futures/data/delivery-price:
+        get:
+            description: |-
+                Latest price for a symbol or symbols.
+                0
+            operationId: UfuturesGetFuturesDataDelivery-Price
+            parameters:
+                - description: e.g BTCUSDT
+                  in: query
+                  name: pair
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[    {        "deliveryTime": 1695945600000,        "deliveryPrice": 27103.00000000    },    {        "deliveryTime": 1688083200000,        "deliveryPrice": 30733.60000000    },    {        "deliveryTime": 1680220800000,        "deliveryPrice": 27814.20000000    },    {        "deliveryTime": 1648166400000,        "deliveryPrice": 44066.30000000    }]'
+                                items:
+                                    $ref: '#/components/schemas/UfuturesGetFuturesDataDelivery-PriceRespItem'
+                                type: array
+                    description: Successful operation
+            summary: Quarterly Contract Settlement Price
+            tags:
+                - Market Data

@@ -1,0 +1,106 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesGetFuturesDataBasisRespItem:
+            properties:
+                annualizedBasisRate:
+                    type: string
+                basis:
+                    type: string
+                basisRate:
+                    type: string
+                contractType:
+                    type: string
+                futuresPrice:
+                    type: string
+                indexPrice:
+                    type: string
+                pair:
+                    type: string
+                timestamp:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /futures/data/basis:
+        get:
+            description: |-
+                Query future basis
+                0
+            operationId: UfuturesGetFuturesDataBasis
+            parameters:
+                - description: BTCUSDT
+                  in: query
+                  name: pair
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: CURRENT_QUARTER, NEXT_QUARTER, PERPETUAL
+                  in: query
+                  name: contractType
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '&#34;5m&#34;,&#34;15m&#34;,&#34;30m&#34;,&#34;1h&#34;,&#34;2h&#34;,&#34;4h&#34;,&#34;6h&#34;,&#34;12h&#34;,&#34;1d&#34;'
+                  in: query
+                  name: period
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 30,Max 500
+                  in: query
+                  name: limit
+                  required: true
+                  schema:
+                    default: 30
+                    format: int64
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: '[      {        "indexPrice": "34400.15945055",        "contractType": "PERPETUAL",        "basisRate": "0.0004",        "futuresPrice": "34414.10",        "annualizedBasisRate": "",        "basis": "13.94054945",        "pair": "BTCUSDT",        "timestamp": 1698742800000    }]'
+                                items:
+                                    $ref: '#/components/schemas/UfuturesGetFuturesDataBasisRespItem'
+                                type: array
+                    description: Successful operation
+            summary: Basis
+            tags:
+                - Market Data

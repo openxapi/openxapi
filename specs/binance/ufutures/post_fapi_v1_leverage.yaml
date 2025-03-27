@@ -1,0 +1,86 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesCreateLeverageV1Req:
+            properties:
+                leverage:
+                    type: integer
+                recvWindow:
+                    format: int64
+                    type: integer
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - symbol
+                - leverage
+                - timestamp
+            type: object
+        UfuturesCreateLeverageV1Resp:
+            example: "{ \t\"leverage\": 21, \t\"maxNotionalValue\": \"1000000\", \t\"symbol\": \"BTCUSDT\"}"
+            properties:
+                leverage:
+                    type: number
+                maxNotionalValue:
+                    type: string
+                symbol:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/leverage:
+        post:
+            description: |-
+                Change user's initial leverage of specific symbol market.
+                1
+            operationId: UfuturesCreateLeverageV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UfuturesCreateLeverageV1Req'
+                description: The request body for UfuturesCreateLeverageV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UfuturesCreateLeverageV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Change Initial Leverage(TRADE)
+            tags:
+                - Trade
+                - V1

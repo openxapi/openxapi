@@ -1,0 +1,68 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesGetConstituentsV1Resp:
+            example: '{    "symbol": "BTCUSDT",    "time": 1697421272043,    "constituents": [        {            "exchange": "binance",            "symbol": "BTCUSDT"        },        {            "exchange": "okex",            "symbol": "BTC-USDT"        },        {            "exchange": "huobi",            "symbol": "btcusdt"        },        {            "exchange": "coinbase",            "symbol": "BTC-USDT"        }    ]}'
+            properties:
+                constituents:
+                    items:
+                        properties:
+                            exchange:
+                                type: string
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                symbol:
+                    type: string
+                time:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/constituents:
+        get:
+            description: |-
+                Query index price constituents
+                2
+            operationId: UfuturesGetConstituentsV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UfuturesGetConstituentsV1Resp'
+                    description: Successful operation
+            summary: Query Index Price Constituents
+            tags:
+                - Market Data
+                - V1

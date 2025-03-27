@@ -1,0 +1,132 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesGetUserTradesV1RespItem:
+            properties:
+                buyer:
+                    type: boolean
+                commission:
+                    type: string
+                commissionAsset:
+                    type: string
+                id:
+                    type: number
+                maker:
+                    type: boolean
+                orderId:
+                    type: number
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                realizedPnl:
+                    type: string
+                side:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/userTrades:
+        get:
+            description: |-
+                Get trades for a specific account and symbol.
+                5
+            operationId: UfuturesGetUserTradesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: This can only be used in combination with `symbol`
+                  in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Trade id to fetch from. Default gets most recent trades.
+                  in: query
+                  name: fromId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: "[  {  \t\"buyer\": false,  \t\"commission\": \"-0.07819010\",  \t\"commissionAsset\": \"USDT\",  \t\"id\": 698759,  \t\"maker\": false,  \t\"orderId\": 25851813,  \t\"price\": \"7819.01\",  \t\"qty\": \"0.002\",  \t\"quoteQty\": \"15.63802\",  \t\"realizedPnl\": \"-0.91539999\",  \t\"side\": \"SELL\",  \t\"positionSide\": \"SHORT\",  \t\"symbol\": \"BTCUSDT\",  \t\"time\": 1569514978020  }]"
+                                items:
+                                    $ref: '#/components/schemas/UfuturesGetUserTradesV1RespItem'
+                                type: array
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Account Trade List (USER_DATA)
+            tags:
+                - Trade
+                - V1

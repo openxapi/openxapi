@@ -1,0 +1,69 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesUpdateBatchOrdersV1Req:
+            properties:
+                batchOrders:
+                    type: object
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - batchOrders
+                - timestamp
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/batchOrders:
+        put:
+            description: |-
+                Modify Multiple Orders (TRADE)
+                5 on 10s order rate limit(X-MBX-ORDER-COUNT-10S);
+                1 on 1min order rate limit(X-MBX-ORDER-COUNT-1M);
+                5 on IP rate limit(x-mbx-used-weight-1m);
+                Where batchOrders is the list of order parameters in JSON
+            operationId: UfuturesUpdateBatchOrdersV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UfuturesUpdateBatchOrdersV1Req'
+                description: The request body for UfuturesUpdateBatchOrdersV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+            security:
+                - ApiKey: []
+            summary: Modify Multiple Orders(TRADE)
+            tags:
+                - Trade
+                - V1

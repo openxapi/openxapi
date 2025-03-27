@@ -122,6 +122,6 @@ func TestParseWithSamples(t *testing.T) {
 // MockHTTPDocumentParser is a mock implementation of HTTPDocumentParser for testing
 type MockHTTPDocumentParser struct{}
 
-func (m *MockHTTPDocumentParser) Parse(r io.Reader, docType string, protectedEndpoints []string) ([]Endpoint, error) {
+func (m *MockHTTPDocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]Endpoint, error) {
 	return []Endpoint{}, nil
 }

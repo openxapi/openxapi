@@ -1,0 +1,111 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UfuturesGetPositionMarginHistoryV1RespItem:
+            properties:
+                amount:
+                    type: string
+                asset:
+                    type: string
+                deltaType:
+                    type: string
+                positionSide:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    type: number
+                type:
+                    type: number
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/positionMargin/history:
+        get:
+            description: |-
+                Get Position Margin Change History
+                1
+            operationId: UfuturesGetPositionMarginHistoryV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '1: Add position margin，2: Reduce position margin'
+                  in: query
+                  name: type
+                  schema:
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default current time if not pass
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: 500'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                example: "[\t{\t  \t\"symbol\": \"BTCUSDT\",\t  \t\"type\": 1,\t\t\"deltaType\": \"USER_ADJUST\",\t\t\"amount\": \"23.36332311\",\t  \t\"asset\": \"USDT\",\t  \t\"time\": 1578047897183,\t  \t\"positionSide\": \"BOTH\"\t},\t{\t\t\"symbol\": \"BTCUSDT\",\t  \t\"type\": 1, \t\t\"deltaType\": \"USER_ADJUST\",\t\t\"amount\": \"100\",\t  \t\"asset\": \"USDT\",\t  \t\"time\": 1578047900425,\t  \t\"positionSide\": \"LONG\" \t}]"
+                                items:
+                                    $ref: '#/components/schemas/UfuturesGetPositionMarginHistoryV1RespItem'
+                                type: array
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Position Margin Change History (TRADE)
+            tags:
+                - Trade
+                - V1
