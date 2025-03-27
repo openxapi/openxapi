@@ -663,7 +663,7 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 			}
 			schema.Properties[key.String()] = valueSchema
 			// FIXME: this is a hack to fix the format of the time fields
-			if strings.HasSuffix(key.String(), "Time") || strings.HasSuffix(key.String(), "time") || valueSchema.Type == parser.IntegerType {
+			if (strings.HasSuffix(key.String(), "Time") || strings.HasSuffix(key.String(), "time")) && valueSchema.Type == parser.IntegerType {
 				schema.Properties[key.String()].Format = "int64"
 			}
 		}
