@@ -30,13 +30,19 @@ type HTTPParser struct {
 func (p *HTTPParser) Parse(ctx context.Context, doc Documentation) ([]Endpoint, error) {
 	var endpoints []Endpoint
 
+	baseDir := filepath.Join(p.SamplesDir, strings.ToLower(doc.Type))
+	// Create the base directory if it doesn't exist
+	if err := os.MkdirAll(baseDir, 0755); err != nil {
+		return nil, fmt.Errorf("creating base directory: %w", err)
+	}
+
 	for _, url := range doc.URLs {
 		var r io.Reader
 		var err error
 
 		// Generate a filename for the sample based on the URL
 		filename := p.generateSampleFilename(url)
-		samplePath := filepath.Join(p.SamplesDir, filename)
+		samplePath := filepath.Join(baseDir, filename)
 
 		// Check if we should use samples and if the sample file exists
 		if p.UseSamples {

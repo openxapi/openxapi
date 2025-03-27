@@ -14,10 +14,12 @@ import (
 )
 
 var (
-	configFile string
-	logLevel   string
-	useSamples bool
-	samplesDir string
+	configFile   string
+	logLevel     string
+	useSamples   bool
+	samplesDir   string
+	exchangeFlag string
+	docType      string
 )
 
 func init() {
@@ -25,6 +27,8 @@ func init() {
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (debug, info, warn, error)")
 	flag.BoolVar(&useSamples, "use-samples", false, "Use sample files instead of making HTTP requests")
 	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/webpage/<exchange>)")
+	flag.StringVar(&exchangeFlag, "exchange", "", "Filter by exchange name")
+	flag.StringVar(&docType, "doc-type", "", "Filter by documentation type")
 }
 
 func main() {
@@ -55,6 +59,11 @@ func main() {
 	// Process each exchange
 	ctx := context.Background()
 	for exchangeName, exchange := range config.Exchanges {
+		// Skip if exchange filter is set and doesn't match
+		if exchangeFlag != "" && exchangeFlag != exchangeName {
+			continue
+		}
+
 		logrus.Infof("Processing exchange: %s", exchangeName)
 
 		exchangeSamplesDir := samplesDir
@@ -79,6 +88,11 @@ func main() {
 
 		// Process each API type
 		for _, doc := range exchange.Docs {
+			// Skip if doc type filter is set and doesn't match
+			if docType != "" && docType != doc.Type {
+				continue
+			}
+
 			logrus.Infof("Processing API type: %s", doc.Type)
 
 			// Convert config Documentation to parser.Documentation

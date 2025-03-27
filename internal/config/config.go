@@ -25,6 +25,7 @@ type Exchange struct {
 
 type Documentation struct {
 	Type               string   `yaml:"type"`
+	Description        string   `yaml:"description"`
 	Servers            []string `yaml:"servers"`
 	URLs               []string `yaml:"urls"`
 	ProtectedEndpoints []string `yaml:"protected_endpoints"`

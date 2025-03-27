@@ -45,7 +45,7 @@ func NewParserWithOptions(useSamples bool, samplesDir string) *Parser {
 	}
 }
 
-// CheckVersion implements the parser.Parser interface
+// TODO: Implement CheckVersion for Binance
 func (p *Parser) CheckVersion(ctx context.Context, doc parser.Documentation) (bool, time.Time, error) {
 	// If using samples, return false to indicate no change
 	if p.HTTPParser.UseSamples {

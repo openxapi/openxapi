@@ -15,16 +15,31 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// DocumentParser is a parser for Binance documents
+// SpotDocumentParser is a parser for Binance documents
 type DocumentParser struct {
 	parser.HTTPDocumentParser
-	docType           string
+	docType string
+}
+
+func (p *DocumentParser) Parse(r io.Reader, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	switch docType {
+	case "spot":
+		sp := &SpotDocumentParser{DocumentParser: p}
+		return sp.Parse(r, docType, protectedEndpoints)
+	default:
+		sp := &SpotDocumentParser{DocumentParser: p}
+		return sp.Parse(r, docType, protectedEndpoints)
+	}
+}
+
+type SpotDocumentParser struct {
+	*DocumentParser
 	tableContent      string
 	collectedElements map[string]*goquery.Selection
 }
 
 // Parse parses an HTML document and extracts API endpoints
-func (p *DocumentParser) Parse(r io.Reader, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
+func (p *SpotDocumentParser) Parse(r io.Reader, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
 	p.docType = docType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
@@ -93,7 +108,7 @@ func (p *DocumentParser) Parse(r io.Reader, docType string, protectedEndpoints [
 }
 
 // extractEndpoint processes the content following an API header to extract endpoint information
-func (p *DocumentParser) extractEndpoint(content []string, category string) (*parser.Endpoint, bool) {
+func (p *SpotDocumentParser) extractEndpoint(content []string, category string) (*parser.Endpoint, bool) {
 	for i, line := range content {
 		logrus.Debugf("line %d: %s", i, line)
 	}
@@ -112,7 +127,7 @@ func (p *DocumentParser) extractEndpoint(content []string, category string) (*pa
 	return endpoint, foundEndpoint
 }
 
-func (p *DocumentParser) extractContent(endpoint *parser.Endpoint, content []string) (bool, bool, string) {
+func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content []string) (bool, bool, string) {
 	// Set the summary from the first content item if available
 	if len(content) > 0 {
 		endpoint.Summary = content[0]
@@ -263,7 +278,7 @@ func methodToAction(method string) string {
 }
 
 // extractParameters extracts parameters from the endpoint description
-func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
+func (p *SpotDocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 	logrus.Debugf("tableContent: %s", p.tableContent)
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader("<table>" + p.tableContent + "</table>"))
 	if err != nil {
@@ -384,7 +399,7 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint) error {
 	return nil
 }
 
-func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, foundResponse bool, responseContent string) error {
+func (p *SpotDocumentParser) extractResponse(endpoint *parser.Endpoint, foundResponse bool, responseContent string) error {
 	// Create a default 200 OK response
 	response := &parser.Response{
 		Description: "Successful operation",
@@ -415,7 +430,7 @@ func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, foundRespons
 }
 
 // createResponseSchema attempts to create a schema from response example text
-func (p *DocumentParser) createResponseSchema(name, responseText string) (*parser.Schema, error) {
+func (p *SpotDocumentParser) createResponseSchema(name, responseText string) (*parser.Schema, error) {
 	responseText = strings.TrimSpace(responseText)
 	logrus.Debugf("responseText: %s", responseText)
 	schema, err := createSchema(name, "", responseText)
@@ -746,7 +761,7 @@ func cleanText(text string) string {
 }
 
 // collectElementContent extracts content from an HTML element and adds it to the content slice
-func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]string) {
+func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content *[]string) {
 	// Extract endpoint URL from code blocks
 	if s.Is(".theme-code-block") {
 		codeText := s.Find(".prism-code").Text()
@@ -821,7 +836,7 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 	}
 }
 
-func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEndpoints []string) {
+func (p *SpotDocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEndpoints []string) {
 	// Check if the endpoint is protected
 	if slices.Contains(protectedEndpoints, fmt.Sprintf("%s %s", strings.ToUpper(endpoint.Method), endpoint.Path)) {
 		endpoint.Protected = true
@@ -830,7 +845,7 @@ func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEnd
 	p.processSecurities(endpoint)
 }
 
-func (p *DocumentParser) processResponses(endpoint *parser.Endpoint) {
+func (p *SpotDocumentParser) processResponses(endpoint *parser.Endpoint) {
 	// Add default responses for 4XX and 5XX
 	endpoint.Responses["4XX"] = &parser.Response{
 		Description: "Client Error",
@@ -868,7 +883,7 @@ func (p *DocumentParser) processResponses(endpoint *parser.Endpoint) {
 	})
 }
 
-func (p *DocumentParser) processSecurities(endpoint *parser.Endpoint) {
+func (p *SpotDocumentParser) processSecurities(endpoint *parser.Endpoint) {
 	if endpoint.SecuritySchemas == nil {
 		endpoint.SecuritySchemas = make(map[string]*parser.SecuritySchema)
 	}
