@@ -683,10 +683,20 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 		return schema, nil
 	}
 	if typ.Kind() == reflect.Float32 || typ.Kind() == reflect.Float64 {
-		schema := &parser.Schema{
-			Type: parser.NumberType,
+		// Check if the value is actually an integer
+		if reflect.ValueOf(v).Float() == float64(int(reflect.ValueOf(v).Float())) {
+			schema := &parser.Schema{
+				Type: parser.IntegerType,
+			}
+			// TODO: we can collect all the LONG parameters from documents and compare the key with the name
+			// if they are the same, we can set the format to int64
+			return schema, nil
+		} else {
+			schema := &parser.Schema{
+				Type: parser.NumberType,
+			}
+			return schema, nil
 		}
-		return schema, nil
 	}
 	return nil, fmt.Errorf("unsupported type: %s", typ.String())
 }
