@@ -1,28 +1,13 @@
 components:
     schemas:
-        SpotGetKlinesV3RespItem:
-            example: |
-              [
-                1499040000000,      // Kline open time
-                "0.01634790",       // Open price
-                "0.80000000",       // High price
-                "0.01575800",       // Low price
-                "0.01577100",       // Close price
-                "148976.11427815",  // Volume
-                1499644799999,      // Kline Close time
-                "2434.19055334",    // Quote asset volume
-                308,                // Number of trades
-                "1756.87402397",    // Taker buy base asset volume
-                "28.46694368",      // Taker buy quote asset volume
-                "0"                 // Unused field, ignore.
-              ]
-            type: array
-            items:
-                oneOf:
-                    - type: string
-                    - type: integer
-                      format: int64
-                    - type: integer
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
 info:
     title: ""
     version: ""
@@ -50,18 +35,18 @@ paths:
                 - in: query
                   name: startTime
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - in: query
                   name: endTime
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - description: 'Default: 0 (UTC)'
                   in: query
                   name: timeZone
                   schema:
-                    default: 0
+                    default: "0"
                     type: string
                 - description: Default 500; max 1000.
                   in: query
@@ -71,12 +56,31 @@ paths:
                     maximum: 1000
                     type: integer
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
+                                example: '[ [ 1499040000000,       "0.01634790",        "0.80000000",        "0.01575800",        "0.01577100",        "148976.11427815",   1499644799999,       "2434.19055334",     308,                 "1756.87402397",     "28.46694368",       "0"                  ] ]'
                                 items:
-                                    $ref: '#/components/schemas/SpotGetKlinesV3RespItem'
+                                    items:
+                                        oneOf:
+                                          - type: integer
+                                            format: int64
+                                          - type: integer
+                                          - type: string
+                                    type: array
                                 type: array
                     description: Successful operation
             summary: Kline/Candlestick data

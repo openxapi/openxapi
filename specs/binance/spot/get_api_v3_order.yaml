@@ -1,79 +1,67 @@
 components:
     schemas:
-        SpotGetOrderV3Resp:
-            example: |-
-                {
-                  "symbol": "LTCBTC",
-                  "orderId": 1,
-                  "orderListId": -1,                 // This field will always have a value of -1 if not an order list.
-                  "clientOrderId": "myOrder1",
-                  "price": "0.1",
-                  "origQty": "1.0",
-                  "executedQty": "0.0",
-                  "cummulativeQuoteQty": "0.0",
-                  "status": "NEW",
-                  "timeInForce": "GTC",
-                  "type": "LIMIT",
-                  "side": "BUY",
-                  "stopPrice": "0.0",
-                  "icebergQty": "0.0",
-                  "time": 1499827319559,
-                  "updateTime": 1499827319559,
-                  "isWorking": true,
-                  "workingTime":1499827319559,
-                  "origQuoteOrderQty": "0.000000",
-                  "selfTradePreventionMode": "NONE"
-                }
-            type: object
+        APIError:
+            description: binance API error
             properties:
-                symbol:
+                code:
+                    type: integer
+                msg:
                     type: string
-                orderId:
-                    type: integer
-                    format: int64
-                orderListId:
-                    type: integer
+            type: object
+        SpotGetOrderV3Resp:
+            example: '{ "symbol": "LTCBTC", "orderId": 1, "orderListId": -1,                  "clientOrderId": "myOrder1", "price": "0.1", "origQty": "1.0", "executedQty": "0.0", "cummulativeQuoteQty": "0.0", "status": "NEW", "timeInForce": "GTC", "type": "LIMIT", "side": "BUY", "stopPrice": "0.0", "icebergQty": "0.0", "time": 1499827319559, "updateTime": 1499827319559, "isWorking": true, "workingTime":1499827319559, "origQuoteOrderQty": "0.000000", "selfTradePreventionMode": "NONE" }'
+            properties:
                 clientOrderId:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                executedQty:
+                    type: string
+                icebergQty:
+                    type: string
+                isWorking:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                orderListId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origQuoteOrderQty:
                     type: string
                 price:
                     type: string
-                    format: double
-                origQty:
+                selfTradePreventionMode:
                     type: string
-                    format: double
-                executedQty:
+                side:
                     type: string
-                    format: double
-                cummulativeQuoteQty:
-                    type: string
-                    format: double
                 status:
                     type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
                 timeInForce:
                     type: string
                 type:
                     type: string
-                side:
-                    type: string
-                stopPrice:
-                    type: string
-                    format: double
-                icebergQty:
-                    type: string
-                    format: double
-                time:
-                    type: integer
                 updateTime:
+                    format: int64
                     type: integer
-                isWorking:
-                    type: boolean
                 workingTime:
+                    format: int64
                     type: integer
-                origQuoteOrderQty:
-                    type: string
-                    format: double
-                selfTradePreventionMode:
-                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
 info:
     title: ""
     version: ""
@@ -93,8 +81,8 @@ paths:
                 - in: query
                   name: orderId
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - in: query
                   name: origClientOrderId
                   schema:
@@ -104,22 +92,35 @@ paths:
                   in: query
                   name: recvWindow
                   schema:
-                    type: integer
-                    maximum: 60000
                     format: int64
+                    type: integer
                 - in: query
                   name: timestamp
                   required: true
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SpotGetOrderV3Resp'
                     description: Successful operation
+            security:
+                - ApiKey: []
             summary: Query order (USER_DATA)
             tags:
                 - Trading

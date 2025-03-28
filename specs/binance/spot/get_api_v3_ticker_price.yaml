@@ -1,7 +1,21 @@
 components:
     schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SpotGetTickerPriceV3Resp:
+            oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/SpotGetTickerPriceV3RespItem'
+                - $ref: '#/components/schemas/SpotGetTickerPriceV3RespItem'
         SpotGetTickerPriceV3RespItem:
-            example: '{  "symbol": "LTCBTC",  "price": "4.00000200"}'
+            example: '{ "symbol": "LTCBTC", "price": "4.00000200" }'
             properties:
                 price:
                     type: string
@@ -15,9 +29,7 @@ openapi: ""
 paths:
     /api/v3/ticker/price:
         get:
-            description: |-
-                Latest price for a symbol or symbols.
-                Weight:
+            description: Latest price for a symbol or symbols.
             operationId: SpotGetTickerPriceV3
             parameters:
                 - description: |-
@@ -43,15 +55,23 @@ paths:
                     default: ""
                     type: string
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
-                                oneOf:
-                                    - type: array
-                                      items:
-                                        $ref: '#/components/schemas/SpotGetTickerPriceV3RespItem'
-                                    - $ref: '#/components/schemas/SpotGetTickerPriceV3RespItem'
+                                $ref: '#/components/schemas/SpotGetTickerPriceV3Resp'
                     description: Successful operation
             summary: Symbol price ticker
             tags:

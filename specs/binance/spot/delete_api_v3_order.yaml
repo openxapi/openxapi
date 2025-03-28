@@ -1,57 +1,55 @@
 components:
     schemas:
-        SpotDeleteOrderV3Resp:
-            example: |
-                {
-                  "symbol": "LTCBTC",
-                  "origClientOrderId": "myOrder1",
-                  "orderId": 4,
-                  "orderListId": -1, // Unless it's part of an order list, value will be -1
-                  "clientOrderId": "cancelMyOrder1",
-                  "transactTime": 1684804350068,
-                  "price": "2.00000000",
-                  "origQty": "1.00000000",
-                  "executedQty": "0.00000000",
-                  "cummulativeQuoteQty": "0.00000000",
-                  "status": "CANCELED",
-                  "timeInForce": "GTC",
-                  "type": "LIMIT",
-                  "side": "BUY",
-                  "selfTradePreventionMode": "NONE"
-                }
+        APIError:
+            description: binance API error
             properties:
-                symbol:
+                code:
+                    type: integer
+                msg:
                     type: string
-                origClientOrderId:
-                    type: string
-                orderId:
-                    type: number
-                    format: int64
-                orderListId:
-                    type: number
+            type: object
+        SpotDeleteOrderV3Resp:
+            example: '{ "symbol": "LTCBTC", "origClientOrderId": "myOrder1", "orderId": 4, "orderListId": -1,  "clientOrderId": "cancelMyOrder1", "transactTime": 1684804350068, "price": "2.00000000", "origQty": "1.00000000", "executedQty": "0.00000000", "cummulativeQuoteQty": "0.00000000", "status": "CANCELED", "timeInForce": "GTC", "type": "LIMIT", "side": "BUY", "selfTradePreventionMode": "NONE" }'
+            properties:
                 clientOrderId:
-                    type: string
-                transactTime:
-                    type: number
-                price:
-                    type: string
-                origQty:
-                    type: string
-                executedQty:
                     type: string
                 cummulativeQuoteQty:
                     type: string
-                status:
+                executedQty:
                     type: string
-                timeInForce:
+                orderId:
+                    format: int64
+                    type: integer
+                orderListId:
+                    format: int64
+                    type: integer
+                origClientOrderId:
                     type: string
-                type:
+                origQty:
                     type: string
-                side:
+                price:
                     type: string
                 selfTradePreventionMode:
                     type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                transactTime:
+                    format: int64
+                    type: integer
+                type:
+                    type: string
             type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
 info:
     title: ""
     version: ""
@@ -71,8 +69,8 @@ paths:
                 - in: query
                   name: orderId
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - in: query
                   name: origClientOrderId
                   schema:
@@ -94,21 +92,35 @@ paths:
                   in: query
                   name: recvWindow
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - in: query
                   name: timestamp
                   required: true
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SpotDeleteOrderV3Resp'
                     description: Successful operation
+            security:
+                - ApiKey: []
             summary: Cancel order (TRADE)
             tags:
                 - Trading

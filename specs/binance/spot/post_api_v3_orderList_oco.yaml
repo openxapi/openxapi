@@ -1,25 +1,40 @@
 components:
     schemas:
-        SpotCreateOrderListOcoV3Req:
-            type: object
+        APIError:
+            description: binance API error
             properties:
-                symbol:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SpotCreateOrderListOcoV3Req:
+            properties:
+                aboveClientOrderId:
                     default: ""
                     type: string
-                listClientOrderId:
-                    description: Arbitrary unique ID among open order lists. Automatically generated if not sent. <br/> A new order list with the same `listClientOrderId` is accepted only when the previous one is filled or completely expired. <br/> `listClientOrderId` is distinct from the `aboveClientOrderId` and the `belowCLientOrderId`.
+                aboveIcebergQty:
+                    format: int64
+                    type: integer
+                abovePrice:
                     default: ""
                     type: string
-                side:
-                    description: '`BUY` or `SELL`'
+                aboveStopPrice:
                     default: ""
                     type: string
-                quantity:
-                    description: Quantity for both orders of the order list.
-                    type: number
+                aboveStrategyId:
+                    format: int64
+                    type: integer
+                aboveStrategyType:
+                    type: integer
+                aboveTimeInForce:
+                    default: ""
+                    type: string
+                aboveTrailingDelta:
+                    format: int64
+                    type: integer
                 aboveType:
-                    description: 'Supported values: `STOP_LOSS_LIMIT`, `STOP_LOSS`, `LIMIT_MAKER`, `TAKE_PROFIT`, `TAKE_PROFIT_LIMIT`'
-                    default: "STOP_LOSS_LIMIT"
+                    default: ""
                     enum:
                         - STOP_LOSS_LIMIT
                         - STOP_LOSS
@@ -27,83 +42,64 @@ components:
                         - TAKE_PROFIT
                         - TAKE_PROFIT_LIMIT
                     type: string
-                aboveClientOrderId:
-                    description: Arbitrary unique ID among open orders for the above order. Automatically generated if not sent
+                belowClientOrderId:
                     default: ""
                     type: string
-                aboveIcebergQty:
-                    description: Note that this can only be used if `aboveTimeInForce` is `GTC`.
+                belowIcebergQty:
+                    format: int64
                     type: integer
-                abovePrice:
-                    description: Can be used if `aboveType` is `STOP_LOSS_LIMIT` , `LIMIT_MAKER`, or `TAKE_PROFIT_LIMIT` to specify the limit price.
-                    type: number
-                aboveStopPrice:
-                    description: Can be used if `aboveType` is `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`, `TAKE_PROFIT_LIMIT` <br/>Either `aboveStopPrice` or `aboveTrailingDelta` or both, must be specified.
-                    type: number
-                aboveTrailingDelta:
-                    description: See <a href="/docs/binance-spot-api-docs/faqs/trailing-stop-faq">Trailing Stop order FAQ</a>.
+                belowPrice:
+                    default: ""
+                    type: string
+                belowStopPrice:
+                    default: ""
+                    type: string
+                belowStrategyId:
+                    format: int64
                     type: integer
-                aboveTimeInForce:
-                    description: Required if `aboveType` is `STOP_LOSS_LIMIT` or `TAKE_PROFIT_LIMIT`
-                    type: number
-                aboveStrategyId:
-                    description: Arbitrary numeric value identifying the above order within an order strategy.
+                belowStrategyType:
                     type: integer
-                aboveStrategyType:
-                    description: Arbitrary numeric value identifying the above order strategy. <br/>Values smaller than 1000000 are reserved and cannot be used.
+                belowTimeInForce:
+                    default: ""
+                    type: string
+                belowTrailingDelta:
+                    format: int64
                     type: integer
                 belowType:
-                    description: 'Supported values: `STOP_LOSS`, `STOP_LOSS_LIMIT`, `TAKE_PROFIT`,`TAKE_PROFIT_LIMIT`'
-                    default: "STOP_LOSS"
+                    default: ""
                     enum:
                         - STOP_LOSS
                         - STOP_LOSS_LIMIT
                         - TAKE_PROFIT
                         - TAKE_PROFIT_LIMIT
                     type: string
-                belowClientOrderId:
-                    description: Arbitrary unique ID among open orders for the below order. Automatically generated if not sent
+                listClientOrderId:
                     default: ""
                     type: string
-                belowIcebergQty:
-                    description: Note that this can only be used if `belowTimeInForce` is `GTC`.
-                    type: integer
-                belowPrice:
-                    description: Can be used if `belowType` is `STOP_LOSS_LIMIT` , `LIMIT_MAKER`, or `TAKE_PROFIT_LIMIT` to specify the limit price.
-                    type: number
-                belowStopPrice:
-                    description: Can be used if `belowType` is `STOP_LOSS`, `STOP_LOSS_LIMIT, TAKE_PROFIT` or `TAKE_PROFIT_LIMIT` <br/>Either belowStopPrice or belowTrailingDelta or both, must be specified.
-                    type: number
-                belowTrailingDelta:
-                    description: See <a href="/docs/binance-spot-api-docs/faqs/trailing-stop-faq">Trailing Stop order FAQ</a>.
-                    type: integer
-                belowTimeInForce:
-                    description: Required if `belowType` is `STOP_LOSS_LIMIT` or `TAKE_PROFIT_LIMIT`.
-                    default: ""
-                    type: string
-                belowStrategyId:
-                    description: Arbitrary numeric value identifying the below order within an order strategy.
-                    type: integer
-                belowStrategyType:
-                    description: Arbitrary numeric value identifying the below order strategy. <br/>Values smaller than 1000000 are reserved and cannot be used.
-                    type: integer
                 newOrderRespType:
-                    description: 'Select response format: `ACK`, `RESULT`, `FULL`'
-                    default: "FULL"
+                    default: ""
                     enum:
                         - ACK
                         - RESULT
                         - FULL
                     type: string
-                selfTradePreventionMode:
-                    description: 'The allowed enums is dependent on what is configured on the symbol. Supported values: <a href="/docs/binance-spot-api-docs/rest-api/enums.md#stpmodes">STP Modes</a>'
+                quantity:
                     default: ""
                     type: string
                 recvWindow:
-                    description: The value cannot be greater than `60000`.
+                    format: int64
                     type: integer
-                    maximum: 60000
+                selfTradePreventionMode:
+                    default: ""
+                    type: string
+                side:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
                 timestamp:
+                    format: int64
                     type: integer
             required:
                 - symbol
@@ -112,8 +108,9 @@ components:
                 - aboveType
                 - belowType
                 - timestamp
+            type: object
         SpotCreateOrderListOcoV3Resp:
-            example: '{    "orderListId": 1,    "contingencyType": "OCO",    "listStatusType": "EXEC_STARTED",    "listOrderStatus": "EXECUTING",    "listClientOrderId": "lH1YDkuQKWiXVXHPSKYEIp",    "transactionTime": 1710485608839,    "symbol": "LTCBTC",    "orders": [        {            "symbol": "LTCBTC",            "orderId": 10,            "clientOrderId": "44nZvqpemY7sVYgPYbvPih"        },        {            "symbol": "LTCBTC",            "orderId": 11,            "clientOrderId": "NuMp0nVYnciDiFmVqfpBqK"        }    ],    "orderReports": [        {            "symbol": "LTCBTC",            "orderId": 10,            "orderListId": 1,            "clientOrderId": "44nZvqpemY7sVYgPYbvPih",            "transactTime": 1710485608839,            "price": "1.00000000",            "origQty": "5.00000000",            "executedQty": "0.00000000",            "origQuoteOrderQty": "0.000000",            "cummulativeQuoteQty": "0.00000000",            "status": "NEW",            "timeInForce": "GTC",            "type": "STOP_LOSS_LIMIT",            "side": "SELL",            "stopPrice": "1.00000000",            "workingTime": -1,            "icebergQty": "1.00000000",            "selfTradePreventionMode": "NONE"        },        {            "symbol": "LTCBTC",            "orderId": 11,            "orderListId": 1,            "clientOrderId": "NuMp0nVYnciDiFmVqfpBqK",            "transactTime": 1710485608839,            "price": "3.00000000",            "origQty": "5.00000000",            "executedQty": "0.00000000",            "origQuoteOrderQty": "0.000000",            "cummulativeQuoteQty": "0.00000000",            "status": "NEW",            "timeInForce": "GTC",            "type": "LIMIT_MAKER",            "side": "SELL",            "workingTime": 1710485608839,            "selfTradePreventionMode": "NONE"        }    ]}'
+            example: '{ "orderListId": 1, "contingencyType": "OCO", "listStatusType": "EXEC_STARTED", "listOrderStatus": "EXECUTING", "listClientOrderId": "lH1YDkuQKWiXVXHPSKYEIp", "transactionTime": 1710485608839, "symbol": "LTCBTC", "orders": [ { "symbol": "LTCBTC", "orderId": 10, "clientOrderId": "44nZvqpemY7sVYgPYbvPih" }, { "symbol": "LTCBTC", "orderId": 11, "clientOrderId": "NuMp0nVYnciDiFmVqfpBqK" } ], "orderReports": [ { "symbol": "LTCBTC", "orderId": 10, "orderListId": 1, "clientOrderId": "44nZvqpemY7sVYgPYbvPih", "transactTime": 1710485608839, "price": "1.00000000", "origQty": "5.00000000", "executedQty": "0.00000000", "origQuoteOrderQty": "0.000000", "cummulativeQuoteQty": "0.00000000", "status": "NEW", "timeInForce": "GTC", "type": "STOP_LOSS_LIMIT", "side": "SELL", "stopPrice": "1.00000000", "workingTime": -1, "icebergQty": "1.00000000", "selfTradePreventionMode": "NONE" }, { "symbol": "LTCBTC", "orderId": 11, "orderListId": 1, "clientOrderId": "NuMp0nVYnciDiFmVqfpBqK", "transactTime": 1710485608839, "price": "3.00000000", "origQty": "5.00000000", "executedQty": "0.00000000", "origQuoteOrderQty": "0.000000", "cummulativeQuoteQty": "0.00000000", "status": "NEW", "timeInForce": "GTC", "type": "LIMIT_MAKER", "side": "SELL", "workingTime": 1710485608839, "selfTradePreventionMode": "NONE" } ] }'
             properties:
                 contingencyType:
                     type: string
@@ -124,7 +121,8 @@ components:
                 listStatusType:
                     type: string
                 orderListId:
-                    type: number
+                    format: int64
+                    type: integer
                 orderReports:
                     items:
                         properties:
@@ -137,9 +135,11 @@ components:
                             icebergQty:
                                 type: string
                             orderId:
-                                type: number
+                                format: int64
+                                type: integer
                             orderListId:
-                                type: number
+                                format: int64
+                                type: integer
                             origQty:
                                 type: string
                             origQuoteOrderQty:
@@ -159,11 +159,13 @@ components:
                             timeInForce:
                                 type: string
                             transactTime:
-                                type: number
+                                format: int64
+                                type: integer
                             type:
                                 type: string
                             workingTime:
-                                type: number
+                                format: int64
+                                type: integer
                         type: object
                     type: array
                 orders:
@@ -172,7 +174,8 @@ components:
                             clientOrderId:
                                 type: string
                             orderId:
-                                type: number
+                                format: int64
+                                type: integer
                             symbol:
                                 type: string
                         type: object
@@ -180,8 +183,14 @@ components:
                 symbol:
                     type: string
                 transactionTime:
-                    type: number
+                    format: int64
+                    type: integer
             type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
 info:
     title: ""
     version: ""
@@ -209,16 +218,32 @@ paths:
             operationId: SpotCreateOrderListOcoV3
             requestBody:
                 content:
-                    application/json:
+                    application/x-www-form-urlencoded:
                         schema:
                             $ref: '#/components/schemas/SpotCreateOrderListOcoV3Req'
+                description: The request body for SpotCreateOrderListOcoV3
+                required: true
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
                                 $ref: '#/components/schemas/SpotCreateOrderListOcoV3Resp'
                     description: Successful operation
+            security:
+                - ApiKey: []
             summary: New Order list - OCO (TRADE)
             tags:
                 - Trading

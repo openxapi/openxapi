@@ -1,20 +1,24 @@
 components:
     schemas:
-        SpotGetAvgPriceV3Resp:
-            example: |
-                {
-                    "mins": 5,                    // Average price interval (in minutes)
-                    "price": "9.35751834",        // Average price
-                    "closeTime": 1694061154503    // Last trade time
-                }
-            type: object
+        APIError:
+            description: binance API error
             properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SpotGetAvgPriceV3Resp:
+            example: '{ "mins": 5,                     "price": "9.35751834",         "closeTime": 1694061154503     }'
+            properties:
+                closeTime:
+                    format: int64
+                    type: integer
                 mins:
-                    type: number
+                    type: integer
                 price:
                     type: string
-                closeTime:
-                    type: number
+            type: object
 info:
     title: ""
     version: ""
@@ -32,6 +36,18 @@ paths:
                     default: ""
                     type: string
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:

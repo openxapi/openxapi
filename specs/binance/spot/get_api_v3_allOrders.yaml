@@ -1,72 +1,66 @@
 components:
     schemas:
-        SpotGetAllOrdersV3RespItem:
-            example: |-
-              {
-                "symbol": "LTCBTC",
-                "orderId": 1,
-                "orderListId": -1, //Unless it's part of an order list, value will be -1
-                "clientOrderId": "myOrder1",
-                "price": "0.1",
-                "origQty": "1.0",
-                "executedQty": "0.0",
-                "cummulativeQuoteQty": "0.0",
-                "status": "NEW",
-                "timeInForce": "GTC",
-                "type": "LIMIT",
-                "side": "BUY",
-                "stopPrice": "0.0",
-                "icebergQty": "0.0",
-                "time": 1499827319559,
-                "updateTime": 1499827319559,
-                "isWorking": true,
-                "origQuoteOrderQty": "0.000000",
-                "workingTime": 1499827319559,
-                "selfTradePreventionMode": "NONE"
-              }
-            type: object
+        APIError:
+            description: binance API error
             properties:
-                symbol:
+                code:
+                    type: integer
+                msg:
                     type: string
-                orderId:
-                    type: integer
-                    format: int64
-                orderListId:
-                    type: integer
+            type: object
+        SpotGetAllOrdersV3RespItem:
+            properties:
                 clientOrderId:
-                    type: string
-                price:
-                    type: string
-                origQty:
-                    type: string
-                executedQty:
                     type: string
                 cummulativeQuoteQty:
                     type: string
+                executedQty:
+                    type: string
+                icebergQty:
+                    type: string
+                isWorking:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                orderListId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origQuoteOrderQty:
+                    type: string
+                price:
+                    type: string
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
                 status:
                     type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
                 timeInForce:
                     type: string
                 type:
                     type: string
-                side:
-                    type: string
-                stopPrice:
-                    type: string
-                icebergQty:
-                    type: string
-                time:
-                    type: integer
                 updateTime:
+                    format: int64
                     type: integer
-                isWorking:
-                    type: boolean
-                origQuoteOrderQty:
-                    type: string
                 workingTime:
+                    format: int64
                     type: integer
-                selfTradePreventionMode:
-                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
 info:
     title: ""
     version: ""
@@ -86,18 +80,18 @@ paths:
                 - in: query
                   name: orderId
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - in: query
                   name: startTime
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - in: query
                   name: endTime
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - description: Default 500; max 1000.
                   in: query
                   name: limit
@@ -109,24 +103,38 @@ paths:
                   in: query
                   name: recvWindow
                   schema:
-                    type: integer
-                    maximum: 60000
                     format: int64
+                    type: integer
                 - in: query
                   name: timestamp
                   required: true
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
-                                type: array
+                                example: '[ { "symbol": "LTCBTC", "orderId": 1, "orderListId": -1,  "clientOrderId": "myOrder1", "price": "0.1", "origQty": "1.0", "executedQty": "0.0", "cummulativeQuoteQty": "0.0", "status": "NEW", "timeInForce": "GTC", "type": "LIMIT", "side": "BUY", "stopPrice": "0.0", "icebergQty": "0.0", "time": 1499827319559, "updateTime": 1499827319559, "isWorking": true, "origQuoteOrderQty": "0.000000", "workingTime": 1499827319559, "selfTradePreventionMode": "NONE" } ]'
                                 items:
                                     $ref: '#/components/schemas/SpotGetAllOrdersV3RespItem'
+                                type: array
                     description: Successful operation
+            security:
+                - ApiKey: []
             summary: All orders (USER_DATA)
             tags:
                 - Trading

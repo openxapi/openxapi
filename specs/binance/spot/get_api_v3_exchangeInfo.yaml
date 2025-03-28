@@ -1,3 +1,98 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SpotGetExchangeInfoV3Resp:
+            example: '{ "timezone": "UTC", "serverTime": 1565246363776, "rateLimits": [ { } ], "exchangeFilters": [ ], "symbols": [ { "symbol": "ETHBTC", "status": "TRADING", "baseAsset": "ETH", "baseAssetPrecision": 8, "quoteAsset": "BTC", "quotePrecision": 8,  "quoteAssetPrecision": 8, "baseCommissionPrecision": 8, "quoteCommissionPrecision": 8, "orderTypes": [ "LIMIT", "LIMIT_MAKER", "MARKET", "STOP_LOSS", "STOP_LOSS_LIMIT", "TAKE_PROFIT", "TAKE_PROFIT_LIMIT" ], "icebergAllowed": true, "ocoAllowed": true, "otoAllowed": true, "quoteOrderQtyMarketAllowed": true, "allowTrailingStop": false, "cancelReplaceAllowed":false, "isSpotTradingAllowed": true, "isMarginTradingAllowed": true, "filters": [ ], "permissions": [], "permissionSets": [ [ "SPOT", "MARGIN" ] ], "defaultSelfTradePreventionMode": "NONE", "allowedSelfTradePreventionModes": [ "NONE" ] } ], "sors": [ { "baseAsset": "BTC", "symbols": [ "BTCUSDT", "BTCUSDC" ] } ] }'
+            properties:
+                exchangeFilters:
+                    type: array
+                rateLimits:
+                    items:
+                        type: object
+                    type: array
+                serverTime:
+                    format: int64
+                    type: integer
+                sors:
+                    items:
+                        properties:
+                            baseAsset:
+                                type: string
+                            symbols:
+                                items:
+                                    type: string
+                                type: array
+                        type: object
+                    type: array
+                symbols:
+                    items:
+                        properties:
+                            allowTrailingStop:
+                                type: boolean
+                            allowedSelfTradePreventionModes:
+                                items:
+                                    type: string
+                                type: array
+                            baseAsset:
+                                type: string
+                            baseAssetPrecision:
+                                type: integer
+                            baseCommissionPrecision:
+                                type: integer
+                            cancelReplaceAllowed:
+                                type: boolean
+                            defaultSelfTradePreventionMode:
+                                type: string
+                            filters:
+                                type: array
+                            icebergAllowed:
+                                type: boolean
+                            isMarginTradingAllowed:
+                                type: boolean
+                            isSpotTradingAllowed:
+                                type: boolean
+                            ocoAllowed:
+                                type: boolean
+                            orderTypes:
+                                items:
+                                    type: string
+                                type: array
+                            otoAllowed:
+                                type: boolean
+                            permissionSets:
+                                items:
+                                    items:
+                                        type: string
+                                    type: array
+                                type: array
+                            permissions:
+                                type: array
+                            quoteAsset:
+                                type: string
+                            quoteAssetPrecision:
+                                type: integer
+                            quoteCommissionPrecision:
+                                type: integer
+                            quoteOrderQtyMarketAllowed:
+                                type: boolean
+                            quotePrecision:
+                                type: integer
+                            status:
+                                type: string
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                timezone:
+                    type: string
+            type: object
 info:
     title: ""
     version: ""
@@ -12,20 +107,21 @@ paths:
                   in: query
                   name: symbol
                   schema:
+                    default: ""
                     type: string
                 - description: 'Examples: curl -X GET &#34;<a href="https://api.binance.com/api/v3/exchangeInfo?symbols=%5B%22BNBBTC%22,%22BTCUSDT%22%5D" target="_blank" rel="noopener noreferrer">https://api.binance.com/api/v3/exchangeInfo?symbols=%5B%22BNBBTC%22,%22BTCUSDT%22%5D</a>&#34; <br/> or <br/> curl -g -X  GET &#39;<a href="https://api.binance.com/api/v3/exchangeInfo?symbols=%5B%22BTCUSDT%22,%22BNBBTC" target="_blank" rel="noopener noreferrer">https://api.binance.com/api/v3/exchangeInfo?symbols=[&#34;BTCUSDT&#34;,&#34;BNBBTC</a>&#34;]&#39;'
                   in: query
                   name: symbols
                   schema:
-                    type: string
+                    items:
+                        type: string
+                    type: array
                 - description: 'Examples: curl -X GET &#34;<a href="https://api.binance.com/api/v3/exchangeInfo?permissions=SPOT" target="_blank" rel="noopener noreferrer">https://api.binance.com/api/v3/exchangeInfo?permissions=SPOT</a>&#34; <br/> or <br/> curl -X GET &#34;<a href="https://api.binance.com/api/v3/exchangeInfo?permissions=%5B%22MARGIN%22%2C%22LEVERAGED%22%5D" target="_blank" rel="noopener noreferrer">https://api.binance.com/api/v3/exchangeInfo?permissions=%5B%22MARGIN%22%2C%22LEVERAGED%22%5D</a>&#34; <br/> or <br/> curl -g -X GET &#39;<a href="https://api.binance.com/api/v3/exchangeInfo?permissions=%5B%22MARGIN%22,%22LEVERAGED" target="_blank" rel="noopener noreferrer">https://api.binance.com/api/v3/exchangeInfo?permissions=[&#34;MARGIN&#34;,&#34;LEVERAGED</a>&#34;]&#39;'
                   in: query
                   name: permissions
                   schema:
-                    items:
-                        default: ""
-                        type: string
-                    type: array
+                    default: ""
+                    type: string
                 - description: Controls whether the content of the `permissionSets` field is populated or not. Defaults to `true`
                   in: query
                   name: showPermissionSets
@@ -35,814 +131,32 @@ paths:
                   in: query
                   name: symbolStatus
                   schema:
+                    default: ""
                     enum:
                         - TRADING
                         - HALT
                         - BREAK
                     type: string
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
-                                $ref: "#/components/schemas/SpotGetExchangeInfoV3Resp"
+                                $ref: '#/components/schemas/SpotGetExchangeInfoV3Resp'
                     description: Successful operation
             summary: Exchange information
             tags:
                 - General
                 - V3
-
-components:
-    schemas:
-        SpotGetExchangeInfoV3Resp:
-            example: |
-                {
-                  "timezone": "UTC",
-                  "serverTime": 1741633633702,
-                  "rateLimits": [
-                    {
-                      "rateLimitType": "REQUEST_WEIGHT",
-                      "interval": "MINUTE",
-                      "intervalNum": 1,
-                      "limit": 6000
-                    },
-                    {
-                      "rateLimitType": "ORDERS",
-                      "interval": "SECOND",
-                      "intervalNum": 10,
-                      "limit": 100
-                    },
-                    {
-                      "rateLimitType": "ORDERS",
-                      "interval": "DAY",
-                      "intervalNum": 1,
-                      "limit": 200000
-                    },
-                    {
-                      "rateLimitType": "RAW_REQUESTS",
-                      "interval": "MINUTE",
-                      "intervalNum": 5,
-                      "limit": 61000
-                    }
-                  ],
-                  "exchangeFilters": [],
-                  "symbols": [
-                    {
-                      "symbol": "BNBBTC",
-                      "status": "TRADING",
-                      "baseAsset": "BNB",
-                      "baseAssetPrecision": 8,
-                      "quoteAsset": "BTC",
-                      "quotePrecision": 8,
-                      "quoteAssetPrecision": 8,
-                      "baseCommissionPrecision": 8,
-                      "quoteCommissionPrecision": 8,
-                      "orderTypes": [
-                        "LIMIT",
-                        "LIMIT_MAKER",
-                        "MARKET",
-                        "STOP_LOSS",
-                        "STOP_LOSS_LIMIT",
-                        "TAKE_PROFIT",
-                        "TAKE_PROFIT_LIMIT"
-                      ],
-                      "icebergAllowed": true,
-                      "ocoAllowed": true,
-                      "otoAllowed": true,
-                      "quoteOrderQtyMarketAllowed": true,
-                      "allowTrailingStop": true,
-                      "cancelReplaceAllowed": true,
-                      "isSpotTradingAllowed": true,
-                      "isMarginTradingAllowed": true,
-                      "filters": [
-                        {
-                          "filterType": "PRICE_FILTER",
-                          "minPrice": "0.00000100",
-                          "maxPrice": "100000.00000000",
-                          "tickSize": "0.00000100"
-                        },
-                        {
-                          "filterType": "LOT_SIZE",
-                          "minQty": "0.00100000",
-                          "maxQty": "100000.00000000",
-                          "stepSize": "0.00100000"
-                        },
-                        {
-                          "filterType": "ICEBERG_PARTS",
-                          "limit": 10
-                        },
-                        {
-                          "filterType": "MARKET_LOT_SIZE",
-                          "minQty": "0.00000000",
-                          "maxQty": "2130.19768200",
-                          "stepSize": "0.00000000"
-                        },
-                        {
-                          "filterType": "TRAILING_DELTA",
-                          "minTrailingAboveDelta": 10,
-                          "maxTrailingAboveDelta": 2000,
-                          "minTrailingBelowDelta": 10,
-                          "maxTrailingBelowDelta": 2000
-                        },
-                        {
-                          "filterType": "PERCENT_PRICE_BY_SIDE",
-                          "bidMultiplierUp": "5",
-                          "bidMultiplierDown": "0.2",
-                          "askMultiplierUp": "5",
-                          "askMultiplierDown": "0.2",
-                          "avgPriceMins": 5
-                        },
-                        {
-                          "filterType": "NOTIONAL",
-                          "minNotional": "0.00010000",
-                          "applyMinToMarket": true,
-                          "maxNotional": "9000000.00000000",
-                          "applyMaxToMarket": false,
-                          "avgPriceMins": 5
-                        },
-                        {
-                          "filterType": "MAX_NUM_ORDERS",
-                          "maxNumOrders": 200
-                        },
-                        {
-                          "filterType": "MAX_NUM_ALGO_ORDERS",
-                          "maxNumAlgoOrders": 5
-                        }
-                      ],
-                      "permissions": [],
-                      "permissionSets": [
-                        [
-                          "SPOT",
-                          "MARGIN",
-                          "TRD_GRP_004",
-                          "TRD_GRP_005",
-                          "TRD_GRP_006",
-                          "TRD_GRP_008",
-                          "TRD_GRP_009",
-                          "TRD_GRP_010",
-                          "TRD_GRP_011",
-                          "TRD_GRP_012",
-                          "TRD_GRP_013",
-                          "TRD_GRP_014",
-                          "TRD_GRP_015",
-                          "TRD_GRP_016",
-                          "TRD_GRP_017",
-                          "TRD_GRP_018",
-                          "TRD_GRP_019",
-                          "TRD_GRP_020",
-                          "TRD_GRP_021",
-                          "TRD_GRP_022",
-                          "TRD_GRP_023",
-                          "TRD_GRP_024",
-                          "TRD_GRP_025",
-                          "TRD_GRP_026",
-                          "TRD_GRP_027",
-                          "TRD_GRP_028",
-                          "TRD_GRP_029",
-                          "TRD_GRP_030",
-                          "TRD_GRP_031",
-                          "TRD_GRP_032",
-                          "TRD_GRP_033",
-                          "TRD_GRP_034",
-                          "TRD_GRP_035",
-                          "TRD_GRP_036",
-                          "TRD_GRP_037",
-                          "TRD_GRP_038",
-                          "TRD_GRP_039",
-                          "TRD_GRP_040",
-                          "TRD_GRP_041",
-                          "TRD_GRP_042",
-                          "TRD_GRP_043",
-                          "TRD_GRP_044",
-                          "TRD_GRP_045",
-                          "TRD_GRP_046",
-                          "TRD_GRP_047",
-                          "TRD_GRP_048",
-                          "TRD_GRP_049",
-                          "TRD_GRP_050",
-                          "TRD_GRP_051",
-                          "TRD_GRP_052",
-                          "TRD_GRP_053",
-                          "TRD_GRP_054",
-                          "TRD_GRP_055",
-                          "TRD_GRP_056",
-                          "TRD_GRP_057",
-                          "TRD_GRP_058",
-                          "TRD_GRP_059",
-                          "TRD_GRP_060",
-                          "TRD_GRP_061",
-                          "TRD_GRP_062",
-                          "TRD_GRP_063",
-                          "TRD_GRP_064",
-                          "TRD_GRP_065",
-                          "TRD_GRP_066",
-                          "TRD_GRP_067",
-                          "TRD_GRP_068",
-                          "TRD_GRP_069",
-                          "TRD_GRP_070",
-                          "TRD_GRP_071",
-                          "TRD_GRP_072",
-                          "TRD_GRP_073",
-                          "TRD_GRP_074",
-                          "TRD_GRP_075",
-                          "TRD_GRP_076",
-                          "TRD_GRP_077",
-                          "TRD_GRP_078",
-                          "TRD_GRP_079",
-                          "TRD_GRP_080",
-                          "TRD_GRP_081",
-                          "TRD_GRP_082",
-                          "TRD_GRP_083",
-                          "TRD_GRP_084",
-                          "TRD_GRP_085",
-                          "TRD_GRP_086",
-                          "TRD_GRP_087",
-                          "TRD_GRP_088",
-                          "TRD_GRP_089",
-                          "TRD_GRP_090",
-                          "TRD_GRP_091",
-                          "TRD_GRP_092",
-                          "TRD_GRP_093",
-                          "TRD_GRP_094",
-                          "TRD_GRP_095",
-                          "TRD_GRP_096",
-                          "TRD_GRP_097",
-                          "TRD_GRP_098",
-                          "TRD_GRP_099",
-                          "TRD_GRP_100",
-                          "TRD_GRP_101",
-                          "TRD_GRP_102",
-                          "TRD_GRP_103",
-                          "TRD_GRP_104",
-                          "TRD_GRP_105",
-                          "TRD_GRP_106",
-                          "TRD_GRP_107",
-                          "TRD_GRP_108",
-                          "TRD_GRP_109",
-                          "TRD_GRP_110",
-                          "TRD_GRP_111",
-                          "TRD_GRP_112",
-                          "TRD_GRP_113",
-                          "TRD_GRP_114",
-                          "TRD_GRP_115",
-                          "TRD_GRP_116",
-                          "TRD_GRP_117",
-                          "TRD_GRP_118",
-                          "TRD_GRP_119",
-                          "TRD_GRP_120",
-                          "TRD_GRP_121",
-                          "TRD_GRP_122",
-                          "TRD_GRP_123",
-                          "TRD_GRP_124",
-                          "TRD_GRP_125",
-                          "TRD_GRP_126",
-                          "TRD_GRP_127",
-                          "TRD_GRP_128",
-                          "TRD_GRP_129",
-                          "TRD_GRP_130",
-                          "TRD_GRP_131",
-                          "TRD_GRP_132",
-                          "TRD_GRP_133",
-                          "TRD_GRP_134",
-                          "TRD_GRP_135",
-                          "TRD_GRP_136",
-                          "TRD_GRP_137",
-                          "TRD_GRP_138",
-                          "TRD_GRP_139",
-                          "TRD_GRP_140",
-                          "TRD_GRP_141",
-                          "TRD_GRP_142",
-                          "TRD_GRP_143",
-                          "TRD_GRP_144",
-                          "TRD_GRP_145",
-                          "TRD_GRP_146",
-                          "TRD_GRP_147",
-                          "TRD_GRP_148",
-                          "TRD_GRP_149",
-                          "TRD_GRP_150",
-                          "TRD_GRP_151",
-                          "TRD_GRP_152",
-                          "TRD_GRP_153",
-                          "TRD_GRP_154",
-                          "TRD_GRP_155",
-                          "TRD_GRP_156",
-                          "TRD_GRP_157",
-                          "TRD_GRP_158",
-                          "TRD_GRP_159",
-                          "TRD_GRP_160",
-                          "TRD_GRP_161",
-                          "TRD_GRP_162",
-                          "TRD_GRP_163",
-                          "TRD_GRP_164",
-                          "TRD_GRP_165",
-                          "TRD_GRP_166",
-                          "TRD_GRP_167",
-                          "TRD_GRP_168",
-                          "TRD_GRP_169",
-                          "TRD_GRP_170",
-                          "TRD_GRP_171",
-                          "TRD_GRP_172",
-                          "TRD_GRP_173",
-                          "TRD_GRP_174",
-                          "TRD_GRP_175",
-                          "TRD_GRP_176",
-                          "TRD_GRP_177",
-                          "TRD_GRP_178",
-                          "TRD_GRP_179",
-                          "TRD_GRP_180",
-                          "TRD_GRP_181",
-                          "TRD_GRP_182",
-                          "TRD_GRP_183",
-                          "TRD_GRP_184",
-                          "TRD_GRP_185",
-                          "TRD_GRP_186",
-                          "TRD_GRP_187",
-                          "TRD_GRP_188",
-                          "TRD_GRP_189",
-                          "TRD_GRP_190",
-                          "TRD_GRP_191",
-                          "TRD_GRP_192",
-                          "TRD_GRP_193",
-                          "TRD_GRP_194",
-                          "TRD_GRP_195",
-                          "TRD_GRP_196",
-                          "TRD_GRP_197",
-                          "TRD_GRP_198",
-                          "TRD_GRP_199",
-                          "TRD_GRP_200",
-                          "TRD_GRP_201",
-                          "TRD_GRP_202",
-                          "TRD_GRP_203",
-                          "TRD_GRP_204",
-                          "TRD_GRP_205",
-                          "TRD_GRP_206",
-                          "TRD_GRP_207",
-                          "TRD_GRP_208",
-                          "TRD_GRP_209",
-                          "TRD_GRP_210",
-                          "TRD_GRP_211",
-                          "TRD_GRP_212",
-                          "TRD_GRP_213",
-                          "TRD_GRP_214",
-                          "TRD_GRP_215",
-                          "TRD_GRP_216",
-                          "TRD_GRP_217",
-                          "TRD_GRP_218",
-                          "TRD_GRP_219",
-                          "TRD_GRP_220",
-                          "TRD_GRP_221",
-                          "TRD_GRP_222",
-                          "TRD_GRP_223",
-                          "TRD_GRP_224",
-                          "TRD_GRP_225",
-                          "TRD_GRP_226",
-                          "TRD_GRP_227",
-                          "TRD_GRP_228",
-                          "TRD_GRP_229",
-                          "TRD_GRP_230",
-                          "TRD_GRP_231",
-                          "TRD_GRP_232",
-                          "TRD_GRP_233",
-                          "TRD_GRP_234",
-                          "TRD_GRP_235",
-                          "TRD_GRP_236"
-                        ]
-                      ],
-                      "defaultSelfTradePreventionMode": "EXPIRE_MAKER",
-                      "allowedSelfTradePreventionModes": [
-                        "EXPIRE_TAKER",
-                        "EXPIRE_MAKER",
-                        "EXPIRE_BOTH"
-                      ]
-                    },
-                    {
-                      "symbol": "BTCUSDT",
-                      "status": "TRADING",
-                      "baseAsset": "BTC",
-                      "baseAssetPrecision": 8,
-                      "quoteAsset": "USDT",
-                      "quotePrecision": 8,
-                      "quoteAssetPrecision": 8,
-                      "baseCommissionPrecision": 8,
-                      "quoteCommissionPrecision": 8,
-                      "orderTypes": [
-                        "LIMIT",
-                        "LIMIT_MAKER",
-                        "MARKET",
-                        "STOP_LOSS",
-                        "STOP_LOSS_LIMIT",
-                        "TAKE_PROFIT",
-                        "TAKE_PROFIT_LIMIT"
-                      ],
-                      "icebergAllowed": true,
-                      "ocoAllowed": true,
-                      "otoAllowed": true,
-                      "quoteOrderQtyMarketAllowed": true,
-                      "allowTrailingStop": true,
-                      "cancelReplaceAllowed": true,
-                      "isSpotTradingAllowed": true,
-                      "isMarginTradingAllowed": true,
-                      "filters": [
-                        {
-                          "filterType": "PRICE_FILTER",
-                          "minPrice": "0.01000000",
-                          "maxPrice": "1000000.00000000",
-                          "tickSize": "0.01000000"
-                        },
-                        {
-                          "filterType": "LOT_SIZE",
-                          "minQty": "0.00001000",
-                          "maxQty": "9000.00000000",
-                          "stepSize": "0.00001000"
-                        },
-                        {
-                          "filterType": "ICEBERG_PARTS",
-                          "limit": 10
-                        },
-                        {
-                          "filterType": "MARKET_LOT_SIZE",
-                          "minQty": "0.00000000",
-                          "maxQty": "96.56124711",
-                          "stepSize": "0.00000000"
-                        },
-                        {
-                          "filterType": "TRAILING_DELTA",
-                          "minTrailingAboveDelta": 10,
-                          "maxTrailingAboveDelta": 2000,
-                          "minTrailingBelowDelta": 10,
-                          "maxTrailingBelowDelta": 2000
-                        },
-                        {
-                          "filterType": "PERCENT_PRICE_BY_SIDE",
-                          "bidMultiplierUp": "5",
-                          "bidMultiplierDown": "0.2",
-                          "askMultiplierUp": "5",
-                          "askMultiplierDown": "0.2",
-                          "avgPriceMins": 5
-                        },
-                        {
-                          "filterType": "NOTIONAL",
-                          "minNotional": "5.00000000",
-                          "applyMinToMarket": true,
-                          "maxNotional": "9000000.00000000",
-                          "applyMaxToMarket": false,
-                          "avgPriceMins": 5
-                        },
-                        {
-                          "filterType": "MAX_NUM_ORDERS",
-                          "maxNumOrders": 200
-                        },
-                        {
-                          "filterType": "MAX_NUM_ALGO_ORDERS",
-                          "maxNumAlgoOrders": 5
-                        }
-                      ],
-                      "permissions": [],
-                      "permissionSets": [
-                        [
-                          "SPOT",
-                          "MARGIN",
-                          "TRD_GRP_004",
-                          "TRD_GRP_005",
-                          "TRD_GRP_006",
-                          "TRD_GRP_009",
-                          "TRD_GRP_010",
-                          "TRD_GRP_011",
-                          "TRD_GRP_012",
-                          "TRD_GRP_013",
-                          "TRD_GRP_014",
-                          "TRD_GRP_015",
-                          "TRD_GRP_016",
-                          "TRD_GRP_017",
-                          "TRD_GRP_018",
-                          "TRD_GRP_019",
-                          "TRD_GRP_020",
-                          "TRD_GRP_021",
-                          "TRD_GRP_022",
-                          "TRD_GRP_023",
-                          "TRD_GRP_024",
-                          "TRD_GRP_025",
-                          "TRD_GRP_026",
-                          "TRD_GRP_027",
-                          "TRD_GRP_028",
-                          "TRD_GRP_029",
-                          "TRD_GRP_030",
-                          "TRD_GRP_031",
-                          "TRD_GRP_032",
-                          "TRD_GRP_033",
-                          "TRD_GRP_034",
-                          "TRD_GRP_035",
-                          "TRD_GRP_036",
-                          "TRD_GRP_037",
-                          "TRD_GRP_038",
-                          "TRD_GRP_039",
-                          "TRD_GRP_040",
-                          "TRD_GRP_041",
-                          "TRD_GRP_042",
-                          "TRD_GRP_043",
-                          "TRD_GRP_044",
-                          "TRD_GRP_045",
-                          "TRD_GRP_046",
-                          "TRD_GRP_047",
-                          "TRD_GRP_048",
-                          "TRD_GRP_049",
-                          "TRD_GRP_050",
-                          "TRD_GRP_051",
-                          "TRD_GRP_052",
-                          "TRD_GRP_053",
-                          "TRD_GRP_054",
-                          "TRD_GRP_055",
-                          "TRD_GRP_056",
-                          "TRD_GRP_057",
-                          "TRD_GRP_058",
-                          "TRD_GRP_059",
-                          "TRD_GRP_060",
-                          "TRD_GRP_061",
-                          "TRD_GRP_062",
-                          "TRD_GRP_063",
-                          "TRD_GRP_064",
-                          "TRD_GRP_065",
-                          "TRD_GRP_066",
-                          "TRD_GRP_067",
-                          "TRD_GRP_068",
-                          "TRD_GRP_069",
-                          "TRD_GRP_070",
-                          "TRD_GRP_071",
-                          "TRD_GRP_072",
-                          "TRD_GRP_073",
-                          "TRD_GRP_074",
-                          "TRD_GRP_075",
-                          "TRD_GRP_076",
-                          "TRD_GRP_077",
-                          "TRD_GRP_078",
-                          "TRD_GRP_079",
-                          "TRD_GRP_080",
-                          "TRD_GRP_081",
-                          "TRD_GRP_082",
-                          "TRD_GRP_083",
-                          "TRD_GRP_084",
-                          "TRD_GRP_085",
-                          "TRD_GRP_086",
-                          "TRD_GRP_087",
-                          "TRD_GRP_088",
-                          "TRD_GRP_089",
-                          "TRD_GRP_090",
-                          "TRD_GRP_091",
-                          "TRD_GRP_092",
-                          "TRD_GRP_093",
-                          "TRD_GRP_094",
-                          "TRD_GRP_095",
-                          "TRD_GRP_096",
-                          "TRD_GRP_097",
-                          "TRD_GRP_098",
-                          "TRD_GRP_099",
-                          "TRD_GRP_100",
-                          "TRD_GRP_101",
-                          "TRD_GRP_102",
-                          "TRD_GRP_103",
-                          "TRD_GRP_104",
-                          "TRD_GRP_105",
-                          "TRD_GRP_106",
-                          "TRD_GRP_107",
-                          "TRD_GRP_108",
-                          "TRD_GRP_109",
-                          "TRD_GRP_110",
-                          "TRD_GRP_111",
-                          "TRD_GRP_112",
-                          "TRD_GRP_113",
-                          "TRD_GRP_114",
-                          "TRD_GRP_115",
-                          "TRD_GRP_116",
-                          "TRD_GRP_117",
-                          "TRD_GRP_118",
-                          "TRD_GRP_119",
-                          "TRD_GRP_120",
-                          "TRD_GRP_121",
-                          "TRD_GRP_122",
-                          "TRD_GRP_123",
-                          "TRD_GRP_124",
-                          "TRD_GRP_125",
-                          "TRD_GRP_126",
-                          "TRD_GRP_127",
-                          "TRD_GRP_128",
-                          "TRD_GRP_129",
-                          "TRD_GRP_130",
-                          "TRD_GRP_131",
-                          "TRD_GRP_132",
-                          "TRD_GRP_133",
-                          "TRD_GRP_134",
-                          "TRD_GRP_135",
-                          "TRD_GRP_136",
-                          "TRD_GRP_137",
-                          "TRD_GRP_138",
-                          "TRD_GRP_139",
-                          "TRD_GRP_140",
-                          "TRD_GRP_141",
-                          "TRD_GRP_142",
-                          "TRD_GRP_143",
-                          "TRD_GRP_144",
-                          "TRD_GRP_145",
-                          "TRD_GRP_146",
-                          "TRD_GRP_147",
-                          "TRD_GRP_148",
-                          "TRD_GRP_149",
-                          "TRD_GRP_150",
-                          "TRD_GRP_151",
-                          "TRD_GRP_152",
-                          "TRD_GRP_153",
-                          "TRD_GRP_154",
-                          "TRD_GRP_155",
-                          "TRD_GRP_156",
-                          "TRD_GRP_157",
-                          "TRD_GRP_158",
-                          "TRD_GRP_159",
-                          "TRD_GRP_160",
-                          "TRD_GRP_161",
-                          "TRD_GRP_162",
-                          "TRD_GRP_163",
-                          "TRD_GRP_164",
-                          "TRD_GRP_165",
-                          "TRD_GRP_166",
-                          "TRD_GRP_167",
-                          "TRD_GRP_168",
-                          "TRD_GRP_169",
-                          "TRD_GRP_170",
-                          "TRD_GRP_171",
-                          "TRD_GRP_172",
-                          "TRD_GRP_173",
-                          "TRD_GRP_174",
-                          "TRD_GRP_175",
-                          "TRD_GRP_176",
-                          "TRD_GRP_177",
-                          "TRD_GRP_178",
-                          "TRD_GRP_179",
-                          "TRD_GRP_180",
-                          "TRD_GRP_181",
-                          "TRD_GRP_182",
-                          "TRD_GRP_183",
-                          "TRD_GRP_184",
-                          "TRD_GRP_185",
-                          "TRD_GRP_186",
-                          "TRD_GRP_187",
-                          "TRD_GRP_188",
-                          "TRD_GRP_189",
-                          "TRD_GRP_190",
-                          "TRD_GRP_191",
-                          "TRD_GRP_192",
-                          "TRD_GRP_193",
-                          "TRD_GRP_194",
-                          "TRD_GRP_195",
-                          "TRD_GRP_196",
-                          "TRD_GRP_197",
-                          "TRD_GRP_198",
-                          "TRD_GRP_199",
-                          "TRD_GRP_200",
-                          "TRD_GRP_201",
-                          "TRD_GRP_202",
-                          "TRD_GRP_203",
-                          "TRD_GRP_204",
-                          "TRD_GRP_205",
-                          "TRD_GRP_206",
-                          "TRD_GRP_207",
-                          "TRD_GRP_208",
-                          "TRD_GRP_209",
-                          "TRD_GRP_210",
-                          "TRD_GRP_211",
-                          "TRD_GRP_212",
-                          "TRD_GRP_213",
-                          "TRD_GRP_214",
-                          "TRD_GRP_215",
-                          "TRD_GRP_216",
-                          "TRD_GRP_217",
-                          "TRD_GRP_218",
-                          "TRD_GRP_219",
-                          "TRD_GRP_220",
-                          "TRD_GRP_221",
-                          "TRD_GRP_222",
-                          "TRD_GRP_223",
-                          "TRD_GRP_224",
-                          "TRD_GRP_225",
-                          "TRD_GRP_226",
-                          "TRD_GRP_227",
-                          "TRD_GRP_228",
-                          "TRD_GRP_229",
-                          "TRD_GRP_230",
-                          "TRD_GRP_231",
-                          "TRD_GRP_232",
-                          "TRD_GRP_233",
-                          "TRD_GRP_234",
-                          "TRD_GRP_235",
-                          "TRD_GRP_236"
-                        ]
-                      ],
-                      "defaultSelfTradePreventionMode": "EXPIRE_MAKER",
-                      "allowedSelfTradePreventionModes": [
-                        "EXPIRE_TAKER",
-                        "EXPIRE_MAKER",
-                        "EXPIRE_BOTH"
-                      ]
-                    }
-                  ]
-                }
-            type: object
-            properties:
-                timezone:
-                    type: string
-                serverTime:
-                    type: number
-                rateLimits:
-                    type: array
-                    items:
-                        type: object
-                        properties:
-                            rateLimitType:
-                                type: string
-                            interval:
-                                type: string
-                            intervalNum:
-                                type: number
-                            limit:
-                                type: number
-                exchangeFilters:
-                    type: array
-                    items:
-                        type: object
-                        properties:
-                            filterType:
-                                type: string
-                            minPrice:
-                                type: string
-                            maxPrice:
-                                type: string
-                            tickSize:
-                                type: string
-                symbols:
-                    type: array
-                    items:
-                        type: object
-                        properties:
-                            symbol:
-                                type: string
-                            status:
-                                type: string
-                            baseAsset:
-                                type: string
-                            baseAssetPrecision:
-                                type: number
-                            quoteAsset:
-                                type: string
-                            quotePrecision:
-                                type: number
-                            quoteAssetPrecision:
-                                type: number
-                            baseCommissionPrecision:
-                                type: number
-                            quoteCommissionPrecision:
-                                type: number
-                            orderTypes:
-                                type: array
-                                items:
-                                    type: string
-                            icebergAllowed:
-                                type: boolean
-                            ocoAllowed:
-                                type: boolean
-                            otoAllowed:
-                                type: boolean
-                            quoteOrderQtyMarketAllowed:
-                                type: boolean
-                            allowTrailingStop:
-                                type: boolean
-                            cancelReplaceAllowed:
-                                type: boolean
-                            isSpotTradingAllowed:
-                                type: boolean
-                            isMarginTradingAllowed:
-                                type: boolean
-                            filters:
-                                type: array
-                                items:
-                                    type: object
-                                    properties:
-                                        filterType:
-                                            type: string
-                                        minPrice:
-                                            type: string
-                                        maxPrice:
-                                            type: string
-                permissions:
-                    type: array
-                    items:
-                        type: string
-                permissionSets:
-                    type: array
-                    items:
-                        type: array
-                        items:
-                            type: string
-                defaultSelfTradePreventionMode:
-                    type: string
-                allowedSelfTradePreventionModes:
-                    type: array
-                    items:
-                        type: string

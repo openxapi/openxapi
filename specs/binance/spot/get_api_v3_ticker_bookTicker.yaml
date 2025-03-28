@@ -1,7 +1,21 @@
 components:
     schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SpotGetTickerBookTickerV3Resp:
+            oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/SpotGetTickerBookTickerV3RespItem'
+                - $ref: '#/components/schemas/SpotGetTickerBookTickerV3RespItem'
         SpotGetTickerBookTickerV3RespItem:
-            example: '{  "symbol": "LTCBTC",  "bidPrice": "4.00000000",  "bidQty": "431.00000000",  "askPrice": "4.00000200",  "askQty": "9.00000000"}'
+            example: '{ "symbol": "LTCBTC", "bidPrice": "4.00000000", "bidQty": "431.00000000", "askPrice": "4.00000200", "askQty": "9.00000000" }'
             properties:
                 askPrice:
                     type: string
@@ -21,9 +35,7 @@ openapi: ""
 paths:
     /api/v3/ticker/bookTicker:
         get:
-            description: |-
-                Best price/qty on the order book for a symbol or symbols.
-                Weight:
+            description: Best price/qty on the order book for a symbol or symbols.
             operationId: SpotGetTickerBookTickerV3
             parameters:
                 - description: |-
@@ -51,15 +63,23 @@ paths:
                     default: ""
                     type: string
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
-                                oneOf:
-                                    - type: array
-                                      items:
-                                        $ref: '#/components/schemas/SpotGetTickerBookTickerV3RespItem'
-                                    - $ref: '#/components/schemas/SpotGetTickerBookTickerV3RespItem'
+                                $ref: '#/components/schemas/SpotGetTickerBookTickerV3Resp'
                     description: Successful operation
             summary: Symbol order book ticker
             tags:

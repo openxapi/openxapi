@@ -1,35 +1,36 @@
 components:
     schemas:
-        SpotGetAggTradesV3RespItem:
-            example: |
-              {
-                a: 26129,         // Aggregate tradeId
-                p: "0.01633102",  // Price
-                q: "4.70443515",  // Quantity
-                f: 27781,         // First tradeId
-                l: 27781,         // Last tradeId
-                T: 1498793709153, // Timestamp
-                m: true,          // Was the buyer the maker?
-                M: true           // Was the trade the best price match?
-              }
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
             type: object
-            properties: # TODO: maybe we should use additionalProperties here because m and M are the same letters
+        SpotGetAggTradesV3RespItem:
+            properties:
+                M:
+                    type: boolean
+                T:
+                    type: integer
+                    format: int64
                 a:
                     type: integer
+                    format: int64
+                f:
+                    type: integer
+                    format: int64
+                l:
+                    type: integer
+                    format: int64
+                m:
+                    type: boolean
                 p:
                     type: string
                 q:
                     type: string
-                f:
-                    type: integer
-                l:
-                    type: integer
-                T:
-                    type: integer
-                m:
-                    type: boolean
-                M:
-                    type: boolean
+            type: object
 info:
     title: ""
     version: ""
@@ -50,20 +51,20 @@ paths:
                   in: query
                   name: fromId
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - description: Timestamp in ms to get aggregate trades from INCLUSIVE.
                   in: query
                   name: startTime
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - description: Timestamp in ms to get aggregate trades until INCLUSIVE.
                   in: query
                   name: endTime
                   schema:
-                    type: integer
                     format: int64
+                    type: integer
                 - description: Default 500; max 1000.
                   in: query
                   name: limit
@@ -72,10 +73,23 @@ paths:
                     maximum: 1000
                     type: integer
             responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
                 "200":
                     content:
                         application/json:
                             schema:
+                                example: '[ { "a": 26129,          "p": "0.01633102",   "q": "4.70443515",   "f": 27781,          "l": 27781,          "T": 1498793709153,  "m": true,           "M": true            } ]'
                                 items:
                                     $ref: '#/components/schemas/SpotGetAggTradesV3RespItem'
                                 type: array
