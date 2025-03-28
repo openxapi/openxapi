@@ -578,6 +578,19 @@ func extractMaxMinDefault(schema *parser.Schema, description string) {
 
 // createSchema creates a schema based on the parameter type
 func createSchema(name, paramType string, content string) (*parser.Schema, error) {
+	listRegex := regexp.MustCompile(`LIST<(\w+)>`)
+	matches := listRegex.FindStringSubmatch(paramType)
+	if len(matches) > 1 {
+		paramType = matches[1]
+		itemSchema, err := createSchema(name, paramType, content)
+		if err != nil {
+			return nil, err
+		}
+		return &parser.Schema{
+			Type:  parser.ArrayType,
+			Items: itemSchema,
+		}, nil
+	}
 	typ, content := normalizeType(paramType, content)
 	switch typ {
 	case parser.ObjectType:
@@ -632,6 +645,11 @@ func createSchema(name, paramType string, content string) (*parser.Schema, error
 
 func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 	typ := reflect.TypeOf(v)
+	if typ == nil {
+		return &parser.Schema{
+			Type: parser.NullType,
+		}, nil
+	}
 	if typ.Kind() == reflect.Ptr {
 		typ = typ.Elem()
 	}
@@ -663,10 +681,13 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 			}
 			schema.Properties[key.String()] = valueSchema
 			// FIXME: this is a hack to fix the format of the time fields
-			if (strings.HasSuffix(key.String(), "Time") || strings.HasSuffix(key.String(), "time")) && valueSchema.Type == parser.IntegerType {
+			if (strings.HasSuffix(key.String(), "Time") || strings.HasSuffix(key.String(), "time") || strings.HasSuffix(key.String(), "timestamp") || strings.HasSuffix(key.String(), "Timestamp")) && valueSchema.Type == parser.IntegerType {
 				schema.Properties[key.String()].Format = "int64"
 			}
 			if strings.HasSuffix(key.String(), "Id") && valueSchema.Type == parser.IntegerType {
+				schema.Properties[key.String()].Format = "int64"
+			}
+			if key.String() == "goodTillDate" && valueSchema.Type == parser.IntegerType {
 				schema.Properties[key.String()].Format = "int64"
 			}
 		}

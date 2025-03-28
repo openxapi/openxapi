@@ -416,6 +416,31 @@ func TestCreateSchema(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name:      "",
+			paramType: "LIST<STRING>",
+			content:   "",
+			want: &parser.Schema{
+				Type: parser.ArrayType,
+				Items: &parser.Schema{
+					Type: parser.StringType,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:      "",
+			paramType: "LIST<LONG>",
+			content:   "",
+			want: &parser.Schema{
+				Type: parser.ArrayType,
+				Items: &parser.Schema{
+					Type:   parser.IntegerType,
+					Format: "int64",
+				},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {

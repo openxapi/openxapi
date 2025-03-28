@@ -8,10 +8,6 @@ components:
                 msg:
                     type: string
             type: object
-        UfuturesDeleteBatchOrdersV1ParamOrderIdList:
-            type: object
-        UfuturesDeleteBatchOrdersV1ParamOrigClientOrderIdList:
-            type: object
         UfuturesDeleteBatchOrdersV1RespItem:
             properties:
                 activatePrice:
@@ -27,6 +23,7 @@ components:
                 executedQty:
                     type: string
                 goodTillDate:
+                    format: int64
                     type: integer
                 orderId:
                     format: int64
@@ -92,12 +89,17 @@ paths:
                   in: query
                   name: orderIdList
                   schema:
-                    $ref: '#/components/schemas/UfuturesDeleteBatchOrdersV1ParamOrderIdList'
+                    type: array
+                    items:
+                        type: integer
+                        format: int64
                 - description: max length 10<br/> e.g. [&#34;my_id_1&#34;,&#34;my_id_2&#34;], encode the double quotes. No space after comma.
                   in: query
                   name: origClientOrderIdList
                   schema:
-                    $ref: '#/components/schemas/UfuturesDeleteBatchOrdersV1ParamOrigClientOrderIdList'
+                    type: array
+                    items:
+                        type: string
                 - in: query
                   name: recvWindow
                   schema:
@@ -128,7 +130,9 @@ paths:
                             schema:
                                 example: '[ { "clientOrderId": "myOrder1", "cumQty": "0", "cumQuote": "0", "executedQty": "0", "orderId": 283194212, "origQty": "11", "origType": "TRAILING_STOP_MARKET", "price": "0", "reduceOnly": false, "side": "BUY", "positionSide": "SHORT", "status": "CANCELED", "stopPrice": "9300", "closePosition": false,    "symbol": "BTCUSDT", "timeInForce": "GTC", "type": "TRAILING_STOP_MARKET", "activatePrice": "9020", "priceRate": "0.3", "updateTime": 1571110484038, "workingType": "CONTRACT_PRICE", "priceProtect": false,             "priceMatch": "NONE",               "selfTradePreventionMode": "NONE",  "goodTillDate": 1693207680000       }, { "code": -2011, "msg": "Unknown order sent." } ]'
                                 items:
-                                    $ref: '#/components/schemas/UfuturesDeleteBatchOrdersV1RespItem'
+                                    oneOf:
+                                        - $ref: '#/components/schemas/UfuturesDeleteBatchOrdersV1RespItem'
+                                        - $ref: '#/components/schemas/APIError'
                                 type: array
                     description: Successful operation
             security:

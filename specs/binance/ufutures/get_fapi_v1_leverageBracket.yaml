@@ -8,6 +8,37 @@ components:
                 msg:
                     type: string
             type: object
+        UfuturesGetLeverageBracketV1Resp:
+            oneOf:
+                - type: array
+                  items:
+                    $ref: '#/components/schemas/UfuturesGetLeverageBracketV1RespItem'
+                - $ref: '#/components/schemas/UfuturesGetLeverageBracketV1RespItem'
+        UfuturesGetLeverageBracketV1RespItem:
+            example: '{ "symbol": "ETHUSDT", "notionalCoef": 1.50,   "brackets": [ { "bracket": 1,    "initialLeverage": 75,   "notionalCap": 10000,   "notionalFloor": 0,   "maintMarginRatio": 0.0065,  "cum":0  } ] }'
+            properties:
+                brackets:
+                    items:
+                        properties:
+                            bracket:
+                                type: integer
+                            cum:
+                                type: integer
+                            initialLeverage:
+                                type: integer
+                            maintMarginRatio:
+                                type: number
+                            notionalCap:
+                                type: integer
+                            notionalFloor:
+                                type: integer
+                        type: object
+                    type: array
+                notionalCoef:
+                    type: number
+                symbol:
+                    type: string
+            type: object
     securitySchemes:
         ApiKey:
             in: header
@@ -52,6 +83,12 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/APIError'
                     description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UfuturesGetLeverageBracketV1Resp'
+                    description: Successful operation
             security:
                 - ApiKey: []
             summary: Notional and Leverage Brackets (USER_DATA)
