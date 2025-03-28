@@ -35,27 +35,10 @@ So that you can use the same specification to generate websocket client SDKs for
 
 ## Supported Exchanges
 
-```{=html}
-<table>
-<tr>
-<th style="text-align: center;">Exchange</th>
-<th colspan="2" style="text-align: center;">Product</th>
-<th style="text-align: center;">REST API Spec</th>
-<th style="text-align: center;">Websocket API Spec</th>
-<th style="text-align: center;">SDKs</th>
-</tr>
-<tr>
-<td rowspan="2" style="text-align: center;">Binance</td>
-<td colspan="2" style="text-align: center;">Spot</td>
-<td style="text-align: center;">✅ [OpenAPI](./specs/binance/spot.yaml)</td>
-<td rowspan="2" style="text-align: center;"> - [Go](https://github.com/openxapi/binance-go) </td>
-</tr>
-<tr>
-<td style="text-align: center;">Futures</td>
-<td style="text-align: center;">USDS-M Futures</td>
-<td style="text-align: center;">✅ [OpenAPI](./specs/binance/ufutures.yaml)</td>
-</table>
-```
+| Exchange | Product | Module | REST API Spec | Websocket API Spec | SDKs |
+|:--------:|:-------:|:-------------:|:----------------:|:------------------:|:----:|
+| Binance | Spot | Spot | ✅ [OpenAPI](./specs/binance/spot.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
+| | Derivatives | USDS-M Futures | ✅ [OpenAPI](./specs/binance/ufutures.yaml) | | |
 
 ## Project Structure
 
