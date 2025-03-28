@@ -170,12 +170,13 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 		}
 	}
 
+	outputDir := filepath.Join(g.outputDir, exchange)
 	// Ensure output directory exists
-	if err := os.MkdirAll(g.outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("creating output directory: %w", err)
 	}
 
-	outputPath := filepath.Join(g.outputDir, fmt.Sprintf("%s_%s.yaml", exchange, apiType))
+	outputPath := filepath.Join(outputDir, fmt.Sprintf("%s.yaml", apiType))
 	if err := g.writeSpec(spec, outputPath); err != nil {
 		return fmt.Errorf("writing specification: %w", err)
 	}

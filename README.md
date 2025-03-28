@@ -35,25 +35,27 @@ So that you can use the same specification to generate websocket client SDKs for
 
 ## Supported Exchanges
 
-| Exchange | Product | Supported | Production Ready |
-|----------|---------|-------------------|-----------------|
-| Binance | Spot     | ✅         |            |
-| Binance | Futures | ✅         ||
-| OKX | Spot |||
-| OKX | Futures |||
-| OKX | Options |||
-
-## Specs
-
-| Exchange | REST API Spec | Websocket API Spec |
-|----------|------------|----|
-| Binance | [OpenAPI](https://github.com/openxapi/openxapi/blob/main/specs/binance/spot/openapi.yaml) | |
-
-## SDKs
-
-| Exchange | Javascript | Go | Python | Rust |
-|----------|------------|----|----|----|
-| Binance | | [github](https://github.com/openxapi/binance-go) | | |
+```{=html}
+<table>
+<tr>
+<th style="text-align: center;">Exchange</th>
+<th colspan="2" style="text-align: center;">Product</th>
+<th style="text-align: center;">REST API Spec</th>
+<th style="text-align: center;">Websocket API Spec</th>
+<th style="text-align: center;">SDKs</th>
+</tr>
+<tr>
+<td rowspan="2" style="text-align: center;">Binance</td>
+<td colspan="2" style="text-align: center;">Spot</td>
+<td style="text-align: center;">✅ [OpenAPI](./specs/binance/spot.yaml)</td>
+<td rowspan="2" style="text-align: center;"> - [Go](https://github.com/openxapi/binance-go) </td>
+</tr>
+<tr>
+<td style="text-align: center;">Futures</td>
+<td style="text-align: center;">USDS-M Futures</td>
+<td style="text-align: center;">✅ [OpenAPI](./specs/binance/ufutures.yaml)</td>
+</table>
+```
 
 ## Project Structure
 
