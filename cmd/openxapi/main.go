@@ -20,6 +20,7 @@ var (
 	samplesDir   string
 	exchangeFlag string
 	docType      string
+	showHelp     bool
 )
 
 func init() {
@@ -29,10 +30,16 @@ func init() {
 	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/webpage/<exchange>)")
 	flag.StringVar(&exchangeFlag, "exchange", "", "Filter by exchange name")
 	flag.StringVar(&docType, "doc-type", "", "Filter by documentation type")
+	flag.BoolVar(&showHelp, "h,help", false, "Show help")
 }
 
 func main() {
 	flag.Parse()
+
+	if showHelp {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	// Setup logging
 	level, err := logrus.ParseLevel(logLevel)

@@ -127,7 +127,7 @@ make build
 1. Configure exchange API documentation URLs in `configs/config.yaml`
 2. Run the OpenAPI specification generator:
 ```bash
-./openxapi generate
+./openxapi
 ```
 
 > NOTE: This command will scrape the exchange's website and parse the API documentation from the website, so it may take a while to complete. Only run this command when you want to use the latest API documentation instead of the sample files.
