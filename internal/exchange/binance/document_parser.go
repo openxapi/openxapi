@@ -430,7 +430,8 @@ func (p *SpotDocumentParser) extractResponse(endpoint *parser.Endpoint, foundRes
 		response.Content = map[string]*parser.MediaType{
 			"application/json": {
 				Schema: &parser.Schema{
-					Type: parser.NullType,
+					Type:     parser.ObjectType,
+					Nullable: true,
 				},
 			},
 		}
@@ -647,7 +648,8 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 	typ := reflect.TypeOf(v)
 	if typ == nil {
 		return &parser.Schema{
-			Type: parser.NullType,
+			Type:     parser.ObjectType,
+			Nullable: true,
 		}, nil
 	}
 	if typ.Kind() == reflect.Ptr {
