@@ -38,7 +38,7 @@ So that you can use the same specification to generate websocket client SDKs for
 | Exchange | Product | Supported | Production Ready |
 |----------|---------|-------------------|-----------------|
 | Binance | Spot     | ✅         |            |
-| Binance | Futures |||
+| Binance | Futures | ✅         ||
 | OKX | Spot |||
 | OKX | Futures |||
 | OKX | Options |||
@@ -61,23 +61,23 @@ So that you can use the same specification to generate websocket client SDKs for
 .
 ├── bin/                    # Compiled binaries
 ├── cmd/                    # Command-line applications
-│   └── openxapi/          # Main application entry point
-├── configs/               # Configuration files
-│   └── config.yaml        # Exchange API documentation URLs and settings
-├── generator-configs/     # Generator-specific configurations
-├── history/              # Version history of generated specs
-├── internal/             # Private application code
-│   ├── config/          # Configuration management
-│   ├── exchange/        # Exchange-specific implementations
-│   ├── generator/       # OpenAPI spec generation logic
-│   └── parser/          # API documentation parsers
-├── samples/             # Sample API documentation files
-│   └── webpage/        # HTML samples of exchange documentation
-├── specs/              # Generated OpenAPI specifications
-├── templates/          # Template files for spec generation
-├── go.mod              # Go module definition
-├── go.sum              # Go module dependencies checksum
-└── Makefile           # Build and development commands
+│   └── openxapi/           # Main application entry point
+├── configs/                # Configuration files
+│   └── config.yaml         # Exchange API documentation URLs and settings
+├── generator-configs/      # OpenAPI Generator-specific configurations
+├── history/                # Version history of generated specs
+├── internal/               # Private application code
+│   ├── config/             # Configuration management
+│   ├── exchange/           # Exchange-specific implementations
+│   ├── generator/          # OpenAPI spec generation logic
+│   └── parser/             # API documentation parsers
+├── samples/                # Sample API documentation files
+│   └── webpage/            # HTML samples of exchange documentation
+├── specs/                  # Generated OpenAPI specifications
+├── templates/              # Template files for spec generation
+├── go.mod                  # Go module definition
+├── go.sum                  # Go module dependencies checksum
+└── Makefile                # Build and development commands
 ```
 
 Key directories and their purposes:
@@ -89,7 +89,7 @@ Key directories and their purposes:
   - `generator/`: OpenAPI specification generation logic
   - `parser/`: Documentation parsing and extraction
 - `configs/`: Configuration files for exchange URLs and settings
-- `generator-configs/`: Specific configurations for OpenAPI generation
+- `generator-configs/`: OpenAPI Generator-specific configurations
 - `history/`: Tracks version history of generated specifications
 - `samples/`: Contains webpage samples of exchange documentation
 - `specs/`: Stores generated OpenAPI specifications
@@ -122,15 +122,19 @@ make build
 
 ## Generate OpenAPI Specification
 
+### For the first time
+
 1. Configure exchange API documentation URLs in `configs/config.yaml`
 2. Run the OpenAPI specification generator:
 ```bash
 ./openxapi generate
 ```
 
+> NOTE: This command will scrape the exchange's website and parse the API documentation from the website, so it may take a while to complete. Only run this command when you want to use the latest API documentation instead of the sample files.
+
 The generated OpenAPI specification will be saved in `specs/` directory.
 
-### Using Sample Files
+### For the subsequent generations - Use sample files
 
 The program can save API documentation to sample files and use them for regenerate the OpenAPI specification offline, that said, you don't need to access the HTTP API documentation online, this is the recommended way to generate the OpenAPI specification after the first generation:
 
@@ -158,13 +162,13 @@ Please follow the steps below to mannually update the OpenAPI specification:
 
 We use [OpenAPI Generator](https://openapi-generator.tech/) to generate SDKs for OpenAPI Specification.
 
-Following is an example of generating Go SDK for Binance REST API:
+Following is an example of generating Go SDK for Binance Spot REST API:
 
 ```bash
 openapi-generator-cli generate \
   -g go \
-  -c generator-configs/binance/go/config.yaml \
-  -o ../binance-go
+  -c generator-configs/binance/go/spot.yaml \
+  -o ../binance-go/spot
 ```
 
 ### Update the SDK code
