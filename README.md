@@ -40,6 +40,7 @@ So that you can use the same specification to generate websocket client SDKs for
 | Binance | Spot | Spot | ✅ [OpenAPI](./specs/binance/spot.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
 | | Derivatives | USDS-M Futures | ✅ [OpenAPI](./specs/binance/ufutures.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
 | | | COIN-M Futures | ✅ [OpenAPI](./specs/binance/cfutures.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
+| | | Options | ✅ [OpenAPI](./specs/binance/options.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
 
 ## Project Structure
 
