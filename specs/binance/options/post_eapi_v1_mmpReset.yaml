@@ -1,0 +1,90 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsCreateMmpResetV1Req:
+            properties:
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                underlying:
+                    default: ""
+                    type: string
+            required:
+                - timestamp
+            type: object
+        OptionsCreateMmpResetV1Resp:
+            example: '{ "underlyingId": 2, "underlying": "BTCUSDT", "windowTimeInMilliseconds": 3000, "frozenTimeInMilliseconds": 300000, "qtyLimit": "2", "deltaLimit": "2.3", "lastTriggerTime": 0 }'
+            properties:
+                deltaLimit:
+                    type: string
+                frozenTimeInMilliseconds:
+                    type: integer
+                lastTriggerTime:
+                    format: int64
+                    type: integer
+                qtyLimit:
+                    type: string
+                underlying:
+                    type: string
+                underlyingId:
+                    format: int64
+                    type: integer
+                windowTimeInMilliseconds:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/mmpReset:
+        post:
+            description: Reset MMP, start MMP order again.
+            operationId: OptionsCreateMmpResetV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/OptionsCreateMmpResetV1Req'
+                description: The request body for OptionsCreateMmpResetV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsCreateMmpResetV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Reset Market Maker Protection Config (TRADE)
+            tags:
+                - Market Maker Endpoints
+                - V1

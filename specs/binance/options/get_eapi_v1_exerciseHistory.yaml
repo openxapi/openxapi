@@ -1,0 +1,84 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetExerciseHistoryV1Resp:
+            example: '[ { "symbol": "BTC-220121-60000-P",             "strikePrice": "60000",                     "realStrikePrice": "38844.69652571",        "expiryDate": 1642752000000,                "strikeResult": "REALISTIC_VALUE_STRICKEN"  } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetExerciseHistoryV1RespItem'
+            type: array
+        OptionsGetExerciseHistoryV1RespItem:
+            properties:
+                expiryDate:
+                    type: integer
+                realStrikePrice:
+                    type: string
+                strikePrice:
+                    type: string
+                strikeResult:
+                    type: string
+                symbol:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/exerciseHistory:
+        get:
+            description: Get historical exercise records.
+            operationId: OptionsGetExerciseHistoryV1
+            parameters:
+                - description: Underlying index like BTCUSDT
+                  in: query
+                  name: underlying
+                  schema:
+                    default: ""
+                    type: string
+                - description: Start Time
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: End Time
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Number of records Default:100 Max:100
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetExerciseHistoryV1Resp'
+                    description: Successful operation
+            summary: Historical Exercise Records
+            tags:
+                - Market Data
+                - V1

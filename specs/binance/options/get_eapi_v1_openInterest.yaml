@@ -1,0 +1,73 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetOpenInterestV1Resp:
+            example: '[ { "symbol": "ETH-221119-1175-P", "sumOpenInterest": "4.01", "sumOpenInterestUsd": "4880.2985615624", "timestamp": "1668754020000" } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetOpenInterestV1RespItem'
+            type: array
+        OptionsGetOpenInterestV1RespItem:
+            properties:
+                sumOpenInterest:
+                    type: string
+                sumOpenInterestUsd:
+                    type: string
+                symbol:
+                    type: string
+                timestamp:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/openInterest:
+        get:
+            description: Get open interest for specific underlying asset on specific expiration date.
+            operationId: OptionsGetOpenInterestV1
+            parameters:
+                - description: underlying asset, e.g ETH/BTC
+                  in: query
+                  name: underlyingAsset
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: expiration date, e.g 221225
+                  in: query
+                  name: expiration
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetOpenInterestV1Resp'
+                    description: Successful operation
+            summary: Open Interest
+            tags:
+                - Market Data
+                - V1

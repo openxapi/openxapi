@@ -1,0 +1,143 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsCreateBatchOrdersV1Req:
+            properties:
+                orders:
+                    type: array
+                    items:
+                        $ref: '#/components/schemas/OptionsCreateBatchOrdersV1ReqOrdersItem'
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - orders
+                - timestamp
+            type: object
+        OptionsCreateBatchOrdersV1ReqOrdersItem:
+            properties:
+                clientOrderId:
+                    default: ""
+                    type: string
+                isMmp:
+                    type: boolean
+                newOrderRespType:
+                    default: ""
+                    type: string
+                postOnly:
+                    default: false
+                    type: boolean
+                price:
+                    default: ""
+                    type: string
+                quantity:
+                    default: ""
+                    type: string
+                reduceOnly:
+                    default: false
+                    type: boolean
+                side:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                timeInForce:
+                    default: ""
+                    type: string
+                type:
+                    default: ""
+                    type: string
+            required:
+                - symbol
+                - side
+                - type
+                - quantity
+            type: object
+        OptionsCreateBatchOrdersV1Resp:
+            example: '[ { "orderId": 4612288550799409153,   "symbol": "ETH-220826-1800-C",    "price": "100",                   "quantity": "0.01",               "side": "BUY",                    "type": "LIMIT",                  "reduceOnly": false,              "postOnly": false,                "clientOrderId": "1001",          "mmp": false                      } ]'
+            items:
+                oneOf:
+                    - $ref: '#/components/schemas/OptionsCreateBatchOrdersV1RespItem'
+                    - $ref: '#/components/schemas/APIError'
+            type: array
+        OptionsCreateBatchOrdersV1RespItem:
+            properties:
+                clientOrderId:
+                    type: string
+                mmp:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                postOnly:
+                    type: boolean
+                price:
+                    type: string
+                quantity:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                side:
+                    type: string
+                symbol:
+                    type: string
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/batchOrders:
+        post:
+            description: Send multiple option orders.
+            operationId: OptionsCreateBatchOrdersV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/OptionsCreateBatchOrdersV1Req'
+                description: The request body for OptionsCreateBatchOrdersV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsCreateBatchOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Place Multiple Orders(TRADE)
+            tags:
+                - Trade
+                - V1

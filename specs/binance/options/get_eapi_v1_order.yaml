@@ -1,0 +1,131 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetOrderV1Resp:
+            example: '{ "orderId": 4611875134427365377,      "symbol": "BTC-200730-9000-C",       "price": "100",                      "quantity": "1",                     "executedQty": "0",                  "fee": "0",                          "side": "BUY",                       "type": "LIMIT",                     "timeInForce": "GTC",                "reduceOnly": false,                 "postOnly": false,          "createTime": 1592465880683,         "updateTime": 1566818724722,         "status": "ACCEPTED",                "avgPrice": "0",                     "source": "API",                     "clientOrderId": "",                  "priceScale": 2, "quantityScale": 2, "optionSide": "CALL", "quoteAsset": "USDT", "mmp": false }'
+            properties:
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                createTime:
+                    format: int64
+                    type: integer
+                executedQty:
+                    type: string
+                fee:
+                    type: string
+                mmp:
+                    type: boolean
+                optionSide:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                postOnly:
+                    type: boolean
+                price:
+                    type: string
+                priceScale:
+                    type: integer
+                quantity:
+                    type: string
+                quantityScale:
+                    type: integer
+                quoteAsset:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                side:
+                    type: string
+                source:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/order:
+        get:
+            description: Check an order status.
+            operationId: OptionsGetOrderV1
+            parameters:
+                - description: Option trading pair, e.g BTC-200730-9000-C
+                  in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Order id
+                  in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: User-defined order ID cannot be repeated in pending orders
+                  in: query
+                  name: clientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Single Order (TRADE)
+            tags:
+                - Trade
+                - V1

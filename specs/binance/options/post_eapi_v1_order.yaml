@@ -1,0 +1,154 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsCreateOrderV1Req:
+            properties:
+                clientOrderId:
+                    default: ""
+                    type: string
+                isMmp:
+                    type: boolean
+                newOrderRespType:
+                    default: ""
+                    type: string
+                postOnly:
+                    default: false
+                    type: boolean
+                price:
+                    default: ""
+                    type: string
+                quantity:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                reduceOnly:
+                    default: false
+                    type: boolean
+                side:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                timeInForce:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                type:
+                    default: ""
+                    type: string
+            required:
+                - symbol
+                - side
+                - type
+                - quantity
+                - timestamp
+            type: object
+        OptionsCreateOrderV1Resp:
+            example: '{ "orderId": 4611875134427365377,      "symbol": "BTC-200730-9000-C",       "price": "100",                      "quantity": "1",                     "side": "BUY",                       "type": "LIMIT",                     "createDate": 1592465880683,         "reduceOnly": false, "postOnly": false, "mmp": false }'
+            properties:
+                createDate:
+                    type: integer
+                mmp:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                postOnly:
+                    type: boolean
+                price:
+                    type: string
+                quantity:
+                    type: string
+                executedQty:
+                    type: string
+                fee:
+                    type: string
+                timeInForce:
+                    type: string
+                createTime:
+                    type: integer
+                    format: int64
+                updateTime:
+                    type: integer
+                    format: int64
+                status:
+                    type: string
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                priceScale:
+                    type: integer
+                quantityScale:
+                    type: integer
+                optionSide:
+                    type: string
+                quoteAsset:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                side:
+                    type: string
+                symbol:
+                    type: string
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/order:
+        post:
+            description: Send a new order.
+            operationId: OptionsCreateOrderV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/OptionsCreateOrderV1Req'
+                description: The request body for OptionsCreateOrderV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsCreateOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: New Order (TRADE)
+            tags:
+                - Trade
+                - V1

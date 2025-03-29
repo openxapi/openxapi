@@ -1,0 +1,59 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetIndexV1Resp:
+            example: '{ "time": 1656647305000, "indexPrice": "9200"  }'
+            properties:
+                indexPrice:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/index:
+        get:
+            description: Get spot index price for option underlying.
+            operationId: OptionsGetIndexV1
+            parameters:
+                - description: Spot pair（Option contract underlying asset, e.g BTCUSDT)
+                  in: query
+                  name: underlying
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetIndexV1Resp'
+                    description: Successful operation
+            summary: Symbol Price Ticker
+            tags:
+                - Market Data
+                - V1

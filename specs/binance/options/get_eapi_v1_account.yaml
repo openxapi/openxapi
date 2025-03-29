@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetAccountV1Resp:
+            example: '{ "asset": [ { "asset": "USDT",                     "marginBalance": "1877.52214415",    "equity": "617.77711415",            "available": "0",                    "locked": "2898.92389933",           "unrealizedPNL": "222.23697000"     } ], "greek": [ { "underlying":"BTCUSDT",             "delta": "-0.05",                   "gamma": "-0.002",                  "theta": "-0.05",                   "vega": "-0.002"                   } ], "time": 1592449455993,                  "riskLevel": "NORMAL"                 }'
+            properties:
+                asset:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            available:
+                                type: string
+                            equity:
+                                type: string
+                            locked:
+                                type: string
+                            marginBalance:
+                                type: string
+                            unrealizedPNL:
+                                type: string
+                        type: object
+                    type: array
+                greek:
+                    items:
+                        properties:
+                            delta:
+                                type: string
+                            gamma:
+                                type: string
+                            theta:
+                                type: string
+                            underlying:
+                                type: string
+                            vega:
+                                type: string
+                        type: object
+                    type: array
+                riskLevel:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/account:
+        get:
+            description: Get current account information.
+            operationId: OptionsGetAccountV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Option Account Information(TRADE)
+            tags:
+                - Account
+                - V1

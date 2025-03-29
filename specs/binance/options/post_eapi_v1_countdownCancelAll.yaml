@@ -1,0 +1,84 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsCreateCountdownCancelAllV1Req:
+            properties:
+                countdownTime:
+                    format: int64
+                    type: integer
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                underlying:
+                    default: ""
+                    type: string
+            required:
+                - underlying
+                - countdownTime
+                - timestamp
+            type: object
+        OptionsCreateCountdownCancelAllV1Resp:
+            example: '{ "underlying": "ETHUSDT", "countdownTime": 30000 }'
+            properties:
+                countdownTime:
+                    format: int64
+                    type: integer
+                underlying:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/countdownCancelAll:
+        post:
+            description: This endpoint sets the parameters of the auto-cancel feature which cancels all open orders (both market maker protection and non market maker protection order types) of the underlying symbol at the end of the specified countdown time period if no heartbeat message is sent.  After the countdown time period, all open orders will be cancelled and new orders will be rejected with error code -2010 until either a heartbeat message is sent or the auto-cancel feature is turned off by setting countdownTime to 0.
+            operationId: OptionsCreateCountdownCancelAllV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/OptionsCreateCountdownCancelAllV1Req'
+                description: The request body for OptionsCreateCountdownCancelAllV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsCreateCountdownCancelAllV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Auto-Cancel All Open Orders (Kill-Switch) Config (TRADE)
+            tags:
+                - Market Maker Endpoints
+                - V1

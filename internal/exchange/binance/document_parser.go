@@ -26,7 +26,7 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 	case "spot":
 		sp := &SpotDocumentParser{DocumentParser: p}
 		return sp.Parse(r, url, docType, protectedEndpoints)
-	case "ufutures", "cfutures":
+	case "ufutures", "cfutures", "options":
 		uf := &DerivativesDocumentParser{
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
@@ -776,7 +776,7 @@ func normalizeType(typ, content string) (string, string) {
 		return parser.StringType, content
 	case "BOOLEAN", "BOOL":
 		return parser.BooleanType, content
-	case "ARRAY", "ARRAY OF STRING":
+	case "ARRAY", "ARRAY OF STRING", "LIST":
 		if content == "" {
 			content = "[\"\"]"
 		}
@@ -853,8 +853,9 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 		code.Children().Each(func(i int, child *goquery.Selection) {
 			text := cleanText(child.Text())
 			text = commentRegex.ReplaceAllString(text, "")
-			// remove `\t`
+			// remove `\t` and `\u00a0`
 			text = strings.ReplaceAll(text, "\t", "")
+			text = strings.ReplaceAll(text, "\u00a0", "")
 			if text != "" {
 				lines = append(lines, text)
 			}

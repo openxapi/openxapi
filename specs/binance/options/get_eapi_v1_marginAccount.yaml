@@ -1,0 +1,104 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetMarginAccountV1Resp:
+            example: '{ "asset": [ { "asset": "USDT",                   "marginBalance": "10099.448",       "equity": "10094.44662",           "available": "8725.92524",         "initialMargin": "1084.52138",     "maintMargin": "151.00138",        "unrealizedPNL": "-5.00138",       "lpProfit": "-5.00138"            } ], "greek": [ { "underlying":"BTCUSDT",             "delta": "-0.05",                   "gamma": "-0.002",                  "theta": "-0.05",                   "vega": "-0.002"                   } ], "time": 1592449455993                  }'
+            properties:
+                asset:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            available:
+                                type: string
+                            equity:
+                                type: string
+                            initialMargin:
+                                type: string
+                            lpProfit:
+                                type: string
+                            maintMargin:
+                                type: string
+                            marginBalance:
+                                type: string
+                            unrealizedPNL:
+                                type: string
+                        type: object
+                    type: array
+                greek:
+                    items:
+                        properties:
+                            delta:
+                                type: string
+                            gamma:
+                                type: string
+                            theta:
+                                type: string
+                            underlying:
+                                type: string
+                            vega:
+                                type: string
+                        type: object
+                    type: array
+                time:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/marginAccount:
+        get:
+            description: Get current account information.
+            operationId: OptionsGetMarginAccountV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetMarginAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Option Margin Account Information (USER_DATA)
+            tags:
+                - Market Maker Endpoints
+                - V1

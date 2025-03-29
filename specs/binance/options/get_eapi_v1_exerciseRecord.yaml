@@ -1,0 +1,122 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetExerciseRecordV1Resp:
+            example: '[ { "id": "1125899906842624042", "currency": "USDT", "symbol": "BTC-220721-25000-C", "exercisePrice": "25000.00000000", "markPrice": "25000.00000000", "quantity": "1.00000000", "amount": "0.00000000", "fee": "0.00000000", "createDate": 1658361600000, "priceScale": 2, "quantityScale": 2, "optionSide": "CALL", "positionSide": "LONG", "quoteAsset": "USDT" } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetExerciseRecordV1RespItem'
+            type: array
+        OptionsGetExerciseRecordV1RespItem:
+            properties:
+                amount:
+                    type: string
+                createDate:
+                    type: integer
+                currency:
+                    type: string
+                exercisePrice:
+                    type: string
+                fee:
+                    type: string
+                id:
+                    type: string
+                markPrice:
+                    type: string
+                optionSide:
+                    type: string
+                positionSide:
+                    type: string
+                priceScale:
+                    type: integer
+                quantity:
+                    type: string
+                quantityScale:
+                    type: integer
+                quoteAsset:
+                    type: string
+                symbol:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/exerciseRecord:
+        get:
+            description: Get account exercise records.
+            operationId: OptionsGetExerciseRecordV1
+            parameters:
+                - description: Option trading pair, e.g BTC-200730-9000-C
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: startTime
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: endTime
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 1000, max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 1000
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetExerciseRecordV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: User Exercise Record (USER_DATA)
+            tags:
+                - Trade
+                - V1

@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetBillV1Resp:
+            example: '[ { "id": 1125899906842624000, "asset": "USDT",               "amount": "-0.552",            "type": "FEE",                 "createDate": 1592449456000   }, { "id": 1125899906842624000, "asset": "USDT",               "amount": "100",               "type": "CONTRACT",            "createDate": 1592449456000   }, { "id": 1125899906842624000, "asset": "USDT",               "amount": "10000",             "type": "TRANSFER",            "createDate": 1592448410000   } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetBillV1RespItem'
+            type: array
+        OptionsGetBillV1RespItem:
+            properties:
+                amount:
+                    type: string
+                asset:
+                    type: string
+                createDate:
+                    type: integer
+                id:
+                    type: integer
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/bill:
+        get:
+            description: Query account funding flows.
+            operationId: OptionsGetBillV1
+            parameters:
+                - description: Asset type, only support USDT  as of now
+                  in: query
+                  name: currency
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Return the recordId and subsequent data, the latest data is returned by default, e.g 100000
+                  in: query
+                  name: recordId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Start Time, e.g 1593511200000
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: End Time, e.g 1593512200000
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Number of result sets returned Default:100 Max:1000
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetBillV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Account Funding Flow (USER_DATA)
+            tags:
+                - Account
+                - V1

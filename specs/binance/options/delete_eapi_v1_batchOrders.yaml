@@ -1,0 +1,127 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsDeleteBatchOrdersV1Resp:
+            example: '[ { "orderId": 4611875134427365377,      "symbol": "BTC-200730-9000-C",       "price": "100",                      "quantity": "1",                     "executedQty": "0",                  "fee": 0,                            "side": "BUY",                       "type": "LIMIT",                     "timeInForce": "GTC",                "createTime": 1592465880683,         "status": "ACCEPTED",                "avgPrice": "0",                     "reduceOnly": false,                 "clientOrderId": "",                  "updateTime": 1566818724722         } ]'
+            items:
+                oneOf:
+                    - $ref: '#/components/schemas/OptionsDeleteBatchOrdersV1RespItem'
+                    - $ref: '#/components/schemas/APIError'
+            type: array
+        OptionsDeleteBatchOrdersV1RespItem:
+            properties:
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                createTime:
+                    format: int64
+                    type: integer
+                executedQty:
+                    type: string
+                fee:
+                    type: integer
+                orderId:
+                    format: int64
+                    type: integer
+                price:
+                    type: string
+                quantity:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                side:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/batchOrders:
+        delete:
+            description: Cancel multiple orders.
+            operationId: OptionsDeleteBatchOrdersV1
+            parameters:
+                - description: Option trading pair, e.g BTC-200730-9000-C
+                  in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Order ID, e.g [4611875134427365377,4611875134427365378]
+                  in: query
+                  name: orderIds
+                  schema:
+                    items:
+                        format: int64
+                        type: integer
+                    type: array
+                - description: User-defined order ID, e.g [&#34;my_id_1&#34;,&#34;my_id_2&#34;]
+                  in: query
+                  name: clientOrderIds
+                  schema:
+                    items:
+                        default: ""
+                        type: string
+                    type: array
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsDeleteBatchOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel Multiple Option Orders (TRADE)
+            tags:
+                - Trade
+                - V1

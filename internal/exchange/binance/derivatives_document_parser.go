@@ -123,6 +123,7 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 			text = commentRegex.ReplaceAllString(text, "")
 			// remove `\t`
 			text = strings.ReplaceAll(text, "\t", "")
+			text = strings.ReplaceAll(text, "\u00a0", "")
 			if text != "" {
 				lines = append(lines, text)
 			}
@@ -263,7 +264,7 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 			matches := endpointRegex.FindStringSubmatch(line)
 			if len(matches) == 3 {
 				endpoint.Method = matches[1]
-				endpoint.Path = matches[2]
+				endpoint.Path = strings.Split(matches[2], " ")[0]
 				foundEndpoint = true
 				endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
 

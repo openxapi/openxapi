@@ -1,0 +1,82 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetBlockTradesV1Resp:
+            example: '[ { "id": 1125899906901081078, "tradeId": 389, "symbol": "ETH-250725-1200-P", "price": "342.40", "qty": "-2167.20", "quoteQty": "-4.90", "side": -1, "time": 1733950676483 }, { "id": 1125899906901080972, "tradeId": 161, "symbol": "XRP-250904-0.086-P", "price": "3.0", "qty": "-6.0", "quoteQty": "-2.02", "side": -1, "time": 1733950488444 } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetBlockTradesV1RespItem'
+            type: array
+        OptionsGetBlockTradesV1RespItem:
+            properties:
+                id:
+                    type: integer
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                side:
+                    type: integer
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                tradeId:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/blockTrades:
+        get:
+            description: Get recent block trades
+            operationId: OptionsGetBlockTradesV1
+            parameters:
+                - description: Option trading pair, e.g. BTC-200730-9000-C
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Number of records; Default: 100 and Max: 500'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 100
+                    maximum: 500
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetBlockTradesV1Resp'
+                    description: Successful operation
+            summary: Recent Block Trades List
+            tags:
+                - Market Data
+                - V1

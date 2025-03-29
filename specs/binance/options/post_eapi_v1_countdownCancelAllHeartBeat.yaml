@@ -1,0 +1,79 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsCreateCountdownCancelAllHeartBeatV1Req:
+            properties:
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                underlyings:
+                    default: ""
+                    type: string
+            required:
+                - underlyings
+                - timestamp
+            type: object
+        OptionsCreateCountdownCancelAllHeartBeatV1Resp:
+            example: '{ "underlyings":["BTCUSDT","ETHUSDT"] }'
+            properties:
+                underlyings:
+                    items:
+                        type: string
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/countdownCancelAllHeartBeat:
+        post:
+            description: This endpoint resets the time from which the countdown will begin to the time this messaged is received.  It should be called repeatedly as heartbeats.  Multiple heartbeats can be updated at once by specifying the underlying symbols as a list (ex. BTCUSDT,ETHUSDT) in the underlyings parameter.
+            operationId: OptionsCreateCountdownCancelAllHeartBeatV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/OptionsCreateCountdownCancelAllHeartBeatV1Req'
+                description: The request body for OptionsCreateCountdownCancelAllHeartBeatV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsCreateCountdownCancelAllHeartBeatV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Auto-Cancel All Open Orders (Kill-Switch) Heartbeat (TRADE)
+            tags:
+                - Market Maker Endpoints
+                - V1

@@ -1,0 +1,76 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsDeleteAllOpenOrdersV1Resp:
+            example: '{ "code": 0, "msg": "success" }'
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/allOpenOrders:
+        delete:
+            description: Cancel all active order on a symbol.
+            operationId: OptionsDeleteAllOpenOrdersV1
+            parameters:
+                - description: Option trading pair, e.g BTC-200730-9000-C
+                  in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsDeleteAllOpenOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel all Option orders on specific symbol (TRADE)
+            tags:
+                - Trade
+                - V1

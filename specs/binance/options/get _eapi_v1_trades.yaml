@@ -1,0 +1,78 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetEapiV1TradesResp:
+            example: '[ { "id":"1",              "symbol": "BTC-220722-19000-C", "price": "1000",       "qty": "-0.1",         "quoteQty": "-100",    "side": -1,             "time": 1592449455993 } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetEapiV1TradesRespItem'
+            type: array
+        OptionsGetEapiV1TradesRespItem:
+            properties:
+                id:
+                    type: string
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                side:
+                    type: integer
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    ' /eapi/v1/trades':
+        get:
+            description: Get recent market trades
+            operationId: OptionsGetEapiV1Trades
+            parameters:
+                - description: Option trading pair, e.g BTC-200730-9000-C
+                  in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Number of records Default:100 Max:500
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetEapiV1TradesResp'
+                    description: Successful operation
+            summary: Recent Trades List
+            tags:
+                - Market Data
+                - V1

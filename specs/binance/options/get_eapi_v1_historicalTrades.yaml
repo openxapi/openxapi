@@ -1,0 +1,84 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetHistoricalTradesV1Resp:
+            example: '[ { "id":"1",              "tradeId": "159244329455993",     "price": "1000",       "qty": "-0.1",         "quoteQty": "-100",    "side": -1,             "time": 1592449455993 } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetHistoricalTradesV1RespItem'
+            type: array
+        OptionsGetHistoricalTradesV1RespItem:
+            properties:
+                id:
+                    type: string
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                side:
+                    type: integer
+                time:
+                    format: int64
+                    type: integer
+                tradeId:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/historicalTrades:
+        get:
+            description: Get older market historical trades.
+            operationId: OptionsGetHistoricalTradesV1
+            parameters:
+                - description: Option trading pair, e.g BTC-200730-9000-C
+                  in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: The UniqueId ID from which to return. The latest deal record is returned by default
+                  in: query
+                  name: fromId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Number of records Default:100 Max:500
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetHistoricalTradesV1Resp'
+                    description: Successful operation
+            summary: Old Trades Lookup (MARKET_DATA)
+            tags:
+                - Market Data
+                - V1

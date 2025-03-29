@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetPositionV1Resp:
+            example: '[ { "entryPrice": "1000",                "symbol": "BTC-200730-9000-C",       "side": "SHORT",                     "quantity": "-0.1",                  "reducibleQty": "0",                 "markValue": "105.00138",            "ror": "-0.05",                      "unrealizedPNL": "-5.00138",         "markPrice": "1050.0138",            "strikePrice": "9000",               "positionCost": "1000.0000",         "expiryDate": 1593511200000,          "priceScale": 2, "quantityScale": 2, "optionSide": "CALL", "quoteAsset": "USDT" } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetPositionV1RespItem'
+            type: array
+        OptionsGetPositionV1RespItem:
+            properties:
+                entryPrice:
+                    type: string
+                expiryDate:
+                    type: integer
+                markPrice:
+                    type: string
+                markValue:
+                    type: string
+                optionSide:
+                    type: string
+                positionCost:
+                    type: string
+                priceScale:
+                    type: integer
+                quantity:
+                    type: string
+                quantityScale:
+                    type: integer
+                quoteAsset:
+                    type: string
+                reducibleQty:
+                    type: string
+                ror:
+                    type: string
+                side:
+                    type: string
+                strikePrice:
+                    type: string
+                symbol:
+                    type: string
+                unrealizedPNL:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/position:
+        get:
+            description: Get current position information.
+            operationId: OptionsGetPositionV1
+            parameters:
+                - description: Option trading pair, e.g BTC-200730-9000-C
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetPositionV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Option Position Information (USER_DATA)
+            tags:
+                - Trade
+                - V1

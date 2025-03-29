@@ -1,0 +1,143 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsSymbolFilter:
+            properties:
+                filterType:
+                    type: string
+                minPrice:
+                    type: string
+                maxPrice:
+                    type: string
+                tickSize:
+                    type: string
+                minQty:
+                    type: string
+                maxQty:
+                    type: string
+                stepSize:
+                    type: string
+        OptionsGetExchangeInfoV1Resp:
+            example: '{ "timezone": "UTC",                     "serverTime": 1592387337630,           "optionContracts": [                   { "baseAsset": "BTC",                "quoteAsset": "USDT",              "underlying": "BTCUSDT",           "settleAsset": "USDT"              } ], "optionAssets": [                      { "name": "USDT"                     } ], "optionSymbols": [                     { "expiryDate": 1660521600000,     "filters": [ { "filterType": "PRICE_FILTER", "minPrice": "0.02", "maxPrice": "80000.01", "tickSize": "0.01" }, { "filterType": "LOT_SIZE", "minQty": "0.01", "maxQty": "100", "stepSize": "0.01" } ], "symbol": "BTC-220815-50000-C",    "side": "CALL",                    "strikePrice": "50000",            "underlying": "BTCUSDT",           "unit": 1,                         "makerFeeRate": "0.0002",          "takerFeeRate": "0.0002",          "minQty": "0.01",                  "maxQty": "100",                   "initialMargin": "0.15",           "maintenanceMargin": "0.075",      "minInitialMargin": "0.1",         "minMaintenanceMargin": "0.05",    "priceScale": 2,                   "quantityScale": 2,                "quoteAsset": "USDT"               } ], "rateLimits": [ { "rateLimitType": "REQUEST_WEIGHT", "interval": "MINUTE", "intervalNum": 1, "limit": 2400 }, { "rateLimitType": "ORDERS", "interval": "MINUTE", "intervalNum": 1, "limit": 1200 }, { "rateLimitType": "ORDERS", "interval": "SECOND", "intervalNum": 10, "limit": 300 } ] }'
+            properties:
+                optionAssets:
+                    items:
+                        properties:
+                            name:
+                                type: string
+                        type: object
+                    type: array
+                optionContracts:
+                    items:
+                        properties:
+                            baseAsset:
+                                type: string
+                            quoteAsset:
+                                type: string
+                            settleAsset:
+                                type: string
+                            underlying:
+                                type: string
+                        type: object
+                    type: array
+                optionSymbols:
+                    items:
+                        properties:
+                            expiryDate:
+                                type: integer
+                            filters:
+                                items:
+                                    $ref: '#/components/schemas/OptionsSymbolFilter'
+                                type: array
+                            initialMargin:
+                                type: string
+                            maintenanceMargin:
+                                type: string
+                            makerFeeRate:
+                                type: string
+                            maxQty:
+                                type: string
+                            minInitialMargin:
+                                type: string
+                            minMaintenanceMargin:
+                                type: string
+                            minQty:
+                                type: string
+                            priceScale:
+                                type: integer
+                            quantityScale:
+                                type: integer
+                            quoteAsset:
+                                type: string
+                            side:
+                                type: string
+                            strikePrice:
+                                type: string
+                            symbol:
+                                type: string
+                            takerFeeRate:
+                                type: string
+                            underlying:
+                                type: string
+                            unit:
+                                type: integer
+                        type: object
+                    type: array
+                rateLimits:
+                    items:
+                        properties:
+                            interval:
+                                type: string
+                            intervalNum:
+                                type: integer
+                            limit:
+                                type: integer
+                            rateLimitType:
+                                type: string
+                        type: object
+                    type: array
+                serverTime:
+                    format: int64
+                    type: integer
+                timezone:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/exchangeInfo:
+        get:
+            description: Current exchange trading rules and symbol information
+            operationId: OptionsGetExchangeInfoV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetExchangeInfoV1Resp'
+                    description: Successful operation
+            summary: Exchange Information
+            tags:
+                - Market Data
+                - V1

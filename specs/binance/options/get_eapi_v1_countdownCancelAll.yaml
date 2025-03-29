@@ -1,0 +1,76 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetCountdownCancelAllV1Resp:
+            example: '{ "underlying": "ETHUSDT", "countdownTime": 100000 }'
+            properties:
+                countdownTime:
+                    format: int64
+                    type: integer
+                underlying:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/countdownCancelAll:
+        get:
+            description: This endpoint returns the auto-cancel parameters for each underlying symbol. Note only active auto-cancel parameters will be returned, if countdownTime is set to 0 (ie. countdownTime has been turned off), the underlying symbol and corresponding countdownTime parameter will not be returned in the response.
+            operationId: OptionsGetCountdownCancelAllV1
+            parameters:
+                - description: Option underlying, e.g BTCUSDT
+                  in: query
+                  name: underlying
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetCountdownCancelAllV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Auto-Cancel All Open Orders (Kill-Switch) Config (TRADE)
+            tags:
+                - Market Maker Endpoints
+                - V1
