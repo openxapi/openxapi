@@ -1,0 +1,98 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsUpdateBlockOrderCreateV1Req:
+            properties:
+                blockOrderMatchingKey:
+                    default: ""
+                    type: string
+                recvWindow:
+                    type: integer
+                timestamp:
+                    type: integer
+            required:
+                - blockOrderMatchingKey
+                - timestamp
+            type: object
+        OptionsUpdateBlockOrderCreateV1Resp:
+            example: '{ "blockTradeSettlementKey": "3668822b8-1baa-6a2f-adb8-d3de6289b361", "expireTime": 1730172007000, "liquidity": "TAKER", "status": "RECEIVED", "createTime": 1730170088111, "legs": [ { "symbol": "BNB-241101-700-C", "side": "BUY", "quantity": "1.2", "price": "2.8" } ] }'
+            properties:
+                blockTradeSettlementKey:
+                    type: string
+                createTime:
+                    format: int64
+                    type: integer
+                expireTime:
+                    format: int64
+                    type: integer
+                legs:
+                    items:
+                        properties:
+                            price:
+                                type: string
+                            quantity:
+                                type: string
+                            side:
+                                type: string
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                liquidity:
+                    type: string
+                status:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/block/order/create:
+        put:
+            description: Extends a block trade expire time by 30 mins from the current time.
+            operationId: OptionsUpdateBlockOrderCreateV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/OptionsUpdateBlockOrderCreateV1Req'
+                description: The request body for OptionsUpdateBlockOrderCreateV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsUpdateBlockOrderCreateV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Extend Block Trade Order (TRADE)
+            tags:
+                - Market Maker Block Trade
+                - V1

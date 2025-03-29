@@ -1,0 +1,116 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetBlockOrderOrdersV1Resp:
+            example: '[ { "blockTradeSettlementKey": "7d046e6e-a429-4335-ab9d-6a681febcde5", "expireTime": 1730172115801, "liquidity": "TAKER", "status": "RECEIVED", "createTime": 1730170315803, "legs": [ { "symbol": "BNB-241101-700-C", "side": "BUY", "quantity": "1.2", "price": "2.8" } ] }, { "blockTradeSettlementKey": "28b96c28-ba05-6906-a47c-703215cfbfe6", "expireTime": 1730171860460, "liquidity": "TAKER", "status": "RECEIVED", "createTime": 1730170060462, "legs": [ { "symbol": "BNB-241101-700-C", "side": "BUY", "quantity": "1.66", "price": "20" } ] } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetBlockOrderOrdersV1RespItem'
+            type: array
+        OptionsGetBlockOrderOrdersV1RespItem:
+            properties:
+                blockTradeSettlementKey:
+                    type: string
+                createTime:
+                    format: int64
+                    type: integer
+                expireTime:
+                    format: int64
+                    type: integer
+                legs:
+                    items:
+                        properties:
+                            price:
+                                type: string
+                            quantity:
+                                type: string
+                            side:
+                                type: string
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                liquidity:
+                    type: string
+                status:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/block/order/orders:
+        get:
+            description: Check block trade order status.
+            operationId: OptionsGetBlockOrderOrdersV1
+            parameters:
+                - description: If specified, returns the specific block trade associated with the blockOrderMatchingKey
+                  in: query
+                  name: blockOrderMatchingKey
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: underlying
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetBlockOrderOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Block Trade Order (TRADE)
+            tags:
+                - Market Maker Block Trade
+                - V1

@@ -264,7 +264,12 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 			matches := endpointRegex.FindStringSubmatch(line)
 			if len(matches) == 3 {
 				endpoint.Method = matches[1]
-				endpoint.Path = strings.Split(matches[2], " ")[0]
+				endpointPath := strings.TrimSpace(matches[2])
+				endpointPath = strings.Split(endpointPath, " ")[0]
+				if !strings.HasPrefix(endpointPath, "/") {
+					endpointPath = "/" + endpointPath
+				}
+				endpoint.Path = endpointPath
 				foundEndpoint = true
 				endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
 

@@ -1,0 +1,69 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsDeleteBlockOrderCreateV1Resp:
+            example: '{}'
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/block/order/create:
+        delete:
+            description: Cancel a block trade order.
+            operationId: OptionsDeleteBlockOrderCreateV1
+            parameters:
+                - in: query
+                  name: blockOrderMatchingKey
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsDeleteBlockOrderCreateV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel Block Trade Order (TRADE)
+            tags:
+                - Market Maker Block Trade
+                - V1

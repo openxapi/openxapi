@@ -1,0 +1,138 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsGetBlockUser-TradesV1Resp:
+            example: '[ { "parentOrderId": "4675011431944499201", "crossType": "USER_BLOCK", "legs": [ { "createTime": 1730170445600, "updateTime": 1730170445600, "symbol": "BNB-241101-700-C", "orderId": "4675011431944499203", "orderPrice": 2.8, "orderQuantity": 1.2, "orderStatus": "FILLED", "executedQty": 1.2, "executedAmount": 3.36, "fee": 0.336, "orderType": "PREV_QUOTED", "orderSide": "BUY", "id": "1125899906900937837", "tradeId": 1, "tradePrice": 2.8, "tradeQty": 1.2, "tradeTime": 1730170445600, "liquidity": "TAKER", "commission": 0.336 } ], "blockTradeSettlementKey": "7d085e6e-a229-2335-ab9d-6a581febcd25" } ]'
+            items:
+                $ref: '#/components/schemas/OptionsGetBlockUser-TradesV1RespItem'
+            type: array
+        OptionsGetBlockUser-TradesV1RespItem:
+            properties:
+                blockTradeSettlementKey:
+                    type: string
+                crossType:
+                    type: string
+                legs:
+                    items:
+                        properties:
+                            commission:
+                                type: number
+                            createTime:
+                                format: int64
+                                type: integer
+                            executedAmount:
+                                type: number
+                            executedQty:
+                                type: number
+                            fee:
+                                type: number
+                            id:
+                                type: string
+                            liquidity:
+                                type: string
+                            orderId:
+                                type: string
+                            orderPrice:
+                                type: number
+                            orderQuantity:
+                                type: number
+                            orderSide:
+                                type: string
+                            orderStatus:
+                                type: string
+                            orderType:
+                                type: string
+                            symbol:
+                                type: string
+                            tradeId:
+                                format: int64
+                                type: integer
+                            tradePrice:
+                                type: number
+                            tradeQty:
+                                type: number
+                            tradeTime:
+                                format: int64
+                                type: integer
+                            updateTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                parentOrderId:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/block/user-trades:
+        get:
+            description: Gets block trades for a specific account.
+            operationId: OptionsGetBlockUser-TradesV1
+            parameters:
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: underlying
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsGetBlockUser-TradesV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Account Block Trade List (USER_DATA)
+            tags:
+                - Market Maker Block Trade
+                - V1

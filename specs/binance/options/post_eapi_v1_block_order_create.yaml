@@ -1,0 +1,116 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        OptionsCreateBlockOrderCreateV1Req:
+            properties:
+                legs:
+                    items:
+                        type: string
+                    type: array
+                liquidity:
+                    default: ""
+                    type: string
+                price:
+                    default: ""
+                    type: string
+                quantity:
+                    default: ""
+                    type: string
+                recvWindow:
+                    type: integer
+                side:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    type: integer
+            required:
+                - liquidity
+                - legs
+                - symbol
+                - side
+                - price
+                - quantity
+                - timestamp
+            type: object
+        OptionsCreateBlockOrderCreateV1Resp:
+            example: '{ "blockTradeSettlementKey": "3668822b8-1baa-6a2f-adb8-d3de6289b361", "expireTime": 1730171888109, "liquidity": "TAKER", "status": "RECEIVED", "legs": [ { "symbol": "BNB-241101-700-C", "side": "BUY", "quantity": "1.2", "price": "2.8" } ] }'
+            properties:
+                blockTradeSettlementKey:
+                    type: string
+                expireTime:
+                    format: int64
+                    type: integer
+                legs:
+                    items:
+                        properties:
+                            price:
+                                type: string
+                            quantity:
+                                type: string
+                            side:
+                                type: string
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                liquidity:
+                    type: string
+                status:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /eapi/v1/block/order/create:
+        post:
+            description: Send in a new block trade order.
+            operationId: OptionsCreateBlockOrderCreateV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/OptionsCreateBlockOrderCreateV1Req'
+                description: The request body for OptionsCreateBlockOrderCreateV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/OptionsCreateBlockOrderCreateV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: New Block Trade Order (TRADE)
+            tags:
+                - Market Maker Block Trade
+                - V1
