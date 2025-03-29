@@ -1,0 +1,86 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetBalanceV1Resp:
+            example: '[ { "accountAlias": "SgsR",     "asset": "BTC", "balance": "0.00250000", "withdrawAvailable": "0.00250000", "crossWalletBalance": "0.00241969", "crossUnPnl": "0.00000000", "availableBalance": "0.00241969", "updateTime": 1592468353979 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetBalanceV1RespItem'
+            type: array
+        CfuturesGetBalanceV1RespItem:
+            properties:
+                accountAlias:
+                    type: string
+                asset:
+                    type: string
+                availableBalance:
+                    type: string
+                balance:
+                    type: string
+                crossUnPnl:
+                    type: string
+                crossWalletBalance:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+                withdrawAvailable:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/balance:
+        get:
+            description: Check futures account balance
+            operationId: CfuturesGetBalanceV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetBalanceV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Futures Account Balance (USER_DATA)
+            tags:
+                - Account
+                - V1

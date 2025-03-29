@@ -1,0 +1,82 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetDepthV1Resp:
+            example: '{ "lastUpdateId": 16769853, "symbol": "BTCUSD_PERP",  "pair": "BTCUSD",  "E": 1591250106370,    "T": 1591250106368,    "bids": [ [ "9638.0",      "431"     ] ], "asks": [ [ "9638.2", "12" ] ] }'
+            properties:
+                E:
+                    type: integer
+                T:
+                    type: integer
+                asks:
+                    items:
+                        items:
+                            type: string
+                        type: array
+                    type: array
+                bids:
+                    items:
+                        items:
+                            type: string
+                        type: array
+                    type: array
+                lastUpdateId:
+                    format: int64
+                    type: integer
+                pair:
+                    type: string
+                symbol:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/depth:
+        get:
+            description: Query orderbook on specific symbol
+            operationId: CfuturesGetDepthV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 500; Valid limits:[5, 10, 20, 50, 100, 500, 1000]
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetDepthV1Resp'
+                    description: Successful operation
+            summary: Order Book
+            tags:
+                - Market Data
+                - V1

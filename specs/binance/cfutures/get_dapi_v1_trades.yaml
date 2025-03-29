@@ -1,0 +1,77 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetTradesV1Resp:
+            example: '[ { "id": 28457, "price": "9635.0", "qty": "1", "baseQty": "0.01037883", "time": 1591250192508, "isBuyerMaker": true } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetTradesV1RespItem'
+            type: array
+        CfuturesGetTradesV1RespItem:
+            properties:
+                baseQty:
+                    type: string
+                id:
+                    type: integer
+                isBuyerMaker:
+                    type: boolean
+                price:
+                    type: string
+                qty:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/trades:
+        get:
+            description: Get recent market trades
+            operationId: CfuturesGetTradesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetTradesV1Resp'
+                    description: Successful operation
+            summary: Recent Trades List
+            tags:
+                - Market Data
+                - V1

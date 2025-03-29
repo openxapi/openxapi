@@ -1,0 +1,136 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetOpenOrderV1Resp:
+            example: '{ "avgPrice": "0.0", "clientOrderId": "abc", "cumBase": "0", "executedQty": "0", "orderId": 1917641, "origQty": "0.40", "origType": "TRAILING_STOP_MARKET", "price": "0", "reduceOnly": false, "side": "BUY", "positionSide": "SHORT", "status": "NEW", "stopPrice": "9300", "closePosition": false,    "symbol": "BTCUSD_200925", "pair": "BTCUSD", "time": 1579276756075, "timeInForce": "GTC", "type": "TRAILING_STOP_MARKET", "activatePrice": "9020", "priceRate": "0.3", "updateTime": 1579276756075, "workingType": "CONTRACT_PRICE", "priceProtect": false,                "priceMatch": "NONE",                "selfTradePreventionMode": "NONE"    }'
+            properties:
+                activatePrice:
+                    type: string
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                closePosition:
+                    type: boolean
+                cumBase:
+                    type: string
+                executedQty:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origType:
+                    type: string
+                pair:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                priceMatch:
+                    type: string
+                priceProtect:
+                    type: boolean
+                priceRate:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+                workingType:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/openOrder:
+        get:
+            description: Query Current Open Order
+            operationId: CfuturesGetOpenOrderV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: origClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetOpenOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Current Open Order(USER_DATA)
+            tags:
+                - Trade
+                - V1

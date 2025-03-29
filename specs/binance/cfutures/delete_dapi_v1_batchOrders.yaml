@@ -1,0 +1,145 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesDeleteBatchOrdersV1Resp:
+            example: '[ { "avgPrice": "0.0", "clientOrderId": "myOrder1", "cumQty": "0", "cumBase": "0", "executedQty": "0", "orderId": 283194212, "origQty": "11", "origType": "TRAILING_STOP_MARKET", "price": "0", "reduceOnly": false, "side": "BUY", "positionSide": "SHORT", "status": "CANCELED", "stopPrice": "9300", "closePosition": false,    "symbol": "BTCUSD_200925", "timeInForce": "GTC", "type": "TRAILING_STOP_MARKET", "activatePrice": "9020", "priceRate": "0.3", "workingType": "CONTRACT_PRICE", "priceProtect": false,               "priceMatch": "NONE",                "selfTradePreventionMode": "NONE",   "updateTime": 1571110484038 }, { "code": -2011, "msg": "Unknown order sent." } ]'
+            items:
+                oneOf:
+                    - $ref: '#/components/schemas/CfuturesDeleteBatchOrdersV1RespItem'
+                    - $ref: '#/components/schemas/APIError'
+            type: array
+        CfuturesDeleteBatchOrdersV1RespItem:
+            properties:
+                activatePrice:
+                    type: string
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                closePosition:
+                    type: boolean
+                cumBase:
+                    type: string
+                cumQty:
+                    type: string
+                executedQty:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origType:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                priceMatch:
+                    type: string
+                priceProtect:
+                    type: boolean
+                priceRate:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+                workingType:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/batchOrders:
+        delete:
+            description: Cancel Multiple Orders
+            operationId: CfuturesDeleteBatchOrdersV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: max length 10 <br/> e.g. [1234567,2345678]
+                  in: query
+                  name: orderIdList
+                  schema:
+                    items:
+                        format: int64
+                        type: integer
+                    type: array
+                - description: max length 10<br/> e.g. [&#34;my_id_1&#34;,&#34;my_id_2&#34;], encode the double quotes. No space after comma.
+                  in: query
+                  name: origClientOrderIdList
+                  schema:
+                    items:
+                        default: ""
+                        type: string
+                    type: array
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesDeleteBatchOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel Multiple Orders(TRADE)
+            tags:
+                - Trade
+                - V1

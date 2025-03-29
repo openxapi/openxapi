@@ -1,0 +1,156 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesSymbolFilter:
+            properties:
+                filterType:
+                    type: string
+                maxPrice:
+                    type: string
+                minPrice:
+                    type: string
+                tickSize:
+                    type: string
+                minQty:
+                    type: string
+                stepSize:
+                    type: string
+                maxQty:
+                    type: string
+                limit:
+                    type: integer
+                multiplierUp:
+                    type: string
+                multiplierDown:
+                    type: string
+                multiplierDecimal:
+                    type: integer
+            type: object
+        CfuturesGetExchangeInfoV1Resp:
+            example: '{ "exchangeFilters": [], "rateLimits": [ { "interval": "MINUTE", "intervalNum": 1, "limit": 6000, "rateLimitType": "REQUEST_WEIGHT" }, { "interval": "MINUTE", "intervalNum": 1, "limit": 6000, "rateLimitType": "ORDERS" } ], "serverTime": 1565613908500,  "symbols": [  { "filters": [ { "filterType": "PRICE_FILTER", "maxPrice": "100000", "minPrice": "0.1", "tickSize": "0.1" }, { "filterType": "LOT_SIZE", "maxQty": "100000", "minQty": "1", "stepSize": "1" }, { "filterType": "MARKET_LOT_SIZE", "maxQty": "100000", "minQty": "1", "stepSize": "1" }, { "filterType": "MAX_NUM_ORDERS", "limit": 200 }, { "filterType": "PERCENT_PRICE", "multiplierUp": "1.0500", "multiplierDown": "0.9500", "multiplierDecimal": 4 } ], "OrderType": [ "LIMIT", "MARKET", "STOP", "TAKE_PROFIT", "TRAILING_STOP_MARKET" ], "timeInForce": [ "GTC", "IOC", "FOK", "GTX" ], "liquidationFee": "0.010000", "marketTakeBound": "0.30", "symbol": "BTCUSD_200925",  "pair": "BTCUSD",   "contractType": "CURRENT_QUARTER", "deliveryDate": 1601020800000, "onboardDate": 1590739200000, "contractStatus": "TRADING", "contractSize": 100, "quoteAsset": "USD", "baseAsset": "BTC", "marginAsset": "BTC", "pricePrecision": 1, "quantityPrecision": 0, "baseAssetPrecision": 8, "quotePrecision": 8, "equalQtyPrecision": 4,  "triggerProtect": "0.0500", "maintMarginPercent": "2.5000",   "requiredMarginPercent": "5.0000",   "underlyingType": "COIN", "underlyingSubType": [] } ], "timezone": "UTC" }'
+            properties:
+                exchangeFilters:
+                    type: array
+                    items:
+                        type: object
+                rateLimits:
+                    items:
+                        properties:
+                            interval:
+                                type: string
+                            intervalNum:
+                                type: integer
+                            limit:
+                                type: integer
+                            rateLimitType:
+                                type: string
+                        type: object
+                    type: array
+                serverTime:
+                    format: int64
+                    type: integer
+                symbols:
+                    items:
+                        properties:
+                            OrderType:
+                                items:
+                                    type: string
+                                type: array
+                            baseAsset:
+                                type: string
+                            baseAssetPrecision:
+                                type: integer
+                            contractSize:
+                                type: integer
+                            contractStatus:
+                                type: string
+                            contractType:
+                                type: string
+                            deliveryDate:
+                                type: integer
+                            equalQtyPrecision:
+                                type: integer
+                            filters:
+                                items:
+                                    $ref: '#/components/schemas/CfuturesSymbolFilter'
+                                type: array
+                            liquidationFee:
+                                type: string
+                            maintMarginPercent:
+                                type: string
+                            marginAsset:
+                                type: string
+                            marketTakeBound:
+                                type: string
+                            onboardDate:
+                                type: integer
+                            pair:
+                                type: string
+                            pricePrecision:
+                                type: integer
+                            quantityPrecision:
+                                type: integer
+                            quoteAsset:
+                                type: string
+                            quotePrecision:
+                                type: integer
+                            requiredMarginPercent:
+                                type: string
+                            symbol:
+                                type: string
+                            timeInForce:
+                                items:
+                                    type: string
+                                type: array
+                            triggerProtect:
+                                type: string
+                            underlyingSubType:
+                                type: array
+                                items:
+                                    type: string
+                            underlyingType:
+                                type: string
+                        type: object
+                    type: array
+                timezone:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/exchangeInfo:
+        get:
+            description: Current exchange trading rules and symbol information
+            operationId: CfuturesGetExchangeInfoV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetExchangeInfoV1Resp'
+                    description: Successful operation
+            summary: Exchange Information
+            tags:
+                - Market Data
+                - V1

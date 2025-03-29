@@ -1,0 +1,106 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetFuturesDataBasisResp:
+            example: '[ { "indexPrice": "29269.93972727", "contractType": "CURRENT_QUARTER", "basisRate": "0.0024", "futuresPrice": "29341.3", "annualizedBasisRate": "0.0283", "basis": "71.36027273", "pair": "BTCUSD", "timestamp": 1653381600000 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetFuturesDataBasisRespItem'
+            type: array
+        CfuturesGetFuturesDataBasisRespItem:
+            properties:
+                annualizedBasisRate:
+                    type: string
+                basis:
+                    type: string
+                basisRate:
+                    type: string
+                contractType:
+                    type: string
+                futuresPrice:
+                    type: string
+                indexPrice:
+                    type: string
+                pair:
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /futures/data/basis:
+        get:
+            description: Query basis
+            operationId: CfuturesGetFuturesDataBasis
+            parameters:
+                - description: BTCUSD
+                  in: query
+                  name: pair
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: CURRENT_QUARTER, NEXT_QUARTER, PERPETUAL
+                  in: query
+                  name: contractType
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '&#34;5m&#34;,&#34;15m&#34;,&#34;30m&#34;,&#34;1h&#34;,&#34;2h&#34;,&#34;4h&#34;,&#34;6h&#34;,&#34;12h&#34;,&#34;1d&#34;'
+                  in: query
+                  name: period
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 30,Max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 30
+                    format: int64
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetFuturesDataBasisResp'
+                    description: Successful operation
+            summary: Basis
+            tags:
+                - Market Data

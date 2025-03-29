@@ -1,0 +1,96 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetAggTradesV1Resp:
+            example: '[ { "a": 416690, "p": "9642.4",    "q": "3",    "f": 595259,          "l": 595259,          "T": 1591250548649,  "m": false           } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetAggTradesV1RespItem'
+            type: array
+        CfuturesGetAggTradesV1RespItem:
+            properties:
+                T:
+                    type: integer
+                a:
+                    type: integer
+                f:
+                    type: integer
+                l:
+                    type: integer
+                m:
+                    type: boolean
+                p:
+                    type: string
+                q:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/aggTrades:
+        get:
+            description: Get compressed, aggregate trades. Market trades that fill in 100ms with the same price and the same taking side will have the quantity aggregated.
+            operationId: CfuturesGetAggTradesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: ID to get aggregate trades from INCLUSIVE.
+                  in: query
+                  name: fromId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Timestamp in ms to get aggregate trades from INCLUSIVE.
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Timestamp in ms to get aggregate trades until INCLUSIVE.
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetAggTradesV1Resp'
+                    description: Successful operation
+            summary: Compressed/Aggregate Trades List
+            tags:
+                - Market Data
+                - V1

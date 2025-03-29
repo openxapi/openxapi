@@ -1,0 +1,64 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetOpenInterestV1Resp:
+            example: '{ "symbol": "BTCUSD_200626", "pair": "BTCUSD", "openInterest": "15004", "contractType": "CURRENT_QUARTER", "time": 1591261042378 }'
+            properties:
+                contractType:
+                    type: string
+                openInterest:
+                    type: string
+                pair:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/openInterest:
+        get:
+            description: Get present open interest of a specific symbol.
+            operationId: CfuturesGetOpenInterestV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetOpenInterestV1Resp'
+                    description: Successful operation
+            summary: Open Interest
+            tags:
+                - Market Data
+                - V1

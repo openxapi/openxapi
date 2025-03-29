@@ -1,0 +1,99 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetTicker24hrV1Resp:
+            example: '[ { "symbol": "BTCUSD_200925", "pair": "BTCUSD", "priceChange": "136.6", "priceChangePercent": "1.436", "weightedAvgPrice": "9547.3", "lastPrice": "9651.6", "lastQty": "1", "openPrice": "9515.0", "highPrice": "9687.0", "lowPrice": "9499.5", "volume": "494109", "baseVolume": "5192.94797687", "openTime": 1591170300000, "closeTime": 1591256718418, "firstId": 600507,  "lastId": 697803,   "count": 97297     } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetTicker24hrV1RespItem'
+            type: array
+        CfuturesGetTicker24hrV1RespItem:
+            properties:
+                baseVolume:
+                    type: string
+                closeTime:
+                    format: int64
+                    type: integer
+                count:
+                    type: integer
+                firstId:
+                    format: int64
+                    type: integer
+                highPrice:
+                    type: string
+                lastId:
+                    format: int64
+                    type: integer
+                lastPrice:
+                    type: string
+                lastQty:
+                    type: string
+                lowPrice:
+                    type: string
+                openPrice:
+                    type: string
+                openTime:
+                    format: int64
+                    type: integer
+                pair:
+                    type: string
+                priceChange:
+                    type: string
+                priceChangePercent:
+                    type: string
+                symbol:
+                    type: string
+                volume:
+                    type: string
+                weightedAvgPrice:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/ticker/24hr:
+        get:
+            description: 24 hour rolling window price change statistics.
+            operationId: CfuturesGetTicker24hrV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: pair
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetTicker24hrV1Resp'
+                    description: Successful operation
+            summary: 24hr Ticker Price Change Statistics
+            tags:
+                - Market Data
+                - V1

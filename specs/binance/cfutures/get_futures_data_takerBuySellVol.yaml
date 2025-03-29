@@ -1,0 +1,106 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetFuturesDataTakerBuySellVolResp:
+            example: '[ { "pair": "BTCUSD", "contractType": "CURRENT_QUARTER", "takerBuyVol": "387",   "takerSellVol": "248",   "takerBuyVolValue": "2342.1220",  "takerSellVolValue": "4213.9800",  "timestamp": 1591261042378 }, { "pair": "BTCUSD", "contractType": "CURRENT_QUARTER", "takerBuyVol": "234",   "takerSellVol": "121",   "takerBuyVolValue": "4563.1320",  "takerSellVolValue": "3313.3940",  "timestamp": 1585615200000 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetFuturesDataTakerBuySellVolRespItem'
+            type: array
+        CfuturesGetFuturesDataTakerBuySellVolRespItem:
+            properties:
+                contractType:
+                    type: string
+                pair:
+                    type: string
+                takerBuyVol:
+                    type: string
+                takerBuyVolValue:
+                    type: string
+                takerSellVol:
+                    type: string
+                takerSellVolValue:
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /futures/data/takerBuySellVol:
+        get:
+            description: |-
+                Taker Buy Volume: the total volume of buy orders filled by takers within the period.
+                Taker Sell Volume: the total volume of sell orders filled by takers within the period.
+            operationId: CfuturesGetFuturesDataTakerBuySellVol
+            parameters:
+                - description: BTCUSD
+                  in: query
+                  name: pair
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: ALL, CURRENT_QUARTER, NEXT_QUARTER, PERPETUAL
+                  in: query
+                  name: contractType
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '&#34;5m&#34;,&#34;15m&#34;,&#34;30m&#34;,&#34;1h&#34;,&#34;2h&#34;,&#34;4h&#34;,&#34;6h&#34;,&#34;12h&#34;,&#34;1d&#34;'
+                  in: query
+                  name: period
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 30,Max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 30
+                    format: int64
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetFuturesDataTakerBuySellVolResp'
+                    description: Successful operation
+            summary: Taker Buy/Sell Volume
+            tags:
+                - Market Data

@@ -1,0 +1,60 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetFundingInfoV1Resp:
+            example: '[ { "symbol": "BLZUSDT", "adjustedFundingRateCap": "0.02500000", "adjustedFundingRateFloor": "-0.02500000", "fundingIntervalHours": 8, "disclaimer": false } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetFundingInfoV1RespItem'
+            type: array
+        CfuturesGetFundingInfoV1RespItem:
+            properties:
+                adjustedFundingRateCap:
+                    type: string
+                adjustedFundingRateFloor:
+                    type: string
+                disclaimer:
+                    type: boolean
+                fundingIntervalHours:
+                    type: integer
+                symbol:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/fundingInfo:
+        get:
+            description: Query funding rate info for symbols that had FundingRateCap/ FundingRateFloor / fundingIntervalHours adjustment
+            operationId: CfuturesGetFundingInfoV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetFundingInfoV1Resp'
+                    description: Successful operation
+            summary: Get Funding Rate Info
+            tags:
+                - Market Data
+                - V1

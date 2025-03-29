@@ -1,0 +1,142 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetForceOrdersV1Resp:
+            example: '[ { "orderId": 165123080, "symbol": "BTCUSD_200925", "pair": "BTCUSD", "status": "FILLED", "clientOrderId": "autoclose-1596542005017000006", "price": "11326.9", "avgPrice": "11326.9", "origQty": "1", "executedQty": "1", "cumBase": "0.00882854", "timeInForce": "IOC", "type": "LIMIT", "reduceOnly": false, "closePosition": false, "side": "SELL", "positionSide": "BOTH", "stopPrice": "0", "workingType": "CONTRACT_PRICE", "priceProtect": false, "origType": "LIMIT", "time": 1596542005019, "updateTime": 1596542005050 }, { "orderId": 207251986, "symbol": "BTCUSD_200925", "pair": "BTCUSD", "status": "FILLED", "clientOrderId": "autoclose-1597307316020000006", "price": "11619.4", "avgPrice": "11661.2", "origQty": "1", "executedQty": "1", "cumBase": "0.00857544", "timeInForce": "IOC", "type": "LIMIT", "reduceOnly": false, "closePosition": false, "side": "SELL", "positionSide": "LONG", "stopPrice": "0", "workingType": "CONTRACT_PRICE", "priceProtect": false, "origType": "LIMIT", "time": 1597307316022, "updateTime": 1597307316035 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetForceOrdersV1RespItem'
+            type: array
+        CfuturesGetForceOrdersV1RespItem:
+            properties:
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                closePosition:
+                    type: boolean
+                cumBase:
+                    type: string
+                executedQty:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origType:
+                    type: string
+                pair:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                priceProtect:
+                    type: boolean
+                reduceOnly:
+                    type: boolean
+                side:
+                    type: string
+                status:
+                    type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+                workingType:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/forceOrders:
+        get:
+            description: User's Force Orders
+            operationId: CfuturesGetForceOrdersV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: autoCloseType
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetForceOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: User's Force Orders(USER_DATA)
+            tags:
+                - Trade
+                - V1

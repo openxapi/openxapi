@@ -1,0 +1,108 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetPositionRiskV1Resp:
+            example: '[ { "symbol": "BTCUSD_201225", "positionAmt": "0", "entryPrice": "0.0", "breakEvenPrice": "0.0",   "markPrice": "0.00000000", "unRealizedProfit": "0.00000000", "liquidationPrice": "0", "leverage": "125", "maxQty": "50",   "marginType": "cross", "isolatedMargin": "0.00000000", "isAutoAddMargin": "false", "positionSide": "BOTH", "updateTime": 0 }, { "symbol": "BTCUSD_201225", "positionAmt": "1", "entryPrice": "11707.70000003", "breakEvenPrice": "11707.80000005",   "markPrice": "11788.66626667", "unRealizedProfit": "0.00005866", "liquidationPrice": "11667.63509587", "leverage": "125", "maxQty": "50", "marginType": "cross", "isolatedMargin": "0.00000000", "isAutoAddMargin": "false", "positionSide": "LONG", "updateTime": 1627026881327 }, { "symbol": "BTCUSD_201225", "positionAmt": "0", "entryPrice": "0.0", "breakEvenPrice": "0.0",   "markPrice": "0.00000000", "unRealizedProfit": "0.00000000", "liquidationPrice": "0", "leverage": "125", "maxQty": "50", "marginType": "cross", "isolatedMargin": "0.00000000", "isAutoAddMargin": "false", "positionSide": "SHORT", "updateTime":1627026881327 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetPositionRiskV1RespItem'
+            type: array
+        CfuturesGetPositionRiskV1RespItem:
+            properties:
+                breakEvenPrice:
+                    type: string
+                entryPrice:
+                    type: string
+                isAutoAddMargin:
+                    type: string
+                isolatedMargin:
+                    type: string
+                leverage:
+                    type: string
+                liquidationPrice:
+                    type: string
+                marginType:
+                    type: string
+                markPrice:
+                    type: string
+                maxQty:
+                    type: string
+                positionAmt:
+                    type: string
+                positionSide:
+                    type: string
+                symbol:
+                    type: string
+                unRealizedProfit:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/positionRisk:
+        get:
+            description: Get current account information.
+            operationId: CfuturesGetPositionRiskV1
+            parameters:
+                - in: query
+                  name: marginAsset
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: pair
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetPositionRiskV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Position Information(USER_DATA)
+            tags:
+                - Trade
+                - V1

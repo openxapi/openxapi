@@ -1,0 +1,82 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetPremiumIndexKlinesV1Resp:
+            example: '[ [ 1691603820000,           "-0.00042931",           "-0.00023641",           "-0.00059406",           "-0.00043659",           "0",                     1691603879999,           "0",                     12,                      "0",                     "0",                     "0"                      ] ]'
+            items:
+                items:
+                    oneOf:
+                        - type: integer
+                          format: int64
+                        - type: string
+                type: array
+            type: array
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/premiumIndexKlines:
+        get:
+            description: Premium index kline bars of a symbol. Klines are uniquely identified by their open time.
+            operationId: CfuturesGetPremiumIndexKlinesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: interval
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500; max 1500.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1500
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetPremiumIndexKlinesV1Resp'
+                    description: Successful operation
+            summary: Premium index Kline Data
+            tags:
+                - Market Data
+                - V1

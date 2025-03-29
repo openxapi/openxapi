@@ -1,0 +1,71 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetPmAccountInfoV1Resp:
+            example: '{ "maxWithdrawAmountUSD": "25347.92083245",    "asset": "BTC",             "maxWithdrawAmount": "1.33663654"         }'
+            properties:
+                asset:
+                    type: string
+                maxWithdrawAmount:
+                    type: string
+                maxWithdrawAmountUSD:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/pmAccountInfo:
+        get:
+            description: Get Classic Portfolio Margin current account information.
+            operationId: CfuturesGetPmAccountInfoV1
+            parameters:
+                - in: query
+                  name: asset
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetPmAccountInfoV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Classic Portfolio Margin Account Information (USER_DATA)
+            tags:
+                - Portfolio Margin Endpoints
+                - V1

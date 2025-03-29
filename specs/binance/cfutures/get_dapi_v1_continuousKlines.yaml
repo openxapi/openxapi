@@ -1,0 +1,90 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetContinuousKlinesV1Resp:
+            example: '[ [ 1591258320000,       "9640.7",         "9642.4",         "9640.6",         "9642.0",         "206",   1591258379999,        "2.13660389",     48,              "119",     "1.23424865",       "0"  ] ]'
+            items:
+                items:
+                    oneOf:
+                        - type: integer
+                          format: int64
+                        - type: string
+                type: array
+            type: array
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/continuousKlines:
+        get:
+            description: |-
+                Kline/candlestick bars for a specific contract type.
+                Klines are uniquely identified by their open time.
+            operationId: CfuturesGetContinuousKlinesV1
+            parameters:
+                - in: query
+                  name: pair
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: contractType
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: interval
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500; max 1500.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1500
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetContinuousKlinesV1Resp'
+                    description: Successful operation
+            summary: Continuous Contract Kline/Candlestick Data
+            tags:
+                - Market Data
+                - V1

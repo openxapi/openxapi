@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetFuturesDataGlobalLongShortAccountRatioResp:
+            example: '[ { "pair": "BTCUSD", "longShortRatio": "0.1960", "longAccount": "0.6622",   "shortAccount": "0.3378",   "timestamp": 1583139600000 }, { "pair": "BTCUSD", "longShortRatio": "1.9559", "longAccount": "0.6617", "shortAccount": "0.3382", "timestamp": 1583139900000 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetFuturesDataGlobalLongShortAccountRatioRespItem'
+            type: array
+        CfuturesGetFuturesDataGlobalLongShortAccountRatioRespItem:
+            properties:
+                longAccount:
+                    type: string
+                longShortRatio:
+                    type: string
+                pair:
+                    type: string
+                shortAccount:
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /futures/data/globalLongShortAccountRatio:
+        get:
+            description: Query symbol Long/Short Ratio
+            operationId: CfuturesGetFuturesDataGlobalLongShortAccountRatio
+            parameters:
+                - description: BTCUSD
+                  in: query
+                  name: pair
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '&#34;5m&#34;,&#34;15m&#34;,&#34;30m&#34;,&#34;1h&#34;,&#34;2h&#34;,&#34;4h&#34;,&#34;6h&#34;,&#34;12h&#34;,&#34;1d&#34;'
+                  in: query
+                  name: period
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 30,Max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 30
+                    format: int64
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetFuturesDataGlobalLongShortAccountRatioResp'
+                    description: Successful operation
+            summary: Long/Short Ratio
+            tags:
+                - Market Data

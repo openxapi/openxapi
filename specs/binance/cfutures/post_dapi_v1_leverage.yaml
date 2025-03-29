@@ -1,0 +1,86 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesCreateLeverageV1Req:
+            properties:
+                leverage:
+                    type: integer
+                recvWindow:
+                    format: int64
+                    type: integer
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - symbol
+                - leverage
+                - timestamp
+            type: object
+        CfuturesCreateLeverageV1Resp:
+            example: '{ "leverage": 21, "maxQty": "1000",   "symbol": "BTCUSD_200925" }'
+            properties:
+                leverage:
+                    type: integer
+                maxQty:
+                    type: string
+                symbol:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/leverage:
+        post:
+            description: |-
+                Change user's initial leverage in the specific symbol market.
+                For Hedge Mode, LONG and SHORT positions of one symbol use the same initial leverage and share a total notional value.
+            operationId: CfuturesCreateLeverageV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CfuturesCreateLeverageV1Req'
+                description: The request body for CfuturesCreateLeverageV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesCreateLeverageV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Change Initial Leverage (TRADE)
+            tags:
+                - Trade
+                - V1

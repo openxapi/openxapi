@@ -1,0 +1,97 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetFuturesDataTopLongShortPositionRatioResp:
+            example: '[ { "pair": "BTCUSD", "longShortRatio": "0.7869", "longPosition": "0.6442",   "shortPosition": "0.4404",   "timestamp": 1592870400000 }, { "pair": "BTCUSD", "longShortRatio": "1.1231", "longPosition": "0.2363", "shortPosition": "0.4537", "timestamp": 1592956800000 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetFuturesDataTopLongShortPositionRatioRespItem'
+            type: array
+        CfuturesGetFuturesDataTopLongShortPositionRatioRespItem:
+            properties:
+                longPosition:
+                    type: string
+                longShortRatio:
+                    type: string
+                pair:
+                    type: string
+                shortPosition:
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /futures/data/topLongShortPositionRatio:
+        get:
+            description: |-
+                The proportion of net long and net short positions to total open positions of the top 20% users with the highest margin balance.
+                Long Position % = Long positions of top traders / Total open positions of top traders
+                Short Position % = Short positions of top traders / Total open positions of top traders
+                Long/Short Ratio (Positions) = Long Position % / Short Position %
+            operationId: CfuturesGetFuturesDataTopLongShortPositionRatio
+            parameters:
+                - description: BTCUSD
+                  in: query
+                  name: pair
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '&#34;5m&#34;,&#34;15m&#34;,&#34;30m&#34;,&#34;1h&#34;,&#34;2h&#34;,&#34;4h&#34;,&#34;6h&#34;,&#34;12h&#34;,&#34;1d&#34;'
+                  in: query
+                  name: period
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 30,Max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 30
+                    format: int64
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetFuturesDataTopLongShortPositionRatioResp'
+                    description: Successful operation
+            summary: Top Trader Long/Short Ratio (Positions)
+            tags:
+                - Market Data

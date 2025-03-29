@@ -1,0 +1,83 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesCreateCountdownCancelAllV1Req:
+            properties:
+                countdownTime:
+                    format: int64
+                    type: integer
+                recvWindow:
+                    format: int64
+                    type: integer
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - symbol
+                - countdownTime
+                - timestamp
+            type: object
+        CfuturesCreateCountdownCancelAllV1Resp:
+            example: '{ "symbol": "BTCUSD_200925", "countdownTime": "100000" }'
+            properties:
+                countdownTime:
+                    type: string
+                symbol:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/countdownCancelAll:
+        post:
+            description: Cancel all open orders of the specified symbol at the end of the specified countdown. This rest endpoint means to ensure your open orders are canceled in case of an outage. The endpoint should be called repeatedly as heartbeats so that the existing countdown time can be canceled and repalced by a new one. The system will check all countdowns approximately every 10 milliseconds, so please note that sufficient redundancy should be considered when using this function. We do not recommend setting the countdown time to be too precise or too small.
+            operationId: CfuturesCreateCountdownCancelAllV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CfuturesCreateCountdownCancelAllV1Req'
+                description: The request body for CfuturesCreateCountdownCancelAllV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesCreateCountdownCancelAllV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Auto-Cancel All Open Orders (TRADE)
+            tags:
+                - Trade
+                - V1

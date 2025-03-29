@@ -1,0 +1,84 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetMarkPriceKlinesV1Resp:
+            example: '[ [ 1591256460000,      "9653.29201333",     "9654.56401333",      "9653.07367333",      "9653.07367333",      "0",  1591256519999,       "0",     60,                  "0",     "0",        "0"  ] ]'
+            items:
+                items:
+                    oneOf:
+                        - type: integer
+                          format: int64
+                        - type: string
+                type: array
+            type: array
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/markPriceKlines:
+        get:
+            description: |-
+                Kline/candlestick bars for the mark price of a symbol.
+                Klines are uniquely identified by their open time.
+            operationId: CfuturesGetMarkPriceKlinesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: interval
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500; max 1500.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1500
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetMarkPriceKlinesV1Resp'
+                    description: Successful operation
+            summary: Mark Price Kline/Candlestick Data
+            tags:
+                - Market Data
+                - V1

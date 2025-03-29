@@ -1,0 +1,144 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesUpdateOrderV1Req:
+            properties:
+                orderId:
+                    format: int64
+                    type: integer
+                origClientOrderId:
+                    default: ""
+                    type: string
+                price:
+                    default: ""
+                    type: string
+                priceMatch:
+                    default: ""
+                    type: string
+                quantity:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                side:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - symbol
+                - side
+                - timestamp
+            type: object
+        CfuturesUpdateOrderV1Resp:
+            example: '{ "orderId": 20072994037, "symbol": "BTCUSD_PERP", "pair": "BTCUSD", "status": "NEW", "clientOrderId": "LJ9R4QZDihCaS8UAOOLpgW", "price": "30005", "avgPrice": "0.0", "origQty": "1", "executedQty": "0", "cumQty": "0", "cumBase": "0", "timeInForce": "GTC", "type": "LIMIT", "reduceOnly": false, "closePosition": false, "side": "BUY", "positionSide": "LONG", "stopPrice": "0", "workingType": "CONTRACT_PRICE", "priceProtect": false, "origType": "LIMIT", "priceMatch": "NONE",                "selfTradePreventionMode": "NONE",   "updateTime": 1629182711600 }'
+            properties:
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                closePosition:
+                    type: boolean
+                cumBase:
+                    type: string
+                cumQty:
+                    type: string
+                executedQty:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origType:
+                    type: string
+                pair:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                priceMatch:
+                    type: string
+                priceProtect:
+                    type: boolean
+                reduceOnly:
+                    type: boolean
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+                workingType:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/order:
+        put:
+            description: Order modify function, currently only LIMIT order modification is supported, modified orders will be reordered in the match queue
+            operationId: CfuturesUpdateOrderV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CfuturesUpdateOrderV1Req'
+                description: The request body for CfuturesUpdateOrderV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesUpdateOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Modify Order (TRADE)
+            tags:
+                - Trade
+                - V1

@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetPositionMarginHistoryV1Resp:
+            example: '[ { "amount": "23.36332311", "asset": "BTC", "symbol": "BTCUSD_200925", "time": 1578047897183, "type": 1, "positionSide": "BOTH" }, { "amount": "100", "asset": "BTC", "symbol": "BTCUSD_200925", "time": 1578047900425, "type": 1, "positionSide": "LONG" } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetPositionMarginHistoryV1RespItem'
+            type: array
+        CfuturesGetPositionMarginHistoryV1RespItem:
+            properties:
+                amount:
+                    type: string
+                asset:
+                    type: string
+                positionSide:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                type:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/positionMargin/history:
+        get:
+            description: Get position margin change history
+            operationId: CfuturesGetPositionMarginHistoryV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '1: Add position margin,2: Reduce position margin'
+                  in: query
+                  name: type
+                  schema:
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: 50'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetPositionMarginHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Position Margin Change History(TRADE)
+            tags:
+                - Trade
+                - V1

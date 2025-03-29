@@ -1,0 +1,70 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetTickerPriceV1Resp:
+            example: '[ { "symbol": "BTCUSD_200626", "ps": "9647.8",   "price": "9647.8", "time": 1591257246176 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetTickerPriceV1RespItem'
+            type: array
+        CfuturesGetTickerPriceV1RespItem:
+            properties:
+                price:
+                    type: string
+                ps:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/ticker/price:
+        get:
+            description: Latest price for a symbol or symbols.
+            operationId: CfuturesGetTickerPriceV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: pair
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetTickerPriceV1Resp'
+                    description: Successful operation
+            summary: Symbol Price Ticker
+            tags:
+                - Market Data
+                - V1

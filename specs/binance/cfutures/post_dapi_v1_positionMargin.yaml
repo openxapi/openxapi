@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesCreatePositionMarginV1Req:
+            properties:
+                amount:
+                    default: ""
+                    type: string
+                positionSide:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                type:
+                    type: integer
+            required:
+                - symbol
+                - amount
+                - type
+                - timestamp
+            type: object
+        CfuturesCreatePositionMarginV1Resp:
+            example: '{ "amount": 100.0, "code": 200, "msg": "Successfully modify position margin.", "type": 1 }'
+            properties:
+                amount:
+                    type: integer
+                code:
+                    type: integer
+                msg:
+                    type: string
+                type:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/positionMargin:
+        post:
+            description: Modify Isolated Position Margin
+            operationId: CfuturesCreatePositionMarginV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CfuturesCreatePositionMarginV1Req'
+                description: The request body for CfuturesCreatePositionMarginV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesCreatePositionMarginV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Modify Isolated Position Margin(TRADE)
+            tags:
+                - Trade
+                - V1

@@ -1,0 +1,67 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetConstituentsV1Resp:
+            example: '{ "symbol": "BTCUSD", "time": 1697422647853, "constituents": [ { "exchange": "bitstamp", "symbol": "btcusd" }, { "exchange": "coinbase", "symbol": "BTC-USD" }, { "exchange": "kraken", "symbol": "XBT/USD" }, { "exchange": "binance_cross", "symbol": "BTCUSDC*index(USDCUSD)" } ] }'
+            properties:
+                constituents:
+                    items:
+                        properties:
+                            exchange:
+                                type: string
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/constituents:
+        get:
+            description: Query index price constituents
+            operationId: CfuturesGetConstituentsV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetConstituentsV1Resp'
+                    description: Successful operation
+            summary: Query Index Price Constituents
+            tags:
+                - Market Data
+                - V1

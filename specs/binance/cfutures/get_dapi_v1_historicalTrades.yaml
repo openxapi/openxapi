@@ -1,0 +1,83 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetHistoricalTradesV1Resp:
+            example: '[ { "id": 595103, "price": "9642.2", "qty": "1", "baseQty": "0.01037108", "time": 1499865549590, "isBuyerMaker": true } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetHistoricalTradesV1RespItem'
+            type: array
+        CfuturesGetHistoricalTradesV1RespItem:
+            properties:
+                baseQty:
+                    type: string
+                id:
+                    type: integer
+                isBuyerMaker:
+                    type: boolean
+                price:
+                    type: string
+                qty:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/historicalTrades:
+        get:
+            description: Get older market historical trades.
+            operationId: CfuturesGetHistoricalTradesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default 100; max 500.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 100
+                    maximum: 500
+                    type: integer
+                - description: TradeId to fetch from. Default gets most recent trades.
+                  in: query
+                  name: fromId
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetHistoricalTradesV1Resp'
+                    description: Successful operation
+            summary: Old Trades Lookup(MARKET_DATA)
+            tags:
+                - Market Data
+                - V1

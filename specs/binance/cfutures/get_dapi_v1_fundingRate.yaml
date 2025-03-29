@@ -1,0 +1,83 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetFundingRateV1Resp:
+            example: '[ { "symbol": "BTCUSD_PERP", "fundingTime": 1596038400000, "fundingRate": "-0.00300000" }, { "symbol": "BTCUSD_PERP", "fundingTime": 1596067200000, "fundingRate": "-0.00300000" } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetFundingRateV1RespItem'
+            type: array
+        CfuturesGetFundingRateV1RespItem:
+            properties:
+                fundingRate:
+                    type: string
+                fundingTime:
+                    format: int64
+                    type: integer
+                symbol:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/fundingRate:
+        get:
+            description: Get Funding Rate History of Perpetual Futures
+            operationId: CfuturesGetFundingRateV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Timestamp in ms to get funding rate from INCLUSIVE.
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Timestamp in ms to get funding rate  until INCLUSIVE.
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 100; max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 100
+                    maximum: 1000
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetFundingRateV1Resp'
+                    description: Successful operation
+            summary: Get Funding Rate History of Perpetual Futures
+            tags:
+                - Market Data
+                - V1

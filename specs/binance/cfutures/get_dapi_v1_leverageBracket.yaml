@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetLeverageBracketV1Resp:
+            example: '[ { "pair": "BTCUSD", "brackets": [ { "bracket": 1,    "initialLeverage": 125,   "qtyCap": 50,   "qtylFloor": 0,   "maintMarginRatio": 0.004,  "cum": 0.0   } ] } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetLeverageBracketV1RespItem'
+            type: array
+        CfuturesGetLeverageBracketV1RespItem:
+            properties:
+                brackets:
+                    items:
+                        properties:
+                            bracket:
+                                type: integer
+                            cum:
+                                type: integer
+                            initialLeverage:
+                                type: integer
+                            maintMarginRatio:
+                                type: number
+                            qtyCap:
+                                type: integer
+                            qtylFloor:
+                                type: integer
+                        type: object
+                    type: array
+                pair:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/leverageBracket:
+        get:
+            description: Not recommended to continue using this v1 endpoint
+            operationId: CfuturesGetLeverageBracketV1
+            parameters:
+                - in: query
+                  name: pair
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetLeverageBracketV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Notional Bracket for Pair(USER_DATA)
+            tags:
+                - Account
+                - V1

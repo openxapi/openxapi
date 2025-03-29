@@ -1,0 +1,96 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetFuturesDataTopLongShortAccountRatioResp:
+            example: '[ { "pair": "BTCUSD", "longShortRatio": "1.8105", "longAccount": "0.6442",   "shortAccount": "0.3558",   "timestamp": 1591261042378 }, { "pair": "BTCUSD", "longShortRatio": "1.1110", "longAccount": "0.5263", "shortAccount": "0.4737", "timestamp": 1592870400000 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetFuturesDataTopLongShortAccountRatioRespItem'
+            type: array
+        CfuturesGetFuturesDataTopLongShortAccountRatioRespItem:
+            properties:
+                longAccount:
+                    type: string
+                longShortRatio:
+                    type: string
+                pair:
+                    type: string
+                shortAccount:
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /futures/data/topLongShortAccountRatio:
+        get:
+            description: |-
+                The proportion of net long and net short accounts to total accounts of the top 20% users with the highest margin balance. Each account is counted once only.
+                Long Account % = Accounts of top traders with net long positions / Total accounts of top traders with open positions
+                Short Account % = Accounts of top traders with net short positions / Total accounts of top traders with open positions
+                Long/Short Ratio (Accounts) = Long Account % / Short Account %
+            operationId: CfuturesGetFuturesDataTopLongShortAccountRatio
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '&#34;5m&#34;,&#34;15m&#34;,&#34;30m&#34;,&#34;1h&#34;,&#34;2h&#34;,&#34;4h&#34;,&#34;6h&#34;,&#34;12h&#34;,&#34;1d&#34;'
+                  in: query
+                  name: period
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: default 30, max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 30
+                    format: int64
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetFuturesDataTopLongShortAccountRatioResp'
+                    description: Successful operation
+            summary: Top Trader Long/Short Ratio (Accounts)
+            tags:
+                - Market Data

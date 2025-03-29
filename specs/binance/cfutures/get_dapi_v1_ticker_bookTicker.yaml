@@ -1,0 +1,79 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetTickerBookTickerV1Resp:
+            example: '[ { "lastUpdateId": 1027024, "symbol": "BTCUSD_200626", "pair": "BTCUSD", "bidPrice": "9650.1", "bidQty": "16", "askPrice": "9650.3", "askQty": "7", "time": 1591257300345 } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetTickerBookTickerV1RespItem'
+            type: array
+        CfuturesGetTickerBookTickerV1RespItem:
+            properties:
+                askPrice:
+                    type: string
+                askQty:
+                    type: string
+                bidPrice:
+                    type: string
+                bidQty:
+                    type: string
+                lastUpdateId:
+                    format: int64
+                    type: integer
+                pair:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/ticker/bookTicker:
+        get:
+            description: Best price/qty on the order book for a symbol or symbols.
+            operationId: CfuturesGetTickerBookTickerV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: pair
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetTickerBookTickerV1Resp'
+                    description: Successful operation
+            summary: Symbol Order Book Ticker
+            tags:
+                - Market Data
+                - V1

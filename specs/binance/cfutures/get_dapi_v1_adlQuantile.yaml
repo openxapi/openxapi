@@ -1,0 +1,85 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CfuturesGetAdlQuantileV1Resp:
+            example: '[ { "symbol": "BTCUSD_200925", "adlQuantile": { "LONG": 3, "SHORT": 3, "HEDGE": 0    } }, { "symbol": "BTCUSD_201225", "adlQuantile": { "LONG": 1,      "SHORT": 2,  "BOTH": 0 } } ]'
+            items:
+                $ref: '#/components/schemas/CfuturesGetAdlQuantileV1RespItem'
+            type: array
+        CfuturesGetAdlQuantileV1RespItem:
+            properties:
+                adlQuantile:
+                    properties:
+                        HEDGE:
+                            type: integer
+                        LONG:
+                            type: integer
+                        SHORT:
+                            type: integer
+                    type: object
+                symbol:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /dapi/v1/adlQuantile:
+        get:
+            description: Query position ADL quantile estimation
+            operationId: CfuturesGetAdlQuantileV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CfuturesGetAdlQuantileV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Position ADL Quantile Estimation(USER_DATA)
+            tags:
+                - Trade
+                - V1
