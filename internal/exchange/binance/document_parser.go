@@ -601,11 +601,10 @@ func createSchema(name, paramType string, content string) (*parser.Schema, error
 		if err != nil {
 			return nil, fmt.Errorf("unmarshalling JSON: %w", err)
 		}
-		schema, err := createSchemaWithValue(v)
+		schema, err := createSchemaWithValue(v, name)
 		if err != nil {
 			return nil, fmt.Errorf("creating schema with value: %w", err)
 		}
-		schema.Title = name
 		return schema, nil
 	case parser.ArrayType:
 		// If the content is a JSON array, unmarshal it into the array
@@ -614,12 +613,10 @@ func createSchema(name, paramType string, content string) (*parser.Schema, error
 		if err != nil {
 			return nil, fmt.Errorf("unmarshalling JSON: %w", err)
 		}
-		schema, err := createSchemaWithValue(v)
+		schema, err := createSchemaWithValue(v, name)
 		if err != nil {
 			return nil, fmt.Errorf("creating schema with value: %w", err)
 		}
-		schema.Title = name
-		schema.Items.Title = fmt.Sprintf("%sItem", name)
 		return schema, nil
 	case parser.StringType:
 		schema := &parser.Schema{
@@ -644,10 +641,11 @@ func createSchema(name, paramType string, content string) (*parser.Schema, error
 	}
 }
 
-func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
+func createSchemaWithValue(v interface{}, title string) (*parser.Schema, error) {
 	typ := reflect.TypeOf(v)
 	if typ == nil {
 		return &parser.Schema{
+			Title:    title,
 			Type:     parser.ObjectType,
 			Nullable: true,
 		}, nil
@@ -657,13 +655,15 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 	}
 	if typ.Kind() == reflect.Slice {
 		schema := &parser.Schema{
-			Type: parser.ArrayType,
+			Title: title,
+			Type:  parser.ArrayType,
 		}
 		if reflect.ValueOf(v).Len() > 0 {
-			itemsSchema, err := createSchemaWithValue(reflect.ValueOf(v).Index(0).Interface())
+			itemsSchema, err := createSchemaWithValue(reflect.ValueOf(v).Index(0).Interface(), fmt.Sprintf("%sItem", title))
 			if err != nil {
 				return nil, fmt.Errorf("creating schema for items: %w", err)
 			}
+			schema.Title = title
 			schema.Items = itemsSchema
 		}
 		// TODO: handle empty array
@@ -671,13 +671,14 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 	}
 	if typ.Kind() == reflect.Map {
 		schema := &parser.Schema{
+			Title:      title,
 			Type:       parser.ObjectType,
 			Properties: make(map[string]*parser.Schema),
 		}
 		// create a schema for each k, v pair
 		keys := reflect.ValueOf(v).MapKeys()
 		for _, key := range keys {
-			valueSchema, err := createSchemaWithValue(reflect.ValueOf(v).MapIndex(key).Interface())
+			valueSchema, err := createSchemaWithValue(reflect.ValueOf(v).MapIndex(key).Interface(), fmt.Sprintf("%s.%s", title, key.String()))
 			if err != nil {
 				return nil, fmt.Errorf("creating schema for value: %w", err)
 			}
@@ -697,19 +698,22 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 	}
 	if typ.Kind() == reflect.String {
 		schema := &parser.Schema{
-			Type: parser.StringType,
+			Title: title,
+			Type:  parser.StringType,
 		}
 		return schema, nil
 	}
 	if typ.Kind() == reflect.Bool {
 		schema := &parser.Schema{
-			Type: parser.BooleanType,
+			Title: title,
+			Type:  parser.BooleanType,
 		}
 		return schema, nil
 	}
 	if typ.Kind() == reflect.Int || typ.Kind() == reflect.Int8 || typ.Kind() == reflect.Int16 || typ.Kind() == reflect.Int32 || typ.Kind() == reflect.Int64 {
 		schema := &parser.Schema{
-			Type: parser.IntegerType,
+			Title: title,
+			Type:  parser.IntegerType,
 		}
 		if typ.Kind() == reflect.Int64 {
 			schema.Format = "int64"
@@ -720,14 +724,16 @@ func createSchemaWithValue(v interface{}) (*parser.Schema, error) {
 		// Check if the value is actually an integer
 		if reflect.ValueOf(v).Float() == float64(int(reflect.ValueOf(v).Float())) {
 			schema := &parser.Schema{
-				Type: parser.IntegerType,
+				Title: title,
+				Type:  parser.IntegerType,
 			}
 			// TODO: we can collect all the LONG parameters from documents and compare the key with the name
 			// if they are the same, we can set the format to int64
 			return schema, nil
 		} else {
 			schema := &parser.Schema{
-				Type: parser.NumberType,
+				Title: title,
+				Type:  parser.NumberType,
 			}
 			return schema, nil
 		}

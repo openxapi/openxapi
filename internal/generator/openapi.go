@@ -186,6 +186,11 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 
 // convertSchema converts a parser.Schema to an OpenAPI schema
 func (g *Generator) convertSchema(schema *parser.Schema) *openapi3.SchemaRef {
+	if schema.Ref != "" {
+		return &openapi3.SchemaRef{
+			Ref: schema.Ref,
+		}
+	}
 	result := &openapi3.Schema{
 		Type:         &openapi3.Types{schema.Type},
 		Format:       schema.Format,
@@ -351,10 +356,14 @@ func (g *Generator) convertResponses(responses map[string]*parser.Response, sche
 					*schemas = append(*schemas, mt.Schema)
 					schema = toSchemaRef(mt.Schema.Title)
 				} else if mt.Schema.Type == parser.ArrayType {
+					*schemas = append(*schemas, mt.Schema)
+					schema = toSchemaRef(mt.Schema.Title)
 					if mt.Schema.Items != nil && mt.Schema.Items.Type == parser.ObjectType {
-						*schemas = append(*schemas, mt.Schema.Items)
-						schema = g.convertSchema(mt.Schema)
-						schema.Value.Items = toSchemaRef(mt.Schema.Items.Title)
+						// Deep copy the item schema to avoid mutating the original schema
+						itemSchema := mt.Schema.Items
+						copiedItemSchema := *itemSchema
+						*schemas = append(*schemas, &copiedItemSchema)
+						mt.Schema.Items.Ref = toSchemaRef(mt.Schema.Items.Title).Ref
 					}
 				}
 			}

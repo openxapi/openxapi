@@ -1,6 +1,7 @@
 package binance
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/adshao/openxapi/internal/parser"
@@ -465,7 +466,7 @@ func TestCreateSchema(t *testing.T) {
 				for key, value := range tt.want.Properties {
 					assert.Contains(t, got.Properties, key)
 					assert.Equal(t, value.Type, got.Properties[key].Type)
-					assert.Equal(t, value.Title, got.Properties[key].Title)
+					assert.Equal(t, fmt.Sprintf("%s.%s", tt.name, key), got.Properties[key].Title)
 				}
 			}
 		})

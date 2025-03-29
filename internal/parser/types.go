@@ -47,6 +47,9 @@ type Schema struct {
 	// Additional fields
 	Properties           map[string]*Schema `json:"properties,omitempty"`
 	AdditionalProperties *Schema            `json:"additionalProperties,omitempty"`
+
+	// OpenAPI specific fields
+	Ref string `json:"$ref,omitempty"`
 }
 
 // Security represents a security requirement for an endpoint
