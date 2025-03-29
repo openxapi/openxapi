@@ -1,0 +1,106 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetMarginOrderListV1Resp:
+            example: '{ "orderListId": 27, "contingencyType": "OCO", "listStatusType": "EXEC_STARTED", "listOrderStatus": "EXECUTING", "listClientOrderId": "h2USkA5YQpaXHPIrkd96xE", "transactionTime": 1565245656253, "symbol": "LTCBTC", "orders": [ { "symbol": "LTCBTC", "orderId": 4, "clientOrderId": "qD1gy3kc3Gx0rihm9Y3xwS" }, { "symbol": "LTCBTC", "orderId": 5, "clientOrderId": "ARzZ9I00CPM8i3NhmU9Ega" } ] }'
+            properties:
+                contingencyType:
+                    type: string
+                listClientOrderId:
+                    type: string
+                listOrderStatus:
+                    type: string
+                listStatusType:
+                    type: string
+                orderListId:
+                    format: int64
+                    type: integer
+                orders:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                symbol:
+                    type: string
+                transactionTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/margin/orderList:
+        get:
+            description: Retrieves a specific OCO based on provided optional parameters
+            operationId: PmarginGetMarginOrderListV1
+            parameters:
+                - description: Either orderListId or origClientOrderId must be provided
+                  in: query
+                  name: orderListId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Either orderListId or origClientOrderId must be provided
+                  in: query
+                  name: origClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetMarginOrderListV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Margin Account's OCO (USER_DATA)
+            tags:
+                - Trade
+                - V1

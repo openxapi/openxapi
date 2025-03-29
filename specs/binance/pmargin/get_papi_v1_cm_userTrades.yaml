@@ -1,0 +1,136 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetCmUserTradesV1Resp:
+            example: '[ { "symbol": "BTCUSD_200626", "id": 6, "orderId": 28, "pair": "BTCUSD", "side": "SELL", "price": "8800", "qty": "1", "realizedPnl": "0", "marginAsset": "BTC", "baseQty": "0.01136364", "commission": "0.00000454", "commissionAsset": "BTC", "time": 1590743483586, "positionSide": "BOTH", "buyer": false, "maker": false } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetCmUserTradesV1RespItem'
+            type: array
+        PmarginGetCmUserTradesV1RespItem:
+            properties:
+                baseQty:
+                    type: string
+                buyer:
+                    type: boolean
+                commission:
+                    type: string
+                commissionAsset:
+                    type: string
+                id:
+                    type: integer
+                maker:
+                    type: boolean
+                marginAsset:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                pair:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                qty:
+                    type: string
+                realizedPnl:
+                    type: string
+                side:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/cm/userTrades:
+        get:
+            description: Get trades for a specific account and CM symbol.
+            operationId: PmarginGetCmUserTradesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: pair
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Trade id to fetch from. Default gets most recent trades.
+                  in: query
+                  name: fromId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 50; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetCmUserTradesV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: CM Account Trade List(USER_DATA)
+            tags:
+                - Trade
+                - V1

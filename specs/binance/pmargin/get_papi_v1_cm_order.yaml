@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetCmOrderV1Resp:
+            example: '{ "avgPrice": "0.0", "clientOrderId": "abc", "cumBase": "0", "executedQty": "0", "orderId": 1917641, "origQty": "0.40", "origType": "LIMIT", "price": "0", "reduceOnly": false, "side": "BUY", "status": "NEW", "symbol": "BTCUSD_200925", "pair": "BTCUSD", "positionSide": "SHORT", "time": 1579276756075,              "timeInForce": "GTC", "type": "LIMIT", "updateTime": 1579276756075         }'
+            properties:
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                cumBase:
+                    type: string
+                executedQty:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origType:
+                    type: string
+                pair:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                side:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/cm/order:
+        get:
+            description: Check an CM order's status.
+            operationId: PmarginGetCmOrderV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: origClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetCmOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query CM Order(USER_DATA)
+            tags:
+                - Trade
+                - V1

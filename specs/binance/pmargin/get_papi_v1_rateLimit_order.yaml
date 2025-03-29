@@ -1,0 +1,77 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetRateLimitOrderV1Resp:
+            example: '[ { "rateLimitType": "ORDERS", "interval": "MINUTE", "intervalNum": 1, "limit": 1200 } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetRateLimitOrderV1RespItem'
+            type: array
+        PmarginGetRateLimitOrderV1RespItem:
+            properties:
+                interval:
+                    type: string
+                intervalNum:
+                    type: integer
+                limit:
+                    type: integer
+                rateLimitType:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/rateLimit/order:
+        get:
+            description: Query User Rate Limit
+            operationId: PmarginGetRateLimitOrderV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetRateLimitOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query User Rate Limit (USER_DATA)
+            tags:
+                - Account
+                - V1

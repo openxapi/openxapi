@@ -1,0 +1,82 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginCreateBnbTransferV1Req:
+            properties:
+                amount:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                transferSide:
+                    default: ""
+                    type: string
+            required:
+                - amount
+                - transferSide
+                - timestamp
+            type: object
+        PmarginCreateBnbTransferV1Resp:
+            example: '{ "tranId": 100000001        }'
+            properties:
+                tranId:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/bnb-transfer:
+        post:
+            description: Transfer BNB in and out of UM
+            operationId: PmarginCreateBnbTransferV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/PmarginCreateBnbTransferV1Req'
+                description: The request body for PmarginCreateBnbTransferV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginCreateBnbTransferV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: BNB transfer (TRADE)
+            tags:
+                - Account
+                - V1

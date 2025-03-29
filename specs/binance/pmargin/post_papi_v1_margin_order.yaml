@@ -1,0 +1,158 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginCreateMarginOrderV1Req:
+            properties:
+                autoRepayAtCancel:
+                    type: boolean
+                icebergQty:
+                    default: ""
+                    type: string
+                newClientOrderId:
+                    default: ""
+                    type: string
+                newOrderRespType:
+                    default: ""
+                    type: string
+                price:
+                    default: ""
+                    type: string
+                quantity:
+                    default: ""
+                    type: string
+                quoteOrderQty:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                selfTradePreventionMode:
+                    default: ""
+                    type: string
+                side:
+                    default: ""
+                    type: string
+                sideEffectType:
+                    default: ""
+                    type: string
+                stopPrice:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                timeInForce:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                type:
+                    default: ""
+                    type: string
+            required:
+                - symbol
+                - side
+                - type
+                - timestamp
+            type: object
+        PmarginCreateMarginOrderV1Resp:
+            example: '{ "symbol": "BTCUSDT", "orderId": 28, "clientOrderId": "6gCrw2kRUAF9CvJDGP16IP", "transactTime": 1507725176595, "price": "1.00000000", "origQty": "10.00000000", "executedQty": "10.00000000", "cummulativeQuoteQty": "10.00000000", "status": "FILLED", "timeInForce": "GTC", "type": "MARKET", "side": "SELL", "marginBuyBorrowAmount": 5,        "marginBuyBorrowAsset": "BTC",     "fills": [ { "price": "4000.00000000", "qty": "1.00000000", "commission": "4.00000000", "commissionAsset": "USDT" }, { "price": "3999.00000000", "qty": "5.00000000", "commission": "19.99500000", "commissionAsset": "USDT" } ] }'
+            properties:
+                clientOrderId:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                executedQty:
+                    type: string
+                fills:
+                    items:
+                        properties:
+                            commission:
+                                type: string
+                            commissionAsset:
+                                type: string
+                            price:
+                                type: string
+                            qty:
+                                type: string
+                        type: object
+                    type: array
+                marginBuyBorrowAmount:
+                    type: integer
+                marginBuyBorrowAsset:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                price:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                transactTime:
+                    format: int64
+                    type: integer
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/margin/order:
+        post:
+            description: New Margin Order
+            operationId: PmarginCreateMarginOrderV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/PmarginCreateMarginOrderV1Req'
+                description: The request body for PmarginCreateMarginOrderV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginCreateMarginOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: New Margin Order(TRADE)
+            tags:
+                - Trade
+                - V1

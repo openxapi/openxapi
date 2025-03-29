@@ -1,0 +1,128 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmUserTradesV1Resp:
+            example: '[ { "symbol": "BTCUSDT", "id": 67880589, "orderId": 270093109, "side": "SELL", "price": "28511.00", "qty": "0.010", "realizedPnl": "2.58500000", "quoteQty": "285.11000", "commission": "-0.11404400", "commissionAsset": "USDT", "time": 1680688557875, "buyer": false, "maker": false, "positionSide": "BOTH" } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetUmUserTradesV1RespItem'
+            type: array
+        PmarginGetUmUserTradesV1RespItem:
+            properties:
+                buyer:
+                    type: boolean
+                commission:
+                    type: string
+                commissionAsset:
+                    type: string
+                id:
+                    type: integer
+                maker:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                qty:
+                    type: string
+                quoteQty:
+                    type: string
+                realizedPnl:
+                    type: string
+                side:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/userTrades:
+        get:
+            description: Get trades for a specific account and UM symbol.
+            operationId: PmarginGetUmUserTradesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Trade id to fetch from. Default gets most recent trades.
+                  in: query
+                  name: fromId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmUserTradesV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: UM Account Trade List(USER_DATA)
+            tags:
+                - Trade
+                - V1

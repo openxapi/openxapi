@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetPortfolioNegativeBalanceExchangeRecordV1Resp:
+            example: '{ "total": 2, "rows": [ { "startTime": 1736263046841, "endTime": 1736263248179, "details": [ { "asset": "ETH", "negativeBalance": 18,   "negativeMaxThreshold": 5   } ] }, { "startTime": 1736184913252, "endTime": 1736184965474, "details": [ { "asset": "BNB", "negativeBalance": 1.10264488, "negativeMaxThreshold": 0 } ] } ] }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            details:
+                                items:
+                                    properties:
+                                        asset:
+                                            type: string
+                                        negativeBalance:
+                                            type: integer
+                                        negativeMaxThreshold:
+                                            type: integer
+                                    type: object
+                                type: array
+                            endTime:
+                                format: int64
+                                type: integer
+                            startTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/portfolio/negative-balance-exchange-record:
+        get:
+            description: Query user negative balance auto exchange record
+            operationId: PmarginGetPortfolioNegativeBalanceExchangeRecordV1
+            parameters:
+                - in: query
+                  name: startTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetPortfolioNegativeBalanceExchangeRecordV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query User Negative Balance Auto Exchange Record (USER_DATA)
+            tags:
+                - Account
+                - V1

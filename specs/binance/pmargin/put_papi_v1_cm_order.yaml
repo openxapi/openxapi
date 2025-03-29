@@ -1,0 +1,134 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginUpdateCmOrderV1Req:
+            properties:
+                orderId:
+                    format: int64
+                    type: integer
+                origClientOrderId:
+                    default: ""
+                    type: string
+                price:
+                    default: ""
+                    type: string
+                priceMatch:
+                    default: ""
+                    type: string
+                quantity:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                side:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - symbol
+                - side
+                - quantity
+                - price
+                - timestamp
+            type: object
+        PmarginUpdateCmOrderV1Resp:
+            example: '{ "orderId": 20072994037, "symbol": "BTCUSD_PERP", "pair": "BTCUSD", "status": "NEW", "clientOrderId": "LJ9R4QZDihCaS8UAOOLpgW", "price": "30005", "avgPrice": "0.0", "origQty": "1", "executedQty": "0", "cumQty": "0", "cumBase": "0", "timeInForce": "GTC", "type": "LIMIT", "reduceOnly": false, "side": "BUY", "positionSide": "LONG", "origType": "LIMIT", "updateTime": 1629182711600 }'
+            properties:
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                cumBase:
+                    type: string
+                cumQty:
+                    type: string
+                executedQty:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origType:
+                    type: string
+                pair:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                side:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/cm/order:
+        put:
+            description: Order modify function, currently only LIMIT order modification is supported, modified orders will be reordered in the match queue
+            operationId: PmarginUpdateCmOrderV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/PmarginUpdateCmOrderV1Req'
+                description: The request body for PmarginUpdateCmOrderV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginUpdateCmOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Modify CM Order(TRADE)
+            tags:
+                - Trade
+                - V1

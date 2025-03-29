@@ -1,0 +1,94 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginCreateMarginRepayDebtV1Req:
+            properties:
+                amount:
+                    default: ""
+                    type: string
+                asset:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                specifyRepayAssets:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - asset
+                - timestamp
+            type: object
+        PmarginCreateMarginRepayDebtV1Resp:
+            example: '{ "amount": "0.10000000", "asset": "BNB", "specifyRepayAssets": [ "USDT", "BTC" ], "updateTime": 1636371437000 ,"success": true }'
+            properties:
+                amount:
+                    type: string
+                asset:
+                    type: string
+                specifyRepayAssets:
+                    items:
+                        type: string
+                    type: array
+                success:
+                    type: boolean
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/margin/repay-debt:
+        post:
+            description: Repay debt for a margin loan.
+            operationId: PmarginCreateMarginRepayDebtV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/PmarginCreateMarginRepayDebtV1Req'
+                description: The request body for PmarginCreateMarginRepayDebtV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginCreateMarginRepayDebtV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Margin Account Repay Debt(TRADE)
+            tags:
+                - Trade
+                - V1

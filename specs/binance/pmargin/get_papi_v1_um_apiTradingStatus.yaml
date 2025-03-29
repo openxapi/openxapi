@@ -1,0 +1,92 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmApiTradingStatusV1Resp:
+            example: '{ "indicators": {  "BTCUSDT": [ { "isLocked": true, "plannedRecoverTime": 1545741270000, "indicator": "UFR",   "value": 0.05,   "triggerValue": 0.995   }, { "isLocked": true, "plannedRecoverTime": 1545741270000, "indicator": "IFER",   "value": 0.99,   "triggerValue": 0.99   }, { "isLocked": true, "plannedRecoverTime": 1545741270000, "indicator": "GCR",   "value": 0.99,   "triggerValue": 0.99   }, { "isLocked": true, "plannedRecoverTime": 1545741270000, "indicator": "DR",   "value": 0.99,   "triggerValue": 0.99   } ] }, "updateTime": 1545741270000 }'
+            properties:
+                indicators:
+                    properties:
+                        BTCUSDT:
+                            items:
+                                properties:
+                                    indicator:
+                                        type: string
+                                    isLocked:
+                                        type: boolean
+                                    plannedRecoverTime:
+                                        format: int64
+                                        type: integer
+                                    triggerValue:
+                                        type: number
+                                    value:
+                                        type: number
+                                type: object
+                            type: array
+                    type: object
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/apiTradingStatus:
+        get:
+            description: Portfolio Margin UM Trading Quantitative Rules Indicators
+            operationId: PmarginGetUmApiTradingStatusV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmApiTradingStatusV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Portfolio Margin UM Trading Quantitative Rules Indicators(USER_DATA)
+            tags:
+                - Account
+                - V1

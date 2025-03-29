@@ -1,0 +1,68 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetCmAdlQuantileV1Resp:
+            example: '[ { "symbol": "BTCUSD_200925", "adlQuantile": { "LONG": 3, "SHORT": 3, "HEDGE": 0    } }, { "symbol": "BTCUSD_201225", "adlQuantile": { "LONG": 1,   "SHORT": 2,      "BOTH": 0        } } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetCmAdlQuantileV1RespItem'
+            type: array
+        PmarginGetCmAdlQuantileV1RespItem:
+            properties:
+                adlQuantile:
+                    properties:
+                        HEDGE:
+                            type: integer
+                        LONG:
+                            type: integer
+                        SHORT:
+                            type: integer
+                    type: object
+                symbol:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/cm/adlQuantile:
+        get:
+            description: Query CM Position ADL Quantile Estimation
+            operationId: PmarginGetCmAdlQuantileV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetCmAdlQuantileV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: CM Position ADL Quantile Estimation(USER_DATA)
+            tags:
+                - Trade
+                - V1

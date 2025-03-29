@@ -1,0 +1,89 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmOrderAsynIdV1Resp:
+            example: '{ "downloadId":"545923594199212032", "status":"completed",      "url":"www.binance.com",   "s3Link": null, "notified":true,           "expirationTimestamp":1645009771000,   "isExpired":null }'
+            properties:
+                downloadId:
+                    type: string
+                expirationTimestamp:
+                    format: int64
+                    type: integer
+                isExpired:
+                    nullable: true
+                    type: object
+                notified:
+                    type: boolean
+                s3Link:
+                    nullable: true
+                    type: object
+                status:
+                    type: string
+                url:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/order/asyn/id:
+        get:
+            description: Get UM futures order download link by Id
+            operationId: PmarginGetUmOrderAsynIdV1
+            parameters:
+                - description: get by download id api
+                  in: query
+                  name: downloadId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmOrderAsynIdV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get UM Futures Order Download Link by Id(USER_DATA)
+            tags:
+                - Account
+                - V1

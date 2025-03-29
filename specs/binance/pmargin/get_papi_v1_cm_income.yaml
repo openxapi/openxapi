@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetCmIncomeV1Resp:
+            example: '[ { "symbol": "",                "incomeType": "TRANSFER",    "income": "-0.37500000",     "asset": "BTC",              "info":"WITHDRAW",           "time": 1570608000000, "tranId":"9689322392",       "tradeId":""                 }, { "symbol": "BTCUSD_200925", "incomeType": "COMMISSION", "income": "-0.01000000", "asset": "BTC", "info":"", "time": 1570636800000, "tranId":"9689322392", "tradeId":"2059192" } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetCmIncomeV1RespItem'
+            type: array
+        PmarginGetCmIncomeV1RespItem:
+            properties:
+                asset:
+                    type: string
+                income:
+                    type: string
+                incomeType:
+                    type: string
+                info:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                tradeId:
+                    type: string
+                tranId:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/cm/income:
+        get:
+            description: Get CM Income History
+            operationId: PmarginGetCmIncomeV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: '&#34;TRANSFER&#34;,&#34;WELCOME_BONUS&#34;, &#34;FUNDING_FEE&#34;, &#34;REALIZED_PNL&#34;, &#34;COMMISSION&#34;, &#34;INSURANCE_CLEAR&#34;, and &#34;DELIVERED_SETTELMENT&#34;'
+                  in: query
+                  name: incomeType
+                  schema:
+                    default: ""
+                    type: string
+                - description: Timestamp in ms to get funding from INCLUSIVE.
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Timestamp in ms to get funding until INCLUSIVE.
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: page
+                  schema:
+                    type: integer
+                - description: Default 100; max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 100
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetCmIncomeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get CM Income History(USER_DATA)
+            tags:
+                - Account
+                - V1

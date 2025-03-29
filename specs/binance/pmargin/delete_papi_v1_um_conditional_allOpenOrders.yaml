@@ -1,0 +1,75 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginDeleteUmConditionalAllOpenOrdersV1Resp:
+            example: '{ "code": "200", "msg": "The operation of cancel all conditional open order is done." }'
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/conditional/allOpenOrders:
+        delete:
+            description: Cancel All UM Open Conditional Orders
+            operationId: PmarginDeleteUmConditionalAllOpenOrdersV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginDeleteUmConditionalAllOpenOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel All UM Open Conditional Orders (TRADE)
+            tags:
+                - Trade
+                - V1

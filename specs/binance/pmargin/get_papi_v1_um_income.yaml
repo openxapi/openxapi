@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmIncomeV1Resp:
+            example: '[ { "symbol": "",                    "incomeType": "TRANSFER",    "income": "-0.37500000",   "asset": "USDT",                 "info":"TRANSFER",           "time": 1570608000000, "tranId":"9689322392",       "tradeId":""                     }, { "symbol": "BTCUSDT", "incomeType": "COMMISSION", "income": "-0.01000000", "asset": "USDT", "info":"COMMISSION", "time": 1570636800000, "tranId":"9689322392", "tradeId":"2059192" } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetUmIncomeV1RespItem'
+            type: array
+        PmarginGetUmIncomeV1RespItem:
+            properties:
+                asset:
+                    type: string
+                income:
+                    type: string
+                incomeType:
+                    type: string
+                info:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                tradeId:
+                    type: string
+                tranId:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/income:
+        get:
+            description: Get UM Income History
+            operationId: PmarginGetUmIncomeV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: TRANSFER, WELCOME_BONUS, REALIZED_PNL, FUNDING_FEE, COMMISSION, INSURANCE_CLEAR, REFERRAL_KICKBACK, COMMISSION_REBATE, API_REBATE, CONTEST_REWARD, CROSS_COLLATERAL_TRANSFER, OPTIONS_PREMIUM_FEE, OPTIONS_SETTLE_PROFIT, INTERNAL_TRANSFER, AUTO_EXCHANGE, DELIVERED_SETTELMENT, COIN_SWAP_DEPOSIT, COIN_SWAP_WITHDRAW, POSITION_LIMIT_INCREASE_FEE
+                  in: query
+                  name: incomeType
+                  schema:
+                    default: ""
+                    type: string
+                - description: Timestamp in ms to get funding from INCLUSIVE.
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Timestamp in ms to get funding until INCLUSIVE.
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: page
+                  schema:
+                    type: integer
+                - description: Default 100; max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 100
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmIncomeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get UM Income History(USER_DATA)
+            tags:
+                - Account
+                - V1

@@ -1,0 +1,83 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmAccountConfigV1Resp:
+            example: '{ "feeTier": 0,                "canTrade": true,            "canDeposit": true,          "canWithdraw": true,         "dualSidePosition": true, "updateTime": 1724416653850,             "multiAssetsMargin": false, "tradeGroupId": -1 }'
+            properties:
+                canDeposit:
+                    type: boolean
+                canTrade:
+                    type: boolean
+                canWithdraw:
+                    type: boolean
+                dualSidePosition:
+                    type: boolean
+                feeTier:
+                    type: integer
+                multiAssetsMargin:
+                    type: boolean
+                tradeGroupId:
+                    format: int64
+                    type: integer
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/accountConfig:
+        get:
+            description: Query UM Futures account configuration
+            operationId: PmarginGetUmAccountConfigV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmAccountConfigV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: UM Futures Account Configuration(USER_DATA)
+            tags:
+                - Account
+                - V1

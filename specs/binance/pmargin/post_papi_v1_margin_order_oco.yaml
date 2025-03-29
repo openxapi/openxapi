@@ -1,0 +1,186 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginCreateMarginOrderOcoV1Req:
+            properties:
+                limitClientOrderId:
+                    default: ""
+                    type: string
+                limitIcebergQty:
+                    default: ""
+                    type: string
+                listClientOrderId:
+                    default: ""
+                    type: string
+                newOrderRespType:
+                    default: ""
+                    type: string
+                price:
+                    default: ""
+                    type: string
+                quantity:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                side:
+                    default: ""
+                    type: string
+                sideEffectType:
+                    default: ""
+                    type: string
+                stopClientOrderId:
+                    default: ""
+                    type: string
+                stopIcebergQty:
+                    default: ""
+                    type: string
+                stopLimitPrice:
+                    default: ""
+                    type: string
+                stopLimitTimeInForce:
+                    default: ""
+                    type: string
+                stopPrice:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - symbol
+                - side
+                - quantity
+                - price
+                - stopPrice
+                - timestamp
+            type: object
+        PmarginCreateMarginOrderOcoV1Resp:
+            example: '{ "orderListId": 0, "contingencyType": "OCO", "listStatusType": "EXEC_STARTED", "listOrderStatus": "EXECUTING", "listClientOrderId": "JYVpp3F0f5CAG15DhtrqLp", "transactionTime": 1563417480525, "symbol": "LTCBTC", "marginBuyBorrowAmount": "5",        "marginBuyBorrowAsset": "BTC",     "orders": [ { "symbol": "LTCBTC", "orderId": 2, "clientOrderId": "Kk7sqHb9J6mJWTMDVW7Vos" }, { "symbol": "LTCBTC", "orderId": 3, "clientOrderId": "xTXKaGYd4bluPVp78IVRvl" } ], "orderReports": [ { "symbol": "LTCBTC", "orderId": 2, "orderListId": 0, "clientOrderId": "Kk7sqHb9J6mJWTMDVW7Vos", "transactTime": 1563417480525, "price": "0.000000", "origQty": "0.624363", "executedQty": "0.000000", "cummulativeQuoteQty": "0.000000", "status": "NEW", "timeInForce": "GTC", "type": "STOP_LOSS", "side": "BUY", "stopPrice": "0.960664" }, { "symbol": "LTCBTC", "orderId": 3, "orderListId": 0, "clientOrderId": "xTXKaGYd4bluPVp78IVRvl", "transactTime": 1563417480525, "price": "0.036435", "origQty": "0.624363", "executedQty": "0.000000", "cummulativeQuoteQty": "0.000000", "status": "NEW", "timeInForce": "GTC", "type": "LIMIT_MAKER", "side": "BUY" } ] }'
+            properties:
+                contingencyType:
+                    type: string
+                listClientOrderId:
+                    type: string
+                listOrderStatus:
+                    type: string
+                listStatusType:
+                    type: string
+                marginBuyBorrowAmount:
+                    type: string
+                marginBuyBorrowAsset:
+                    type: string
+                orderListId:
+                    format: int64
+                    type: integer
+                orderReports:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            cummulativeQuoteQty:
+                                type: string
+                            executedQty:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            orderListId:
+                                format: int64
+                                type: integer
+                            origQty:
+                                type: string
+                            price:
+                                type: string
+                            side:
+                                type: string
+                            status:
+                                type: string
+                            stopPrice:
+                                type: string
+                            symbol:
+                                type: string
+                            timeInForce:
+                                type: string
+                            transactTime:
+                                format: int64
+                                type: integer
+                            type:
+                                type: string
+                        type: object
+                    type: array
+                orders:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                symbol:
+                    type: string
+                transactionTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/margin/order/oco:
+        post:
+            description: Send in a new OCO for a margin account
+            operationId: PmarginCreateMarginOrderOcoV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/PmarginCreateMarginOrderOcoV1Req'
+                description: The request body for PmarginCreateMarginOrderOcoV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginCreateMarginOrderOcoV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Margin Account New OCO(TRADE)
+            tags:
+                - Trade
+                - V1

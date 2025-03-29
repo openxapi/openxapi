@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmAccountV2Resp:
+            example: '{ "assets": [ { "asset": "USDT",             "crossWalletBalance": "23.72469206",       "crossUnPnl": "0.00000000",     "maintMargin": "0.00000000",         "initialMargin": "0.00000000",     "positionInitialMargin": "0.00000000",     "openOrderInitialMargin": "0.00000000",    "updateTime": 1625474304765  } ], "positions": [   { "symbol": "BTCUSDT",     "initialMargin": "0",    "maintMargin": "0",      "unrealizedProfit": "0.00000000",   "positionSide": "BOTH",      "positionAmt": "0",          "updateTime": 0,            "notional": "86.98650000" } ] }'
+            properties:
+                assets:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            crossUnPnl:
+                                type: string
+                            crossWalletBalance:
+                                type: string
+                            initialMargin:
+                                type: string
+                            maintMargin:
+                                type: string
+                            openOrderInitialMargin:
+                                type: string
+                            positionInitialMargin:
+                                type: string
+                            updateTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                positions:
+                    items:
+                        properties:
+                            initialMargin:
+                                type: string
+                            maintMargin:
+                                type: string
+                            notional:
+                                type: string
+                            positionAmt:
+                                type: string
+                            positionSide:
+                                type: string
+                            symbol:
+                                type: string
+                            unrealizedProfit:
+                                type: string
+                            updateTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v2/um/account:
+        get:
+            description: Get current UM account asset and position information.
+            operationId: PmarginGetUmAccountV2
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmAccountV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get UM Account Detail V2(USER_DATA)
+            tags:
+                - Account
+                - V2

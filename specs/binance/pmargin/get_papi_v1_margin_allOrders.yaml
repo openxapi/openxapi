@@ -1,0 +1,144 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetMarginAllOrdersV1Resp:
+            example: '[ { "clientOrderId": "D2KDy4DIeS56PvkM13f8cP", "cummulativeQuoteQty": "0.00000000", "executedQty": "0.00000000", "icebergQty": "0.00000000", "isWorking": false, "orderId": 41295, "origQty": "5.31000000", "price": "0.22500000", "side": "SELL", "status": "CANCELED", "stopPrice": "0.18000000", "symbol": "BNBBTC", "time": 1565769338806, "timeInForce": "GTC", "type": "TAKE_PROFIT_LIMIT", "updateTime": 1565769342148, "accountId": 152950866, "selfTradePreventionMode": "EXPIRE_TAKER", "preventedMatchId": null, "preventedQuantity": null } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetMarginAllOrdersV1RespItem'
+            type: array
+        PmarginGetMarginAllOrdersV1RespItem:
+            properties:
+                accountId:
+                    format: int64
+                    type: integer
+                clientOrderId:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                executedQty:
+                    type: string
+                icebergQty:
+                    type: string
+                isWorking:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                preventedMatchId:
+                    nullable: true
+                    type: object
+                preventedQuantity:
+                    nullable: true
+                    type: object
+                price:
+                    type: string
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/margin/allOrders:
+        get:
+            description: Query All Margin Account Orders
+            operationId: PmarginGetMarginAllOrdersV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500; max 500.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 500
+                    type: integer
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetMarginAllOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query All Margin Account Orders (USER_DATA)
+            tags:
+                - Trade
+                - V1

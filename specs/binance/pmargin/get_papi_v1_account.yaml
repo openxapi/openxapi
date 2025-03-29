@@ -1,0 +1,86 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetAccountV1Resp:
+            example: '{ "uniMMR": "5167.92171923",         "accountEquity": "122607.35137903",    "actualEquity": "73.47428058",    "accountInitialMargin": "23.72469206", "accountMaintMargin": "23.72469206",  "accountStatus": "NORMAL",    "virtualMaxWithdrawAmount": "1627523.32459208",    "totalAvailableBalance":"", "totalMarginOpenLoss":"",  "updateTime": 1657707212154  }'
+            properties:
+                accountEquity:
+                    type: string
+                accountInitialMargin:
+                    type: string
+                accountMaintMargin:
+                    type: string
+                accountStatus:
+                    type: string
+                actualEquity:
+                    type: string
+                totalAvailableBalance:
+                    type: string
+                totalMarginOpenLoss:
+                    type: string
+                uniMMR:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+                virtualMaxWithdrawAmount:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/account:
+        get:
+            description: Query account information
+            operationId: PmarginGetAccountV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Account Information(USER_DATA)
+            tags:
+                - Account
+                - V1

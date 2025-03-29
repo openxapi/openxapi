@@ -1,0 +1,117 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetCmAccountV1Resp:
+            example: '{ "assets": [ { "asset": "BTC",   "crossWalletBalance": "0.00241969",   "crossUnPnl": "0.00000000",   "maintMargin": "0.00000000",     "initialMargin": "0.00000000",   "positionInitialMargin": "0.00000000",   "openOrderInitialMargin": "0.00000000",   "updateTime": 1625474304765  } ], "positions": [ { "symbol": "BTCUSD_201225", "positionAmt":"0",   "initialMargin": "0", "maintMargin": "0", "unrealizedProfit": "0.00000000", "positionInitialMargin": "0", "openOrderInitialMargin": "0", "leverage": "125", "positionSide": "BOTH",  "entryPrice": "0.0", "maxQty": "50",   "updateTime": 0 } ] }'
+            properties:
+                assets:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            crossUnPnl:
+                                type: string
+                            crossWalletBalance:
+                                type: string
+                            initialMargin:
+                                type: string
+                            maintMargin:
+                                type: string
+                            openOrderInitialMargin:
+                                type: string
+                            positionInitialMargin:
+                                type: string
+                            updateTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                positions:
+                    items:
+                        properties:
+                            entryPrice:
+                                type: string
+                            initialMargin:
+                                type: string
+                            leverage:
+                                type: string
+                            maintMargin:
+                                type: string
+                            maxQty:
+                                type: string
+                            openOrderInitialMargin:
+                                type: string
+                            positionAmt:
+                                type: string
+                            positionInitialMargin:
+                                type: string
+                            positionSide:
+                                type: string
+                            symbol:
+                                type: string
+                            unrealizedProfit:
+                                type: string
+                            updateTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/cm/account:
+        get:
+            description: Get current CM account asset and position information.
+            operationId: PmarginGetCmAccountV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetCmAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get CM Account Detail(USER_DATA)
+            tags:
+                - Account
+                - V1

@@ -1,0 +1,77 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetCmCommissionRateV1Resp:
+            example: '{ "symbol": "BTCUSD_PERP", "makerCommissionRate": "0.00015",   "takerCommissionRate": "0.00040"    }'
+            properties:
+                makerCommissionRate:
+                    type: string
+                symbol:
+                    type: string
+                takerCommissionRate:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/cm/commissionRate:
+        get:
+            description: Get User Commission Rate for CM
+            operationId: PmarginGetCmCommissionRateV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetCmCommissionRateV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get User Commission Rate for CM(USER_DATA)
+            tags:
+                - Account
+                - V1

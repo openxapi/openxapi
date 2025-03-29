@@ -1,0 +1,124 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetMarginMarginInterestHistoryV1Resp:
+            example: '{ "rows": [ { "txId": 1352286576452864727, "interestAccuredTime": 1672160400000, "asset": "USDT", "rawAsset": "USDT", "principal": "45.3313", "interest": "0.00024995", "interestRate": "0.00013233", "type": "ON_BORROW" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            interest:
+                                type: string
+                            interestAccuredTime:
+                                format: int64
+                                type: integer
+                            interestRate:
+                                type: string
+                            principal:
+                                type: string
+                            rawAsset:
+                                type: string
+                            txId:
+                                format: int64
+                                type: integer
+                            type:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/margin/marginInterestHistory:
+        get:
+            description: Get Margin Borrow/Loan Interest History
+            operationId: PmarginGetMarginMarginInterestHistoryV1
+            parameters:
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Currently querying page. Start from 1. Default:1
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:10 Max:100
+                  in: query
+                  name: size
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: `false`. Set to `true` for archived data from 6 months ago'
+                  in: query
+                  name: archived
+                  schema:
+                    default: "false"
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetMarginMarginInterestHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Margin Borrow/Loan Interest History(USER_DATA)
+            tags:
+                - Account
+                - V1

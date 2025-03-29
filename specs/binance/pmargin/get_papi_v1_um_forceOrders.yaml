@@ -1,0 +1,135 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmForceOrdersV1Resp:
+            example: '[ { "orderId": 6071832819, "symbol": "BTCUSDT", "status": "FILLED", "clientOrderId": "autoclose-1596107620040000020", "price": "10871.09", "avgPrice": "10913.21000", "origQty": "0.001", "executedQty": "0.001", "cumQuote": "10.91321", "timeInForce": "IOC", "type": "LIMIT", "reduceOnly": false, "side": "SELL", "positionSide": "BOTH", "origType": "LIMIT", "time": 1596107620044, "updateTime": 1596107620087 } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetUmForceOrdersV1RespItem'
+            type: array
+        PmarginGetUmForceOrdersV1RespItem:
+            properties:
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                cumQuote:
+                    type: string
+                executedQty:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                origType:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                side:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/forceOrders:
+        get:
+            description: Query User's UM Force Orders
+            operationId: PmarginGetUmForceOrdersV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: '`LIQUIDATION` for liquidation orders, `ADL` for ADL orders.'
+                  in: query
+                  name: autoCloseType
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 50; max 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 100
+                    type: integer
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmForceOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query User's UM Force Orders (USER_DATA)
+            tags:
+                - Trade
+                - V1

@@ -1,0 +1,122 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginDeleteUmOrderV1Resp:
+            example: '{ "avgPrice": "0.00000", "clientOrderId": "myOrder1", "cumQty": "0", "cumQuote": "0", "executedQty": "0", "orderId": 4611875134427365377, "origQty": "0.40", "price": "0", "reduceOnly": false, "side": "BUY", "positionSide": "SHORT", "status": "CANCELED", "symbol": "BTCUSDT", "timeInForce": "GTC", "type": "LIMIT", "updateTime": 1571110484038, "selfTradePreventionMode": "NONE", "goodTillDate": 0, "priceMatch": "NONE" }'
+            properties:
+                avgPrice:
+                    type: string
+                clientOrderId:
+                    type: string
+                cumQty:
+                    type: string
+                cumQuote:
+                    type: string
+                executedQty:
+                    type: string
+                goodTillDate:
+                    format: int64
+                    type: integer
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                positionSide:
+                    type: string
+                price:
+                    type: string
+                priceMatch:
+                    type: string
+                reduceOnly:
+                    type: boolean
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/order:
+        delete:
+            description: Cancel an active UM LIMIT order
+            operationId: PmarginDeleteUmOrderV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: origClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginDeleteUmOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel UM Order(TRADE)
+            tags:
+                - Trade
+                - V1

@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmPositionRiskV1Resp:
+            example: '[ { "entryPrice": "0.00000", "leverage": "10", "markPrice": "6679.50671178", "maxNotionalValue": "20000000", "positionAmt": "0.000", "notional": "0", "symbol": "BTCUSDT", "unRealizedProfit": "0.00000000", "liquidationPrice": "6170.20509059", "positionSide": "BOTH", "updateTime": 1625474304765 } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetUmPositionRiskV1RespItem'
+            type: array
+        PmarginGetUmPositionRiskV1RespItem:
+            properties:
+                entryPrice:
+                    type: string
+                leverage:
+                    type: string
+                liquidationPrice:
+                    type: string
+                markPrice:
+                    type: string
+                maxNotionalValue:
+                    type: string
+                notional:
+                    type: string
+                positionAmt:
+                    type: string
+                positionSide:
+                    type: string
+                symbol:
+                    type: string
+                unRealizedProfit:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/positionRisk:
+        get:
+            description: Get current UM position information.
+            operationId: PmarginGetUmPositionRiskV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmPositionRiskV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query UM Position Information(USER_DATA)
+            tags:
+                - Account
+                - V1

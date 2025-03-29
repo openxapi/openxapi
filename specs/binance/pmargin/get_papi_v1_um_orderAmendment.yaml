@@ -1,0 +1,140 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginGetUmOrderAmendmentV1Resp:
+            example: '[ { "amendmentId": 5363,     "symbol": "BTCUSDT", "pair": "BTCUSDT", "orderId": 20072994037, "clientOrderId": "LJ9R4QZDihCaS8UAOOLpgW", "time": 1629184560899,   "amendment": { "price": { "before": "30004", "after": "30003.2" }, "origQty": { "before": "1", "after": "1" }, "count": 3   }, "priceMatch": "NONE" }, { "amendmentId": 5361, "symbol": "BTCUSDT", "pair": "BTCUSDT", "orderId": 20072994037, "clientOrderId": "LJ9R4QZDihCaS8UAOOLpgW", "time": 1629184533946, "amendment": { "price": { "before": "30005", "after": "30004" }, "origQty": { "before": "1", "after": "1" }, "count": 2 }, "priceMatch": "NONE" }, { "amendmentId": 5325, "symbol": "BTCUSDT", "pair": "BTCUSDT", "orderId": 20072994037, "clientOrderId": "LJ9R4QZDihCaS8UAOOLpgW", "time": 1629182711787, "amendment": { "price": { "before": "30002", "after": "30005" }, "origQty": { "before": "1", "after": "1" }, "count": 1 }, "priceMatch": "NONE" } ]'
+            items:
+                $ref: '#/components/schemas/PmarginGetUmOrderAmendmentV1RespItem'
+            type: array
+        PmarginGetUmOrderAmendmentV1RespItem:
+            properties:
+                amendment:
+                    properties:
+                        count:
+                            type: integer
+                        origQty:
+                            properties:
+                                after:
+                                    type: string
+                                before:
+                                    type: string
+                            type: object
+                        price:
+                            properties:
+                                after:
+                                    type: string
+                                before:
+                                    type: string
+                            type: object
+                    type: object
+                amendmentId:
+                    format: int64
+                    type: integer
+                clientOrderId:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                pair:
+                    type: string
+                priceMatch:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /papi/v1/um/orderAmendment:
+        get:
+            description: Get order modification history
+            operationId: PmarginGetUmOrderAmendmentV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: origClientOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - description: Timestamp in ms to get modification history from INCLUSIVE
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Timestamp in ms to get modification history until INCLUSIVE
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500, max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginGetUmOrderAmendmentV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query UM Modify Order History(TRADE)
+            tags:
+                - Trade
+                - V1

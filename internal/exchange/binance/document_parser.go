@@ -26,7 +26,7 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 	case "spot":
 		sp := &SpotDocumentParser{DocumentParser: p}
 		return sp.Parse(r, url, docType, protectedEndpoints)
-	case "ufutures", "cfutures", "options":
+	case "ufutures", "cfutures", "options", "pmargin", "pmarginpro", "futuresdata":
 		uf := &DerivativesDocumentParser{
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
@@ -269,7 +269,7 @@ func operationID(docType, method, path string) string {
 		}
 		path = fmt.Sprintf("%sV%s", action, matches[2])
 	}
-	path = strings.Join(strings.Split(strings.Title(strings.ReplaceAll(path, "/", " ")), " "), "")
+	path = strings.Join(strings.Split(strings.Title(strings.ReplaceAll(strings.ReplaceAll(path, "/", " "), "-", " ")), " "), "")
 	return fmt.Sprintf("%s%s%s", title(docType), methodToAction(method), path)
 }
 
