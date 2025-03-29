@@ -35,10 +35,10 @@ So that you can use the same specification to generate websocket client SDKs for
 
 ## Supported Exchanges
 
-| Exchange | Product | Module | REST API Spec | Websocket API Spec | SDKs |
+| Exchange | Product | Module | REST API | Websocket API | SDKs |
 |:--------:|:-------:|:-------------:|:----------------:|:------------------:|:----:|
 | Binance | Spot | Spot | ✅ [OpenAPI](./specs/binance/spot.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
-| | Derivatives | USDS-M Futures | ✅ [OpenAPI](./specs/binance/ufutures.yaml) | | |
+| | Derivatives | USDS-M Futures | ✅ [OpenAPI](./specs/binance/ufutures.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
 
 ## Project Structure
 
