@@ -10,11 +10,11 @@ OpenXAPI provides standardized OpenAPI and AsyncAPI specifications for cryptocur
 
 ## Specifications
 
-### REST API
+### REST API - OpenAPI Specification
 
 OpenXAPI is a Go program that automatically generates OpenAPI Specifications from various cryptocurrency exchange API documentation. It enables automatic SDK generation for multiple programming languages using the generated OpenAPI Specs.
 
-### WebSocket API
+### WebSocket API - AsyncAPI Specification
 
 OpenXAPI also maintains AsyncAPI Specifications for cryptocurrency exchanges and DeFi protocols.
 So that you can use the same specification to generate websocket client SDKs for multiple programming languages.
