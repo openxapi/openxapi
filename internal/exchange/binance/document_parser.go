@@ -847,15 +847,10 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 	// Extract response examples from code blocks
 	if s.HasClass("language-javascript") || s.HasClass("language-json") {
 		var lines []string
-		var commentRegex = regexp.MustCompile(`\s+//.*`)
 		code := s.Find("code")
 		// for each child of code, get the text
 		code.Children().Each(func(i int, child *goquery.Selection) {
-			text := cleanText(child.Text())
-			text = commentRegex.ReplaceAllString(text, "")
-			// remove `\t` and `\u00a0`
-			text = strings.ReplaceAll(text, "\t", "")
-			text = strings.ReplaceAll(text, "\u00a0", "")
+			text := cleanResponseLine(child.Text())
 			if text != "" {
 				lines = append(lines, text)
 			}
@@ -907,6 +902,18 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 			}
 		})
 	}
+}
+
+func cleanResponseLine(text string) string {
+	var commentRegex = regexp.MustCompile(`(\s+)//.*`)
+	var commentRegex2 = regexp.MustCompile(`//\s+.*`)
+	text = cleanText(text)
+	text = commentRegex.ReplaceAllString(text, "$1")
+	text = commentRegex2.ReplaceAllString(text, "")
+	// remove `\t` and `\u00a0`
+	text = strings.ReplaceAll(text, "\t", "")
+	text = strings.ReplaceAll(text, "\u00a0", "")
+	return text
 }
 
 func (p *SpotDocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEndpoints []string) {

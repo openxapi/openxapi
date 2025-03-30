@@ -137,6 +137,33 @@ func TestExtractEnumWithSupportedValues(t *testing.T) {
 	assert.Equal(t, []interface{}{"ACK", "RESULT", "FULL"}, values)
 }
 
+func TestCleanResponseLine(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{
+			`"positionInitialMargin": "0.61571385",// initial margin required for positions with current mark price"`,
+			`"positionInitialMargin": "0.61571385",`,
+		},
+		{
+			`// initial margin required with current mark price`,
+			``,
+		},
+		{
+			`"positionInitialMargin": "0.61571385", // initial margin required for positions with current mark price"`,
+			`"positionInitialMargin": "0.61571385", `,
+		},
+		{
+			`"url": "https://www.binance.com/en/futures/BTCUSDT", // url to the position`,
+			`"url": "https://www.binance.com/en/futures/BTCUSDT", `,
+		},
+	}
+	for _, test := range tests {
+		assert.Equal(t, test.expected, cleanResponseLine(test.input))
+	}
+}
+
 func TestExtractResponse(t *testing.T) {
 	docParser := &SpotDocumentParser{
 		DocumentParser: &DocumentParser{},
