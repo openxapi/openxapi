@@ -1,12 +1,14 @@
 # OpenXAPI - Open eXchange API
 
+![OpenXAPI Logo](images/logo.svg)
+
 ### Write APIs in Specification.
 
 ### One Spec. All Exchanges. Any Language.
 
 OpenXAPI provides standardized OpenAPI and AsyncAPI specifications for cryptocurrency exchanges and DeFi protocols, enabling seamless integration and SDK generation across multiple programming languages.
 
-## Implementations
+## Specifications
 
 ### REST API
 
