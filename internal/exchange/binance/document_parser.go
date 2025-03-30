@@ -847,7 +847,7 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 	// Extract response examples from code blocks
 	if s.HasClass("language-javascript") || s.HasClass("language-json") {
 		var lines []string
-		var commentRegex = regexp.MustCompile(`//.*`)
+		var commentRegex = regexp.MustCompile(`\s+//.*`)
 		code := s.Find("code")
 		// for each child of code, get the text
 		code.Children().Each(func(i int, child *goquery.Selection) {

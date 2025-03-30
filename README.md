@@ -43,6 +43,7 @@ So that you can use the same specification to generate websocket client SDKs for
 | | | Options | ✅ [OpenAPI](./specs/binance/options.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
 | | Portfolio Margin | Portfolio Margin | ✅ [OpenAPI](./specs/binance/pmargin.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
 | | Portfolio Margin Pro | Portfolio Margin Pro | ✅ [OpenAPI](./specs/binance/pmarginpro.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
+| | | Futures Data | ✅ [OpenAPI](./specs/binance/futuresdata.yaml) | | ✅ [Go](https://github.com/openxapi/binance-go) |
 
 ## Project Structure
 
