@@ -913,6 +913,9 @@ func cleanResponseLine(text string) string {
 	// remove `\t` and `\u00a0`
 	text = strings.ReplaceAll(text, "\t", "")
 	text = strings.ReplaceAll(text, "\u00a0", "")
+	if strings.HasPrefix(strings.TrimSpace(text), "//") {
+		return ""
+	}
 	return text
 }
 

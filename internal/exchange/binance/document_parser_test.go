@@ -158,6 +158,10 @@ func TestCleanResponseLine(t *testing.T) {
 			`"url": "https://www.binance.com/en/futures/BTCUSDT", // url to the position`,
 			`"url": "https://www.binance.com/en/futures/BTCUSDT", `,
 		},
+		{
+			`    //transaction id`,
+			``,
+		},
 	}
 	for _, test := range tests {
 		assert.Equal(t, test.expected, cleanResponseLine(test.input))
