@@ -1,0 +1,65 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginGetMarginCrossMarginCollateralRatioV1Resp:
+            example: '[ { "collaterals": [ { "minUsdValue": "0", "maxUsdValue": "13000000", "discountRate": "1" }, { "minUsdValue": "13000000", "maxUsdValue": "20000000", "discountRate": "0.975" }, { "minUsdValue": "20000000", "discountRate": "0" } ], "assetNames": [ "BNX" ] }, { "collaterals": [ { "minUsdValue": "0", "discountRate": "1" } ], "assetNames": [ "BTC", "BUSD", "ETH", "USDT" ] } ]'
+            items:
+                $ref: '#/components/schemas/MarginGetMarginCrossMarginCollateralRatioV1RespItem'
+            type: array
+        MarginGetMarginCrossMarginCollateralRatioV1RespItem:
+            properties:
+                assetNames:
+                    items:
+                        type: string
+                    type: array
+                collaterals:
+                    items:
+                        properties:
+                            discountRate:
+                                type: string
+                            maxUsdValue:
+                                type: string
+                            minUsdValue:
+                                type: string
+                        type: object
+                    type: array
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/crossMarginCollateralRatio:
+        get:
+            description: Cross margin collateral ratio
+            operationId: MarginGetMarginCrossMarginCollateralRatioV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginGetMarginCrossMarginCollateralRatioV1Resp'
+                    description: Successful operation
+            summary: Cross margin collateral ratio (MARKET_DATA)
+            tags:
+                - Market Data
+                - V1

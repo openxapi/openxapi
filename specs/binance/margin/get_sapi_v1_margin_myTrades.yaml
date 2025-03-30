@@ -1,0 +1,136 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginGetMarginMyTradesV1Resp:
+            example: '[ { "commission": "0.00006000", "commissionAsset": "BTC", "id": 34, "isBestMatch": true, "isBuyer": false, "isMaker": false, "orderId": 39324, "price": "0.02000000", "qty": "3.00000000", "symbol": "BNBBTC", "isIsolated": false, "time": 1561973357171 } ]'
+            items:
+                $ref: '#/components/schemas/MarginGetMarginMyTradesV1RespItem'
+            type: array
+        MarginGetMarginMyTradesV1RespItem:
+            properties:
+                commission:
+                    type: string
+                commissionAsset:
+                    type: string
+                id:
+                    type: integer
+                isBestMatch:
+                    type: boolean
+                isBuyer:
+                    type: boolean
+                isIsolated:
+                    type: boolean
+                isMaker:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                price:
+                    type: string
+                qty:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/myTrades:
+        get:
+            description: Query Margin Account's Trade List
+            operationId: MarginGetMarginMyTradesV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: for isolated margin or not, &#34;TRUE&#34;, &#34;FALSE&#34;，default &#34;FALSE&#34;
+                  in: query
+                  name: isIsolated
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: TradeId to fetch from. Default gets most recent trades.
+                  in: query
+                  name: fromId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500; max 1000.
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginGetMarginMyTradesV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Margin Account's Trade List (USER_DATA)
+            tags:
+                - Trade
+                - V1

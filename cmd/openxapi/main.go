@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/adshao/openxapi/internal/config"
-	"github.com/adshao/openxapi/internal/exchange/binance"
-	"github.com/adshao/openxapi/internal/generator"
-	"github.com/adshao/openxapi/internal/parser"
+	"github.com/openxapi/openxapi/internal/config"
+	"github.com/openxapi/openxapi/internal/exchange/binance"
+	"github.com/openxapi/openxapi/internal/generator"
+	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
 )
 

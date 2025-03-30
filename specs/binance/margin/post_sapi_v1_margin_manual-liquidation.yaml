@@ -1,0 +1,81 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginCreateMarginManualLiquidationV1Req:
+            properties:
+                recvWindow:
+                    format: int64
+                    type: integer
+                symbol:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                type:
+                    default: ""
+                    type: string
+            required:
+                - type
+                - timestamp
+            type: object
+        MarginCreateMarginManualLiquidationV1Resp:
+            example: '{ "asset": "ETH", "interest": "0.00083334", "principal": "0.001", "liabilityAsset": "USDT", "liabilityQty": 0.3552 }'
+            properties:
+                asset:
+                    type: string
+                interest:
+                    type: string
+                liabilityAsset:
+                    type: string
+                liabilityQty:
+                    type: number
+                principal:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/manual-liquidation:
+        post:
+            description: Margin Manual Liquidation
+            operationId: MarginCreateMarginManualLiquidationV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/MarginCreateMarginManualLiquidationV1Req'
+                description: The request body for MarginCreateMarginManualLiquidationV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginCreateMarginManualLiquidationV1Resp'
+                    description: Successful operation
+            summary: Margin Manual Liquidation(MARGIN)
+            tags:
+                - Trade
+                - V1

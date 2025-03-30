@@ -1,0 +1,130 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginGetMarginTransferV1Resp:
+            example: '{ "rows": [ { "amount": "0.10000000", "asset": "BNB", "status": "CONFIRMED", "timestamp": 1566898617, "txId": 5240372201, "type": "ROLL_IN", "transFrom": "SPOT",  "transTo": "ISOLATED_MARGIN"  }, { "amount": "5.00000000", "asset": "USDT", "status": "CONFIRMED", "timestamp": 1566888436, "txId": 5239810406, "type": "ROLL_OUT", "transFrom": "ISOLATED_MARGIN", "transTo": "ISOLATED_MARGIN",  "fromSymbol": "BNBUSDT", "toSymbol": "BTCUSDT" }, { "amount": "1.00000000", "asset": "EOS", "status": "CONFIRMED", "timestamp": 1566888403, "txId": 5239808703, "type": "ROLL_IN" } ], "total": 3 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            status:
+                                type: string
+                            timestamp:
+                                format: int64
+                                type: integer
+                            transFrom:
+                                type: string
+                            transTo:
+                                type: string
+                            txId:
+                                format: int64
+                                type: integer
+                            type:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/transfer:
+        get:
+            description: Get Cross Margin Transfer History
+            operationId: MarginGetMarginTransferV1
+            parameters:
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Transfer Type: ROLL_IN, ROLL_OUT'
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Currently querying page. Start from 1. Default:1
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:10 Max:100
+                  in: query
+                  name: size
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Symbol in Isolated Margin
+                  in: query
+                  name: isolatedSymbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginGetMarginTransferV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Cross Margin Transfer History (USER_DATA)
+            tags:
+                - Transfer
+                - V1

@@ -1,4 +1,4 @@
-module github.com/adshao/openxapi
+module github.com/openxapi/openxapi
 
 go 1.23
 

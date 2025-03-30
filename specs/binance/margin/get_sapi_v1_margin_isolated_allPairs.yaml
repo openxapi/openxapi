@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginGetMarginIsolatedAllPairsV1Resp:
+            example: '[ { "base": "BNB", "isBuyAllowed": true, "isMarginTrade": true, "isSellAllowed": true, "quote": "BTC", "symbol": "BNBBTC" }, { "base": "TRX", "isBuyAllowed": true, "isMarginTrade": true, "isSellAllowed": true, "quote": "BTC", "symbol": "TRXBTC" } ]'
+            items:
+                $ref: '#/components/schemas/MarginGetMarginIsolatedAllPairsV1RespItem'
+            type: array
+        MarginGetMarginIsolatedAllPairsV1RespItem:
+            properties:
+                base:
+                    type: string
+                isBuyAllowed:
+                    type: boolean
+                isMarginTrade:
+                    type: boolean
+                isSellAllowed:
+                    type: boolean
+                quote:
+                    type: string
+                symbol:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/isolated/allPairs:
+        get:
+            description: Get All Isolated Margin Symbol
+            operationId: MarginGetMarginIsolatedAllPairsV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: No more than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginGetMarginIsolatedAllPairsV1Resp'
+                    description: Successful operation
+            summary: Get All Isolated Margin Symbol(MARKET_DATA)
+            tags:
+                - Market Data
+                - V1

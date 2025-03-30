@@ -8,8 +8,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/adshao/openxapi/internal/parser"
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v3"
 )

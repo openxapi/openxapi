@@ -39,13 +39,14 @@ So that you can use the same specification to generate websocket client SDKs for
 
 | Exchange | Product | Module | Supported | REST API | Websocket API | SDKs |
 |:--------:|:-------:|:------:|:----------:|:----------:|:------------:|:----:|
-| Binance | Spot | Spot | ✅ | [OpenAPI](./specs/binance/spot.yaml) | | [Go](https://github.com/openxapi/binance-go) |
-| | Derivatives | USDS-M Futures | ✅ | [OpenAPI](./specs/binance/ufutures.yaml) | | [Go](https://github.com/openxapi/binance-go) |
-| | | COIN-M Futures | ✅ | [OpenAPI](./specs/binance/cfutures.yaml) | | [Go](https://github.com/openxapi/binance-go) |
-| | | Options | ✅ | [OpenAPI](./specs/binance/options.yaml) | | [Go](https://github.com/openxapi/binance-go) |
-| | | Portfolio Margin | ✅ | [OpenAPI](./specs/binance/pmargin.yaml) | | [Go](https://github.com/openxapi/binance-go) |
-| | | Portfolio Margin Pro | ✅ | [OpenAPI](./specs/binance/pmarginpro.yaml) | | [Go](https://github.com/openxapi/binance-go) |
-| | | Futures Data | ✅ | [OpenAPI](./specs/binance/futuresdata.yaml) | | [Go](https://github.com/openxapi/binance-go) |
+| Binance | Spot | | ✅ | [OpenAPI](./specs/binance/spot.yaml) | | [Go](https://github.com/openxapi/binance-go/spot) |
+| | Derivatives | USDS-M Futures | ✅ | [OpenAPI](./specs/binance/ufutures.yaml) | | [Go](https://github.com/openxapi/binance-go/ufutures) |
+| | | COIN-M Futures | ✅ | [OpenAPI](./specs/binance/cfutures.yaml) | | [Go](https://github.com/openxapi/binance-go/cfutures) |
+| | | Options | ✅ | [OpenAPI](./specs/binance/options.yaml) | | [Go](https://github.com/openxapi/binance-go/options) |
+| | | Portfolio Margin | ✅ | [OpenAPI](./specs/binance/pmargin.yaml) | | [Go](https://github.com/openxapi/binance-go/pmargin) |
+| | | Portfolio Margin Pro | ✅ | [OpenAPI](./specs/binance/pmarginpro.yaml) | | [Go](https://github.com/openxapi/binance-go/pmarginpro) |
+| | | Futures Data | ✅ | [OpenAPI](./specs/binance/futuresdata.yaml) | | [Go](https://github.com/openxapi/binance-go/futuresdata) |
+| | Margin | | ✅ | [OpenAPI](./specs/binance/margin.yaml) | | [Go](https://github.com/openxapi/binance-go/margin) |
 
 ## Project Structure
 

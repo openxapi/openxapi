@@ -1,0 +1,92 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginGetMarginRateLimitOrderV1Resp:
+            example: '[ { "rateLimitType": "ORDERS", "interval": "SECOND", "intervalNum": 10, "limit": 10000, "count": 0 }, { "rateLimitType": "ORDERS", "interval": "DAY", "intervalNum": 1, "limit": 20000, "count": 0 } ]'
+            items:
+                $ref: '#/components/schemas/MarginGetMarginRateLimitOrderV1RespItem'
+            type: array
+        MarginGetMarginRateLimitOrderV1RespItem:
+            properties:
+                count:
+                    type: integer
+                interval:
+                    type: string
+                intervalNum:
+                    type: integer
+                limit:
+                    type: integer
+                rateLimitType:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/rateLimit/order:
+        get:
+            description: Displays the user's current margin order count usage for all intervals.
+            operationId: MarginGetMarginRateLimitOrderV1
+            parameters:
+                - description: for isolated margin or not, &#34;TRUE&#34;, &#34;FALSE&#34;，default &#34;FALSE&#34;
+                  in: query
+                  name: isIsolated
+                  schema:
+                    default: ""
+                    type: string
+                - description: isolated symbol, mandatory for isolated margin
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginGetMarginRateLimitOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Current Margin Order Count Usage (TRADE)
+            tags:
+                - Trade
+                - V1

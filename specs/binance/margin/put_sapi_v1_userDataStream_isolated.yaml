@@ -1,0 +1,71 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginUpdateUserDataStreamIsolatedV1Req:
+            properties:
+                listenKey:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+            required:
+                - symbol
+                - listenKey
+            type: object
+        MarginUpdateUserDataStreamIsolatedV1Resp:
+            example: '{}'
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/userDataStream/isolated:
+        put:
+            description: Keepalive an isolated margin user data stream to prevent a time out.
+            operationId: MarginUpdateUserDataStreamIsolatedV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/MarginUpdateUserDataStreamIsolatedV1Req'
+                description: The request body for MarginUpdateUserDataStreamIsolatedV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginUpdateUserDataStreamIsolatedV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Keepalive Isolated Margin User Data Stream (USER_STREAM)
+            tags:
+                - Trade Data Stream
+                - V1

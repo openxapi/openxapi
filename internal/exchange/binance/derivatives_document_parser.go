@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/adshao/openxapi/internal/parser"
+	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
 )
 

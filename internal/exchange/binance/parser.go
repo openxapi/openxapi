@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/adshao/openxapi/internal/parser"
+	"github.com/openxapi/openxapi/internal/parser"
 )
 
 // Parser implements the parser.Parser interface for Binance

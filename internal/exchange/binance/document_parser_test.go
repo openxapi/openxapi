@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/adshao/openxapi/internal/parser"
+	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -162,6 +162,14 @@ func TestCleanResponseLine(t *testing.T) {
 			`    //transaction id`,
 			``,
 		},
+		{
+			`"transTo": "ISOLATED_MARGIN" //SPOT,FUTURES,FIAT,DELIVERY,MINING,ISOLATED_MARGIN,FUNDING,MOTHER_SPOT,OPTION,SUB_SPOT,SUB_MARGIN,CROSS_MARGIN`,
+			`"transTo": "ISOLATED_MARGIN" `,
+		},
+		{
+			`"transFrom": "ISOLATED_MARGIN",//SPOT,FUTURES,FIAT,DELIVERY,MINING,ISOLATED_MARGIN,FUNDING,MOTHER_SPOT,OPTION,SUB_SPOT,SUB_MARGIN,CROSS_MARGIN`,
+			`"transFrom": "ISOLATED_MARGIN",`,
+		},
 	}
 	for _, test := range tests {
 		assert.Equal(t, test.expected, cleanResponseLine(test.input))
@@ -273,6 +281,14 @@ func TestExtractMaxMinDefault(t *testing.T) {
 	extractMaxMinDefault(schema, "Default `false`")
 	assert.NotNil(t, schema.Default, "defaultValue should not be nil")
 	assert.Equal(t, false, schema.Default.(bool), "defaultValue should be false")
+
+	schema = &parser.Schema{
+		Type: parser.IntegerType,
+	}
+	extractMaxMinDefault(schema, "Default: 30 days from current timestamp")
+	assert.Nil(t, schema.Max, "maxValue should be nil")
+	assert.Nil(t, schema.Min, "minValue should be nil")
+	assert.Nil(t, schema.Default, "defaultValue should be nil")
 }
 
 func TestProcessSecurities(t *testing.T) {

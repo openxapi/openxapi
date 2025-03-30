@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/adshao/openxapi/internal/parser"
+	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,6 +29,13 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 	case "ufutures", "cfutures", "options", "pmargin", "pmarginpro", "futuresdata":
 		uf := &DerivativesDocumentParser{
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
+		}
+		return uf.Parse(r, url, docType, protectedEndpoints)
+	case "margin":
+		uf := &MarginDocumentParser{
+			DerivativesDocumentParser: &DerivativesDocumentParser{
+				SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
+			},
 		}
 		return uf.Parse(r, url, docType, protectedEndpoints)
 	default:
@@ -512,7 +519,14 @@ func extractMaxMinDefault(schema *parser.Schema, description string) {
 	MinRegex := regexp.MustCompile(`(Min|min):? ` + "`?" + `(\d+)` + "`?" + `?`)
 	MaxRegex := regexp.MustCompile(`(Max|max):? ` + "`?" + `(\d+)` + "`?" + `?`)
 
-	matches := DefaultRegex.FindStringSubmatch(description)
+	timeRegex := regexp.MustCompile(`\d+ (days|day|month|months|week|weeks|year|years)`)
+	matches := timeRegex.FindStringSubmatch(description)
+	if len(matches) > 1 {
+		// Give up if we find a time value
+		return
+	}
+
+	matches = DefaultRegex.FindStringSubmatch(description)
 	if len(matches) > 2 {
 		defaultValue = matches[2]
 	}
@@ -905,7 +919,7 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 }
 
 func cleanResponseLine(text string) string {
-	var commentRegex = regexp.MustCompile(`(\s+)//.*`)
+	var commentRegex = regexp.MustCompile(`(\s+|,)//.*`)
 	var commentRegex2 = regexp.MustCompile(`//\s+.*`)
 	text = cleanText(text)
 	text = commentRegex.ReplaceAllString(text, "$1")

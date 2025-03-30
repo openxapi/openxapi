@@ -1,0 +1,210 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginCreateMarginOrderOtoV1Req:
+            properties:
+                autoRepayAtCancel:
+                    type: boolean
+                isIsolated:
+                    default: ""
+                    type: string
+                listClientOrderId:
+                    default: ""
+                    type: string
+                newOrderRespType:
+                    default: ""
+                    type: string
+                pendingClientOrderId:
+                    default: ""
+                    type: string
+                pendingIcebergQty:
+                    default: ""
+                    type: string
+                pendingPrice:
+                    default: ""
+                    type: string
+                pendingQuantity:
+                    default: ""
+                    type: string
+                pendingSide:
+                    default: ""
+                    type: string
+                pendingStopPrice:
+                    default: ""
+                    type: string
+                pendingTimeInForce:
+                    default: ""
+                    type: string
+                pendingTrailingDelta:
+                    default: ""
+                    type: string
+                pendingType:
+                    default: ""
+                    type: string
+                selfTradePreventionMode:
+                    default: ""
+                    type: string
+                sideEffectType:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                workingClientOrderId:
+                    default: ""
+                    type: string
+                workingIcebergQty:
+                    default: ""
+                    type: string
+                workingPrice:
+                    default: ""
+                    type: string
+                workingQuantity:
+                    default: ""
+                    type: string
+                workingSide:
+                    default: ""
+                    type: string
+                workingTimeInForce:
+                    default: ""
+                    type: string
+                workingType:
+                    default: ""
+                    enum:
+                        - LIMIT
+                        - LIMIT_MAKER
+                    type: string
+            required:
+                - symbol
+                - workingType
+                - workingSide
+                - workingPrice
+                - workingQuantity
+                - workingIcebergQty
+                - pendingType
+                - pendingSide
+                - pendingQuantity
+            type: object
+        MarginCreateMarginOrderOtoV1Resp:
+            example: '{ "orderListId": 13551, "contingencyType": "OTO", "listStatusType": "EXEC_STARTED", "listOrderStatus": "EXECUTING", "listClientOrderId": "JDuOrsu0Ge8GTyvx8J7VTD", "transactionTime": 1725521998054, "symbol": "BTCUSDT", "isIsolated": false, "orders": [ { "symbol": "BTCUSDT", "orderId": 29896699, "clientOrderId": "y8RB6tQEMuHUXybqbtzTxk" }, { "symbol": "BTCUSDT", "orderId": 29896700, "clientOrderId": "dKQEdh5HhXb7Lpp85jz1dQ" } ], "orderReports": [ { "symbol": "BTCUSDT", "orderId": 29896699, "orderListId": 13551, "clientOrderId": "y8RB6tQEMuHUXybqbtzTxk", "transactTime": 1725521998054, "price": "80000.00000000", "origQty": "0.02000000", "executedQty": "0", "cummulativeQuoteQty": "0", "status": "NEW", "timeInForce": "GTC", "type": "LIMIT", "side": "SELL", "selfTradePreventionMode": "NONE" }, { "symbol": "BTCUSDT", "orderId": 29896700, "orderListId": 13551, "clientOrderId": "dKQEdh5HhXb7Lpp85jz1dQ", "transactTime": 1725521998054, "price": "50000.00000000", "origQty": "0.02000000", "executedQty": "0", "cummulativeQuoteQty": "0", "status": "PENDING_NEW", "timeInForce": "GTC", "type": "LIMIT", "side": "BUY", "selfTradePreventionMode": "NONE" } ] }'
+            properties:
+                contingencyType:
+                    type: string
+                isIsolated:
+                    type: boolean
+                listClientOrderId:
+                    type: string
+                listOrderStatus:
+                    type: string
+                listStatusType:
+                    type: string
+                orderListId:
+                    format: int64
+                    type: integer
+                orderReports:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            cummulativeQuoteQty:
+                                type: string
+                            executedQty:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            orderListId:
+                                format: int64
+                                type: integer
+                            origQty:
+                                type: string
+                            price:
+                                type: string
+                            selfTradePreventionMode:
+                                type: string
+                            side:
+                                type: string
+                            status:
+                                type: string
+                            symbol:
+                                type: string
+                            timeInForce:
+                                type: string
+                            transactTime:
+                                format: int64
+                                type: integer
+                            type:
+                                type: string
+                        type: object
+                    type: array
+                orders:
+                    items:
+                        properties:
+                            clientOrderId:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                symbol:
+                    type: string
+                transactionTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/order/oto:
+        post:
+            description: 'Post a new OTO order for margin account:'
+            operationId: MarginCreateMarginOrderOtoV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/MarginCreateMarginOrderOtoV1Req'
+                description: The request body for MarginCreateMarginOrderOtoV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginCreateMarginOrderOtoV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Margin Account New OTO (TRADE)
+            tags:
+                - Trade
+                - V1

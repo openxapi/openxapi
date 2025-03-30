@@ -1,0 +1,88 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginGetMarginApiKeyV1Resp:
+            example: '{ "apiKey":"npOzOAeLVgr2TuxWfNo43AaPWpBbJEoKezh1o8mSQb6ryE2odE11A4AoVlJbQoGx", "ip": "0.0.0.0,192.168.0.1,192.168.0.2",  "apiName": "testName", "type": "RSA", "permissionMode": "TRADE" }'
+            properties:
+                apiKey:
+                    type: string
+                apiName:
+                    type: string
+                ip:
+                    type: string
+                permissionMode:
+                    type: string
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/apiKey:
+        get:
+            description: Query Special Key Information.
+            operationId: MarginGetMarginApiKeyV1
+            parameters:
+                - in: query
+                  name: apiKey
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: isolated margin pair
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginGetMarginApiKeyV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Special key(Low Latency Trading)(TRADE)
+            tags:
+                - Trade
+                - V1
