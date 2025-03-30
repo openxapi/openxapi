@@ -1,0 +1,69 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        PmarginproGetPortfolioPmLoanV1Resp:
+            example: '{ "asset": "BUSD", "amount":  "579.45"  }'
+            properties:
+                amount:
+                    type: string
+                asset:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/portfolio/pmLoan:
+        get:
+            description: Query Portfolio Margin Pro Bankruptcy Loan Amount
+            operationId: PmarginproGetPortfolioPmLoanV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/PmarginproGetPortfolioPmLoanV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Portfolio Margin Pro Bankruptcy Loan Amount(USER_DATA)
+            tags:
+                - Account
+                - V1
