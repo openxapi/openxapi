@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/exchange/binance"
@@ -20,8 +21,21 @@ var (
 	samplesDir   string
 	exchangeFlag string
 	docType      string
+	specTypes    stringsFlag
 	showHelp     bool
+	outputDir    string
 )
+
+type stringsFlag []string
+
+func (s *stringsFlag) String() string {
+	return strings.Join(*s, ", ")
+}
+
+func (s *stringsFlag) Set(value string) error {
+	*s = append(*s, value)
+	return nil
+}
 
 func init() {
 	flag.StringVar(&configFile, "config", "configs/config.yaml", "Path to configuration file")
@@ -30,6 +44,8 @@ func init() {
 	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/<exchange>)")
 	flag.StringVar(&exchangeFlag, "exchange", "", "Filter by exchange name")
 	flag.StringVar(&docType, "doc-type", "", "Filter by documentation type")
+	flag.Var(&specTypes, "spec-types", "Filter by specification types")
+	flag.StringVar(&outputDir, "output-dir", "./specs", "Output directory")
 	flag.BoolVar(&showHelp, "h,help", false, "Show help")
 }
 
@@ -61,11 +77,14 @@ func main() {
 	}
 
 	// Create OpenAPI generator
-	gen := generator.NewGenerator(config.Settings.OutputDir)
+	if outputDir == "" {
+		outputDir = config.Settings.OutputDir
+	}
+	gen := generator.NewGenerator(outputDir)
 
 	// Process each exchange
 	ctx := context.Background()
-	for exchangeName, exchange := range config.Exchanges {
+	for exchangeName, restConfig := range config.RestConfigs {
 		// Skip if exchange filter is set and doesn't match
 		if exchangeFlag != "" && exchangeFlag != exchangeName {
 			continue
@@ -94,7 +113,7 @@ func main() {
 		}
 
 		// Process each API type
-		for _, doc := range exchange.Docs {
+		for _, doc := range restConfig.Docs {
 			// Skip if doc type filter is set and doesn't match
 			if docType != "" && docType != doc.Type {
 				continue
@@ -117,13 +136,13 @@ func main() {
 			}
 
 			// Generate OpenAPI specification for each endpoint
-			if err := gen.GenerateEndpoints(exchangeName, exchange.Version, doc.Type, endpoints); err != nil {
+			if err := gen.GenerateEndpoints(exchangeName, restConfig.Version, doc.Type, endpoints); err != nil {
 				logrus.Errorf("Failed to generate OpenAPI endpoint specs for %s %s API: %v", exchangeName, doc.Type, err)
 				continue
 			}
 
 			// Generate OpenAPI specification
-			if err := gen.Generate(exchangeName, exchange.Version, doc.Type, doc.Servers); err != nil {
+			if err := gen.Generate(exchangeName, restConfig.Version, doc.Type, doc.Servers); err != nil {
 				logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
 				continue
 			}

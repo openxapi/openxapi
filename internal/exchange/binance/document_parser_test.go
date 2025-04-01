@@ -210,7 +210,7 @@ func TestOperationID(t *testing.T) {
 		{"Spot", "GET", "/api/v3/order/oco", "SpotGetOrderOcoV3"},
 		{"Future", "GET", "/fapi/v1/exchangeInfo", "FutureGetExchangeInfoV1"},
 		{"Future", "POST", "/fapi/v1/order", "FutureCreateOrderV1"},
-		{"Ufutures", "GET", "/futures/data/basis", "UfuturesGetFuturesDataBasis"},
+		{"Umfutures", "GET", "/futures/data/basis", "UmfuturesGetFuturesDataBasis"},
 	}
 
 	for _, test := range tests {

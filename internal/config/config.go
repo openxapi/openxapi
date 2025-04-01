@@ -10,12 +10,12 @@ import (
 )
 
 type Config struct {
-	ExchangeDir string              `yaml:"exchange_dir"`
-	Settings    Settings            `yaml:"settings"`
-	Exchanges   map[string]Exchange `yaml:"exchanges"`
+	ExchangeDir string                `yaml:"exchange_dir"`
+	Settings    Settings              `yaml:"settings"`
+	RestConfigs map[string]RestConfig `yaml:"rest_configs"`
 }
 
-type Exchange struct {
+type RestConfig struct {
 	Name        string          `yaml:"name"`
 	Version     string          `yaml:"version"`
 	Description string          `yaml:"description"`
@@ -50,15 +50,15 @@ func LoadConfig(path string) (*Config, error) {
 	}
 
 	// Load exchanges from the exchange directory
-	config.Exchanges, err = loadExchanges(path, config.ExchangeDir)
+	config.RestConfigs, err = loadRestConfigs(path, config.ExchangeDir)
 	if err != nil {
-		return nil, fmt.Errorf("loading exchanges: %w", err)
+		return nil, fmt.Errorf("loading rest configs: %w", err)
 	}
 
 	return &config, nil
 }
 
-func loadExchanges(path, dir string) (map[string]Exchange, error) {
+func loadRestConfigs(path, dir string) (map[string]RestConfig, error) {
 	if dir == "" {
 		return nil, fmt.Errorf("exchange directory is not set")
 	}
@@ -75,7 +75,7 @@ func loadExchanges(path, dir string) (map[string]Exchange, error) {
 	}
 	logrus.Debugf("ExchangeDir: %s", dir)
 
-	exchanges := make(map[string]Exchange)
+	restConfigs := make(map[string]RestConfig)
 	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("reading exchange directory: %w", err)
@@ -98,18 +98,18 @@ func loadExchanges(path, dir string) (map[string]Exchange, error) {
 					continue
 				}
 				// Read the file into Exchange struct
-				var exchange Exchange
+				var restConfig RestConfig
 				data, err := os.ReadFile(filepath.Join(fpath, configFile.Name()))
 				if err != nil {
 					return nil, fmt.Errorf("reading exchange file: %w", err)
 				}
-				if err := yaml.Unmarshal(data, &exchange); err != nil {
+				if err := yaml.Unmarshal(data, &restConfig); err != nil {
 					return nil, fmt.Errorf("parsing exchange file: %w", err)
 				}
-				exchanges[file.Name()] = exchange
+				restConfigs[file.Name()] = restConfig
 			}
 		}
 	}
 
-	return exchanges, nil
+	return restConfigs, nil
 }

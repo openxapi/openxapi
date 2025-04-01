@@ -28,7 +28,7 @@ func NewGenerator(outputDir string) *Generator {
 
 // GenerateEndpoints generates an OpenAPI specification for each endpoint
 func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoints []parser.Endpoint) error {
-	baseDir := filepath.Join(g.outputDir, exchange, apiType)
+	baseDir := filepath.Join(g.outputDir, exchange, "openapi", apiType)
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
 		return fmt.Errorf("creating directory: %w", err)
 	}
@@ -94,7 +94,7 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 	}
 
 	// Read all endpoint specs from the endpoints directory
-	baseDir := filepath.Join(g.outputDir, exchange, apiType)
+	baseDir := filepath.Join(g.outputDir, exchange, "openapi", apiType)
 	// Read all files in the paths directory
 	files, err := os.ReadDir(baseDir)
 	if err != nil {
@@ -170,7 +170,7 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 		}
 	}
 
-	outputDir := filepath.Join(g.outputDir, exchange)
+	outputDir := filepath.Join(g.outputDir, exchange, "openapi")
 	// Ensure output directory exists
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		return fmt.Errorf("creating output directory: %w", err)

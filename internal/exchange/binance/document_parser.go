@@ -26,7 +26,7 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 	case "spot":
 		sp := &SpotDocumentParser{DocumentParser: p}
 		return sp.Parse(r, url, docType, protectedEndpoints)
-	case "ufutures", "cfutures", "options", "pmargin", "pmarginpro", "futuresdata":
+	case "umfutures", "cmfutures", "options", "pmargin", "pmarginpro", "futuresdata":
 		uf := &DerivativesDocumentParser{
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
