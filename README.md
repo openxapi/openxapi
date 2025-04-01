@@ -39,14 +39,14 @@ So that you can use the same specification to generate websocket client SDKs for
 
 | Exchange | Product | Module | Supported | REST API | Websocket API | SDKs |
 |:--------:|:-------:|:------:|:----------:|:----------:|:------------:|:----:|
-| Binance | Spot Trading | | ✅ | [OpenAPI](./specs/binance/spot.yaml) | | [Go](https://github.com/openxapi/binance-go/spot) |
-| | Derivatives Trading | USDS-M Futures | ✅ | [OpenAPI](./specs/binance/umfutures.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/umfutures) |
-| | | COIN-M Futures | ✅ | [OpenAPI](./specs/binance/cmfutures.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/cmfutures) |
-| | | Options | ✅ | [OpenAPI](./specs/binance/options.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/options) |
-| | | Portfolio Margin | ✅ | [OpenAPI](./specs/binance/pmargin.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/pmargin) |
-| | | Portfolio Margin Pro | ✅ | [OpenAPI](./specs/binance/pmarginpro.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/pmarginpro) |
-| | | Futures Data | ✅ | [OpenAPI](./specs/binance/futuresdata.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/futuresdata) |
-| | Margin Trading | | ✅ | [OpenAPI](./specs/binance/margin.yaml) | | [Go](https://github.com/openxapi/binance-go/margin) |
+| Binance | Spot Trading | | ✅ | [Spec](./specs/binance/openapi/spot.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| | [Go](https://github.com/openxapi/binance-go/spot) |
+| | Derivatives Trading | USDS-M Futures | ✅ | [Spec](./specs/binance/openapi/umfutures.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/umfutures) |
+| | | COIN-M Futures | ✅ | [Spec](./specs/binance/openapi/cmfutures.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/cmfutures) |
+| | | Options | ✅ | [Spec](./specs/binance/openapi/options.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/options) |
+| | | Portfolio Margin | ✅ | [Spec](./specs/binance/openapi/pmargin.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/pmargin) |
+| | | Portfolio Margin Pro | ✅ | [Spec](./specs/binance/openapi/pmarginpro.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/pmarginpro) |
+| | | Futures Data | ✅ | [Spec](./specs/binance/openapi/futuresdata.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | | [Go](https://github.com/openxapi/binance-go/derivatives/futuresdata) |
+| | Margin Trading | | ✅ | [Spec](./specs/binance/openapi/margin.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | | [Go](https://github.com/openxapi/binance-go/margin) |
 
 ## Project Structure
 
@@ -65,7 +65,7 @@ So that you can use the same specification to generate websocket client SDKs for
 │   ├── generator/          # OpenAPI spec generation logic
 │   └── parser/             # API documentation parsers
 ├── samples/                # Sample API documentation files
-│   └── webpage/            # HTML samples of exchange documentation
+│   └── binance/            # HTML samples of binance exchange documentation
 ├── specs/                  # Generated OpenAPI specifications
 ├── templates/              # Template files for spec generation
 ├── go.mod                  # Go module definition

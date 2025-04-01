@@ -27,7 +27,7 @@ func init() {
 	flag.StringVar(&configFile, "config", "configs/config.yaml", "Path to configuration file")
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (debug, info, warn, error)")
 	flag.BoolVar(&useSamples, "use-samples", false, "Use sample files instead of making HTTP requests")
-	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/webpage/<exchange>)")
+	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/<exchange>)")
 	flag.StringVar(&exchangeFlag, "exchange", "", "Filter by exchange name")
 	flag.StringVar(&docType, "doc-type", "", "Filter by documentation type")
 	flag.BoolVar(&showHelp, "h,help", false, "Show help")
@@ -75,7 +75,7 @@ func main() {
 
 		exchangeSamplesDir := samplesDir
 		if exchangeSamplesDir == "" {
-			exchangeSamplesDir = fmt.Sprintf("samples/webpage/%s", exchangeName)
+			exchangeSamplesDir = fmt.Sprintf("samples/%s", exchangeName)
 		}
 
 		// Create exchange-specific parser
