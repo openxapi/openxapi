@@ -1,0 +1,125 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        AlgoGetAlgoFuturesSubOrdersV1Resp:
+            example: '{ "total": 1, "executedQty": "1.000", "executedAmt": "3229.44000000", "subOrders": [ { "algoId": 13723, "orderId": 8389765519993908929, "orderStatus": "FILLED", "executedQty": "1.000", "executedAmt": "3229.44000000", "feeAmt": "-1.61471999", "feeAsset": "USDT", "bookTime": 1649319001964, "avgPrice": "3229.44", "side": "SELL", "symbol": "ETHUSDT", "subId": 1, "timeInForce": "IMMEDIATE_OR_CANCEL", "origQty": "1.000" } ] }'
+            properties:
+                executedAmt:
+                    type: string
+                executedQty:
+                    type: string
+                subOrders:
+                    items:
+                        properties:
+                            algoId:
+                                format: int64
+                                type: integer
+                            avgPrice:
+                                type: string
+                            bookTime:
+                                format: int64
+                                type: integer
+                            executedAmt:
+                                type: string
+                            executedQty:
+                                type: string
+                            feeAmt:
+                                type: string
+                            feeAsset:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            orderStatus:
+                                type: string
+                            origQty:
+                                type: string
+                            side:
+                                type: string
+                            subId:
+                                format: int64
+                                type: integer
+                            symbol:
+                                type: string
+                            timeInForce:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/algo/futures/subOrders:
+        get:
+            description: Get respective sub orders for a specified algoId
+            operationId: AlgoGetAlgoFuturesSubOrdersV1
+            parameters:
+                - in: query
+                  name: algoId
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default is 1
+                  in: query
+                  name: page
+                  schema:
+                    type: integer
+                - description: MIN 1, MAX 100; Default 100
+                  in: query
+                  name: pageSize
+                  schema:
+                    default: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/AlgoGetAlgoFuturesSubOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Sub Orders(USER_DATA)
+            tags:
+                - Future Algo
+                - V1

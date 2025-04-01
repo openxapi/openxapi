@@ -31,7 +31,7 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
 		return uf.Parse(r, url, docType, protectedEndpoints)
-	case "margin":
+	case "margin", "algo":
 		uf := &MarginDocumentParser{
 			DerivativesDocumentParser: &DerivativesDocumentParser{
 				SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
