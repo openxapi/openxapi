@@ -1,0 +1,125 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletGetAssetCustodyTransferHistoryV1Resp:
+            example: '{ "total": 3316, "rows": [ { "clientTranId": "293915932290879488", "transferType": "Undelegate", "asset": "ETH", "amount": "1", "time": 1695205406000 }, { "clientTranId": "293915892281413632", "transferType": "Delegate", "asset": "ETH", "amount": "1", "time": 1695205396000 } ] }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            clientTranId:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                            transferType:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/custody/transfer-history:
+        get:
+            description: Query User Delegation History
+            operationId: WalletGetAssetCustodyTransferHistoryV1
+            parameters:
+                - in: query
+                  name: email
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Delegate/Undelegate
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - description: default 1
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    type: integer
+                - description: default 10, max 100
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletGetAssetCustodyTransferHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query User Delegation History(For Master Account)(USER_DATA)
+            tags:
+                - Asset
+                - V1

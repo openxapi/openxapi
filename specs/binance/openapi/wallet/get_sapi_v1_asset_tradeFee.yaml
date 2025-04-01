@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletGetAssetTradeFeeV1Resp:
+            example: '[ { "symbol": "ADABNB", "makerCommission": "0.001", "takerCommission": "0.001" }, { "symbol": "BNBBTC", "makerCommission": "0.001", "takerCommission": "0.001" } ]'
+            items:
+                $ref: '#/components/schemas/WalletGetAssetTradeFeeV1RespItem'
+            type: array
+        WalletGetAssetTradeFeeV1RespItem:
+            properties:
+                makerCommission:
+                    type: string
+                symbol:
+                    type: string
+                takerCommission:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/tradeFee:
+        get:
+            description: Fetch trade fee
+            operationId: WalletGetAssetTradeFeeV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletGetAssetTradeFeeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Trade Fee (USER_DATA)
+            tags:
+                - Asset
+                - V1

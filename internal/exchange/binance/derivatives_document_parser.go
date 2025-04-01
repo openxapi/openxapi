@@ -112,6 +112,7 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 		}
 	}
 
+	var foundResponse bool
 	// Extract response examples from code blocks
 	if s.HasClass("language-javascript") || s.HasClass("language-json") {
 		var lines []string
@@ -127,6 +128,7 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 		if responseText != "" {
 			*content = append(*content, "Response: "+responseText)
 		}
+		foundResponse = true
 	}
 	if s.Is("h2") && strings.Contains(s.Text(), "API Description") {
 		// get the next p element
@@ -184,6 +186,27 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 				*content = append(*content, "- "+text)
 			}
 		})
+	}
+
+	if !foundResponse {
+		if s.Is("#response-example") {
+			// find response from the next sibling
+			respElement := s.Next()
+			var lines []string
+			code := respElement.Find("code")
+			// for each child of code, get the text
+			code.Children().Each(func(i int, child *goquery.Selection) {
+				text := cleanResponseLine(child.Text())
+				if text != "" {
+					lines = append(lines, text)
+				}
+			})
+			responseText := strings.Join(lines, " ")
+			if responseText != "" {
+				*content = append(*content, "Response: "+responseText)
+			}
+			foundResponse = true
+		}
 	}
 }
 

@@ -1,0 +1,168 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletGetLocalentityWithdrawHistoryV1Resp:
+            example: '[ { "id": "b6ae22b3aa844210a7041aee7589627c",   "trId": 1234456,   "amount": "8.91000000",    "transactionFee": "0.004",  "coin": "USDT", "withdrawalStatus": 6,  "travelRuleStatus": 0,  "address": "0x94df8b352de7f46f64b01d3666bf6e936e44ce60", "addressTag": "1231212", "txId": "0xb5ef8c13b968a406cc62a93a8bd80f9e9a906ef1b3fcf20a2e48573c17659268",    "applyTime": "2019-10-12 11:12:02",   "network": "ETH", "transferType": 0,  "withdrawOrderId": "WITHDRAWtest123",  "info": "The address is not valid. Please confirm with the recipient",   "confirmNo":3,   "walletType": 1,   "txKey": "",  "questionnaire": "{''question1'':''answer1'',''question2'':''answer2''}",  "completeTime": "2023-03-23 16:52:41"  }, { "id": "156ec387f49b41df8724fa744fa82719", "trId": 2231556234, "amount": "0.00150000", "transactionFee": "0.004", "coin": "BTC", "withdrawalStatus": 6, "travelRuleStatus": 0, "address": "1FZdVHtiBqMrWdjPyRPULCUceZPJ2WLCsB", "txId": "60fd9007ebfddc753455f95fafa808c4302c836e4d1eebc5a132c36c1d8ac354", "applyTime": "2019-09-24 12:43:45", "network": "BTC", "transferType": 0, "info": "", "confirmNo": 2, "walletType": 1, "txKey": "", "questionnaire": "{''question1'':''answer1'',''question2'':''answer2''}", "completeTime": "2023-03-23 16:52:41" } ]'
+            items:
+                $ref: '#/components/schemas/WalletGetLocalentityWithdrawHistoryV1RespItem'
+            type: array
+        WalletGetLocalentityWithdrawHistoryV1RespItem:
+            properties:
+                address:
+                    type: string
+                addressTag:
+                    type: string
+                amount:
+                    type: string
+                applyTime:
+                    type: string
+                coin:
+                    type: string
+                completeTime:
+                    type: string
+                confirmNo:
+                    type: integer
+                id:
+                    type: string
+                info:
+                    type: string
+                network:
+                    type: string
+                questionnaire:
+                    type: string
+                trId:
+                    format: int64
+                    type: integer
+                transactionFee:
+                    type: string
+                transferType:
+                    type: integer
+                travelRuleStatus:
+                    type: integer
+                txId:
+                    type: string
+                txKey:
+                    type: string
+                walletType:
+                    type: integer
+                withdrawOrderId:
+                    type: string
+                withdrawalStatus:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/localentity/withdraw/history:
+        get:
+            description: Fetch withdraw history for local entities that required travel rule.
+            operationId: WalletGetLocalentityWithdrawHistoryV1
+            parameters:
+                - description: Comma(,) separated list of travel rule record Ids.
+                  in: query
+                  name: trId
+                  schema:
+                    default: ""
+                    type: string
+                - description: Comma(,) separated list of transaction Ids.
+                  in: query
+                  name: txId
+                  schema:
+                    default: ""
+                    type: string
+                - description: Comma(,) separated list of withdrawID defined by the client (i.e. client&#39;s internal withdrawID).
+                  in: query
+                  name: withdrawOrderId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: network
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    type: string
+                - description: 0:Completed,1:Pending,2:Failed
+                  in: query
+                  name: travelRuleStatus
+                  schema:
+                    type: integer
+                - description: 'Default: 0'
+                  in: query
+                  name: offset
+                  schema:
+                    default: 0
+                    type: integer
+                - description: 'Default: 1000, Max: 1000'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 1000
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 90 days from current timestamp'
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: present timestamp'
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletGetLocalentityWithdrawHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Withdraw History (for local entities that require travel rule) (supporting network) (USER_DATA)
+            tags:
+                - Travel Rule
+                - V1

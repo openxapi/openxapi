@@ -1,0 +1,99 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletCreateAssetDustBtcV1Req:
+            properties:
+                accountType:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - timestamp
+            type: object
+        WalletCreateAssetDustBtcV1Resp:
+            example: '{ "details": [ { "asset": "ADA", "assetFullName": "ADA", "amountFree": "6.21",    "toBTC": "0.00016848",   "toBNB": "0.01777302",   "toBNBOffExchange": "0.01741756",  "exchange": "0.00035546"  } ], "totalTransferBtc": "0.00016848", "totalTransferBNB": "0.01777302", "dribbletPercentage": "0.02"      }'
+            properties:
+                details:
+                    items:
+                        properties:
+                            amountFree:
+                                type: string
+                            asset:
+                                type: string
+                            assetFullName:
+                                type: string
+                            exchange:
+                                type: string
+                            toBNB:
+                                type: string
+                            toBNBOffExchange:
+                                type: string
+                            toBTC:
+                                type: string
+                        type: object
+                    type: array
+                dribbletPercentage:
+                    type: string
+                totalTransferBNB:
+                    type: string
+                totalTransferBtc:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/dust-btc:
+        post:
+            description: Get Assets That Can Be Converted Into BNB
+            operationId: WalletCreateAssetDustBtcV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/WalletCreateAssetDustBtcV1Req'
+                description: The request body for WalletCreateAssetDustBtcV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletCreateAssetDustBtcV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Assets That Can Be Converted Into BNB (USER_DATA)
+            tags:
+                - Asset
+                - V1

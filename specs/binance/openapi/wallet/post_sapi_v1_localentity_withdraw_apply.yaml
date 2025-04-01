@@ -1,0 +1,111 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletCreateLocalentityWithdrawApplyV1Req:
+            properties:
+                address:
+                    default: ""
+                    type: string
+                addressTag:
+                    default: ""
+                    type: string
+                amount:
+                    default: ""
+                    type: string
+                coin:
+                    default: ""
+                    type: string
+                name:
+                    default: ""
+                    type: string
+                network:
+                    default: ""
+                    type: string
+                questionnaire:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                transactionFeeFlag:
+                    default: false
+                    type: boolean
+                walletType:
+                    type: integer
+                withdrawOrderId:
+                    default: ""
+                    type: string
+            required:
+                - coin
+                - address
+                - amount
+                - timestamp
+                - questionnaire
+            type: object
+        WalletCreateLocalentityWithdrawApplyV1Resp:
+            example: '{ "trId": 123456,  "accpted": true,  "info": "Withdraw request accepted"  }'
+            properties:
+                accpted:
+                    type: boolean
+                info:
+                    type: string
+                trId:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/localentity/withdraw/apply:
+        post:
+            description: Submit a withdrawal request for local entities that required travel rule.
+            operationId: WalletCreateLocalentityWithdrawApplyV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/WalletCreateLocalentityWithdrawApplyV1Req'
+                description: The request body for WalletCreateLocalentityWithdrawApplyV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletCreateLocalentityWithdrawApplyV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Withdraw (for local entities that require travel rule) (USER_DATA)
+            tags:
+                - Travel Rule
+                - V1

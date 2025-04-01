@@ -1,0 +1,83 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletCreateCapitalDepositCreditApplyV1Req:
+            properties:
+                depositId:
+                    format: int64
+                    type: integer
+                subAccountId:
+                    format: int64
+                    type: integer
+                subUserId:
+                    format: int64
+                    type: integer
+                txId:
+                    default: ""
+                    type: string
+            type: object
+        WalletCreateCapitalDepositCreditApplyV1Resp:
+            example: '{ "code": "000000", "message": "success", "data":true, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    type: boolean
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/capital/deposit/credit-apply:
+        post:
+            description: Apply deposit credit for expired address (One click arrival)
+            operationId: WalletCreateCapitalDepositCreditApplyV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/WalletCreateCapitalDepositCreditApplyV1Req'
+                description: The request body for WalletCreateCapitalDepositCreditApplyV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletCreateCapitalDepositCreditApplyV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: One click arrival deposit apply (for expired address deposit) (USER_DATA)
+            tags:
+                - Capital
+                - V1

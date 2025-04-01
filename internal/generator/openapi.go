@@ -66,7 +66,7 @@ func (g *Generator) GenerateEndpoints(exchange, version, apiType string, endpoin
 }
 
 // Generate creates an OpenAPI specification from parsed endpoints
-func (g *Generator) Generate(exchange, version, apiType string, servers []string) error {
+func (g *Generator) Generate(exchange, version, title, apiType string, servers []string) error {
 	if len(servers) == 0 {
 		return fmt.Errorf("no servers found for %s %s API", exchange, apiType)
 	}
@@ -80,8 +80,8 @@ func (g *Generator) Generate(exchange, version, apiType string, servers []string
 	spec := &openapi3.T{
 		OpenAPI: "3.0.3",
 		Info: &openapi3.Info{
-			Title:       fmt.Sprintf("%s %s API", strings.Title(exchange), strings.Title(apiType)),
-			Description: fmt.Sprintf("OpenAPI specification for %s cryptocurrency exchange - %s API", strings.Title(exchange), strings.Title(apiType)),
+			Title:       title,
+			Description: fmt.Sprintf("OpenAPI specification for %s exchange - %s API", strings.Title(exchange), strings.Title(apiType)),
 			Version:     version,
 		},
 		Servers: openapiServers,
@@ -353,9 +353,11 @@ func (g *Generator) convertResponses(responses map[string]*parser.Response, sche
 				if mt.Schema.Type == "" && mt.Schema.Title != "" {
 					schema = toSchemaRef(mt.Schema.Title)
 				} else if mt.Schema.Type == parser.ObjectType {
+					// FIXME: check title
 					*schemas = append(*schemas, mt.Schema)
 					schema = toSchemaRef(mt.Schema.Title)
 				} else if mt.Schema.Type == parser.ArrayType {
+					// FIXME: check title
 					*schemas = append(*schemas, mt.Schema)
 					schema = toSchemaRef(mt.Schema.Title)
 					if mt.Schema.Items != nil && mt.Schema.Items.Type == parser.ObjectType {

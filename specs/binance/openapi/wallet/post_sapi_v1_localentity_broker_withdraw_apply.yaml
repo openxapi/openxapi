@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletCreateLocalentityBrokerWithdrawApplyV1Req:
+            properties:
+                address:
+                    default: ""
+                    type: string
+                addressName:
+                    default: ""
+                    type: string
+                addressTag:
+                    default: ""
+                    type: string
+                amount:
+                    type: object
+                coin:
+                    default: ""
+                    type: string
+                network:
+                    default: ""
+                    type: string
+                originatorPii:
+                    default: ""
+                    type: string
+                questionnaire:
+                    default: ""
+                    type: string
+                signature:
+                    default: ""
+                    type: string
+                subAccountId:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                transactionFeeFlag:
+                    default: false
+                    type: boolean
+                walletType:
+                    type: integer
+                withdrawOrderId:
+                    default: ""
+                    type: string
+            required:
+                - subAccountId
+                - address
+                - coin
+                - amount
+                - withdrawOrderId
+                - questionnaire
+                - originatorPii
+                - timestamp
+                - signature
+            type: object
+        WalletCreateLocalentityBrokerWithdrawApplyV1Resp:
+            example: '{ "trId": 123456,  "accpted": true,  "info": "Withdraw request accepted"  }'
+            properties:
+                accpted:
+                    type: boolean
+                info:
+                    type: string
+                trId:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/localentity/broker/withdraw/apply:
+        post:
+            description: Submit a withdrawal request for brokers of local entities that required travel rule.
+            operationId: WalletCreateLocalentityBrokerWithdrawApplyV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/WalletCreateLocalentityBrokerWithdrawApplyV1Req'
+                description: The request body for WalletCreateLocalentityBrokerWithdrawApplyV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletCreateLocalentityBrokerWithdrawApplyV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Broker Withdraw (for brokers of local entities that require travel rule) (USER_DATA)
+            tags:
+                - Travel Rule
+                - V1

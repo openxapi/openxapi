@@ -31,7 +31,7 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
 		return uf.Parse(r, url, docType, protectedEndpoints)
-	case "margin", "algo":
+	case "margin", "algo", "wallet":
 		uf := &MarginDocumentParser{
 			DerivativesDocumentParser: &DerivativesDocumentParser{
 				SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
@@ -919,7 +919,7 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 }
 
 func cleanResponseLine(text string) string {
-	var commentRegex = regexp.MustCompile(`(\s+|,)//.*`)
+	var commentRegex = regexp.MustCompile(`(\s+|,)(//|#).*`)
 	var commentRegex2 = regexp.MustCompile(`//\s+.*`)
 	text = cleanText(text)
 	text = commentRegex.ReplaceAllString(text, "$1")
@@ -927,6 +927,7 @@ func cleanResponseLine(text string) string {
 	// remove `\t` and `\u00a0`
 	text = strings.ReplaceAll(text, "\t", "")
 	text = strings.ReplaceAll(text, "\u00a0", "")
+	text = strings.ReplaceAll(text, "\\", "")
 	if strings.HasPrefix(strings.TrimSpace(text), "//") {
 		return ""
 	}

@@ -132,19 +132,19 @@ func main() {
 			endpoints, err := p.Parse(ctx, parserDoc)
 			if err != nil {
 				logrus.Errorf("Failed to parse %s %s API: %v", exchangeName, doc.Type, err)
-				continue
+				os.Exit(1)
 			}
 
 			// Generate OpenAPI specification for each endpoint
 			if err := gen.GenerateEndpoints(exchangeName, restConfig.Version, doc.Type, endpoints); err != nil {
 				logrus.Errorf("Failed to generate OpenAPI endpoint specs for %s %s API: %v", exchangeName, doc.Type, err)
-				continue
+				os.Exit(1)
 			}
 
 			// Generate OpenAPI specification
-			if err := gen.Generate(exchangeName, restConfig.Version, doc.Type, doc.Servers); err != nil {
+			if err := gen.Generate(exchangeName, restConfig.Version, doc.Description, doc.Type, doc.Servers); err != nil {
 				logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
-				continue
+				os.Exit(1)
 			}
 
 			logrus.Infof("Successfully generated OpenAPI spec for %s %s API", exchangeName, doc.Type)

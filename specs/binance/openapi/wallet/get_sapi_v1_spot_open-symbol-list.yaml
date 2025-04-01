@@ -1,0 +1,57 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletGetSpotOpenSymbolListV1Resp:
+            example: '[ { "openTime": 1686161202000, "symbols": [ "BNBBTC", "BNBETH" ] }, { "openTime": 1686222232000, "symbols": [ "BTCUSDT" ] } ]'
+            items:
+                $ref: '#/components/schemas/WalletGetSpotOpenSymbolListV1RespItem'
+            type: array
+        WalletGetSpotOpenSymbolListV1RespItem:
+            properties:
+                openTime:
+                    format: int64
+                    type: integer
+                symbols:
+                    items:
+                        type: string
+                    type: array
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/spot/open-symbol-list:
+        get:
+            description: Get the list of symbols that are scheduled to be opened for trading in the market.
+            operationId: WalletGetSpotOpenSymbolListV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletGetSpotOpenSymbolListV1Resp'
+                    description: Successful operation
+            summary: Get Open Symbol List (MARKET_DATA)
+            tags:
+                - Asset
+                - V1

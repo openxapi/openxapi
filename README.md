@@ -47,6 +47,8 @@ So that you can use the same specification to generate websocket client SDKs for
 | | | Portfolio Margin Pro | ✅ | [Spec](./specs/binance/openapi/pmarginpro.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | | [Go](https://github.com/openxapi/binance-go) |
 | | | Futures Data | ✅ | [Spec](./specs/binance/openapi/futuresdata.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | | [Go](https://github.com/openxapi/binance-go) |
 | | Margin Trading | | ✅ | [Spec](./specs/binance/openapi/margin.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | | [Go](https://github.com/openxapi/binance-go) |
+| | Algo Trading | | ✅ | [Spec](./specs/binance/openapi/algo.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | | [Go](https://github.com/openxapi/binance-go) |
+| | Wallet | | ✅ | [Spec](./specs/binance/openapi/wallet.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | | [Go](https://github.com/openxapi/binance-go) |
 
 ## Project Structure
 

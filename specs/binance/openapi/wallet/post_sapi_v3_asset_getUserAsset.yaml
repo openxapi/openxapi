@@ -1,0 +1,94 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletCreateAssetGetUserAssetV3Req:
+            properties:
+                asset:
+                    default: ""
+                    type: string
+                needBtcValuation:
+                    type: boolean
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - timestamp
+            type: object
+        WalletCreateAssetGetUserAssetV3Resp:
+            example: '[ { "asset": "AVAX", "free": "1", "locked": "0", "freeze": "0", "withdrawing": "0", "ipoable": "0", "btcValuation": "0" }, { "asset": "BCH", "free": "0.9", "locked": "0", "freeze": "0", "withdrawing": "0", "ipoable": "0", "btcValuation": "0" }, { "asset": "BNB", "free": "887.47061626", "locked": "0", "freeze": "10.52", "withdrawing": "0.1", "ipoable": "0", "btcValuation": "0" }, { "asset": "BUSD", "free": "9999.7", "locked": "0", "freeze": "0", "withdrawing": "0", "ipoable": "0", "btcValuation": "0" }, { "asset": "SHIB", "free": "532.32", "locked": "0", "freeze": "0", "withdrawing": "0", "ipoable": "0", "btcValuation": "0" }, { "asset": "USDT", "free": "50300000001.44911105", "locked": "0", "freeze": "0", "withdrawing": "0", "ipoable": "0", "btcValuation": "0" }, { "asset": "WRZ", "free": "1", "locked": "0", "freeze": "0", "withdrawing": "0", "ipoable": "0", "btcValuation": "0" } ]'
+            items:
+                $ref: '#/components/schemas/WalletCreateAssetGetUserAssetV3RespItem'
+            type: array
+        WalletCreateAssetGetUserAssetV3RespItem:
+            properties:
+                asset:
+                    type: string
+                btcValuation:
+                    type: string
+                free:
+                    type: string
+                freeze:
+                    type: string
+                ipoable:
+                    type: string
+                locked:
+                    type: string
+                withdrawing:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v3/asset/getUserAsset:
+        post:
+            description: Get user assets, just for positive data.
+            operationId: WalletCreateAssetGetUserAssetV3
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/WalletCreateAssetGetUserAssetV3Req'
+                description: The request body for WalletCreateAssetGetUserAssetV3
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletCreateAssetGetUserAssetV3Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: User Asset (USER_DATA)
+            tags:
+                - Asset
+                - V3

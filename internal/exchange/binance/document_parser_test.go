@@ -170,6 +170,10 @@ func TestCleanResponseLine(t *testing.T) {
 			`"transFrom": "ISOLATED_MARGIN",//SPOT,FUTURES,FIAT,DELIVERY,MINING,ISOLATED_MARGIN,FUNDING,MOTHER_SPOT,OPTION,SUB_SPOT,SUB_MARGIN,CROSS_MARGIN`,
 			`"transFrom": "ISOLATED_MARGIN",`,
 		},
+		{
+			`"trId": 123456, # The travel rule record Id`,
+			`"trId": 123456, `,
+		},
 	}
 	for _, test := range tests {
 		assert.Equal(t, test.expected, cleanResponseLine(test.input))

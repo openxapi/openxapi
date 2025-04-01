@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        WalletCreateAssetDustV1Req:
+            properties:
+                accountType:
+                    default: ""
+                    type: string
+                asset:
+                    items:
+                        type: string
+                    type: array
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - asset
+                - timestamp
+            type: object
+        WalletCreateAssetDustV1Resp:
+            example: '{ "totalServiceCharge":"0.02102542", "totalTransfered":"1.05127099", "transferResult":[ { "amount":"0.03000000", "fromAsset":"ETH", "operateTime":1563368549307, "serviceChargeAmount":"0.00500000", "tranId":2970932918, "transferedAmount":"0.25000000" }, { "amount":"0.09000000", "fromAsset":"LTC", "operateTime":1563368549404, "serviceChargeAmount":"0.01548000", "tranId":2970932918, "transferedAmount":"0.77400000" }, { "amount":"248.61878453", "fromAsset":"TRX", "operateTime":1563368549489, "serviceChargeAmount":"0.00054542", "tranId":2970932918, "transferedAmount":"0.02727099" } ] }'
+            properties:
+                totalServiceCharge:
+                    type: string
+                totalTransfered:
+                    type: string
+                transferResult:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            fromAsset:
+                                type: string
+                            operateTime:
+                                format: int64
+                                type: integer
+                            serviceChargeAmount:
+                                type: string
+                            tranId:
+                                format: int64
+                                type: integer
+                            transferedAmount:
+                                type: string
+                        type: object
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/dust:
+        post:
+            description: Convert dust assets to BNB.
+            operationId: WalletCreateAssetDustV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/WalletCreateAssetDustV1Req'
+                description: The request body for WalletCreateAssetDustV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/WalletCreateAssetDustV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Dust Transfer (USER_DATA)
+            tags:
+                - Asset
+                - V1
