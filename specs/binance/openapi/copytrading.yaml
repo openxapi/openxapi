@@ -1,0 +1,151 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CopytradingGetCopyTradingFuturesLeadSymbolV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": [ { "symbol": "BTCUSDT", "baseAsset": "BTC", "quoteAsset": "USDT" }, { "symbol": "ETHUSDT", "baseAsset": "ETH", "quoteAsset": "USDT" } ] }'
+            properties:
+                code:
+                    type: string
+                data:
+                    items:
+                        properties:
+                            baseAsset:
+                                type: string
+                            quoteAsset:
+                                type: string
+                            symbol:
+                                type: string
+                        type: object
+                    type: array
+                message:
+                    type: string
+            type: object
+        CopytradingGetCopyTradingFuturesUserStatusV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": { "isLeadTrader": true, "time": 1717382310843 }, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        isLeadTrader:
+                            type: boolean
+                        time:
+                            format: int64
+                            type: integer
+                    type: object
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    description: OpenAPI specification for Binance exchange - Copytrading API
+    title: Binance Copy Trading API
+    version: 0.1.0
+openapi: 3.0.3
+paths:
+    /sapi/v1/copyTrading/futures/leadSymbol:
+        get:
+            description: Get Futures Lead Trading Symbol Whitelist
+            operationId: CopytradingGetCopyTradingFuturesLeadSymbolV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CopytradingGetCopyTradingFuturesLeadSymbolV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Futures Lead Trading Symbol Whitelist(USER_DATA)
+            tags:
+                - Future Copy Trading
+                - V1
+    /sapi/v1/copyTrading/futures/userStatus:
+        get:
+            description: Get Futures Lead Trader Status
+            operationId: CopytradingGetCopyTradingFuturesUserStatusV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CopytradingGetCopyTradingFuturesUserStatusV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Futures Lead Trader Status(TRADE)
+            tags:
+                - Future Copy Trading
+                - V1
+servers:
+    - description: Binance Copytrading API Server
+      url: https://api.binance.com
+    - description: Binance Copytrading API Server
+      url: https://api1.binance.com
+    - description: Binance Copytrading API Server
+      url: https://api2.binance.com
+    - description: Binance Copytrading API Server
+      url: https://api3.binance.com
+    - description: Binance Copytrading API Server
+      url: https://api4.binance.com
