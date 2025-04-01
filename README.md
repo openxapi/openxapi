@@ -50,6 +50,7 @@ So that you can use the same specification to generate websocket client SDKs for
 | | Algo Trading | | ✅ | [Spec](./specs/binance/openapi/algo.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | | [Go](https://github.com/openxapi/binance-go) |
 | | Wallet | | ✅ | [Spec](./specs/binance/openapi/wallet.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | | [Go](https://github.com/openxapi/binance-go) |
 | | Copy Trading | | ✅ | [Spec](./specs/binance/openapi/copytrading.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/copytrading.yaml) | | [Go](https://github.com/openxapi/binance-go) |
+| | Convert | | ✅ | [Spec](./specs/binance/openapi/convert.yaml) [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/convert.yaml) | | [Go](https://github.com/openxapi/binance-go) |
 
 ## Project Structure
 

@@ -1,0 +1,113 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ConvertCreateConvertLimitPlaceOrderV1Req:
+            properties:
+                baseAmount:
+                    default: ""
+                    type: string
+                baseAsset:
+                    default: ""
+                    type: string
+                expiredType:
+                    default: ""
+                    type: string
+                limitPrice:
+                    default: ""
+                    type: string
+                quoteAmount:
+                    default: ""
+                    type: string
+                quoteAsset:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                side:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                walletType:
+                    default: ""
+                    type: string
+            required:
+                - baseAsset
+                - quoteAsset
+                - limitPrice
+                - side
+                - expiredType
+                - timestamp
+            type: object
+        ConvertCreateConvertLimitPlaceOrderV1Resp:
+            example: '{ "quoteId":"12415572564", "ratio":"38163.7", "inverseRatio":"0.0000262", "validTimestamp":1623319461670, "toAmount":"3816.37", "fromAmount":"0.1" }'
+            properties:
+                fromAmount:
+                    type: string
+                inverseRatio:
+                    type: string
+                quoteId:
+                    type: string
+                ratio:
+                    type: string
+                toAmount:
+                    type: string
+                validTimestamp:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/convert/limit/placeOrder:
+        post:
+            description: Enable users to place a limit order
+            operationId: ConvertCreateConvertLimitPlaceOrderV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/ConvertCreateConvertLimitPlaceOrderV1Req'
+                description: The request body for ConvertCreateConvertLimitPlaceOrderV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ConvertCreateConvertLimitPlaceOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Place limit order (USER_DATA)
+            tags:
+                - Trade
+                - V1
