@@ -1,0 +1,116 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SubaccountGetSubAccountFuturesInternalTransferV1Resp:
+            example: '{ "success":true, "futuresType": 2, "transfers":[ { "from":"aaa@test.com", "to":"bbb@test.com", "asset":"BTC", "qty":"1", "tranId":11897001102, "time":1544433328000 }, { "from":"bbb@test.com", "to":"ccc@test.com", "asset":"ETH", "qty":"2", "tranId":11631474902, "time":1544433328000 } ] }'
+            properties:
+                futuresType:
+                    type: integer
+                success:
+                    type: boolean
+                transfers:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            from:
+                                type: string
+                            qty:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                            to:
+                                type: string
+                            tranId:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sub-account/futures/internalTransfer:
+        get:
+            description: Query Sub-account Futures Asset Transfer History
+            operationId: SubaccountGetSubAccountFuturesInternalTransferV1
+            parameters:
+                - description: <a href="/docs/sub_account/asset-management/Query-Sub-account-Futures-Asset-Transfer-History#email-address">Sub-account email</a>
+                  in: query
+                  name: email
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '1:USDT-margined Futures，2: Coin-margined Futures'
+                  in: query
+                  name: futuresType
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Cannot be earlier than 1 month ago
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default value: 1'
+                  in: query
+                  name: page
+                  schema:
+                    type: integer
+                - description: 'Default value: 50, Max value: 500'
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SubaccountGetSubAccountFuturesInternalTransferV1Resp'
+                    description: Successful operation
+            summary: Query Sub-account Futures Asset Transfer History(For Master Account)
+            tags:
+                - Asset Management
+                - V1

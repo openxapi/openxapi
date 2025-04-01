@@ -1,0 +1,92 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SubaccountGetSubAccountFuturesPositionRiskV2Resp:
+            example: '{ "futurePositionRiskVos": [ { "entryPrice": "9975.12000", "leverage": "50",               "maxNotional": "1000000",       "liquidationPrice": "7963.54", "markPrice": "9973.50770517", "positionAmount": "0.010", "symbol": "BTCUSDT", "unrealizedProfit": "-0.01612295" } ] }'
+            properties:
+                futurePositionRiskVos:
+                    items:
+                        properties:
+                            entryPrice:
+                                type: string
+                            leverage:
+                                type: string
+                            liquidationPrice:
+                                type: string
+                            markPrice:
+                                type: string
+                            maxNotional:
+                                type: string
+                            positionAmount:
+                                type: string
+                            symbol:
+                                type: string
+                            unrealizedProfit:
+                                type: string
+                        type: object
+                    type: array
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/sub-account/futures/positionRisk:
+        get:
+            description: Get Futures Position-Risk of Sub-account V2
+            operationId: SubaccountGetSubAccountFuturesPositionRiskV2
+            parameters:
+                - description: <a href="/docs/sub_account/account-management/Get-Futures-Position-Risk-of-Sub-account-V2#email-address">Sub-account email</a>
+                  in: query
+                  name: email
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: 1:USDT Margined Futures, 2:COIN Margined Futures
+                  in: query
+                  name: futuresType
+                  required: true
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SubaccountGetSubAccountFuturesPositionRiskV2Resp'
+                    description: Successful operation
+            summary: Get Futures Position-Risk of Sub-account V2(For Master Account)
+            tags:
+                - Account Management
+                - V2

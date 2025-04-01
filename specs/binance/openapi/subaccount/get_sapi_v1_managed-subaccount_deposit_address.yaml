@@ -1,0 +1,97 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SubaccountGetManagedSubaccountDepositAddressV1Resp:
+            example: '{ "coin": "USDT", "address": "0x206c22d833bb0bb2102da6b7c7d4c3eb14bcf73d", "tag": "", "url": "https://etherscan.io/address/0x206c22d833bb0bb2102da6b7c7d4c3eb14bcf73d" }'
+            properties:
+                address:
+                    type: string
+                coin:
+                    type: string
+                tag:
+                    type: string
+                url:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/managed-subaccount/deposit/address:
+        get:
+            description: Get investor's managed sub-account deposit address.
+            operationId: SubaccountGetManagedSubaccountDepositAddressV1
+            parameters:
+                - description: Sub user email
+                  in: query
+                  name: email
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: coin
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: networks can be found in `GET /sapi/v1/capital/deposit/address`
+                  in: query
+                  name: network
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: amount
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SubaccountGetManagedSubaccountDepositAddressV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Managed Sub-account Deposit Address (For Investor Master Account)(USER_DATA)
+            tags:
+                - Managed Sub Account
+                - V1
