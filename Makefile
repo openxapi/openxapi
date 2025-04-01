@@ -14,6 +14,10 @@ all: format lint vet test build
 build:
 	@$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/openxapi
 
+generate:
+	@make build
+	@$(BINARY_NAME) -use-samples
+
 clean:
 	@rm -rf $(BIN_DIR)
 	@rm -f coverage.out

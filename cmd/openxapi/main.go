@@ -15,15 +15,15 @@ import (
 )
 
 var (
-	configFile   string
-	logLevel     string
-	useSamples   bool
-	samplesDir   string
-	exchangeFlag string
-	docType      string
-	specTypes    stringsFlag
-	showHelp     bool
-	outputDir    string
+	configFile string
+	logLevel   string
+	useSamples bool
+	samplesDir string
+	exchange   string
+	docType    string
+	specTypes  stringsFlag
+	showHelp   bool
+	outputDir  string
 )
 
 type stringsFlag []string
@@ -42,7 +42,7 @@ func init() {
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (debug, info, warn, error)")
 	flag.BoolVar(&useSamples, "use-samples", false, "Use sample files instead of making HTTP requests")
 	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/<exchange>)")
-	flag.StringVar(&exchangeFlag, "exchange", "", "Filter by exchange name")
+	flag.StringVar(&exchange, "exchange", "", "Filter by exchange name")
 	flag.StringVar(&docType, "doc-type", "", "Filter by documentation type")
 	flag.Var(&specTypes, "spec-types", "Filter by specification types")
 	flag.StringVar(&outputDir, "output-dir", "./specs", "Output directory")
@@ -86,7 +86,7 @@ func main() {
 	ctx := context.Background()
 	for exchangeName, restConfig := range config.RestConfigs {
 		// Skip if exchange filter is set and doesn't match
-		if exchangeFlag != "" && exchangeFlag != exchangeName {
+		if exchange != "" && exchange != exchangeName {
 			continue
 		}
 

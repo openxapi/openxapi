@@ -1,0 +1,32 @@
+name: PR
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: go.mod
+          cache: true
+          cache-dependency-path: go.sum
+      - name: Format
+        run: make format
+      - name: Unit Test
+        run: make test
+      - name: Build
+        run: make build
+      - name: Generate
+        run: make generate
+      - name: Clean
+        run: make clean
