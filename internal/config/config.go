@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -83,20 +82,32 @@ func loadExchanges(path, dir string) (map[string]Exchange, error) {
 	}
 
 	for _, file := range files {
-		if !file.IsDir() {
+		if file.IsDir() {
 			logrus.Debugf("Loading exchange: %s", file.Name())
 			fpath := filepath.Join(dir, file.Name())
-			// Read the file into Exchange struct
-			var exchange Exchange
-			data, err := os.ReadFile(fpath)
+			configFiles, err := os.ReadDir(fpath)
 			if err != nil {
-				return nil, fmt.Errorf("reading exchange file: %w", err)
+				return nil, fmt.Errorf("reading exchange directory: %w", err)
 			}
-			if err := yaml.Unmarshal(data, &exchange); err != nil {
-				return nil, fmt.Errorf("parsing exchange file: %w", err)
+			for _, configFile := range configFiles {
+				if configFile.IsDir() {
+					continue
+				}
+				// Currently only support restapi.yaml
+				if configFile.Name() != "restapi.yaml" {
+					continue
+				}
+				// Read the file into Exchange struct
+				var exchange Exchange
+				data, err := os.ReadFile(filepath.Join(fpath, configFile.Name()))
+				if err != nil {
+					return nil, fmt.Errorf("reading exchange file: %w", err)
+				}
+				if err := yaml.Unmarshal(data, &exchange); err != nil {
+					return nil, fmt.Errorf("parsing exchange file: %w", err)
+				}
+				exchanges[file.Name()] = exchange
 			}
-			name := strings.Split(file.Name(), ".")[0]
-			exchanges[name] = exchange
 		}
 	}
 
