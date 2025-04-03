@@ -9,21 +9,13 @@ import re
 import urllib.parse
 from typing import Any, Dict, Optional, Union, Tuple, Callable, List
 
-# Import necessary parts from pycryptodome
-try:
-    from Crypto.PublicKey import RSA, ECC
-    from Crypto.Signature import pkcs1_15, eddsa
-    from Crypto.Hash import SHA256
-    from Crypto.IO import PEM
-    from Crypto.Util.asn1 import DerSequence
-    from Crypto.PublicKey.ECC import EccKey
-    from Crypto.PublicKey.RSA import RsaKey
-    _PYCRYPTODOME_AVAILABLE = True
-except ImportError:
-    _PYCRYPTODOME_AVAILABLE = False
-    # Define dummy types if pycryptodome is not available
-    EccKey = type("EccKey", (), {})
-    RsaKey = type("RsaKey", (), {})
+from Crypto.PublicKey import RSA, ECC
+from Crypto.Signature import pkcs1_15, eddsa
+from Crypto.Hash import SHA256
+from Crypto.IO import PEM
+from Crypto.Util.asn1 import DerSequence
+from Crypto.PublicKey.ECC import EccKey
+from Crypto.PublicKey.RSA import RsaKey
 
 
 class KeyType:
@@ -70,8 +62,6 @@ class BinanceAuth:
             self.secret_key = secret_key
             self.key_type = KeyType.HMAC
         else:
-            if not _PYCRYPTODOME_AVAILABLE:
-                raise ImportError("pycryptodome is required for RSA/ED25519 signing. Please install it.")
             self._load_private_key(private_key_path, private_key_pem)
 
 

@@ -93,12 +93,13 @@ configuration = {{{packageName}}}.Configuration(
 {{/isHttpSignature}}
 {{/isBasic}}
 {{#isApiKey}}
-
-# Configure API key authorization: {{{name}}}
-configuration.api_key['{{{name}}}'] = os.environ["API_KEY"]
-
-# Uncomment below to setup prefix (e.g. Bearer) for API key, if needed
-# configuration.api_key_prefix['{{name}}'] = 'Bearer'
+configuration = {{{packageName}}}.Configuration(
+    auth={{{packageName}}}.BinanceAuth(
+        api_key=os.getenv("BINANCE_API_KEY"),
+        # secret_key=os.getenv("BINANCE_SECRET_KEY"), # if you want to use HMAC auth
+        private_key_path="/path/to/private_key.pem", # Automatically detects RSA/Ed25519 private keys
+    ),
+)
 {{/isApiKey}}
 {{#isOAuth}}
 

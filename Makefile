@@ -9,14 +9,33 @@ GOVET=$(GOCMD) vet
 BIN_DIR=bin
 BINARY_NAME=$(BIN_DIR)/openxapi
 
+
 all: format lint vet test build
 
 build:
 	@$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/openxapi
 
-generate:
+generate-spec:
 	@make build
-	@$(BINARY_NAME) -use-samples
+	CMD=$(BINARY_NAME)
+    # if EXCHANGE is set, append it to the command
+	@if [ -n "${EXCHANGE}" ]; then \
+		CMD="${CMD} -exchange ${EXCHANGE}"; \
+	fi
+	@if [ -n "${DOCTYPE}" ]; then \
+		CMD="${CMD} -doc-type ${DOCTYPE}"; \
+	fi
+	@$(CMD) -use-samples
+
+generate-sdk:
+	@if [ -z "${OPENAPI_GENERATOR_CLI}" ]; then \
+		OPENAPI_GENERATOR_CLI=openapi-generator-cli; \
+	fi
+	# Loop through all the yaml files in the generator-configs directory
+	@for file in $(shell find generator-configs/${EXCHANGE}/openapi/${LANGUAGE} -name "*.yaml"); do \
+		echo "Generating ${EXCHANGE} ${LANGUAGE} SDK for $$file"; \
+		$(OPENAPI_GENERATOR_CLI) generate -c $$file -g ${LANGUAGE} -o ${OUTPUT_DIR}; \
+	done
 
 clean:
 	@rm -rf $(BIN_DIR)
