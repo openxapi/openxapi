@@ -37,21 +37,27 @@ So that you can use the same specification to generate websocket client SDKs for
 
 ## Supported Exchanges
 
-| Exchange | Product | Module | Supported | REST API | Websocket API | SDKs |
-|:--------:|:-------:|:------:|:----------:|----------|:------------:|:----:|
-| Binance | Spot Trading | | ✅ | [Spec](./specs/binance/openapi/spot.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | Derivatives Trading | USDS-M Futures | ✅ | [Spec](./specs/binance/openapi/umfutures.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | | COIN-M Futures | ✅ | [Spec](./specs/binance/openapi/cmfutures.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | | Options | ✅ | [Spec](./specs/binance/openapi/options.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | | Portfolio Margin | ✅ | [Spec](./specs/binance/openapi/pmargin.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | | Portfolio Margin Pro | ✅ | [Spec](./specs/binance/openapi/pmarginpro.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | | Futures Data | ✅ | [Spec](./specs/binance/openapi/futuresdata.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | Margin Trading | | ✅ | [Spec](./specs/binance/openapi/margin.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | Algo Trading | | ✅ | [Spec](./specs/binance/openapi/algo.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | Wallet | | ✅ | [Spec](./specs/binance/openapi/wallet.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | Copy Trading | | ✅ | [Spec](./specs/binance/openapi/copytrading.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/copytrading.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | Convert | | ✅ | [Spec](./specs/binance/openapi/convert.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/convert.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
-| | Sub Account | | ✅ | [Spec](./specs/binance/openapi/subaccount.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/subaccount.yaml) | | [Go](https://github.com/openxapi/binance-go) <br/> [Python](https://github.com/openxapi/binance-py) |
+| Exchange | Product | Module | Supported | REST API | Websocket API |
+|:--------:|:-------:|:------:|:----------:|----------|:------------:|
+| Binance | Spot Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/spot.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
+| | Derivatives Trading | USDS-M Futures | ✅ | [OpenAPI Spec](./specs/binance/openapi/umfutures.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
+| | | COIN-M Futures | ✅ | [OpenAPI Spec](./specs/binance/openapi/cmfutures.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
+| | | Options | ✅ | [OpenAPI Spec](./specs/binance/openapi/options.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | |
+| | | Portfolio Margin | ✅ | [OpenAPI Spec](./specs/binance/openapi/pmargin.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | |
+| | | Portfolio Margin Pro | ✅ | [OpenAPI Spec](./specs/binance/openapi/pmarginpro.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | |
+| | | Futures Data | ✅ | [OpenAPI Spec](./specs/binance/openapi/futuresdata.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | |
+| | Margin Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/margin.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | |
+| | Algo Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/algo.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | |
+| | Wallet | | ✅ | [OpenAPI Spec](./specs/binance/openapi/wallet.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | |
+| | Copy Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/copytrading.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/copytrading.yaml) | |
+| | Convert | | ✅ | [OpenAPI Spec](./specs/binance/openapi/convert.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/convert.yaml) | |
+| | Sub Account | | ✅ | [OpenAPI Spec](./specs/binance/openapi/subaccount.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/subaccount.yaml) | |
+
+## SDKs
+
+| Exchange | Go | Python | JavaScript | Rust |
+|:--------:|:----:|:------:|:----------:|:----:|
+| Binance | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) [PyPi](https://pypi.org/project/openxapi-binance) | | |
 
 ## Project Structure
 
