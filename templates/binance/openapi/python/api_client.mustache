@@ -678,19 +678,12 @@ class ApiClient:
             headers['Cookie'] = auth_setting['value']
         elif auth_setting['in'] == 'header':
             if auth_setting['type'] == 'binance':
-                signature = self.configuration.auth.sign(
+                self.configuration.auth.sign(
+                    header_params=headers,
                     query_params=queries,
                     request_body=body,
+                    parameters_to_url_query=self.parameters_to_url_query
                 )
-                headers[auth_setting['key']] = signature
-            else:
-                # The HTTP signature scheme requires multiple HTTP headers
-                # that are calculated dynamically.
-                signing_info = self.configuration.signing_info
-                auth_headers = signing_info.get_http_signature_headers(
-                resource_path, method, headers, body, queries)
-                headers.update(auth_headers)
-            {{/hasHttpSignatureMethods}}
         elif auth_setting['in'] == 'query':
             queries.append((auth_setting['key'], auth_setting['value']))
         else:

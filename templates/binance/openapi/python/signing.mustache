@@ -7,11 +7,11 @@ import io
 import os
 import re
 import urllib.parse
-from typing import Any, Dict, Optional, Union, Tuple
+from typing import Any, Dict, Optional, Union, Tuple, Callable, List
 
 # Import necessary parts from pycryptodome
 try:
-    from Crypto.PublicKey import RSA, ECC, Ed25519
+    from Crypto.PublicKey import RSA, ECC
     from Crypto.Signature import pkcs1_15, eddsa
     from Crypto.Hash import SHA256
     from Crypto.IO import PEM
@@ -106,45 +106,55 @@ class BinanceAuth:
                 # Check if it's actually an ED25519 key
                 # We might need a more reliable check here if ECC.import_key loads other curve types
                 # For now, assume non-RSA loaded via ECC.import_key could be ED25519 if needed
-                # A safer check involves looking at the algorithm OID in the PEM structure if possible
-                # or checking key properties like curve name if available.
-                # Let's refine this check:
                 try:
-                    # Try specific Ed25519 import first
-                     Ed25519.import_key(pem_data, passphrase=passphrase_bytes)
-                     # If successful, re-import as the correct type if needed or just set type
-                     # Re-importing might be redundant if ECC.import_key already gave the right object
-                     self.private_key = Ed25519.import_key(pem_data, passphrase=passphrase_bytes)
-                     self.key_type = KeyType.ED25519
-                except (ValueError, TypeError, IndexError): # Errors if not Ed25519 or wrong format
+                    # Try to check if it's an Ed25519 key using eddsa
+                    # We'll check if eddsa can create a new signer with this key
+                    # If it succeeds, it's likely an Ed25519 key
+                    signer_test = eddsa.new(self.private_key, mode='rfc8032')
+                    self.key_type = KeyType.ED25519
+                except (ValueError, TypeError) as e_ed25519:
                     # If not Ed25519, check if it's RSA loaded via PKCS#8
                     try:
-                         # Try importing specifically as RSA to confirm
-                         rsa_key_check = RSA.import_key(pem_data, passphrase=passphrase_bytes)
-                         # Confirm it's actually an RSA key object
-                         if isinstance(rsa_key_check, RsaKey):
-                             self.private_key = rsa_key_check
-                             self.key_type = KeyType.RSA
-                         else:
+                        # Try importing specifically as RSA to confirm
+                        rsa_key_check = RSA.import_key(pem_data, passphrase=passphrase_bytes)
+                        # Confirm it's actually an RSA key object
+                        if isinstance(rsa_key_check, RsaKey):
+                            self.private_key = rsa_key_check
+                            self.key_type = KeyType.RSA
+                        else:
                             # If ECC.import_key worked but it's not Ed25519 or RSA, it's an unsupported EC key for Binance
                             raise ValueError("Unsupported EC private key type loaded.")
                     except (ValueError, TypeError, IndexError):
-                         # If it failed both Ed25519 and RSA import, but ECC.import_key worked initially,
-                         # it might be another EC type not used by Binance or error in logic.
-                         # For safety, raise error if not explicitly identified as RSA or ED25519.
-                         raise ValueError("Could not determine private key type (not RSA or ED25519).")
+                        # If it failed both Ed25519 and RSA import, but ECC.import_key worked initially,
+                        # it might be another EC type not used by Binance or error in logic.
+                        # For safety, raise error if not explicitly identified as RSA or ED25519.
+                        raise ValueError("Could not determine private key type (not RSA or ED25519).")
 
             except (ValueError, TypeError, IndexError) as e_pkcs8:
-                 # If PKCS#8 fails, try legacy PEM formats (PKCS#1 for RSA)
+                # If PKCS#8 fails, try legacy PEM formats (PKCS#1 for RSA)
                 try:
                     self.private_key = RSA.import_key(pem_data, passphrase=passphrase_bytes)
                     self.key_type = KeyType.RSA
                 except (ValueError, TypeError, IndexError) as e_pkcs1:
-                    # If all import attempts fail
-                    raise ValueError(
-                        f"Failed to parse private key from {source_description}. "
-                        f"Check format and passphrase. PKCS#8 Error: {e_pkcs8}, PKCS#1 Error: {e_pkcs1}"
-                    )
+                    # Try specifically importing as Ed25519 using eddsa
+                    try:
+                        # This handles raw Ed25519 format (32 bytes)
+                        if len(pem_data) == 32 or "BEGIN OPENSSH PRIVATE KEY" in pem_data.decode('utf-8', errors='ignore'):
+                            self.private_key = eddsa.import_private_key(pem_data)
+                            self.key_type = KeyType.ED25519
+                        else:
+                            # If all import attempts fail
+                            raise ValueError(
+                                f"Failed to parse private key from {source_description}. "
+                                f"Check format and passphrase. PKCS#8 Error: {e_pkcs8}, PKCS#1 Error: {e_pkcs1}"
+                            )
+                    except (ValueError, TypeError) as e_raw_ed25519:
+                        # If all import attempts fail
+                        raise ValueError(
+                            f"Failed to parse private key from {source_description}. "
+                            f"Check format and passphrase. PKCS#8 Error: {e_pkcs8}, PKCS#1 Error: {e_pkcs1}, "
+                            f"Ed25519 Error: {e_raw_ed25519}"
+                        )
 
         except Exception as e:
              # Catch any other unexpected errors during loading/parsing
@@ -156,8 +166,9 @@ class BinanceAuth:
 
     def _get_signature_payload(
         self,
-        query_params: Optional[Dict[str, Any]],
-        request_body: Optional[Union[str, bytes]]
+        query_params: Optional[List[Tuple[str, str]]],
+        request_body: Optional[Union[str, bytes]],
+        parameters_to_url_query: Callable[[List[Tuple[str, str]], Dict[str, str]], str]
     ) -> bytes:
         """
         Constructs the payload string for signing according to Binance rules.
@@ -165,13 +176,10 @@ class BinanceAuth:
         """
         query_string = ""
         if query_params:
-            # Sort parameters alphabetically by key
-            sorted_params = sorted(query_params.items())
             # Encode parameters, Binance uses urlencode but doesn't escape '@'
             # Python's urlencode escapes '@' to '%40'. Go code replaces %40 back to @.
             # We replicate the Go behavior here.
-            query_string = urllib.parse.urlencode(sorted_params, doseq=True)
-            query_string = query_string.replace('%40', '@')
+            query_string = parameters_to_url_query(query_params, None)
 
 
         body_string = ""
@@ -183,7 +191,6 @@ class BinanceAuth:
                  # Assume string if not bytes
                 body_string = request_body
 
-            # Replicate Go's replacement for body as well
             body_string = body_string.replace('%40', '@')
 
 
@@ -200,17 +207,23 @@ class BinanceAuth:
 
     def sign(
         self,
-        query_params: Optional[Dict[str, Any]],
-        request_body: Optional[Union[str, bytes]]
-    ) -> str:
+        header_params: Optional[Dict[str, Any]],
+        query_params: Optional[List[Tuple[str, str]]],
+        request_body: Optional[Union[str, bytes]],
+        parameters_to_url_query: Callable[[List[Tuple[str, str]], Dict[str, str]], str]
+    ) -> None:
         """
         Generates the signature for the request data.
 
-        :param query_params: Dictionary of query parameters.
+        :param header_params: Dictionary of header parameters.
+        :param query_params: List of tuples of query parameters.
         :param request_body: The request body as a string or bytes.
         :return: The calculated signature string (hex for HMAC, base64 for RSA/ED25519).
         """
-        payload = self._get_signature_payload(query_params, request_body)
+        header_params = header_params or {}
+        header_params['X-MBX-APIKEY'] = self.api_key
+
+        payload = self._get_signature_payload(query_params, request_body, parameters_to_url_query)
         signature: str
 
         if self.key_type == KeyType.HMAC:
@@ -226,11 +239,7 @@ class BinanceAuth:
             sig_bytes = signer.sign(digest)
             signature = base64.b64encode(sig_bytes).decode('utf-8')
         elif self.key_type == KeyType.ED25519:
-             # Assuming self.private_key is an Ed25519 key object from pycryptodome
-             # Make sure it's the correct type. ECC.import_key might load generic EccKey.
-             # We ensured it's Ed25519 type during loading if possible.
-            if not hasattr(self.private_key, 'sign'): # Basic check if it looks like a signable key
-                 # Or more specific: isinstance(self.private_key, Ed25519.Ed25519PrivateKey) might be too restrictive if loaded differently
+            if not hasattr(self.private_key, 'pointQ'): # Basic check if it looks like an ECC key
                  raise TypeError("Private key is not a valid Ed25519 key or doesn't support signing.")
             # Use EdDSA signature scheme for Ed25519
             signer = eddsa.new(self.private_key, mode='rfc8032') # mode='rfc8032' is standard for Ed25519
@@ -239,52 +248,8 @@ class BinanceAuth:
         else:
             raise ValueError(f"Unsupported key type for signing: {self.key_type}")
 
-        return signature
-
-
-    def apply_auth(
-        self,
-        url: str,
-        headers: Dict[str, str],
-        query_params: Optional[Dict[str, Any]],
-        request_body: Optional[Union[str, bytes]]
-    ) -> Tuple[str, Dict[str, str]]:
-        """
-        Calculates the signature and modifies the URL and headers for authentication.
-
-        :param url: The request URL (without query parameters).
-        :param headers: The request headers dictionary.
-        :param query_params: Dictionary of original query parameters.
-        :param request_body: The request body (string or bytes).
-        :return: Tuple containing the updated URL (with signature) and updated headers.
-        """
-        # Add API Key header
-        headers['X-MBX-APIKEY'] = self.api_key
-
-        # Calculate signature
-        current_query_params = query_params.copy() if query_params else {}
-        signature = self.sign(current_query_params, request_body)
-
-        # Add signature to query parameters
-        current_query_params['signature'] = signature
-
-        # Rebuild URL with updated query parameters
-        parsed_url = urllib.parse.urlparse(url)
-        # Sort parameters alphabetically by key for the final URL
-        sorted_params = sorted(current_query_params.items())
-        final_query_string = urllib.parse.urlencode(sorted_params, doseq=True)
-        # Replicate Go's @ replacement for the final URL as well
-        final_query_string = final_query_string.replace('%40', '@')
-
-        # Use urlunparse to correctly rebuild the URL
-        # Components: scheme, netloc, path, params, query, fragment
-        updated_url = urllib.parse.urlunparse((
-            parsed_url.scheme,
-            parsed_url.netloc,
-            parsed_url.path,
-            parsed_url.params, # Usually empty
-            final_query_string,
-            parsed_url.fragment # Usually empty
-        ))
-
-        return updated_url, headers
+        # Make sure signature is at the end of the query string
+        if query_params:
+            query_params.append(('signature', signature))
+        else:
+            query_params = [('signature', signature)]
