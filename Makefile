@@ -30,12 +30,13 @@ generate-sdk:
 	@if [ "${LANGUAGE}" == "typescript" ]; then \
 		for file in $(shell find generator-configs/${EXCHANGE}/openapi/typescript -name "*.yaml"); do \
 			echo "Generating ${EXCHANGE} typescript SDK for $$file"; \
-			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g typescript-axios -o ${OUTPUT_DIR}; \
+			subdir=$$(echo "$$file" | sed -n 's|.*typescript/\(.*\)\.yaml|\1|p'); \
+			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g typescript-axios -o ${OUTPUT_DIR}/src/$$subdir; \
 		done \
 	elif [ "${LANGUAGE}" == "go" ]; then \
 		for file in $(shell find generator-configs/${EXCHANGE}/openapi/go -name "*.yaml"); do \
-			subdir=$$(echo "$$file" | sed -n 's|.*go/\(.*\)\.yaml|\1|p'); \
 			echo "Generating ${EXCHANGE} go SDK for $$subdir"; \
+			subdir=$$(echo "$$file" | sed -n 's|.*go/\(.*\)\.yaml|\1|p'); \
 			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g go -o ${OUTPUT_DIR}/$$subdir; \
 		done \
 	elif [ "${LANGUAGE}" == "python" ]; then \
