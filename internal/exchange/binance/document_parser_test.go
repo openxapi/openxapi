@@ -255,7 +255,7 @@ func TestExtractContent(t *testing.T) {
 	assert.Equal(t, nil, endpoint.Extensions["x-weight"])
 	assert.Equal(t, "Memory", endpoint.Extensions["x-data-source"])
 	assert.Equal(t, "SpotGetDepthV3", endpoint.OperationID)
-	assert.Equal(t, []string{"Market Data", "V3"}, endpoint.Tags)
+	assert.Equal(t, []string{"Market Data"}, endpoint.Tags)
 }
 
 func TestExtractMaxMinDefault(t *testing.T) {
