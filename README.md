@@ -2,7 +2,7 @@
 
 ![OpenXAPI Logo](images/logo.svg)
 
-### Write APIs in Specification.
+### Write APIs by Specification.
 
 ### One Spec. All Exchanges. Any Language.
 

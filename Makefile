@@ -1,4 +1,4 @@
-.PHONY: all build clean format lint vet test unit-test coverage help test-with-samples
+.PHONY: all build clean format lint vet test unit-test coverage help test-with-samples generate-spec generate-sdk
 
 # Go parameters
 GOCMD=go
@@ -17,25 +17,33 @@ build:
 
 generate-spec:
 	@make build
-	CMD=$(BINARY_NAME)
-    # if EXCHANGE is set, append it to the command
 	@if [ -n "${EXCHANGE}" ]; then \
-		CMD="${CMD} -exchange ${EXCHANGE}"; \
+		$(BINARY_NAME) -exchange ${EXCHANGE} -use-samples; \
+	else \
+		$(BINARY_NAME) -use-samples; \
 	fi
-	@if [ -n "${DOCTYPE}" ]; then \
-		CMD="${CMD} -doc-type ${DOCTYPE}"; \
-	fi
-	@$(CMD) -use-samples
 
 generate-sdk:
 	@if [ -z "${OPENAPI_GENERATOR_CLI}" ]; then \
 		OPENAPI_GENERATOR_CLI=openapi-generator-cli; \
 	fi
-	# Loop through all the yaml files in the generator-configs directory
-	@for file in $(shell find generator-configs/${EXCHANGE}/openapi/${LANGUAGE} -name "*.yaml"); do \
-		echo "Generating ${EXCHANGE} ${LANGUAGE} SDK for $$file"; \
-		$(OPENAPI_GENERATOR_CLI) generate -c $$file -g ${LANGUAGE} -o ${OUTPUT_DIR}; \
-	done
+	@if [ "${LANGUAGE}" == "typescript" ]; then \
+		for file in $(shell find generator-configs/${EXCHANGE}/openapi/typescript -name "*.yaml"); do \
+			echo "Generating ${EXCHANGE} typescript SDK for $$file"; \
+			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g typescript-axios -o ${OUTPUT_DIR}; \
+		done \
+	elif [ "${LANGUAGE}" == "go" ]; then \
+		for file in $(shell find generator-configs/${EXCHANGE}/openapi/go -name "*.yaml"); do \
+			subdir=$$(echo "$$file" | sed -n 's|.*go/\(.*\)\.yaml|\1|p'); \
+			echo "Generating ${EXCHANGE} go SDK for $$subdir"; \
+			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g go -o ${OUTPUT_DIR}/$$subdir; \
+		done \
+	elif [ "${LANGUAGE}" == "python" ]; then \
+		for file in $(shell find generator-configs/${EXCHANGE}/openapi/python -name "*.yaml"); do \
+			echo "Generating ${EXCHANGE} python SDK for $$file"; \
+			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g python -o ${OUTPUT_DIR}; \
+		done \
+	fi
 
 clean:
 	@rm -rf $(BIN_DIR)
@@ -47,7 +55,7 @@ format:
 
 lint:
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		@golangci-lint run ./...; \
+		golangci-lint run ./...; \
 	else \
 		echo "golangci-lint is not installed. Please install it using:"; \
 		echo "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \

@@ -187,7 +187,9 @@ func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content [
 				apiVersionMatches := apiVersionRegex.FindStringSubmatch(endpoint.Path)
 				if len(apiVersionMatches) == 2 {
 					apiVersion := apiVersionMatches[1]
-					endpoint.Tags = append(endpoint.Tags, strings.ToUpper(apiVersion))
+					logrus.Debugf("apiVersion: %s", apiVersion)
+					// TODO: due to a bug in openapi-generator typescript-axios, we need to make sure there is only one tag for each endpoint
+					// endpoint.Tags = append(endpoint.Tags, strings.ToUpper(apiVersion))
 				}
 				continue
 			}
