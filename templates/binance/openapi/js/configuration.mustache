@@ -2,45 +2,77 @@
 /* eslint-disable */
 {{>licenseInfo}}
 
+import { BinanceAuth } from './signing';
+
+/**
+ * Interface defining the configuration options for the API client.
+ * @export
+ * @interface ConfigurationParameters
+ */
 export interface ConfigurationParameters {
-    apiKey?: string | Promise<string> | ((name: string) => string) | ((name: string) => Promise<string>);
-    username?: string;
-    password?: string;
-    accessToken?: string | Promise<string> | ((name?: string, scopes?: string[]) => string) | ((name?: string, scopes?: string[]) => Promise<string>);
+    /**
+     * Override base path.
+     * @type {string}
+     * @memberof ConfigurationParameters
+     */
     basePath?: string;
+    /**
+     * Override server index.
+     * @type {number}
+     * @memberof ConfigurationParameters
+     */
     serverIndex?: number;
+    /**
+     * Base options for axios calls.
+     * @type {any}
+     * @memberof ConfigurationParameters
+     */
     baseOptions?: any;
+    /**
+     * The FormData constructor that will be used to create multipart form data requests.
+     * @type {new () => any}
+     * @memberof ConfigurationParameters
+     */
     formDataCtor?: new () => any;
+    /**
+     * Binance authentication handler instance.
+     * This is the recommended way to authenticate with Binance API using either HMAC, RSA, or ED25519 signing.
+     * 
+     * @example
+     * ```typescript
+     * // HMAC Authentication
+     * const auth = new BinanceAuth(
+     *   apiKey: 'your-api-key',
+     *   secretKey: 'your-secret-key'
+     * );
+     * 
+     * // RSA Authentication
+     * const auth = new BinanceAuth(
+     *   apiKey: 'your-api-key',
+     *   privateKeyPath: 'path/to/private-key.pem',
+     *   passphrase: 'optional-passphrase'
+     * );
+     * 
+     * // ED25519 Authentication
+     * const auth = new BinanceAuth(
+     *   apiKey: 'your-api-key',
+     *   privateKeyPath: 'path/to/ed25519-key.pem',
+     *   passphrase: 'optional-passphrase'
+     * );
+     * ```
+     * 
+     * @type {BinanceAuth}
+     * @memberof ConfigurationParameters
+     */
+    auth?: BinanceAuth;
 }
 
+/**
+ * Configuration class for the API client.
+ * @export
+ * @class Configuration
+ */
 export class Configuration {
-    /**
-     * parameter for apiKey security
-     * @param name security name
-     * @memberof Configuration
-     */
-    apiKey?: string | Promise<string> | ((name: string) => string) | ((name: string) => Promise<string>);
-    /**
-     * parameter for basic security
-     *
-     * @type {string}
-     * @memberof Configuration
-     */
-    username?: string;
-    /**
-     * parameter for basic security
-     *
-     * @type {string}
-     * @memberof Configuration
-     */
-    password?: string;
-    /**
-     * parameter for oauth2 security
-     * @param name security name
-     * @param scopes oauth2 scope
-     * @memberof Configuration
-     */
-    accessToken?: string | Promise<string> | ((name?: string, scopes?: string[]) => string) | ((name?: string, scopes?: string[]) => Promise<string>);
     /**
      * override base path
      *
@@ -70,14 +102,18 @@ export class Configuration {
      * @type {new () => FormData}
      */
     formDataCtor?: new () => any;
+    /**
+     * Binance authentication handler instance
+     * 
+     * @type {BinanceAuth}
+     * @memberof Configuration
+     */
+    auth?: BinanceAuth;
 
     constructor(param: ConfigurationParameters = {}) {
-        this.apiKey = param.apiKey;
-        this.username = param.username;
-        this.password = param.password;
-        this.accessToken = param.accessToken;
         this.basePath = param.basePath;
         this.serverIndex = param.serverIndex;
+        this.auth = param.auth;
         this.baseOptions = {
             ...param.baseOptions,
             headers: {

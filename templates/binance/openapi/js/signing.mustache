@@ -1,0 +1,303 @@
+/* tslint:disable */
+/* eslint-disable */
+{{>licenseInfo}}
+
+import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
+
+/**
+ * Key types supported for Binance API authentication
+ */
+class KeyType {
+    static HMAC = "HMAC";
+    static RSA = "RSA";
+    static ED25519 = "ED25519";
+}
+
+/**
+ * Configuration options for BinanceAuth
+ */
+export interface BinanceAuthOptions {
+    /**
+     * Your Binance API Key (required)
+     */
+    apiKey: string;
+    
+    /**
+     * Your Binance Secret Key (for HMAC signing).
+     * Mutually exclusive with privateKeyPath/privateKeyPem.
+     */
+    secretKey?: string;
+    
+    /**
+     * Path to your PEM-encoded private key file (for RSA/ED25519 signing).
+     * Mutually exclusive with secretKey/privateKeyPem.
+     */
+    privateKeyPath?: string;
+    
+    /**
+     * String containing the PEM-encoded private key (for RSA/ED25519 signing).
+     * Mutually exclusive with secretKey/privateKeyPath.
+     */
+    privateKeyPem?: string;
+    
+    /**
+     * Passphrase to decrypt the private key, if it's encrypted.
+     */
+    passphrase?: string;
+}
+
+/**
+ * Handles authentication for Binance API requests using API Key and either
+ * Secret Key (HMAC) or Private Key (RSA/ED25519).
+ * 
+ * @export
+ * @class BinanceAuth
+ */
+export class BinanceAuth {
+    private apiKey: string;
+    private secretKey: string | null = null;
+    private privateKey: crypto.KeyObject | null = null;
+    private keyType: string | null = null;
+    private passphrase: string | null = null;
+
+    /**
+     * Creates an instance of BinanceAuth.
+     * 
+     * @param {BinanceAuthOptions} options - Configuration options for BinanceAuth
+     * @memberof BinanceAuth
+     */
+    constructor(options: BinanceAuthOptions) {
+        if (!options.apiKey) {
+            throw new Error("API Key is required.");
+        }
+
+        this.apiKey = options.apiKey;
+        this.passphrase = options.passphrase || null;
+
+        // Validate mutually exclusive parameters
+        const keySources = [options.secretKey, options.privateKeyPath, options.privateKeyPem].filter(Boolean).length;
+        if (keySources === 0) {
+            throw new Error("One of secretKey, privateKeyPath, or privateKeyPem must be provided.");
+        }
+        if (keySources > 1) {
+            throw new Error("Only one of secretKey, privateKeyPath, or privateKeyPem can be provided.");
+        }
+
+        if (options.secretKey) {
+            this.secretKey = options.secretKey;
+            this.keyType = KeyType.HMAC;
+        } else {
+            this._loadPrivateKey(options.privateKeyPath, options.privateKeyPem);
+        }
+    }
+
+    /**
+     * Factory method to create a BinanceAuth instance with the legacy parameter style.
+     * This is provided for backward compatibility.
+     * 
+     * @param {string} apiKey - Your Binance API Key
+     * @param {string} [secretKey] - Your Binance Secret Key (for HMAC signing)
+     * @param {string} [privateKeyPath] - Path to your PEM-encoded private key file
+     * @param {string} [privateKeyPem] - String containing the PEM-encoded private key
+     * @param {string} [passphrase] - Passphrase to decrypt the private key
+     * @returns {BinanceAuth} A new BinanceAuth instance
+     * @static
+     */
+    public static create(
+        apiKey: string,
+        secretKey?: string,
+        privateKeyPath?: string,
+        privateKeyPem?: string,
+        passphrase?: string
+    ): BinanceAuth {
+        return new BinanceAuth({
+            apiKey,
+            secretKey,
+            privateKeyPath,
+            privateKeyPem,
+            passphrase
+        });
+    }
+
+    /**
+     * Loads and parses the private key from path or string.
+     * 
+     * @private
+     * @param {string} [privateKeyPath] - Path to the private key file
+     * @param {string} [privateKeyPem] - PEM-encoded private key string
+     * @memberof BinanceAuth
+     */
+    private _loadPrivateKey(privateKeyPath?: string, privateKeyPem?: string): void {
+        let pemData: Buffer | null = null;
+        let sourceDescription = "";
+
+        if (privateKeyPem) {
+            pemData = Buffer.from(privateKeyPem, 'utf-8');
+            sourceDescription = "string";
+        } else if (privateKeyPath) {
+            sourceDescription = `file '${privateKeyPath}'`;
+            if (!fs.existsSync(privateKeyPath)) {
+                throw new Error(`Private key file not found: ${privateKeyPath}`);
+            }
+            try {
+                pemData = fs.readFileSync(privateKeyPath);
+            } catch (error) {
+                throw new Error(`Cannot load private key ${sourceDescription}. Error: ${error}`);
+            }
+        }
+
+        if (!pemData) {
+            // This case should ideally not be reached due to initial checks, but added for safety
+            throw new Error("No private key data provided.");
+        }
+
+        try {
+            // Define the key options inline without a named interface
+            const options: crypto.PrivateKeyInput = {
+                key: pemData
+            };
+            
+            if (this.passphrase) {
+                options.passphrase = this.passphrase;
+            }
+
+            try {
+                // Try to import as a private key with automatic format detection
+                this.privateKey = crypto.createPrivateKey(options);
+
+                // Detect key type based on the algorithm
+                const keyType = this.privateKey.asymmetricKeyType;
+
+                if (keyType === 'rsa') {
+                    this.keyType = KeyType.RSA;
+                } else if (keyType === 'ed25519') {
+                    this.keyType = KeyType.ED25519;
+                } else {
+                    throw new Error(`Unsupported key type: ${keyType}. Only RSA and ED25519 are supported.`);
+                }
+            } catch (error) {
+                throw new Error(`Failed to parse private key from ${sourceDescription}. Error: ${error}`);
+            }
+        } catch (error) {
+            throw new Error(`An unexpected error occurred while processing the private key: ${error}`);
+        }
+
+        if (!this.keyType || !this.privateKey) {
+            throw new Error(`Could not determine or load private key type from ${sourceDescription}.`);
+        }
+    }
+
+    /**
+     * Constructs the payload string for signing according to Binance rules.
+     * Payload is queryString[&body]
+     * 
+     * @private
+     * @param {Array<[string, string]>} [queryParams] - Query parameters as key-value pairs
+     * @param {string | Buffer | URLSearchParams | any} [requestBody] - Request body (string, Buffer, URLSearchParams, or other)
+     * @returns {Buffer} The payload as a Buffer for signing
+     * @memberof BinanceAuth
+     */
+    private _getSignaturePayload(
+        queryParams?: Array<[string, string]>,
+        requestBody?: string | Buffer | URLSearchParams | any
+    ): Buffer {
+        let queryString = "";
+        
+        if (queryParams && queryParams.length > 0) {
+            // Create URLSearchParams and convert to string
+            const params = new URLSearchParams();
+            queryParams.forEach(([key, value]) => {
+                params.append(key, value);
+            });
+            
+            // Convert to string and replace %40 with @ as per Binance requirements
+            queryString = params.toString().replace(/%40/g, '@');
+        }
+
+        let bodyString = "";
+        if (requestBody) {
+            if (Buffer.isBuffer(requestBody)) {
+                bodyString = requestBody.toString('utf-8');
+            } else if (typeof requestBody === 'string') {
+                bodyString = requestBody;
+            } else if (requestBody instanceof URLSearchParams) {
+                bodyString = requestBody.toString();
+            } else if (typeof requestBody.toString === 'function') {
+                // Handle other objects with toString method
+                bodyString = requestBody.toString();
+            }
+            
+            bodyString = bodyString.replace(/%40/g, '@');
+        }
+
+        // Combine query string and body
+        let payload: string;
+        if (queryString && bodyString) {
+            payload = `${queryString}${bodyString}`;
+        } else if (bodyString) {
+            payload = bodyString;
+        } else {
+            payload = queryString; // Can be empty if no query params and no body
+        }
+
+        return Buffer.from(payload, 'utf-8');
+    }
+
+    /**
+     * Generates the signature for the request data and adds it to the query parameters.
+     * 
+     * @param {Array<[string, string]>} [queryParams] - Query parameters
+     * @param {string | Buffer | URLSearchParams | any} [requestBody] - Request body
+     * @memberof BinanceAuth
+     */
+    public sign(
+        queryParams?: Array<[string, string]>,
+        requestBody?: string | Buffer | URLSearchParams | any
+    ): string {
+        let params = queryParams || [];
+        const payload = this._getSignaturePayload(params, requestBody);
+        let signature: string;
+
+        if (this.keyType === KeyType.HMAC) {
+            if (!this.secretKey) {
+                throw new Error("Secret key is not set for HMAC signing.");
+            }
+            // Create HMAC-SHA256 signature
+            const hmac = crypto.createHmac('sha256', this.secretKey);
+            hmac.update(payload);
+            signature = hmac.digest('hex');
+        } else if (this.keyType === KeyType.RSA) {
+            if (!this.privateKey) {
+                throw new Error("Private key is not set for RSA signing.");
+            }
+            // Create RSA-SHA256 signature
+            const sign = crypto.createSign('RSA-SHA256');
+            sign.update(payload);
+            sign.end();
+            const sigBuffer = sign.sign(this.privateKey);
+            signature = sigBuffer.toString('base64');
+        } else if (this.keyType === KeyType.ED25519) {
+            if (!this.privateKey) {
+                throw new Error("Private key is not set for ED25519 signing.");
+            }
+            // Create ED25519 signature
+            const signature_buffer = crypto.sign(null, payload, this.privateKey);
+            signature = signature_buffer.toString('base64');
+        } else {
+            throw new Error(`Unsupported key type for signing: ${this.keyType}`);
+        }
+        return signature;
+    }
+
+    /**
+     * Gets the API key associated with this instance
+     * 
+     * @returns {string} The API key
+     * @memberof BinanceAuth
+     */
+    public getApiKey(): string {
+        return this.apiKey;
+    }
+} 

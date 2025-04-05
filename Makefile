@@ -24,13 +24,17 @@ generate-spec:
 	fi
 
 generate-sdk:
+	@if [ -z "${EXCHANGE}" -o -z "${LANGUAGE}" -o -z "${OUTPUT_DIR}" ]; then \
+		echo "Usage: make generate-sdk EXCHANGE=<exchange> LANGUAGE=<language> OUTPUT_DIR=<output_dir>"; \
+		exit 1; \
+	fi
 	@if [ -z "${OPENAPI_GENERATOR_CLI}" ]; then \
 		OPENAPI_GENERATOR_CLI=openapi-generator-cli; \
 	fi
-	@if [ "${LANGUAGE}" == "typescript" ]; then \
-		for file in $(shell find generator-configs/${EXCHANGE}/openapi/typescript -name "*.yaml"); do \
-			echo "Generating ${EXCHANGE} typescript SDK for $$file"; \
-			subdir=$$(echo "$$file" | sed -n 's|.*typescript/\(.*\)\.yaml|\1|p'); \
+	@if [ "${LANGUAGE}" == "js" ]; then \
+		for file in $(shell find generator-configs/${EXCHANGE}/openapi/js -name "*.yaml"); do \
+			echo "Generating ${EXCHANGE} js SDK for $$file"; \
+			subdir=$$(echo "$$file" | sed -n 's|.*js/\(.*\)\.yaml|\1|p'); \
 			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g typescript-axios -o ${OUTPUT_DIR}/src/$$subdir; \
 		done \
 	elif [ "${LANGUAGE}" == "go" ]; then \

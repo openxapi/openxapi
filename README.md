@@ -38,8 +38,8 @@ So that you can use the same specification to generate websocket client SDKs for
 ## Supported Exchanges
 
 | Exchange | Product | Module | Supported | REST API | Websocket API |
-|:--------:|:-------:|:------:|:----------:|----------|:------------:|
-| Binance | Spot Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/spot.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
+|:--------:|:-------:|:------:|:----------:|:----------:|:------------:|
+| ![Binance](./images/binance.jpg) | Spot Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/spot.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
 | | Derivatives Trading | USDS-M Futures | ✅ | [OpenAPI Spec](./specs/binance/openapi/umfutures.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
 | | | COIN-M Futures | ✅ | [OpenAPI Spec](./specs/binance/openapi/cmfutures.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
 | | | Options | ✅ | [OpenAPI Spec](./specs/binance/openapi/options.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | |
@@ -57,7 +57,7 @@ So that you can use the same specification to generate websocket client SDKs for
 
 | Exchange | Go | Python | JavaScript | Rust |
 |:--------:|:----:|:------:|:----------:|:----:|
-| Binance | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) [PyPi](https://pypi.org/project/openxapi-binance) | | |
+| ![Binance](./images/binance.jpg) | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) <br /> [PyPi](https://pypi.org/project/openxapi-binance) | [Github](https://github.com/openxapi/binance-js) <br /> [npm](https://www.npmjs.com/package/@openxapi/binance)| |
 
 ## Project Structure
 

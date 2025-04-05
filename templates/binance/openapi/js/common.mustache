@@ -41,6 +41,48 @@ export const setApiKeyToObject = async function (object: any, keyParamName: stri
 }
 
 /**
+ * Sets the Binance authentication parameters for API requests.
+ * When a request has Binance auth, this function will:
+ * 1. Add API key to header
+ * 2. Sign the payload and append signature to query parameters
+ *
+ * @export
+ */
+export const setBinanceAuthToObject = async function (
+    localVarUrlObj: URL,
+    localVarRequestOptions: any,
+    configuration?: Configuration
+) {
+    if (!configuration || !configuration.auth) {
+        return;
+    }
+
+    // Get request data
+    const requestData = localVarRequestOptions.data;
+    
+    // Extract query parameters from URL
+    const searchParams = new URLSearchParams(localVarUrlObj.search);
+    const queryParams: [string, string][] = Array.from(searchParams.entries());
+    
+    // Ensure headers object exists
+    if (!localVarRequestOptions.headers) {
+        localVarRequestOptions.headers = {};
+    }
+    
+    // Add API key to headers - using auth config for the key
+    localVarRequestOptions.headers['X-MBX-APIKEY'] = configuration.auth.apiKey;
+    
+    // Sign request and add signature to query parameters
+    const signature = configuration.auth.sign(queryParams, requestData);
+    queryParams.push(['signature', signature]);
+    
+    // Update URL with signed query parameters
+    const newSearchParams = new URLSearchParams();
+    queryParams.forEach(([key, value]) => newSearchParams.append(key, value));
+    localVarUrlObj.search = newSearchParams.toString();
+}
+
+/**
  *
  * @export
  */
