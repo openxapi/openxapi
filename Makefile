@@ -48,6 +48,11 @@ generate-sdk:
 			echo "Generating ${EXCHANGE} python SDK for $$file"; \
 			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g python -o ${OUTPUT_DIR}; \
 		done \
+	elif [ "${LANGUAGE}" == "rust" ]; then \
+		for file in $(shell find generator-configs/${EXCHANGE}/openapi/rust -name "*.yaml"); do \
+			echo "Generating ${EXCHANGE} rust SDK for $$file"; \
+			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g rust -o ${OUTPUT_DIR}; \
+		done \
 	fi
 
 clean:
