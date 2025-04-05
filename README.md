@@ -39,25 +39,25 @@ So that you can use the same specification to generate websocket client SDKs for
 
 | Exchange | Product | Module | Supported | REST API | Websocket API |
 |:--------:|:-------:|:------:|:----------:|:----------:|:------------:|
-| ![Binance](./images/binance.jpg) | Spot Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/spot.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
-| | Derivatives Trading | USDS-M Futures | ✅ | [OpenAPI Spec](./specs/binance/openapi/umfutures.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
-| | | COIN-M Futures | ✅ | [OpenAPI Spec](./specs/binance/openapi/cmfutures.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
-| | | Options | ✅ | [OpenAPI Spec](./specs/binance/openapi/options.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | |
-| | | Portfolio Margin | ✅ | [OpenAPI Spec](./specs/binance/openapi/pmargin.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | |
-| | | Portfolio Margin Pro | ✅ | [OpenAPI Spec](./specs/binance/openapi/pmarginpro.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | |
-| | | Futures Data | ✅ | [OpenAPI Spec](./specs/binance/openapi/futuresdata.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | |
-| | Margin Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/margin.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | |
-| | Algo Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/algo.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | |
-| | Wallet | | ✅ | [OpenAPI Spec](./specs/binance/openapi/wallet.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | |
-| | Copy Trading | | ✅ | [OpenAPI Spec](./specs/binance/openapi/copytrading.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/copytrading.yaml) | |
-| | Convert | | ✅ | [OpenAPI Spec](./specs/binance/openapi/convert.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/convert.yaml) | |
-| | Sub Account | | ✅ | [OpenAPI Spec](./specs/binance/openapi/subaccount.yaml) <br/> [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/subaccount.yaml) | |
+| <img src="./images/binance.jpg" width="100" /> | Spot Trading | | ✅ | [OpenAPI](./specs/binance/openapi/spot.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
+| | Derivatives Trading | USDS-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/umfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
+| | | COIN-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/cmfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
+| | | Options | ✅ | [OpenAPI](./specs/binance/openapi/options.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | |
+| | | Portfolio Margin | ✅ | [OpenAPI](./specs/binance/openapi/pmargin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | |
+| | | Portfolio Margin Pro | ✅ | [OpenAPI](./specs/binance/openapi/pmarginpro.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | |
+| | | Futures Data | ✅ | [OpenAPI](./specs/binance/openapi/futuresdata.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | |
+| | Margin Trading | | ✅ | [OpenAPI](./specs/binance/openapi/margin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | |
+| | Algo Trading | | ✅ | [OpenAPI](./specs/binance/openapi/algo.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | |
+| | Wallet | | ✅ | [OpenAPI](./specs/binance/openapi/wallet.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | |
+| | Copy Trading | | ✅ | [OpenAPI](./specs/binance/openapi/copytrading.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/copytrading.yaml) | |
+| | Convert | | ✅ | [OpenAPI](./specs/binance/openapi/convert.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/convert.yaml) | |
+| | Sub Account | | ✅ | [OpenAPI](./specs/binance/openapi/subaccount.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/subaccount.yaml) | |
 
 ## SDKs
 
 | Exchange | Go | Python | JavaScript | Rust |
 |:--------:|:----:|:------:|:----------:|:----:|
-| ![Binance](./images/binance.jpg) | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) <br /> [PyPi](https://pypi.org/project/openxapi-binance) | [Github](https://github.com/openxapi/binance-js) <br /> [npm](https://www.npmjs.com/package/@openxapi/binance)| |
+| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py), [PyPi](https://pypi.org/project/openxapi-binance) | [Github](https://github.com/openxapi/binance-js), [npm](https://www.npmjs.com/package/@openxapi/binance) | |
 
 ## Project Structure
 
@@ -146,9 +146,9 @@ The program can save API documentation to sample files and use them for regenera
 ./openxapi --use-samples
 ```
 
-Specify a custom directory for sample files:
+Or simply use `make` command:
 ```bash
-./openxapi --use-samples --samples-dir=/path/to/samples
+make generate-spec EXCHANGE=binance
 ```
 
 ### Mannual maintenance on OpenAPI Specification
@@ -157,9 +157,9 @@ If you find there are some issues on the generated OpenAPI specification, please
 
 Please follow the steps below to mannually update the OpenAPI specification:
 
-1. Find the OpenAPI specification for an exchange in `specs/` directory, for example, `specs/binance/spot/delete_api_v3_openOrders.yaml`.
-2. Add the endpoint to the `protected_endpoints` section in `configs/exchanges/binance.yaml`, this will make sure the endpoint will be ignored by the automatic generation.
-3. Update the OpenAPI specification in `specs/binance/spot/delete_api_v3_openOrders.yaml`.
+1. Find the OpenAPI specification for an exchange in `specs/` directory, for example, `specs/binance/openapi/spot/delete_api_v3_openOrders.yaml`.
+2. Add the endpoint to the `protected_endpoints` section in `configs/exchanges/binance/restapi.yaml`, this will make sure the endpoint will be ignored by the automatic generation.
+3. Update the OpenAPI specification in `specs/binance/openapi/spot/delete_api_v3_openOrders.yaml`.
 4. Regenerate the OpenAPI specification by the steps in [Generate OpenAPI Specification](#generate-openapi-specification) section.
 
 ## Generate SDKs for OpenAPI Specification
@@ -169,11 +169,11 @@ We use [OpenAPI Generator](https://openapi-generator.tech/) to generate SDKs for
 Following is an example of generating Go SDK for Binance Spot REST API:
 
 ```bash
-openapi-generator-cli generate \
-  -g go \
-  -c generator-configs/binance/go/spot.yaml \
-  -o ../binance-go/spot
+make generate-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=../binance-go
 ```
+
+* Supported languages: `go`, `python`, `js`, `rust`
+* Supported exchanges: `binance`
 
 ### Update the SDK code
 
