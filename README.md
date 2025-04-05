@@ -38,7 +38,7 @@ So that you can use the same specification to generate websocket client SDKs for
 ## Supported Exchanges
 
 | Exchange | Product | Supported | REST API | Websocket API |
-|:--------:|:-------:|:----------:|:----------:|:------------:|
+|:--------:|-------|:----------:|:----------:|:------------:|
 | <img src="./images/binance.jpg" width="100" /> | Spot Trading | ✅ | [OpenAPI](./specs/binance/openapi/spot.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
 | | Derivatives - USDS-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/umfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
 | | Derivatives - COIN-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/cmfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
