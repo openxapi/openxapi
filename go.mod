@@ -1,7 +1,6 @@
 module github.com/openxapi/openxapi
 
 go 1.23
-
 toolchain go1.24.1
 
 require (
@@ -24,6 +23,6 @@ require (
 	github.com/oasdiff/yaml3 v0.0.0-20241214160948-977117996672 // indirect
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/net v0.36.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 )
