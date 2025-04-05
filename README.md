@@ -37,21 +37,21 @@ So that you can use the same specification to generate websocket client SDKs for
 
 ## Supported Exchanges
 
-| Exchange | Product | Module | Supported | REST API | Websocket API |
-|:--------:|:-------:|:------:|:----------:|:----------:|:------------:|
-| <img src="./images/binance.jpg" width="100" /> | Spot Trading | | ✅ | [OpenAPI](./specs/binance/openapi/spot.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
-| | Derivatives Trading | USDS-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/umfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
-| | | COIN-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/cmfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
-| | | Options | ✅ | [OpenAPI](./specs/binance/openapi/options.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | |
-| | | Portfolio Margin | ✅ | [OpenAPI](./specs/binance/openapi/pmargin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | |
-| | | Portfolio Margin Pro | ✅ | [OpenAPI](./specs/binance/openapi/pmarginpro.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | |
-| | | Futures Data | ✅ | [OpenAPI](./specs/binance/openapi/futuresdata.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | |
-| | Margin Trading | | ✅ | [OpenAPI](./specs/binance/openapi/margin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | |
-| | Algo Trading | | ✅ | [OpenAPI](./specs/binance/openapi/algo.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | |
-| | Wallet | | ✅ | [OpenAPI](./specs/binance/openapi/wallet.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | |
-| | Copy Trading | | ✅ | [OpenAPI](./specs/binance/openapi/copytrading.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/copytrading.yaml) | |
-| | Convert | | ✅ | [OpenAPI](./specs/binance/openapi/convert.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/convert.yaml) | |
-| | Sub Account | | ✅ | [OpenAPI](./specs/binance/openapi/subaccount.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/subaccount.yaml) | |
+| Exchange | Product | Supported | REST API | Websocket API |
+|:--------:|:-------:|:----------:|:----------:|:------------:|
+| <img src="./images/binance.jpg" width="100" /> | Spot Trading | ✅ | [OpenAPI](./specs/binance/openapi/spot.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
+| | Derivatives Trading - USDS-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/umfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
+| | Derivatives Trading - COIN-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/cmfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
+| | Derivatives Trading - Options | ✅ | [OpenAPI](./specs/binance/openapi/options.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | |
+| | Derivatives Trading - Portfolio Margin | ✅ | [OpenAPI](./specs/binance/openapi/pmargin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | |
+| | Derivatives Trading - Portfolio Margin Pro | ✅ | [OpenAPI](./specs/binance/openapi/pmarginpro.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | |
+| | Derivatives Trading - Futures Data | ✅ | [OpenAPI](./specs/binance/openapi/futuresdata.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | |
+| | Margin Trading | ✅ | [OpenAPI](./specs/binance/openapi/margin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | |
+| | Algo Trading | ✅ | [OpenAPI](./specs/binance/openapi/algo.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | |
+| | Wallet | ✅ | [OpenAPI](./specs/binance/openapi/wallet.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | |
+| | Copy Trading | ✅ | [OpenAPI](./specs/binance/openapi/copytrading.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/copytrading.yaml) | |
+| | Convert | ✅ | [OpenAPI](./specs/binance/openapi/convert.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/convert.yaml) | |
+| | Sub Account | ✅ | [OpenAPI](./specs/binance/openapi/subaccount.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/subaccount.yaml) | |
 
 ## SDKs
 
