@@ -22,7 +22,7 @@ func NewParser() *Parser {
 			Name:       name,
 			Client:     &http.Client{},
 			UseSamples: false,
-			SamplesDir: fmt.Sprintf("samples/webpage/%s", name),
+			SamplesDir: fmt.Sprintf("samples/%s", name),
 			DocParser:  &DocumentParser{},
 		},
 	}
@@ -32,7 +32,7 @@ func NewParser() *Parser {
 func NewParserWithOptions(useSamples bool, samplesDir string) *Parser {
 	name := "okx"
 	if samplesDir == "" {
-		samplesDir = fmt.Sprintf("samples/webpage/%s", name)
+		samplesDir = fmt.Sprintf("samples/%s", name)
 	}
 	return &Parser{
 		HTTPParser: parser.HTTPParser{
