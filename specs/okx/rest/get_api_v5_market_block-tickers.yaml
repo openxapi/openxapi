@@ -1,0 +1,145 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetMarketBlockTickersV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                     {
+                        "instType":"SWAP",
+                        "instId":"LTC-USD-SWAP",
+                        "volCcy24h":"2222",
+                        "vol24h":"2222",
+                        "ts":"1597026383085"
+                     },
+                     {
+                        "instType":"SWAP",
+                        "instId":"BTC-USD-SWAP",
+                        "volCcy24h":"2222",
+                        "vol24h":"2222",
+                        "ts":"1597026383085"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            ts:
+                                default: ""
+                                description: Block ticker data generation time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            vol24h:
+                                default: ""
+                                description: "24h trading volume, with a unit of `contract`. \n\nIf it is a `derivatives` contract, the value is the number of contracts. \n\nIf it is `SPOT`/`MARGIN`, the value is the quantity in base currency."
+                                type: string
+                            volCcy24h:
+                                default: ""
+                                description: "24h trading volume, with a unit of `currency`. \n\nIf it is a `derivatives` contract, the value is the number of base currency. \n\nIf it is `SPOT`/`MARGIN`, the value is the quantity in quote currency."
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/market/block-tickers:
+        get:
+            description: "Retrieve the latest block trading volume in the last 24 hours.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketBlockTickersV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SPOT`
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: "Underlying, e.g. `BTC-USD` \n\nApplicable to `FUTURES`/`SWAP`/`OPTION`"
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: "Underlying, e.g. `BTC-USD` \n\nApplicable to `FUTURES`/`SWAP`/`OPTION`"
+                    type: string
+                - description: |-
+                    Instrument family, e.g. `BTC-USD`
+
+                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family, e.g. `BTC-USD`
+
+                        Applicable to `FUTURES`/`SWAP`/`OPTION`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketBlockTickersV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the latest block trading volume in the last 24 hours.
+
+            tags:
+                - Block Trading

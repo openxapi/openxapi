@@ -1,0 +1,220 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFiatDepositPaymentMethodsV5Resp:
+            example: |+
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                      "ccy": "TRY",
+                      "paymentMethod": "TR_BANKS",
+                      "feeRate": "0",
+                      "minFee": "0",
+                      "limits": {
+                        "dailyLimit": "2147483647",
+                        "dailyLimitRemaining": "2147483647",
+                        "weeklyLimit": "2147483647",
+                        "weeklyLimitRemaining": "2147483647",
+                        "monthlyLimit": "",
+                        "monthlyLimitRemaining": "",
+                        "maxAmt": "1000000",
+                        "minAmt": "1",
+                        "lifetimeLimit": "2147483647"
+                      },
+                      "accounts": [
+                          {
+                            "paymentAcctId": "1",
+                            "acctNum": "TR740001592093703829602611",
+                            "recipientName": "John Doe",
+                            "bankName": "VakıfBank",
+                            "bankCode": "TVBATR2AXXX",
+                            "state": "active"
+                          },
+                          {
+                            "paymentAcctId": "2",
+                            "acctNum": "TR740001592093703829602622",
+                            "recipientName": "John Doe",
+                            "bankName": "FBHLTRISXXX",
+                            "bankCode": "",
+                            "state": "active"
+                          }
+                      ]
+                    }
+                  ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            accounts:
+                                description: An array containing information about payment accounts associated with the currency and method.
+                                items:
+                                    properties:
+                                        acctNum:
+                                            default: ""
+                                            description: The account number, which can be an IBAN or other bank account number.
+                                            type: string
+                                        bankCode:
+                                            default: ""
+                                            description: The SWIFT code / BIC / bank code associated with the account
+                                            type: string
+                                        bankName:
+                                            default: ""
+                                            description: The name of the bank associated with the account
+                                            type: string
+                                        paymentAcctId:
+                                            default: ""
+                                            description: The account ID for withdrawal
+                                            type: string
+                                        recipientName:
+                                            default: ""
+                                            description: The name of the recipient
+                                            type: string
+                                        state:
+                                            default: ""
+                                            description: |-
+                                                The state of the account
+
+                                                `active`
+                                            type: string
+                                    type: object
+                                type: array
+                            ccy:
+                                default: ""
+                                description: Fiat currency
+                                type: string
+                            feeRate:
+                                default: ""
+                                description: |-
+                                    The fee rate for each deposit, expressed as a percentage
+
+                                    e.g. `0.02` represents 2 percent fee for each transaction.
+                                type: string
+                            limits:
+                                description: An object containing limits for various transaction intervals
+                                properties:
+                                    dailyLimit:
+                                        default: ""
+                                        description: The daily transaction limit
+                                        type: string
+                                    dailyLimitRemaining:
+                                        default: ""
+                                        description: The remaining daily transaction limit
+                                        type: string
+                                    lifetimeLimit:
+                                        default: ""
+                                        description: The lifetime transaction limit. Return the configured value, "" if not configured
+                                        type: string
+                                    maxAmt:
+                                        default: ""
+                                        description: The maximum amount allowed per transaction
+                                        type: string
+                                    minAmt:
+                                        default: ""
+                                        description: The minimum amount allowed per transaction
+                                        type: string
+                                    monthlyLimit:
+                                        default: ""
+                                        description: The monthly transaction limit
+                                        type: string
+                                    monthlyLimitRemaining:
+                                        default: ""
+                                        description: The remaining monthly transaction limit
+                                        type: string
+                                    weeklyLimit:
+                                        default: ""
+                                        description: The weekly transaction limit
+                                        type: string
+                                    weeklyLimitRemaining:
+                                        default: ""
+                                        description: The remaining weekly transaction limit
+                                        type: string
+                                type: object
+                            minFee:
+                                default: ""
+                                description: The minimum fee for each deposit
+                                type: string
+                            paymentMethod:
+                                default: ""
+                                description: |-
+                                    The payment method associated with the currency
+
+                                    `TR_BANKS`
+
+                                    `PIX`
+
+                                    `SEPA`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/fiat/deposit-payment-methods:
+        get:
+            description: "To display all the available fiat deposit payment methods\n\n#### Rate Limit: 3 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetFiatDepositPaymentMethodsV5
+            parameters:
+                - description: Fiat currency, ISO-4217 3 digit currency code, e.g. `TRY`
+                  in: query
+                  name: ccy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Fiat currency, ISO-4217 3 digit currency code, e.g. `TRY`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFiatDepositPaymentMethodsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                To display all the available fiat deposit payment methods
+
+            tags:
+                - Funding Account

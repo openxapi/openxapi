@@ -1,0 +1,207 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetRfqPublicTradesV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "blockTdId": "439161457415012352",
+                            "legs": [
+                                {
+                                    "instId": "BTC-USD-210826",
+                                    "side": "sell",
+                                    "sz": "100",
+                                    "px": "11000",
+                                    "tradeId": "439161457415012354"
+                                },
+                                {
+                                    "instId": "BTC-USD-SWAP",
+                                    "side": "sell",
+                                    "sz": "100",
+                                    "px": "50",
+                                    "tradeId": "439161457415012355"
+                                },
+                                {
+                                    "instId": "BTC-USDT",
+                                    "side": "buy",
+                                    "sz": "0.1", //for public feed, spot "sz" is in baseccy
+                                    "px": "10.1",
+                                    "tradeId": "439161457415012356"
+                                },
+                                {
+                                    "instId": "BTC-USD-210326-60000-C",
+                                    "side": "buy",
+                                    "sz": "200",
+                                    "px": "0.008",
+                                    "tradeId": "439161457415012357"
+                                },
+                                {
+                                    "instId": "BTC-USD-220930-5000-P",
+                                    "side": "sell",
+                                    "sz": "200",
+                                    "px": "0.008",
+                                    "tradeId": "439161457415012360"
+                                },
+                                {
+                                    "instId": "BTC-USD-220930-10000-C",
+                                    "side": "sell",
+                                    "sz": "200",
+                                    "px": "0.008",
+                                    "tradeId": "439161457415012361"
+                                },
+                                {
+                                    "instId": "BTC-USD-220930-10000-P",
+                                    "side": "sell",
+                                    "sz": "200",
+                                    "px": "0.008",
+                                    "tradeId": "439161457415012362"
+                                },
+                                {
+                                    "instId": "ETH-USD-220624-100100-C",
+                                    "side": "sell",
+                                    "sz": "100",
+                                    "px": "0.008",
+                                    "tradeId": "439161457415012363"
+                                }
+                            ],
+                            "strategy":"CALL_CALENDAR_SPREAD",
+                            "cTime": "1650976251241"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            blockTdId:
+                                default: ""
+                                description: Block trade ID.
+                                type: string
+                            cTime:
+                                default: ""
+                                description: The time the trade was executed. Unix timestamp in milliseconds.
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                            legs:
+                                description: Legs of trade
+                                items:
+                                    properties:
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. BTC-USDT-SWAP
+                                            type: string
+                                        px:
+                                            default: ""
+                                            description: The price the leg executed
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: The direction of the leg from the Takers perspective. Valid value can be buy or sell.
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: "Trade quantity \n\nFor spot trading, the unit is base currency\n\nFor `FUTURES`/`SWAP`/`OPTION`, the unit is contract."
+                                            type: string
+                                        tradeId:
+                                            default: ""
+                                            description: Last traded ID.
+                                            type: string
+                                    type: object
+                                type: array
+                            px:
+                                default: ""
+                                description: The price the leg executed
+                                type: string
+                            side:
+                                default: ""
+                                description: The direction of the leg from the Takers perspective. Valid value can be buy or sell.
+                                type: string
+                            strategy:
+                                default: ""
+                                description: Option strategy, e.g. CALL_CALENDAR_SPREAD
+                                type: string
+                            sz:
+                                default: ""
+                                description: "Trade quantity \n\nFor spot trading, the unit is base currency\n\nFor `FUTURES`/`SWAP`/`OPTION`, the unit is contract."
+                                type: string
+                            tradeId:
+                                default: ""
+                                description: Last traded ID.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/public-trades:
+        get:
+            description: "Retrieves the executed block trades. The data will be updated 15 minutes after the block trade execution.\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetRfqPublicTradesV5
+            parameters:
+                - description: The starting blockTdId the request to begin with. Pagination of data to return records newer than the requested `blockTdId`, not including beginId.
+                  in: query
+                  name: beginId
+                  schema:
+                    default: ""
+                    description: The starting blockTdId the request to begin with. Pagination of data to return records newer than the requested `blockTdId`, not including beginId.
+                    type: string
+                - description: The last blockTdId the request to end with. Pagination of data to return records earlier than the requested `blockTdId`, not including endId.
+                  in: query
+                  name: endId
+                  schema:
+                    default: ""
+                    description: The last blockTdId the request to end with. Pagination of data to return records earlier than the requested `blockTdId`, not including endId.
+                    type: string
+                - description: Number of results per request. The maximum is 100 which is also the default value.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100 which is also the default value.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRfqPublicTradesV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieves the executed block trades. The data will be updated 15 minutes after the block trade execution.
+
+            tags:
+                - Block Trading

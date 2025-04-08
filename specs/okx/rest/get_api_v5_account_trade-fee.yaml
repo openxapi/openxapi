@@ -1,0 +1,262 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountTradeFeeV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [{
+                    "category": "1", //Deprecated
+                    "delivery": "",
+                    "exercise": "",
+                    "instType": "SPOT",
+                    "level": "lv1",
+                    "maker": "-0.0008",
+                    "makerU": "",
+                    "makerUSDC": "",
+                    "taker": "-0.001",
+                    "takerU": "",
+                    "takerUSDC": "",
+                    "ruleType": "normal",
+                    "ts": "1608623351857",
+                    "fiat": []
+                  }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            category:
+                                default: ""
+                                deprecated: true
+                                description: 'Currency category. Note: this parameter is already deprecated'
+                                type: string
+                            delivery:
+                                default: ""
+                                description: Delivery fee rate
+                                type: string
+                            exercise:
+                                default: ""
+                                description: Fee rate for exercising the option
+                                type: string
+                            fiat:
+                                description: Details of fiat fee rate
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: Fiat currency.
+                                            type: string
+                                        maker:
+                                            default: ""
+                                            description: Maker fee rate
+                                            type: string
+                                        taker:
+                                            default: ""
+                                            description: Taker fee rate
+                                            type: string
+                                    type: object
+                                type: array
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            level:
+                                default: ""
+                                description: Fee rate Level
+                                type: string
+                            maker:
+                                default: ""
+                                description: "For `SPOT`/`MARGIN`, it is maker fee rate of the USDT trading pairs. \n\nFor `FUTURES`/`SWAP`/`OPTION`, it is the fee rate of crypto-margined contracts"
+                                type: string
+                            makerU:
+                                default: ""
+                                description: Maker fee rate of USDT-margined contracts, only applicable to `FUTURES`/`SWAP`
+                                type: string
+                            makerUSDC:
+                                default: ""
+                                description: |-
+                                    For `SPOT`/`MARGIN`, it is maker fee rate of the USDⓈ&Crypto trading pairs.
+
+                                    For `FUTURES`/`SWAP`, it is the fee rate of USDC-margined contracts
+                                type: string
+                            ruleType:
+                                default: ""
+                                description: |-
+                                    Trading rule types
+
+                                     `normal`: normal trading
+
+                                     `pre_market`: pre-market trading
+                                type: string
+                            taker:
+                                default: ""
+                                description: "For `SPOT`/`MARGIN`, it is taker fee rate of the USDT trading pairs. \n\nFor `FUTURES`/`SWAP`/`OPTION`, it is the fee rate of crypto-margined contracts"
+                                type: string
+                            takerU:
+                                default: ""
+                                description: Taker fee rate of USDT-margined contracts, only applicable to `FUTURES`/`SWAP`
+                                type: string
+                            takerUSDC:
+                                default: ""
+                                description: |-
+                                    For `SPOT`/`MARGIN`, it is taker fee rate of the USDⓈ&Crypto trading pairs.
+
+                                    For `FUTURES`/`SWAP`, it is the fee rate of USDC-margined contracts
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data return time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/trade-fee:
+        get:
+            description: "#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountTradeFeeV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SPOT`
+
+                    `MARGIN`
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `MARGIN`
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: |-
+                    Instrument ID, e.g. `BTC-USDT`
+
+                    Applicable to `SPOT`/`MARGIN`
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument ID, e.g. `BTC-USDT`
+
+                        Applicable to `SPOT`/`MARGIN`
+                    type: string
+                - description: |-
+                    Underlying, e.g. `BTC-USD`
+
+                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: |-
+                        Underlying, e.g. `BTC-USD`
+
+                        Applicable to `FUTURES`/`SWAP`/`OPTION`
+                    type: string
+                - description: |-
+                    Instrument family, e.g. `BTC-USD`
+
+                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family, e.g. `BTC-USD`
+
+                        Applicable to `FUTURES`/`SWAP`/`OPTION`
+                    type: string
+                - description: |-
+                    Trading rule types
+
+                     `normal`: normal trading
+
+                     `pre_market`: pre-market trading
+
+                     ruleType can not be passed through together with instId/instFamily/uly
+                  in: query
+                  name: ruleType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Trading rule types
+
+                         `normal`: normal trading
+
+                         `pre_market`: pre-market trading
+
+                         ruleType can not be passed through together with instId/instFamily/uly
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountTradeFeeV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            tags:
+                - Trading Account

@@ -1,0 +1,138 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotGridClosePositionV5Req:
+            properties:
+                algoId:
+                    default: ""
+                    description: Algo ID
+                    type: string
+                mktClose:
+                    description: |-
+                        Market close all the positions or not
+
+                        `true`: Market close all position, `false`: Close part of position
+                    type: boolean
+                px:
+                    default: ""
+                    description: |-
+                        Close position price
+
+                        If `mktClose` is `false`, the parameter is required.
+                    type: string
+                sz:
+                    default: ""
+                    description: |-
+                        Close position amount, with unit of `contract`
+
+                        If `mktClose` is `false`, the parameter is required.
+                    type: string
+            required:
+                - algoId
+                - mktClose
+            type: object
+        CreateTradingBotGridClosePositionV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "algoClOrdId": "",
+                            "algoId": "448965992920907776",
+                            "ordId": "",
+                            "tag": ""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoClOrdId:
+                                default: ""
+                                description: Client-supplied Algo ID
+                                type: string
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                            ordId:
+                                default: ""
+                                description: |-
+                                    Close position order ID
+
+                                    If `mktClose` is `true`, the parameter will return "".
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/grid/close-position:
+        post:
+            description: "Close position when the contract grid stop type is 'keep position'.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradingBotGridClosePositionV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotGridClosePositionV5Req'
+                description: The request body for CreateTradingBotGridClosePositionV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotGridClosePositionV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Close position when the contract grid stop type is 'keep position'.
+
+            tags:
+                - Grid Trading

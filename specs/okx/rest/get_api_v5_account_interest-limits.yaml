@@ -1,0 +1,262 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountInterestLimitsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "debt": "0.85893159114900247077000000000000",
+                            "interest": "0.00000000000000000000000000000000",
+                            "loanAlloc": "",
+                            "nextDiscountTime": "1729490400000",
+                            "nextInterestTime": "1729490400000",
+                            "records": [
+                                {
+                                    "availLoan": "",
+                                    "avgRate": "",
+                                    "ccy": "BTC",
+                                    "interest": "0",
+                                    "loanQuota": "175.00000000",
+                                    "posLoan": "",
+                                    "rate": "0.0000276",
+                                    "surplusLmt": "175.00000000",
+                                    "surplusLmtDetails": {},
+                                    "usedLmt": "0.00000000",
+                                    "usedLoan": ""
+                                }
+                            ]
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            debt:
+                                default: ""
+                                description: Current debt in `USDT`
+                                type: string
+                            interest:
+                                default: ""
+                                description: |-
+                                    Current interest in `USDT`, the unit is `USDT`
+
+                                    Only applicable to `Market loans`
+                                type: string
+                            loanAlloc:
+                                default: ""
+                                description: |-
+                                    VIP Loan allocation for the current trading account
+
+                                    1. The unit is percent(%). Range is [0, 100]. Precision is 0.01%
+
+                                    2. If master account did not assign anything, then "0"
+
+                                    3. "" if shared between master and sub-account
+                                type: string
+                            nextDiscountTime:
+                                default: ""
+                                description: Next deduct time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            nextInterestTime:
+                                default: ""
+                                description: Next accrual time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            records:
+                                description: Details for currencies
+                                items:
+                                    properties:
+                                        allAcctRemainingQuota:
+                                            default: ""
+                                            description: Total remaining quota for master account and sub-accounts
+                                            type: string
+                                        availLoan:
+                                            default: ""
+                                            description: |-
+                                                Available amount for current account (Within the locked quota)
+
+                                                Only applicable to `VIP loans`
+                                            type: string
+                                        avgRate:
+                                            default: ""
+                                            description: |-
+                                                Average (hour) interest of already borrowed coin
+
+                                                only applicable to `VIP loans`
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: Loan currency, e.g. `BTC`
+                                            type: string
+                                        curAcctRemainingQuota:
+                                            default: ""
+                                            description: |-
+                                                The remaining quota for the current account.
+
+                                                Only applicable to the case in which the sub-account is assigned the loan allocation
+                                            type: string
+                                        interest:
+                                            default: ""
+                                            description: |-
+                                                Interest to be deducted
+
+                                                Only applicable to `Market loans`
+                                            type: string
+                                        loanQuota:
+                                            default: ""
+                                            description: |-
+                                                Borrow limit of master account
+
+                                                If loan allocation has been assigned, then it is the borrow limit of the current trading account
+                                            type: string
+                                        platRemainingQuota:
+                                            default: ""
+                                            description: |-
+                                                Remaining quota for the platform.
+
+                                                The format like  "600" will be returned when it is more than `curAcctRemainingQuota` or `allAcctRemainingQuota`
+                                            type: string
+                                        posLoan:
+                                            default: ""
+                                            description: "Frozen amount for current account (Within the locked quota) \n\nOnly applicable to `VIP loans`"
+                                            type: string
+                                        rate:
+                                            default: ""
+                                            description: Current daily rate
+                                            type: string
+                                        surplusLmt:
+                                            default: ""
+                                            description: |-
+                                                Available amount across all sub-accounts
+
+                                                If loan allocation has been assigned, then it is the available amount to borrow by the current trading account
+                                            type: string
+                                        surplusLmtDetails:
+                                            description: |-
+                                                The details of available amount across all sub-accounts
+
+                                                The value of `surplusLmt` is the minimum value within this array. It can help you judge the reason that `surplusLmt` is not enough.
+
+                                                Only applicable to `VIP loans`
+                                            properties:
+                                                allAcctRemainingQuota:
+                                                    default: ""
+                                                    description: Total remaining quota for master account and sub-accounts
+                                                    type: string
+                                                curAcctRemainingQuota:
+                                                    default: ""
+                                                    description: |-
+                                                        The remaining quota for the current account.
+
+                                                        Only applicable to the case in which the sub-account is assigned the loan allocation
+                                                    type: string
+                                                platRemainingQuota:
+                                                    default: ""
+                                                    description: |-
+                                                        Remaining quota for the platform.
+
+                                                        The format like  "600" will be returned when it is more than `curAcctRemainingQuota` or `allAcctRemainingQuota`
+                                                    type: string
+                                            type: object
+                                        usedLmt:
+                                            default: ""
+                                            description: |-
+                                                Borrowed amount across all sub-accounts
+
+                                                If loan allocation has been assigned, then it is the borrowed amount by the current trading account
+                                            type: string
+                                        usedLoan:
+                                            default: ""
+                                            description: |-
+                                                Borrowed amount for current account
+
+                                                Only applicable to `VIP loans`
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/interest-limits:
+        get:
+            description: "#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountInterestLimitsV5
+            parameters:
+                - description: |-
+                    Loan type
+
+                    `2`: Market loans
+
+                    Default is `2`
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: |-
+                        Loan type
+
+                        `2`: Market loans
+
+                        Default is `2`
+                    type: string
+                - description: Loan currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Loan currency, e.g. `BTC`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountInterestLimitsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            tags:
+                - Trading Account

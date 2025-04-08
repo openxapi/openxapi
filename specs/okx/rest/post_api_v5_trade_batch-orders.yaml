@@ -1,0 +1,286 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradeBatchOrdersV5Req:
+            properties:
+                attachAlgoOrds:
+                    description: TP/SL information attached when placing order
+                    items:
+                        properties:
+                            amendPxOnTriggerType:
+                                default: ""
+                                description: "Whether to enable Cost-price SL. Only applicable to SL order of split TPs. Whether `slTriggerPx` will move to `avgPx` when the first TP order is triggered\n\n`0`: disable, the default value \n\n`1`: Enable"
+                                type: string
+                            attachAlgoClOrdId:
+                                default: ""
+                                description: |-
+                                    Client-supplied Algo ID when placing order attaching TP/SL
+
+                                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+
+                                    It will be posted to `algoClOrdId` when placing TP/SL order once the general order is filled completely.
+                                type: string
+                            slOrdPx:
+                                default: ""
+                                description: |-
+                                    Stop-loss order price
+
+                                    If you fill in this parameter, you should fill in the stop-loss trigger price.
+
+                                    If the price is -1, stop-loss will be executed at the market price.
+                                type: string
+                            slTriggerPx:
+                                default: ""
+                                description: |-
+                                    Stop-loss trigger price
+
+                                    If you fill in this parameter, you should fill in the stop-loss order price.
+                                type: string
+                            slTriggerPxType:
+                                default: ""
+                                description: "Stop-loss trigger price type\n\n`last`: last price \n\n`index`: index price \n\n`mark`: mark price \n\nThe default is last"
+                                type: string
+                            sz:
+                                default: ""
+                                description: Size. Only applicable to TP order of split TPs, and it is required for TP order of split TPs
+                                type: string
+                            tpOrdKind:
+                                default: ""
+                                description: |-
+                                    TP order kind
+
+                                    `condition`
+
+                                    `limit`
+
+                                     The default is `condition`
+                                type: string
+                            tpOrdPx:
+                                default: ""
+                                description: "Take-profit order price \n\nFor condition TP order, if you fill in this parameter, you should fill in the take-profit trigger price as well. \n\nFor limit TP order, you need to fill in this parameter, take-profit trigger needn't to be filled.\n\nIf the price is -1, take-profit will be executed at the market price."
+                                type: string
+                            tpTriggerPx:
+                                default: ""
+                                description: |-
+                                    Take-profit trigger price
+
+                                    For condition TP order, if you fill in this parameter, you should fill in the take-profit order price as well.
+                                type: string
+                            tpTriggerPxType:
+                                default: ""
+                                description: "Take-profit trigger price type\n\n`last`: last price \n\n`index`: index price \n\n`mark`: mark price \n\nThe default is last"
+                                type: string
+                        type: object
+                    type: array
+                banAmend:
+                    description: "Whether to disallow the system from amending the size of the SPOT Market Order.\n\nValid options: `true` or `false`. The default value is `false`.\n\nIf `true`, system will not amend and reject the market order if user does not have sufficient funds. \n\nOnly applicable to SPOT Market Orders"
+                    type: boolean
+                ccy:
+                    default: ""
+                    description: "Margin currency \n\nApplicable to all `isolated` `MARGIN` orders and `cross` `MARGIN` orders in `Spot and futures mode`."
+                    type: string
+                clOrdId:
+                    default: ""
+                    description: "Client Order ID as assigned by the client  \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters."
+                    type: string
+                instId:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT`
+                    type: string
+                ordType:
+                    default: ""
+                    description: "Order type \n\n`market`: Market order \n\n`limit`: Limit order \n\n`post_only`: Post-only order \n\n`fok`: Fill-or-kill order \n\n`ioc`: Immediate-or-cancel order  \n\n`optimal_limit_ioc`: Market order with immediate-or-cancel order (applicable only to Expiry Futures and Perpetual Futures).\n\n`mmp`: Market Maker Protection (only applicable to Option in Portfolio Margin mode)\n\n`mmp_and_post_only`: Market Maker Protection and Post-only order(only applicable to Option in Portfolio Margin mode)"
+                    type: string
+                posSide:
+                    default: ""
+                    description: "Position side  \n\nThe default is `net` in the `net` mode \n\nIt is required in the `long/short` mode, and can only be `long` or `short`. \n\nOnly applicable to `FUTURES`/`SWAP`."
+                    type: string
+                px:
+                    default: ""
+                    description: |-
+                        Order price. Only applicable to `limit`,`post_only`,`fok`,`ioc`,`mmp`,`mmp_and_post_only` order.
+
+                        When placing an option order, one of px/pxUsd/pxVol must be filled in, and only one can be filled in
+                    type: string
+                pxUsd:
+                    default: ""
+                    description: "Place options orders in `USD` \n\nOnly applicable to options \n\nWhen placing an option order, one of px/pxUsd/pxVol must be filled in, and only one can be filled in"
+                    type: string
+                pxVol:
+                    default: ""
+                    description: "Place options orders based on implied volatility, where 1 represents 100% \n\nOnly applicable to options \n\nWhen placing an option order, one of px/pxUsd/pxVol must be filled in, and only one can be filled in"
+                    type: string
+                quickMgnType:
+                    default: ""
+                    deprecated: true
+                    description: "Quick Margin type. Only applicable to Quick Margin Mode of isolated margin \n\n`manual`, `auto_borrow`, `auto_repay`\n\nThe default value is `manual`(Deprecated)"
+                    type: string
+                reduceOnly:
+                    description: "Whether the order can only reduce position size.  \n\nValid options: `true` or `false`. The default value is `false`.\n\nOnly applicable to `MARGIN` orders, and `FUTURES`/`SWAP` orders in `net` mode \n\nOnly applicable to `Spot and futures mode` and `Multi-currency margin`"
+                    type: boolean
+                side:
+                    default: ""
+                    description: Order side `buy` `sell`
+                    type: string
+                stpId:
+                    default: ""
+                    deprecated: true
+                    description: |-
+                        Self trade prevention ID. Orders from the same master account with the same ID will be prevented from self trade.
+
+                        Numerical integers defined by user in the range of 1<= x<= 999999999 (deprecated)
+                    type: string
+                stpMode:
+                    default: ""
+                    description: "Self trade prevention mode. \n\nDefault to cancel maker \n\n`cancel_maker`,`cancel_taker`, `cancel_both`\n\nCancel both does not support FOK."
+                    type: string
+                sz:
+                    default: ""
+                    description: Quantity to buy or sell
+                    type: string
+                tag:
+                    default: ""
+                    description: "Order tag \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters."
+                    type: string
+                tdMode:
+                    default: ""
+                    description: |-
+                        Trade mode
+
+                        Margin mode `cross` `isolated`
+
+                        Non-Margin mode `cash`
+
+                        `spot_isolated` (only applicable to SPOT lead trading, `tdMode` should be `spot_isolated` for `SPOT` lead trading.)
+                    type: string
+                tgtCcy:
+                    default: ""
+                    description: "Order quantity unit setting for `sz`\n\n`base_ccy`: Base currency ,`quote_ccy`: Quote currency  \n\nOnly applicable to `SPOT` Market Orders\n\nDefault is `quote_ccy` for buy, `base_ccy` for sell"
+                    type: string
+            required:
+                - instId
+                - tdMode
+                - side
+                - ordType
+                - sz
+            type: object
+        CreateTradeBatchOrdersV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "clOrdId":"oktswap6",
+                            "ordId":"12345689",
+                            "tag":"",
+                            "ts":"1695190491421",
+                            "sCode":"0",
+                            "sMsg":""
+                        },
+                        {
+                            "clOrdId":"oktswap7",
+                            "ordId":"12344",
+                            "tag":"",
+                            "ts":"1695190491421",
+                            "sCode":"0",
+                            "sMsg":""
+                        }
+                    ],
+                    "inTime": "1695190491421339",
+                    "outTime": "1695190491423240"
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            clOrdId:
+                                default: ""
+                                description: Client Order ID as assigned by the client
+                                type: string
+                            ordId:
+                                default: ""
+                                description: Order ID
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, `0` means success.
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection or success message of event execution.
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                            ts:
+                                default: ""
+                                description: Timestamp when the order request processing is finished by our system, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/batch-orders:
+        post:
+            description: "Place orders in batches. Maximum 20 orders can be placed per request. \n\n\nRequest parameters should be passed in the form of an array. Orders will be placed in turn\n\n\n\n#### Rate Limit: 300 orders per 2 seconds \n\n#### Rate Limit of lead instruments for Copy Trading: 4 orders per 2 seconds \n\n#### Rate limit rule (except Options): User ID + Instrument ID \n\n#### Rate limit rule (Options only): User ID + Instrument Family \n\n#### Permission: Trade \n\nRate limit of this endpoint will also be affected by the rules  and .\n\n**_Unlike other endpoints, the rate limit of this endpoint is determined by the number of orders. If there is only one order in the request, it will consume the rate limit of `Place order`._**\n\n"
+            operationId: CreateTradeBatchOrdersV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradeBatchOrdersV5Req'
+                description: The request body for CreateTradeBatchOrdersV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradeBatchOrdersV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "Place orders in batches. Maximum 20 orders can be placed per request. \n\n\nRequest parameters should be passed in the form of an array. Orders will be placed in turn\n\n\n\nRate limit of this endpoint will also be affected by the rules  and .\n\n"
+            tags:
+                - Trade

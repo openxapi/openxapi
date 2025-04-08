@@ -1,0 +1,187 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateFiatCreateWithdrawalV5Req:
+            properties:
+                amt:
+                    default: ""
+                    description: Requested withdrawal amount before fees. Has to be less than or equal to 2 decimal points double
+                    type: string
+                ccy:
+                    default: ""
+                    description: Currency for withdrawal, must match currency allowed for paymentMethod
+                    type: string
+                clientId:
+                    default: ""
+                    description: "Client-supplied ID, A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters \n\n e.g. `194a6975e98246538faeb0fab0d502df`"
+                    type: string
+                paymentAcctId:
+                    default: ""
+                    description: Payment account id to withdraw to, retrieved from get withdrawal payment methods API
+                    type: string
+                paymentMethod:
+                    default: ""
+                    description: |-
+                        Payment method to use for withdrawal
+
+                        `TR_BANKS`
+
+                        `PIX`
+
+                        `SEPA`
+                    type: string
+            required:
+                - paymentAcctId
+                - ccy
+                - amt
+                - paymentMethod
+                - clientId
+            type: object
+        CreateFiatCreateWithdrawalV5Resp:
+            example: |+
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                        "cTime": "1707429385000",
+                        "uTime": "1707429385000",
+                        "ordId": "124041201450544699",
+                        "paymentMethod": "TR_BANKS",
+                        "paymentAcctId": "20",
+                        "fee": "0",
+                        "amt": "100",
+                        "ccy": "TRY",
+                        "state": "completed",
+                        "clientId": "194a6975e98246538faeb0fab0d502df"
+                    }
+                  ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: The requested amount for the transaction
+                                type: string
+                            cTime:
+                                default: ""
+                                description: The creation time of the transaction, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            ccy:
+                                default: ""
+                                description: The currency of the transaction
+                                type: string
+                            clientId:
+                                default: ""
+                                description: The client ID associated with the transaction
+                                type: string
+                            fee:
+                                default: ""
+                                description: The transaction fee
+                                type: string
+                            ordId:
+                                default: ""
+                                description: The unique order Id
+                                type: string
+                            paymentAcctId:
+                                default: ""
+                                description: The Id of the payment account used
+                                type: string
+                            paymentMethod:
+                                default: ""
+                                description: |-
+                                    Payment Method
+
+                                    `TR_BANKS`
+
+                                    `PIX`
+
+                                    `SEPA`
+                                type: string
+                            state:
+                                default: ""
+                                description: |-
+                                    The State of the transaction
+
+                                    `processing`
+
+                                    `completed`
+                                type: string
+                            uTime:
+                                default: ""
+                                description: The update time of the transaction, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/fiat/create-withdrawal:
+        post:
+            description: "Initiate a fiat withdrawal request (Authenticated endpoint, Only for API keys with \"Withdrawal\" access)\n\n\nOnly supported withdrawal of assets from funding account.\n\n#### Rate Limit: 3 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Withdraw \n\n"
+            operationId: CreateFiatCreateWithdrawalV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateFiatCreateWithdrawalV5Req'
+                description: The request body for CreateFiatCreateWithdrawalV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateFiatCreateWithdrawalV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Initiate a fiat withdrawal request (Authenticated endpoint, Only for API keys with "Withdrawal" access)
+
+
+                Only supported withdrawal of assets from funding account.
+
+            tags:
+                - Funding Account

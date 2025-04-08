@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFinanceSavingsLendingRateSummaryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                        "ccy": "BTC",
+                        "avgAmt": "10000",
+                        "avgAmtUsd": "10000000000",
+                        "avgRate": "0.03",
+                        "preRate": "0.02",
+                        "estRate": "0.01"
+                    }]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            avgAmt:
+                                default: ""
+                                description: 24H average borrowing amount
+                                type: string
+                            avgAmtUsd:
+                                default: ""
+                                description: 24H average borrowing amount in `USD` value
+                                type: string
+                            avgRate:
+                                default: ""
+                                description: 24H average lending rate
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `BTC`
+                                type: string
+                            estRate:
+                                default: ""
+                                description: Next estimate annual interest rate
+                                type: string
+                            preRate:
+                                default: ""
+                                description: Last annual interest rate
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/savings/lending-rate-summary:
+        get:
+            description: "Authentication is not required for this public endpoint.\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetFinanceSavingsLendingRateSummaryV5
+            parameters:
+                - description: Currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency, e.g. `BTC`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFinanceSavingsLendingRateSummaryV5Resp'
+                    description: Successful operation
+            summary: |+
+                Authentication is not required for this public endpoint.
+
+            tags:
+                - Simple Earn Flexible

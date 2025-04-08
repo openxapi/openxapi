@@ -1,0 +1,130 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateFinanceStaking-DefiPurchaseV5Req:
+            properties:
+                investData:
+                    description: Investment data
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Investment amount
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Investment currency, e.g. `BTC`
+                                type: string
+                        type: object
+                    type: array
+                productId:
+                    default: ""
+                    description: Product ID
+                    type: string
+                tag:
+                    default: ""
+                    description: |-
+                        Order tag
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters.
+                    type: string
+                term:
+                    default: ""
+                    description: |-
+                        Investment term
+
+                        Investment term must be specified for fixed-term product
+                    type: string
+            required:
+                - productId
+                - investData
+            type: object
+        CreateFinanceStaking-DefiPurchaseV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                      "ordId": "754147",
+                      "tag": ""
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ordId:
+                                default: ""
+                                description: Order ID
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/staking-defi/purchase:
+        post:
+            description: "#### Rate Limit: 2 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateFinanceStaking-DefiPurchaseV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateFinanceStaking-DefiPurchaseV5Req'
+                description: The request body for CreateFinanceStaking-DefiPurchaseV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateFinanceStaking-DefiPurchaseV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            tags:
+                - On Chain Earn

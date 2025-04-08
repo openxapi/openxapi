@@ -1,0 +1,119 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountMmpConfigV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "data": [
+                    {
+                      "frozenInterval": "2000",
+                      "instFamily": "ETH-USD",
+                      "mmpFrozen": true,
+                      "mmpFrozenUntil": "1000",
+                      "qtyLimit": "10",
+                      "timeInterval": "5000"
+                    }
+                  ],
+                  "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            frozenInterval:
+                                default: ""
+                                description: Frozen period (ms). If it is "0", the trade will remain frozen until manually reset and `mmpFrozenUntil` will be "".
+                                type: string
+                            instFamily:
+                                default: ""
+                                description: Instrument Family
+                                type: string
+                            mmpFrozen:
+                                description: Whether MMP is currently triggered. `true` or `false`
+                                type: boolean
+                            mmpFrozenUntil:
+                                default: ""
+                                description: If frozenInterval is configured and mmpFrozen = True, it is the time interval (in ms) when MMP is no longer triggered, otherwise "".
+                                type: string
+                            qtyLimit:
+                                default: ""
+                                description: Trade qty limit in number of contracts
+                                type: string
+                            timeInterval:
+                                default: ""
+                                description: Time window (ms). MMP interval where monitoring is done
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/mmp-config:
+        get:
+            description: "This endpoint is used to get MMP configure information\n\n\n\nOnly applicable to Option in Portfolio Margin mode, and MMP privilege is required.\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountMmpConfigV5
+            parameters:
+                - description: Instrument Family
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: Instrument Family
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountMmpConfigV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                This endpoint is used to get MMP configure information
+
+
+
+                Only applicable to Option in Portfolio Margin mode, and MMP privilege is required.
+
+            tags:
+                - Trading Account

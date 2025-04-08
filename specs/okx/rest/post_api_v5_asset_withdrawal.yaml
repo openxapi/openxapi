@@ -1,0 +1,225 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAssetWithdrawalV5Req:
+            properties:
+                amt:
+                    default: ""
+                    description: |-
+                        Withdrawal amount
+
+                        Withdrawal fee is not included in withdrawal amount. Please reserve sufficient transaction fees when withdrawing.
+
+                        You can get fee amount by .
+
+                        For `internal transfer`, transaction fee is always `0`.
+                    type: string
+                areaCode:
+                    default: ""
+                    description: |-
+                        Area code for the phone number, e.g. `86`
+
+                        If `toAddr` is a phone number, this parameter is required.
+
+                        Apply to `internal transfer`
+                    type: string
+                ccy:
+                    default: ""
+                    description: Currency, e.g. `USDT`
+                    type: string
+                chain:
+                    default: ""
+                    description: |-
+                        Chain name
+
+                        There are multiple chains under some currencies, such as `USDT` has `USDT-ERC20`, `USDT-TRC20`
+
+                        If the parameter is not filled in, the default will be the main chain.
+
+                        When you withdrawal the non-tradable asset, if the parameter is not filled in, the default will be the unique withdrawal chain.
+
+                        Apply to `on-chain withdrawal`.
+
+                        You can get supported chain name by the endpoint of .
+                    type: string
+                clientId:
+                    default: ""
+                    description: |-
+                        Client-supplied ID
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                dest:
+                    default: ""
+                    description: |-
+                        Withdrawal method
+
+                        `3`: internal transfer
+
+                        `4`: on-chain withdrawal
+                    type: string
+                rcvrInfo:
+                    description: |-
+                        Recipient information
+
+                        For the specific entity users to do on-chain withdrawal/lightning withdrawal, this information is required.
+                    properties:
+                        exchId:
+                            default: ""
+                            description: "Exchange ID\n\nYou can query supported exchanges through the endpoint of \n\nIf the exchange is not in the exchange list, fill in '0' in this field. \n\nApply to walletType = `exchange`"
+                            type: string
+                        rcvrCountry:
+                            default: ""
+                            description: |-
+                                The recipient's country, e.g. `United States`
+
+                                You must enter an English country name or a two letter country code (ISO 3166-1). Please refer to the `Country Name` and `Country Code` in the country information table below.
+                            type: string
+                        rcvrCountrySubDivision:
+                            default: ""
+                            description: State/Province of the recipient, e.g. `California`
+                            type: string
+                        rcvrFirstName:
+                            default: ""
+                            description: Receiver's first name, e.g. `Bruce`
+                            type: string
+                        rcvrLastName:
+                            default: ""
+                            description: Receiver's last name, e.g. `Wayne`
+                            type: string
+                        rcvrStreetName:
+                            default: ""
+                            description: Recipient's street address, e.g. `Clementi Avenue 1`
+                            type: string
+                        rcvrTownName:
+                            default: ""
+                            description: The town/city where the recipient is located, e.g. `San Jose`
+                            type: string
+                        walletType:
+                            default: ""
+                            description: |-
+                                Wallet Type
+
+                                `exchange`: Withdraw to exchange wallet
+
+                                `private`: Withdraw to private wallet
+
+                                For the wallet belongs to business recipient, `rcvrFirstName` may input the company name, `rcvrLastName` may input "N/A", location info may input the registered address of the company.
+                            type: string
+                    type: object
+                toAddr:
+                    default: ""
+                    description: "`toAddr` should be a trusted address/account. \n\nIf your `dest` is `4`, some crypto currency addresses are formatted as `'address:tag'`, e.g. `'ARDOR-7JF3-8F2E-QUWZ-CAN7F:123456'`\n\nIf your `dest` is `3`,`toAddr` should be a recipient address which can be email, phone or login account name (account name is only for sub-account)."
+                    type: string
+            required:
+                - ccy
+                - amt
+                - dest
+                - toAddr
+            type: object
+        CreateAssetWithdrawalV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                        "amt": "0.1",
+                        "wdId": "67485",
+                        "ccy": "BTC",
+                        "clientId": "",
+                        "chain": "BTC-Bitcoin"
+                    }]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Withdrawal amount
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            chain:
+                                default: ""
+                                description: Chain name, e.g. `USDT-ERC20`, `USDT-TRC20`
+                                type: string
+                            clientId:
+                                default: ""
+                                description: |-
+                                    Client-supplied ID
+
+                                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                                type: string
+                            wdId:
+                                default: ""
+                                description: Withdrawal ID
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/withdrawal:
+        post:
+            description: "Only supported withdrawal of assets from funding account. Common sub-account does not support withdrawal. \n\n**_The API can only make withdrawal to verified addresses/account, and verified addresses can be set by WEB/APP._**\n\n**_About tagSome token deposits require a deposit address and a tag (e.g. Memo/Payment ID), which is a string that guarantees the uniqueness of your deposit address. Follow the deposit procedure carefully, or you may risk losing your assets.For currencies with labels, if it is a withdrawal between OKX users, please use internal transfer instead of online withdrawal_**\n\n**_The following content only applies to users residing in the United Arab EmiratesDue to local laws and regulations in your country or region, a certain ratio of user assets must be stored in cold wallets. We will perform cold-to-hot wallet asset transfers from time to time. However, if assets in hot wallets are not sufficient to meet user withdrawal demands, an extra step is needed to transfer cold wallet assets to the hot wallet. This may cause delays of up to 24 hours to receive withdrawals.Learn more (https://www.okx.com/help/what-is-a-segregated-wallet-and-why-is-my-withdrawal-delayed)_**\n\n**_Users under certain entities need to provide additional information for withdrawalBahama entity users refer to https://www.okx.com/docs-v5/log_en/#2024-08-08-withdrawal-api-adjustment-for-bahama-entity-users_**\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Withdraw \n\n"
+            operationId: CreateAssetWithdrawalV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetWithdrawalV5Req'
+                description: The request body for CreateAssetWithdrawalV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetWithdrawalV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "Only supported withdrawal of assets from funding account. Common sub-account does not support withdrawal. \n\n"
+            tags:
+                - Funding Account

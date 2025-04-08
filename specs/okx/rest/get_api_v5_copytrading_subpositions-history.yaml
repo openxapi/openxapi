@@ -1,0 +1,260 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingSubpositionsHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "ccy": "USDT",
+                            "closeAvgPx": "37617.5",
+                            "closeTime": "1701188587950",
+                            "instId": "BTC-USDT-SWAP",
+                            "instType": "SWAP",
+                            "lever": "3",
+                            "margin": "37.41",
+                            "markPx": "38203.4",
+                            "mgnMode": "isolated",
+                            "openAvgPx": "37410",
+                            "openOrdId": "",
+                            "openTime": "1701184638702",
+                            "pnl": "0.6225",
+                            "pnlRatio": "0.0166399358460306",
+                            "posSide": "net",
+                            "profitSharingAmt": "0.0407967",
+                            "subPos": "3",
+                            "closeSubPos": "2",
+                            "type": "1",
+                            "subPosId": "649750700213698561",
+                            "uniqueCode": "25CD5A80241D6FE6"
+                        },
+                        {
+                            "ccy": "USDT",
+                            "closeAvgPx": "37617.5",
+                            "closeTime": "1701188587950",
+                            "instId": "BTC-USDT-SWAP",
+                            "instType": "SWAP",
+                            "lever": "3",
+                            "margin": "24.94",
+                            "markPx": "38203.4",
+                            "mgnMode": "isolated",
+                            "openAvgPx": "37410",
+                            "openOrdId": "",
+                            "openTime": "1701184635381",
+                            "pnl": "0.415",
+                            "pnlRatio": "0.0166399358460306",
+                            "posSide": "net",
+                            "profitSharingAmt": "0.0271978",
+                            "subPos": "2",
+                            "closeSubPos": "2",
+                            "type": "2",
+                            "subPosId": "649750686292803585",
+                            "uniqueCode": "25CD5A80241D6FE6"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            closeAvgPx:
+                                default: ""
+                                description: Average price of closing position
+                                type: string
+                            closeSubPos:
+                                default: ""
+                                description: Quantity of positions that is already closed
+                                type: string
+                            closeTime:
+                                default: ""
+                                description: Time of closing position
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            lever:
+                                default: ""
+                                description: Leverage
+                                type: string
+                            margin:
+                                default: ""
+                                description: Margin
+                                type: string
+                            markPx:
+                                default: ""
+                                description: Latest mark price, only applicable to contract
+                                type: string
+                            mgnMode:
+                                default: ""
+                                description: Margin mode. `cross` `isolated`
+                                type: string
+                            openAvgPx:
+                                default: ""
+                                description: Average open price
+                                type: string
+                            openOrdId:
+                                default: ""
+                                description: Order ID for opening position, only applicable to lead position
+                                type: string
+                            openTime:
+                                default: ""
+                                description: Time of opening
+                                type: string
+                            pnl:
+                                default: ""
+                                description: Profit and loss
+                                type: string
+                            pnlRatio:
+                                default: ""
+                                description: P&L ratio
+                                type: string
+                            posSide:
+                                default: ""
+                                description: "Position side\n\n`long` \n\n`short` \n\n`net`\n\n(long position has positive subPos; short position has negative subPos)"
+                                type: string
+                            profitSharingAmt:
+                                default: ""
+                                deprecated: true
+                                description: 'Profit sharing amount, only applicable to copy trading. Note: this parameter is already deprecated.'
+                                type: string
+                            subPos:
+                                default: ""
+                                description: Quantity of positions
+                                type: string
+                            subPosId:
+                                default: ""
+                                description: Lead position ID
+                                type: string
+                            type:
+                                default: ""
+                                description: |-
+                                    The type of closing position
+
+                                    `1`：Close position partially;
+
+                                    `2`：Close all
+                                type: string
+                            uniqueCode:
+                                default: ""
+                                description: Lead trader unique code
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/subpositions-history:
+        get:
+            description: "Retrieve the completed lead position of the last 3 months.\n\n\nReturns reverse chronological order with `subPosId`. \n\n#### Rate limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingSubpositionsHistoryV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SPOT`
+
+                    `SWAP`
+
+                    It returns all types by default.
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`
+
+                        It returns all types by default.
+                    type: string
+                - description: Instrument ID, e.g. BTC-USDT-SWAP
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: Instrument ID, e.g. BTC-USDT-SWAP
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `subPosId`.
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `subPosId`.
+                    type: string
+                - description: Pagination of data to return records newer than the requested `subPosId`.
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `subPosId`.
+                    type: string
+                - description: Number of results per request. Maximum is 100. Default is 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. Maximum is 100. Default is 100.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingSubpositionsHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "Retrieve the completed lead position of the last 3 months.\n\n\nReturns reverse chronological order with `subPosId`. \n\n"
+            tags:
+                - Copy Trading

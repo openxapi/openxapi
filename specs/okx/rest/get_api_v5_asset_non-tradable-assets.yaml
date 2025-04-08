@@ -1,0 +1,169 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetNonTradableAssetsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "bal": "989.84719571",
+                            "burningFeeRate": "",
+                            "canWd": true,
+                            "ccy": "CELT",
+                            "chain": "CELT-OKTC",
+                            "ctAddr": "f403fb",
+                            "fee": "2",
+                            "feeCcy": "USDT",
+                            "logoLink": "https://static.coinall.ltd/cdn/assets/imgs/221/460DA8A592400393.png",
+                            "minWd": "0.1",
+                            "name": "",
+                            "needTag": false,
+                            "wdAll": false,
+                            "wdTickSz": "8"
+                        },
+                        {
+                            "bal": "0.001",
+                            "burningFeeRate": "",
+                            "canWd": true,
+                            "ccy": "MEME",
+                            "chain": "MEME-ERC20",
+                            "ctAddr": "09b760",
+                            "fee": "5",
+                            "feeCcy": "USDT",
+                            "logoLink": "https://static.coinall.ltd/cdn/assets/imgs/207/2E664E470103C613.png",
+                            "minWd": "0.001",
+                            "name": "MEME Inu",
+                            "needTag": false,
+                            "wdAll": false,
+                            "wdTickSz": "8"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            bal:
+                                default: ""
+                                description: Withdrawable balance
+                                type: string
+                            burningFeeRate:
+                                default: ""
+                                description: |-
+                                    Burning fee rate, e.g "0.05" represents "5%".
+
+                                    Some currencies may charge combustion fees. The burning fee is deducted based on the withdrawal quantity (excluding gas fee) multiplied by the burning fee rate.
+                                type: string
+                            canWd:
+                                description: "Availability to withdraw to chain. \n\n`false`: not available  `true`: available"
+                                type: boolean
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `CELT`
+                                type: string
+                            chain:
+                                default: ""
+                                description: Chain for withdrawal
+                                type: string
+                            ctAddr:
+                                default: ""
+                                description: Last 6 digits of contract address
+                                type: string
+                            fee:
+                                default: ""
+                                description: Fixed withdrawal fee
+                                type: string
+                            feeCcy:
+                                default: ""
+                                description: Fixed withdrawal fee unit, e.g. `USDT`
+                                type: string
+                            logoLink:
+                                default: ""
+                                description: Logo link of currency
+                                type: string
+                            minWd:
+                                default: ""
+                                description: Minimum withdrawal amount of currency in a single transaction
+                                type: string
+                            name:
+                                default: ""
+                                description: Chinese name of currency. There is no related name when it is not shown.
+                                type: string
+                            needTag:
+                                description: Whether tag/memo information is required for withdrawal
+                                type: boolean
+                            wdAll:
+                                description: Whether all assets in this currency must be withdrawn at one time
+                                type: boolean
+                            wdTickSz:
+                                default: ""
+                                description: Withdrawal precision, indicating the number of digits after the decimal point
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/non-tradable-assets:
+        get:
+            description: "#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetNonTradableAssetsV5
+            parameters:
+                - description: Single currency or multiple currencies (no more than 20) separated with comma, e.g. `BTC` or `BTC,ETH`.
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Single currency or multiple currencies (no more than 20) separated with comma, e.g. `BTC` or `BTC,ETH`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetNonTradableAssetsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            tags:
+                - Funding Account

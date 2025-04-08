@@ -1,0 +1,121 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFinanceFlexible-LoanCollateralAssetsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "assets": [
+                                {
+                                    "amt": "1.7921483143067599",
+                                    "ccy": "BTC",
+                                    "notionalUsd": "158292.621793314105231"
+                                },
+                                {
+                                    "amt": "1.9400755578876945",
+                                    "ccy": "ETH",
+                                    "notionalUsd": "6325.6652712507628946"
+                                },
+                                {
+                                    "amt": "63.9795959720319628",
+                                    "ccy": "USDT",
+                                    "notionalUsd": "64.3650372635940345"
+                                }
+                            ]
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            assets:
+                                description: Collateral assets data
+                                items:
+                                    properties:
+                                        amt:
+                                            default: ""
+                                            description: Available amount
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: Currency, e.g. `BTC`
+                                            type: string
+                                        notionalUsd:
+                                            default: ""
+                                            description: Notional value in `USD`
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/flexible-loan/collateral-assets:
+        get:
+            description: "Get collateral assets in funding account.\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetFinanceFlexible-LoanCollateralAssetsV5
+            parameters:
+                - description: Collateral currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Collateral currency, e.g. `BTC`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFinanceFlexible-LoanCollateralAssetsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Get collateral assets in funding account.
+
+            tags:
+                - Flexible Loan

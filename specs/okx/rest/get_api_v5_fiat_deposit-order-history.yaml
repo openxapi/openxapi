@@ -1,0 +1,236 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFiatDepositOrderHistoryV5Resp:
+            example: |+
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                        "cTime": "1707429385000",
+                        "uTime": "1707429385000",
+                        "ordId": "024041201450544699",
+                        "paymentMethod": "TR_BANKS",
+                        "paymentAcctId": "20",
+                        "amt": "10000",
+                        "fee": "0",
+                        "ccy": "TRY",
+                        "state": "completed",
+                        "clientId": ""
+                    },
+                    {
+                        "cTime": "1707429385000",
+                        "uTime": "1707429385000",
+                        "ordId": "024041201450544690",
+                        "paymentMethod": "TR_BANKS",
+                        "paymentAcctId": "20",
+                        "amt": "50000",
+                        "fee": "0",
+                        "ccy": "TRY",
+                        "state": "completed",
+                        "clientId": ""
+                    }
+                  ]
+                }
+
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Final amount of the transaction
+                                type: string
+                            cTime:
+                                default: ""
+                                description: Creation time of the transaction, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency of the transaction
+                                type: string
+                            clientId:
+                                default: ""
+                                description: Client Id of the transaction
+                                type: string
+                            fee:
+                                default: ""
+                                description: Transaction fee
+                                type: string
+                            ordId:
+                                default: ""
+                                description: Unique Order ID
+                                type: string
+                            paymentAcctId:
+                                default: ""
+                                description: ID of the payment account used
+                                type: string
+                            paymentMethod:
+                                default: ""
+                                description: Payment Method, e.g. `TR_BANKS`
+                                type: string
+                            state:
+                                default: ""
+                                description: |-
+                                    State of the transaction
+
+                                    `completed`
+
+                                    `failed`
+
+                                    `pending`
+
+                                    `canceled`
+
+                                    `inqueue`
+                                type: string
+                            uTime:
+                                default: ""
+                                description: Update time of the transaction, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/fiat/deposit-order-history:
+        get:
+            description: "Get fiat deposit order history\n\n#### Rate Limit: 3 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetFiatDepositOrderHistoryV5
+            parameters:
+                - description: ISO-4217 3 digit currency code
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: ISO-4217 3 digit currency code
+                    type: string
+                - description: |-
+                    Payment Method
+
+                    `TR_BANKS`
+
+                    `PIX`
+
+                    `SEPA`
+                  in: query
+                  name: paymentMethod
+                  schema:
+                    default: ""
+                    description: |-
+                        Payment Method
+
+                        `TR_BANKS`
+
+                        `PIX`
+
+                        `SEPA`
+                    type: string
+                - description: |-
+                    State of the order
+
+                    `completed`
+
+                    `failed`
+
+                    `pending`
+
+                    `canceled`
+
+                    `inqueue`
+
+                    `processing`
+                  in: query
+                  name: state
+                  schema:
+                    default: ""
+                    description: |-
+                        State of the order
+
+                        `completed`
+
+                        `failed`
+
+                        `pending`
+
+                        `canceled`
+
+                        `inqueue`
+
+                        `processing`
+                    type: string
+                - description: Filter with a begin timestamp. Unix timestamp format in milliseconds (inclusive), e.g. `1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Filter with a begin timestamp. Unix timestamp format in milliseconds (inclusive), e.g. `1597026383085`
+                    type: string
+                - description: Filter with an end timestamp. Unix timestamp format in milliseconds (inclusive), e.g. `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Filter with an end timestamp. Unix timestamp format in milliseconds (inclusive), e.g. `1597026383085`
+                    type: string
+                - description: Number of results per request. Maximum and default is 100
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. Maximum and default is 100
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFiatDepositOrderHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Get fiat deposit order history
+
+            tags:
+                - Funding Account

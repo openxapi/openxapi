@@ -1,0 +1,144 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradeEasyConvertHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "fillFromSz": "0.1761712511667539",
+                            "fillToSz": "6.7342205900000000",
+                            "fromCcy": "OKB",
+                            "status": "filled",
+                            "toCcy": "ADA",
+                            "acct": "18",
+                            "uTime": "1661313307979"
+                        },
+                        {
+                            "fillFromSz": "0.1722106121112177",
+                            "fillToSz": "2.9971018300000000",
+                            "fromCcy": "OKB",
+                            "status": "filled",
+                            "toCcy": "USDC",
+                            "acct": "18",
+                            "uTime": "1661313307979"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            acct:
+                                default: ""
+                                description: "The account where the mainstream currency is located\n\n`6`: Funding account \n\n`18`: Trading account"
+                                type: string
+                            fillFromSz:
+                                default: ""
+                                description: Amount of small payment currency convert from
+                                type: string
+                            fillToSz:
+                                default: ""
+                                description: Amount of mainstream currency convert to
+                                type: string
+                            fromCcy:
+                                default: ""
+                                description: Type of small payment currency convert from
+                                type: string
+                            status:
+                                default: ""
+                                description: "Current status of easy convert \n\n`running`: Running \n\n`filled`: Filled \n\n`failed`: Failed"
+                                type: string
+                            toCcy:
+                                default: ""
+                                description: Type of mainstream currency convert to
+                                type: string
+                            uTime:
+                                default: ""
+                                description: Trade time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/easy-convert-history:
+        get:
+            description: "Get the history and status of easy convert trades in the past 7 days.\n\n#### Rate Limit: 1 request per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetTradeEasyConvertHistoryV5
+            parameters:
+                - description: Pagination of data to return records earlier than the requested time (exclude), Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested time (exclude), Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Pagination of data to return records newer than the requested time (exclude), Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested time (exclude), Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradeEasyConvertHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Get the history and status of easy convert trades in the past 7 days.
+
+            tags:
+                - Trade

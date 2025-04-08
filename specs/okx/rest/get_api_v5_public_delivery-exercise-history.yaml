@@ -1,0 +1,177 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicDeliveryExerciseHistoryV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "ts":"1597026383085",
+                            "details":[
+                                {
+                                    "type":"delivery",
+                                    "insId":"BTC-USD-190927",
+                                    "px":"0.016"
+                                }
+                            ]
+                        },
+                        {
+                            "ts":"1597026383085",
+                            "details":[
+                                {
+                                    "insId":"BTC-USD-200529-6000-C",
+                                    "type":"exercised",
+                                    "px":"0.016"
+                                },
+                                {
+                                    "insId":"BTC-USD-200529-8000-C",
+                                    "type":"exercised",
+                                    "px":"0.016"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            details:
+                                description: Delivery/exercise details
+                                items:
+                                    properties:
+                                        insId:
+                                            default: ""
+                                            description: Delivery/exercise contract ID
+                                            type: string
+                                        px:
+                                            default: ""
+                                            description: Delivery/exercise price
+                                            type: string
+                                        type:
+                                            default: ""
+                                            description: "Type  \n\n`delivery` \n\n`exercised` \n\n`expired_otm`:Out of the money"
+                                            type: string
+                                    type: object
+                                type: array
+                            ts:
+                                default: ""
+                                description: Delivery/exercise time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/delivery-exercise-history:
+        get:
+            description: "Retrieve delivery records of Futures and exercise records of Options in the last 3 months.\n\n#### Rate Limit: 40 requests per 2 seconds \n\n#### Rate limit rule: IP + (Instrument Type + uly) \n\n"
+            operationId: GetPublicDeliveryExerciseHistoryV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: |-
+                    Underlying, only applicable to `FUTURES`/`OPTION`
+
+                    Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: |-
+                        Underlying, only applicable to `FUTURES`/`OPTION`
+
+                        Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                    type: string
+                - description: |-
+                    Instrument family, only applicable to `FUTURES`/`OPTION`
+
+                    Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family, only applicable to `FUTURES`/`OPTION`
+
+                        Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `ts`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `ts`
+                    type: string
+                - description: Pagination of data to return records newer than the requested `ts`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `ts`
+                    type: string
+                - description: Number of results per request. The maximum is `100`; The default is `100`
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is `100`; The default is `100`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicDeliveryExerciseHistoryV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve delivery records of Futures and exercise records of Options in the last 3 months.
+
+            tags:
+                - Public Data

@@ -1,0 +1,160 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicFundingRateV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "formulaType": "noRate",
+                            "fundingRate": "0.0000182221218054",
+                            "fundingTime": "1743609600000",
+                            "impactValue": "",
+                            "instId": "BTC-USDT-SWAP",
+                            "instType": "SWAP",
+                            "interestRate": "",
+                            "maxFundingRate": "0.00375",
+                            "method": "current_period",
+                            "minFundingRate": "-0.00375",
+                            "nextFundingRate": "",
+                            "nextFundingTime": "1743638400000",
+                            "premium": "0.0000910113652644",
+                            "settFundingRate": "0.0000145824401745",
+                            "settState": "settled",
+                            "ts": "1743588686291"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            formulaType:
+                                default: ""
+                                description: |-
+                                    Formula type
+
+                                    `noRate`: old funding rate formula
+
+                                    `withRate`: new funding rate formula
+                                type: string
+                            fundingRate:
+                                default: ""
+                                description: Current funding rate
+                                type: string
+                            fundingTime:
+                                default: ""
+                                description: Settlement time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            impactValue:
+                                default: ""
+                                description: Depth weighted amount (in the unit of quote currency)
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. `BTC-USD-SWAP`
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type  `SWAP`
+                                type: string
+                            interestRate:
+                                default: ""
+                                description: Interest rate
+                                type: string
+                            maxFundingRate:
+                                default: ""
+                                description: The upper limit of the predicted funding rate of the next cycle
+                                type: string
+                            method:
+                                default: ""
+                                description: "Funding rate mechanism \n\n`current_period` \n\n`next_period`(no longer supported)"
+                                type: string
+                            minFundingRate:
+                                default: ""
+                                description: The lower limit of the predicted funding rate of the next cycle
+                                type: string
+                            nextFundingRate:
+                                default: ""
+                                description: "Forecasted funding rate for the next period \n\nThe nextFundingRate will be \"\" if the method is `current_period`(no longer supported)"
+                                type: string
+                            nextFundingTime:
+                                default: ""
+                                description: Forecasted funding time for the next period , Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            premium:
+                                default: ""
+                                description: Premium between the mid price of perps market and the index price
+                                type: string
+                            settFundingRate:
+                                default: ""
+                                description: "If settState = `processing`, it is the funding rate that is being used for current settlement cycle. \n\nIf settState = `settled`, it is the funding rate that is being used for previous settlement cycle"
+                                type: string
+                            settState:
+                                default: ""
+                                description: "Settlement state of funding rate \n\n`processing` \n\n`settled`"
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data return time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/funding-rate:
+        get:
+            description: "Retrieve funding rate.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP + Instrument ID \n\n"
+            operationId: GetPublicFundingRateV5
+            parameters:
+                - description: "Instrument ID, e.g. `BTC-USD-SWAP` \n\nonly applicable to `SWAP`"
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: "Instrument ID, e.g. `BTC-USD-SWAP` \n\nonly applicable to `SWAP`"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicFundingRateV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve funding rate.
+
+            tags:
+                - Public Data

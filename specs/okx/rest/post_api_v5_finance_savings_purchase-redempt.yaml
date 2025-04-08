@@ -1,0 +1,136 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateFinanceSavingsPurchaseRedemptV5Req:
+            properties:
+                amt:
+                    default: ""
+                    description: Purchase/redemption amount
+                    type: string
+                ccy:
+                    default: ""
+                    description: Currency, e.g. `BTC`
+                    type: string
+                rate:
+                    default: ""
+                    description: |-
+                        Annual purchase rate
+
+                        Only applicable to purchase saving shares
+
+                        The interest rate of the new subscription will cover the interest rate of the last subscription
+
+                        The rate value range is between 1% and 365%
+                    type: string
+                side:
+                    default: ""
+                    description: "Action type. \n\n`purchase`: purchase saving shares \n\n`redempt`: redeem saving shares"
+                    type: string
+            required:
+                - ccy
+                - amt
+                - side
+                - rate
+            type: object
+        CreateFinanceSavingsPurchaseRedemptV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "ccy":"BTC",
+                            "amt":"1",
+                            "side":"purchase",
+                            "rate": "0.01"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Purchase/Redemption amount
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            rate:
+                                default: ""
+                                description: Annual purchase rate
+                                type: string
+                            side:
+                                default: ""
+                                description: Action type
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/savings/purchase-redempt:
+        post:
+            description: "Only the assets in the funding account can be used for saving.\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateFinanceSavingsPurchaseRedemptV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateFinanceSavingsPurchaseRedemptV5Req'
+                description: The request body for CreateFinanceSavingsPurchaseRedemptV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateFinanceSavingsPurchaseRedemptV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Only the assets in the funding account can be used for saving.
+
+            tags:
+                - Simple Earn Flexible

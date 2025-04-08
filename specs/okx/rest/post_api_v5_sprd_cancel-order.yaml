@@ -1,0 +1,87 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateSprdCancelOrderV5Req:
+            properties:
+                clOrdId:
+                    default: ""
+                    description: Client Order ID as assigned by the client
+                    type: string
+                ordId:
+                    default: ""
+                    description: "Order ID \n\nEither `ordId` or `clOrdId` is required. If both are passed, `ordId` will be used."
+                    type: string
+            type: object
+        CreateSprdCancelOrderV5Resp:
+            example: ""
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/sprd/cancel-order:
+        post:
+            description: "Cancel an incomplete order.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateSprdCancelOrderV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSprdCancelOrderV5Req'
+                description: The request body for CreateSprdCancelOrderV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSprdCancelOrderV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Cancel an incomplete order.
+
+            tags:
+                - Spread Trading

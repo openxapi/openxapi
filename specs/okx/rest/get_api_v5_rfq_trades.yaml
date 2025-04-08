@@ -1,0 +1,312 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetRfqTradesV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "rfqId": "123456",
+                            "clRfqId": "",
+                            "quoteId": "0T5342O",
+                            "clQuoteId": "",
+                            "blockTdId": "439127542058958848",
+                            "tag": "123456",
+                            "isSuccessful": true,
+                            "errorCode": "",
+                            "legs": [
+                                {
+                                    "instId": "BTC-USDT",
+                                    "side": "sell",
+                                    "sz": "0.666",
+                                    "px": "100",
+                                    "tradeId": "439127542058958850",
+                                    "fee": "-0.0333",
+                                    "feeCcy": "USDT"
+                                }
+                            ],
+                            "cTime": "1650968164900",
+                            "tTraderCode": "SATS",
+                            "mTraderCode": "MIKE"
+                        },
+                        {
+                            "rfqId": "1234567",
+                            "clRfqId": "",
+                            "quoteId": "0T533T0",
+                            "clQuoteId": "",
+                            "blockTdId": "439121886014849024",
+                            "tag": "123456",
+                            "isSuccessful": true,
+                            "errorCode": "",
+                            "legs": [
+                                {
+                                    "instId": "BTC-USDT",
+                                    "side": "sell",
+                                    "sz": "0.532",
+                                    "px": "100",
+                                    "tradeId": "439121886014849026",
+                                    "fee": "-0.0266",
+                                    "feeCcy": "USDT"
+                                }
+                            ],
+                            "cTime": "1650966816550",
+                            "tTraderCode": "SATS",
+                            "mTraderCode": "MIKE"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            blockTdId:
+                                default: ""
+                                description: Block trade ID.
+                                type: string
+                            cTime:
+                                default: ""
+                                description: The time the trade was executed. Unix timestamp in milliseconds.
+                                type: string
+                            clQuoteId:
+                                default: ""
+                                description: Client-supplied Quote ID. This attribute is treated as client sensitive information. It will not be exposed to the Taker, only return empty string.
+                                type: string
+                            clRfqId:
+                                default: ""
+                                description: Client-supplied RFQ ID. This attribute is treated as client sensitive information. It will not be exposed to the Maker, only return empty string.
+                                type: string
+                            errorCode:
+                                default: ""
+                                description: "Error code for unsuccessful trades. \n\nIt is \"\" for successful trade."
+                                type: string
+                            fee:
+                                default: ""
+                                description: Fee. Negative number represents the user transaction fee charged by the platform. Positive number represents rebate.
+                                type: string
+                            feeCcy:
+                                default: ""
+                                description: Fee currency
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                type: string
+                            isSuccessful:
+                                description: Whether the trade is filled successfully
+                                type: boolean
+                            legs:
+                                description: Legs of trade
+                                items:
+                                    properties:
+                                        fee:
+                                            default: ""
+                                            description: Fee. Negative number represents the user transaction fee charged by the platform. Positive number represents rebate.
+                                            type: string
+                                        feeCcy:
+                                            default: ""
+                                            description: Fee currency
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                            type: string
+                                        px:
+                                            default: ""
+                                            description: The price the leg executed
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: The direction of the leg. Valid value can be buy or sell.
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: Size of the leg in contracts or spot.
+                                            type: string
+                                        tradeId:
+                                            default: ""
+                                            description: Last traded ID.
+                                            type: string
+                                    type: object
+                                type: array
+                            mTraderCode:
+                                default: ""
+                                description: A unique identifier of the Maker. Empty if the anonymous parameter of the Quote is set to be `true`.
+                                type: string
+                            px:
+                                default: ""
+                                description: The price the leg executed
+                                type: string
+                            quoteId:
+                                default: ""
+                                description: Quote ID.
+                                type: string
+                            rfqId:
+                                default: ""
+                                description: RFQ ID.
+                                type: string
+                            side:
+                                default: ""
+                                description: The direction of the leg. Valid value can be buy or sell.
+                                type: string
+                            sz:
+                                default: ""
+                                description: Size of the leg in contracts or spot.
+                                type: string
+                            tTraderCode:
+                                default: ""
+                                description: A unique identifier of the Taker. Empty if the anonymous parameter of the RFQ is set to be `true`.
+                                type: string
+                            tag:
+                                default: ""
+                                description: Trade tag. The block trade will have the tag of the RFQ or Quote it corresponds to.
+                                type: string
+                            tradeId:
+                                default: ""
+                                description: Last traded ID.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/trades:
+        get:
+            description: "Retrieves the executed trades that the user is a counterparty to (either as the creator or the receiver).\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetRfqTradesV5
+            parameters:
+                - description: RFQ ID .
+                  in: query
+                  name: rfqId
+                  schema:
+                    default: ""
+                    description: RFQ ID .
+                    type: string
+                - description: Client-supplied RFQ ID. If both `clRfqId` and `rfqId` are passed, `rfqId` will be treated as primary identifier
+                  in: query
+                  name: clRfqId
+                  schema:
+                    default: ""
+                    description: Client-supplied RFQ ID. If both `clRfqId` and `rfqId` are passed, `rfqId` will be treated as primary identifier
+                    type: string
+                - description: Quote ID
+                  in: query
+                  name: quoteId
+                  schema:
+                    default: ""
+                    description: Quote ID
+                    type: string
+                - description: Block trade ID
+                  in: query
+                  name: blockTdId
+                  schema:
+                    default: ""
+                    description: Block trade ID
+                    type: string
+                - description: Client-supplied Quote ID. If both `clQuoteId` and `quoteId` are passed, `quoteId` will be treated as primary identifier
+                  in: query
+                  name: clQuoteId
+                  schema:
+                    default: ""
+                    description: Client-supplied Quote ID. If both `clQuoteId` and `quoteId` are passed, `quoteId` will be treated as primary identifier
+                    type: string
+                - description: The starting rfq id the request to begin with. Pagination of data to return records newer than the requested blockTdId, not including beginId.
+                  in: query
+                  name: beginId
+                  schema:
+                    default: ""
+                    description: The starting rfq id the request to begin with. Pagination of data to return records newer than the requested blockTdId, not including beginId.
+                    type: string
+                - description: The last rfq id the request to end withPagination of data to return records earlier than the requested blockTdId, not including endId.
+                  in: query
+                  name: endId
+                  schema:
+                    default: ""
+                    description: The last rfq id the request to end withPagination of data to return records earlier than the requested blockTdId, not including endId.
+                    type: string
+                - description: Filter trade execution time with a begin timestamp (UTC timezone). Unix timestamp format in milliseconds, e.g. 1597026383085
+                  in: query
+                  name: beginTs
+                  schema:
+                    default: ""
+                    description: Filter trade execution time with a begin timestamp (UTC timezone). Unix timestamp format in milliseconds, e.g. 1597026383085
+                    type: string
+                - description: Filter trade execution time with an end timestamp (UTC timezone). Unix timestamp format in milliseconds, e.g. 1597026383085
+                  in: query
+                  name: endTs
+                  schema:
+                    default: ""
+                    description: Filter trade execution time with an end timestamp (UTC timezone). Unix timestamp format in milliseconds, e.g. 1597026383085
+                    type: string
+                - description: "Number of results per request. The maximum is 100 which is also the default value. \n\nIf the number of trades in the requested range is bigger than 100, the latest 100 trades in the range will be returned."
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: "Number of results per request. The maximum is 100 which is also the default value. \n\nIf the number of trades in the requested range is bigger than 100, the latest 100 trades in the range will be returned."
+                    type: string
+                - description: |-
+                    Whether the trade is filled successfully.
+
+                    `true`: the default value. `false`.
+                  in: query
+                  name: isSuccessful
+                  schema:
+                    description: |-
+                        Whether the trade is filled successfully.
+
+                        `true`: the default value. `false`.
+                    type: boolean
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRfqTradesV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieves the executed trades that the user is a counterparty to (either as the creator or the receiver).
+
+            tags:
+                - Block Trading

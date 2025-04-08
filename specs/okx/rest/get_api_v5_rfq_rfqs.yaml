@@ -1,0 +1,274 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetRfqRfqsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "rfqId": "123456",
+                            "clRfqId": "",
+                            "tag": "123456",
+                            "traderCode": "VITALIK",
+                            "validUntil": "1650969031817",
+                            "allowPartialExecution": false,
+                            "state": "filled",
+                            "flowType": "",
+                            "counterparties": [
+                                "SATOSHI"
+                            ],
+                            "legs": [
+                                {
+                                    "instId": "BTC-USDT",
+                                    "tdMode": "cross",
+                                    "ccy": "USDT",
+                                    "side": "buy",
+                                    "posSide": "long",
+                                    "sz": "25",
+                                    "tgtCcy": "base_ccy"
+                                }
+                            ],
+                            "cTime": "1650968131817",
+                            "uTime": "1650968164944"
+                        },
+                        {
+                            "rfqId": "1234567",
+                            "clRfqId": "",
+                            "tag": "1234567",
+                            "traderCode": "VITALIK",
+                            "validUntil": "1650967623729",
+                            "state": "filled",
+                            "flowType": "",
+                            "counterparties": [
+                                "SATOSHI"
+                            ],
+                            "legs": [
+                                {
+                                    "instId": "BTC-USDT",
+                                    "tdMode": "cross",
+                                    "ccy": "USDT",
+                                    "side": "buy",
+                                    "posSide": "long",
+                                    "sz": "1500000",
+                                    "tgtCcy": "quote_ccy"
+                                }
+                            ],
+                            "cTime": "1650966723729",
+                            "uTime": "1650966816577"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            allowPartialExecution:
+                                description: "Whether the RFQ can be partially filled provided that the shape of legs stays the same.  \n\nValid value is `true` or `false`. `false` by default."
+                                type: boolean
+                            cTime:
+                                default: ""
+                                description: The timestamp the RFQ was created. Unix timestamp format in milliseconds.
+                                type: string
+                            ccy:
+                                default: ""
+                                description: "Margin currency. \n\nOnly applicable to `cross` `MARGIN` orders in `Spot and futures mode`. The parameter will be ignored in other scenarios."
+                                type: string
+                            clRfqId:
+                                default: ""
+                                description: "Client-supplied RFQ ID. \n\nThis attribute is treated as client sensitive information. It will not be exposed to the Maker, only return empty string."
+                                type: string
+                            counterparties:
+                                description: The list of counterparties traderCode the RFQ was broadcasted to.
+                                items:
+                                    type: string
+                                type: array
+                            flowType:
+                                default: ""
+                                description: "Identify the type of the RFQ. \n\nOnly applicable to Makers, return \"\" for Takers"
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                            legs:
+                                description: Legs of RFQ
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: "Margin currency. \n\nOnly applicable to `cross` `MARGIN` orders in `Spot and futures mode`. The parameter will be ignored in other scenarios."
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. BTC-USDT-SWAP
+                                            type: string
+                                        posSide:
+                                            default: ""
+                                            description: "Position side. \n\nThe default is `net` in the net mode. If not specified, return \"\", which is equivalent to net. \n\nIt can only be `long` or `short` in the long/short mode. If not specified, return \"\", which corresponds to the direction that opens new positions for the trade (buy => long, sell => short). \n\nOnly applicable to `FUTURES`/`SWAP`."
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: The direction of the leg. Valid values can be buy or sell.
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: Size of the leg in contracts or spot.
+                                            type: string
+                                        tdMode:
+                                            default: ""
+                                            description: "Trade mode \n\nMargin mode: `cross` `isolated` \n\nNon-Margin mode: `cash`. \n\nIf not provided, tdMode will inherit default values set by the system shown below: \n\nSpot and futures mode & SPOT: `cash` \n\nBuy options in Spot and futures mode and Multi-currency Margin: `isolated` \n\nOther cases: `cross`"
+                                            type: string
+                                        tgtCcy:
+                                            default: ""
+                                            description: "Defines the unit of the “sz” attribute. \n\nOnly applicable to instType = SPOT. \n\nThe valid enumerations are base_ccy and quote_ccy. When not specified this is equal to base_ccy by default."
+                                            type: string
+                                    type: object
+                                type: array
+                            posSide:
+                                default: ""
+                                description: "Position side. \n\nThe default is `net` in the net mode. If not specified, return \"\", which is equivalent to net. \n\nIt can only be `long` or `short` in the long/short mode. If not specified, return \"\", which corresponds to the direction that opens new positions for the trade (buy => long, sell => short). \n\nOnly applicable to `FUTURES`/`SWAP`."
+                                type: string
+                            rfqId:
+                                default: ""
+                                description: RFQ ID.
+                                type: string
+                            side:
+                                default: ""
+                                description: The direction of the leg. Valid values can be buy or sell.
+                                type: string
+                            state:
+                                default: ""
+                                description: "The status of the RFQ. \n\nValid values can be `active` `canceled` `pending_fill` `filled` `expired` `failed` `traded_away`. \n\n`traded_away` only applies to Maker"
+                                type: string
+                            sz:
+                                default: ""
+                                description: Size of the leg in contracts or spot.
+                                type: string
+                            tag:
+                                default: ""
+                                description: "RFQ tag. \n\nThe block trade associated with the RFQ will have the same tag."
+                                type: string
+                            tdMode:
+                                default: ""
+                                description: "Trade mode \n\nMargin mode: `cross` `isolated` \n\nNon-Margin mode: `cash`. \n\nIf not provided, tdMode will inherit default values set by the system shown below: \n\nSpot and futures mode & SPOT: `cash` \n\nBuy options in Spot and futures mode and Multi-currency Margin: `isolated` \n\nOther cases: `cross`"
+                                type: string
+                            tgtCcy:
+                                default: ""
+                                description: "Defines the unit of the “sz” attribute. \n\nOnly applicable to instType = SPOT. \n\nThe valid enumerations are base_ccy and quote_ccy. When not specified this is equal to base_ccy by default."
+                                type: string
+                            traderCode:
+                                default: ""
+                                description: A unique identifier of taker. Empty if the anonymous parameter of the RFQ is set to be `true`.
+                                type: string
+                            uTime:
+                                default: ""
+                                description: The timestamp the RFQ was last updated. Unix timestamp format in milliseconds.
+                                type: string
+                            validUntil:
+                                default: ""
+                                description: The timestamp the RFQ expires. Unix timestamp format in milliseconds.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/rfqs:
+        get:
+            description: "Retrieves details of RFQs that the user is a counterparty to (either as the creator or the receiver of the RFQ). \n\n#### Rate Limit: 2 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetRfqRfqsV5
+            parameters:
+                - description: RFQ ID .
+                  in: query
+                  name: rfqId
+                  schema:
+                    default: ""
+                    description: RFQ ID .
+                    type: string
+                - description: Client-supplied RFQ ID. If both `clRfqId` and `rfqId` are passed, `rfqId` will be treated as primary identifier
+                  in: query
+                  name: clRfqId
+                  schema:
+                    default: ""
+                    description: Client-supplied RFQ ID. If both `clRfqId` and `rfqId` are passed, `rfqId` will be treated as primary identifier
+                    type: string
+                - description: "The status of the RFQ. \n\nValid values can be `active` `canceled` `pending_fill` `filled` `expired` `failed` `traded_away`. \n\n`traded_away` only applies to Maker"
+                  in: query
+                  name: state
+                  schema:
+                    default: ""
+                    description: "The status of the RFQ. \n\nValid values can be `active` `canceled` `pending_fill` `filled` `expired` `failed` `traded_away`. \n\n`traded_away` only applies to Maker"
+                    type: string
+                - description: Start rfq id the request to begin with. Pagination of data to return records newer than the requested rfqId, not including beginId
+                  in: query
+                  name: beginId
+                  schema:
+                    default: ""
+                    description: Start rfq id the request to begin with. Pagination of data to return records newer than the requested rfqId, not including beginId
+                    type: string
+                - description: End rfq id the request to end with. Pagination of data to return records earlier than the requested rfqId, not including endId
+                  in: query
+                  name: endId
+                  schema:
+                    default: ""
+                    description: End rfq id the request to end with. Pagination of data to return records earlier than the requested rfqId, not including endId
+                    type: string
+                - description: Number of results per request. The maximum is 100 which is also the default value.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100 which is also the default value.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRfqRfqsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "Retrieves details of RFQs that the user is a counterparty to (either as the creator or the receiver of the RFQ). \n\n"
+            tags:
+                - Block Trading

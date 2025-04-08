@@ -1,0 +1,145 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountSetLeverageV5Req:
+            properties:
+                ccy:
+                    default: ""
+                    description: |-
+                        Currency used for margin, used for the leverage setting for the currency in auto borrow.
+
+                        Only applicable to `cross` `MARGIN` of `Spot mode`/`Multi-currency margin`/`Portfolio margin`
+
+                        Required when setting the leverage for automatically borrowing coin.
+                    type: string
+                instId:
+                    default: ""
+                    description: |-
+                        Instrument ID
+
+                        Under cross mode, either `instId` or `ccy` is required; if both are passed, `instId` will be used by default.
+                    type: string
+                lever:
+                    default: ""
+                    description: Leverage
+                    type: string
+                mgnMode:
+                    default: ""
+                    description: "Margin mode\n\n`isolated` `cross` \n\nCan only be `cross` if `ccy` is passed."
+                    type: string
+                posSide:
+                    default: ""
+                    description: |-
+                        Position side
+
+                        `long` `short`
+
+                        Only required when margin mode is `isolated` in `long/short` mode for `FUTURES`/`SWAP`.
+                    type: string
+            required:
+                - lever
+                - mgnMode
+            type: object
+        CreateAccountSetLeverageV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                      "lever": "30",
+                      "mgnMode": "isolated",
+                      "instId": "BTC-USDT-SWAP",
+                      "posSide": "long"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            lever:
+                                default: ""
+                                description: Leverage
+                                type: string
+                            mgnMode:
+                                default: ""
+                                description: |-
+                                    Margin mode
+
+                                    `cross` `isolated`
+                                type: string
+                            posSide:
+                                default: ""
+                                description: Position side
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/set-leverage:
+        post:
+            description: "\n\nThere are 10 different scenarios for leverage setting: \n\n\n\n\n1. Set leverage for `MARGIN` instruments under `isolated-margin` trade mode at pairs level. \n\n\n2. Set leverage for `MARGIN` instruments under `cross-margin` trade mode and Spot mode (enabled borrow) at currency level. \n\n\n3. Set leverage for `MARGIN` instruments under `cross-margin` trade mode and Spot and futures mode account mode at pairs level. \n\n\n4. Set leverage for `MARGIN` instruments under `cross-margin` trade mode and Multi-currency margin at currency level. \n\n\n5. Set leverage for `MARGIN` instruments under `cross-margin` trade mode and Portfolio margin at currency level. \n\n\n6. Set leverage for `FUTURES` instruments under `cross-margin` trade mode at underlying level. \n\n\n7. Set leverage for `FUTURES` instruments under `isolated-margin` trade mode and buy/sell position mode at contract level. \n\n\n8. Set leverage for `FUTURES` instruments under `isolated-margin` trade mode and long/short position mode at contract and position side level. \n\n\n9. Set leverage for `SWAP` instruments under `cross-margin` trade at contract level. \n\n\n10. Set leverage for `SWAP` instruments under `isolated-margin` trade mode and buy/sell position mode at contract level. \n\n\n11. Set leverage for `SWAP` instruments under `isolated-margin` trade mode and long/short position mode at contract and position side level. \n\n\n\n\n\nNote that the request parameter `posSide` is only required when margin mode is isolated in long/short position mode for FUTURES/SWAP instruments (see scenario 8 and 11 above). \n\n\nPlease refer to the request examples on the right for each case. \n\n\n\n#### Rate limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAccountSetLeverageV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSetLeverageV5Req'
+                description: The request body for CreateAccountSetLeverageV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSetLeverageV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "\n\nThere are 10 different scenarios for leverage setting: \n\n\n\n\n1. Set leverage for `MARGIN` instruments under `isolated-margin` trade mode at pairs level. \n\n\n2. Set leverage for `MARGIN` instruments under `cross-margin` trade mode and Spot mode (enabled borrow) at currency level. \n\n\n3. Set leverage for `MARGIN` instruments under `cross-margin` trade mode and Spot and futures mode account mode at pairs level. \n\n\n4. Set leverage for `MARGIN` instruments under `cross-margin` trade mode and Multi-currency margin at currency level. \n\n\n5. Set leverage for `MARGIN` instruments under `cross-margin` trade mode and Portfolio margin at currency level. \n\n\n6. Set leverage for `FUTURES` instruments under `cross-margin` trade mode at underlying level. \n\n\n7. Set leverage for `FUTURES` instruments under `isolated-margin` trade mode and buy/sell position mode at contract level. \n\n\n8. Set leverage for `FUTURES` instruments under `isolated-margin` trade mode and long/short position mode at contract and position side level. \n\n\n9. Set leverage for `SWAP` instruments under `cross-margin` trade at contract level. \n\n\n10. Set leverage for `SWAP` instruments under `isolated-margin` trade mode and buy/sell position mode at contract level. \n\n\n11. Set leverage for `SWAP` instruments under `isolated-margin` trade mode and long/short position mode at contract and position side level. \n\n\n\n\n\nNote that the request parameter `posSide` is only required when margin mode is isolated in long/short position mode for FUTURES/SWAP instruments (see scenario 8 and 11 above). \n\n\nPlease refer to the request examples on the right for each case. \n\n\n\n"
+            tags:
+                - Trading Account

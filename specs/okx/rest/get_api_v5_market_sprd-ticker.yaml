@@ -1,0 +1,139 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetMarketSprdTickerV5Resp:
+            example: |+
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "sprdId": "BTC-USDT_BTC-USDT-SWAP",
+                            "last": "14.5",
+                            "lastSz": "0.5",
+                            "askPx": "8.5",
+                            "askSz": "12.0",
+                            "bidPx": "0.5",
+                            "bidSz": "12.0",
+                            "open24h": "4",
+                            "high24h": "14.5",
+                            "low24h": "-2.2",
+                            "vol24h": "6.67",
+                            "ts": "1715331406485"
+                        }
+                    ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            askPx:
+                                default: ""
+                                description: Best ask price
+                                type: string
+                            askSz:
+                                default: ""
+                                description: Best ask size
+                                type: string
+                            bidPx:
+                                default: ""
+                                description: Best bid price
+                                type: string
+                            bidSz:
+                                default: ""
+                                description: Best bid size
+                                type: string
+                            high24h:
+                                default: ""
+                                description: Highest price in the past 24 hours
+                                type: string
+                            last:
+                                default: ""
+                                description: Last traded price
+                                type: string
+                            lastSz:
+                                default: ""
+                                description: Last traded size
+                                type: string
+                            low24h:
+                                default: ""
+                                description: Lowest price in the past 24 hours
+                                type: string
+                            open24h:
+                                default: ""
+                                description: Open price in the past 24 hours
+                                type: string
+                            sprdId:
+                                default: ""
+                                description: spread ID
+                                type: string
+                            ts:
+                                default: ""
+                                description: Ticker data generation time, Unix timestamp format in milliseconds, e.g. 1597026383085.
+                                type: string
+                            vol24h:
+                                default: ""
+                                description: |-
+                                    24h trading volume
+
+                                     The unit is USD for inverse spreads, and the corresponding baseCcy for linear and hybrid spreads.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/market/sprd-ticker:
+        get:
+            description: "Retrieve the latest price snapshot, best bid/ask price and quantity.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketSprdTickerV5
+            parameters:
+                - description: spread ID, e.g. BTC-USDT_BTC-USDT-SWAP
+                  in: query
+                  name: sprdId
+                  required: true
+                  schema:
+                    default: ""
+                    description: spread ID, e.g. BTC-USDT_BTC-USDT-SWAP
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketSprdTickerV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the latest price snapshot, best bid/ask price and quantity.
+
+            tags:
+                - Spread Trading

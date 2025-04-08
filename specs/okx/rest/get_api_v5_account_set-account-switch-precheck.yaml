@@ -1,0 +1,419 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountSetAccountSwitchPrecheckV5Resp:
+            example: |+
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "acctLv": "3",
+                            "curAcctLv": "4",
+                            "mgnAft": {
+                                "acctAvailEq": "106002.2061970689",
+                                "details": [],
+                                "mgnRatio": "148.1652396878421"
+                            },
+                            "mgnBf": {
+                                "acctAvailEq": "77308.89735228613",
+                                "details": [],
+                                "mgnRatio": "4.460069474634038"
+                            },
+                            "posList": [
+                                {
+                                    "lever": "50",
+                                    "posId": "2005456500916518912"
+                                },
+                                {
+                                    "lever": "50",
+                                    "posId": "2005456108363218944"
+                                },
+                                {
+                                    "lever": "50",
+                                    "posId": "2005456332909477888"
+                                },
+                                {
+                                    "lever": "50",
+                                    "posId": "2005456415990251520"
+                                }
+                            ],
+                            "posTierCheck": [],
+                            "riskOffsetType": "",
+                            "sCode": "0",
+                            "unmatchedInfoCheck": []
+                        }
+                    ],
+                    "msg": ""
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            acctLv:
+                                default: ""
+                                description: |-
+                                    Account mode
+
+                                     `1`: Spot mode
+
+                                     `2`: Spot and futures mode
+
+                                     `3`: Multi-currency margin code
+
+                                     `4`: Portfolio margin mode
+
+                                     Applicable to all scenarios
+                                type: string
+                            curAcctLv:
+                                default: ""
+                                description: |-
+                                    Account mode
+
+                                     `1`: Spot mode
+
+                                     `2`: Spot and futures mode
+
+                                     `3`: Multi-currency margin code
+
+                                     `4`: Portfolio margin mode
+
+                                     Applicable to all scenarios
+                                type: string
+                            mgnAft:
+                                description: |-
+                                    The margin related information after switching account mode
+
+                                     Applicable when sCode is `0/4`, return null for other scenarios
+                                properties:
+                                    acctAvailEq:
+                                        default: ""
+                                        description: |-
+                                            Account available equity in USD
+
+                                             Applicable when acctLv is `3/4`, return "" for other scenarios
+                                        type: string
+                                    availEq:
+                                        default: ""
+                                        description: Available equity of currency
+                                        type: string
+                                    ccy:
+                                        default: ""
+                                        description: Currency
+                                        type: string
+                                    details:
+                                        description: |-
+                                            Detailed information
+
+                                             Only applicable when acctLv is `2`, return "" for other scenarios
+                                        items:
+                                            properties:
+                                                availEq:
+                                                    default: ""
+                                                    description: Available equity of currency
+                                                    type: string
+                                                ccy:
+                                                    default: ""
+                                                    description: Currency
+                                                    type: string
+                                                mgnRatio:
+                                                    default: ""
+                                                    description: Margin ratio of currency
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    mgnRatio:
+                                        default: ""
+                                        description: Margin ratio of currency
+                                        type: string
+                                type: object
+                            mgnBf:
+                                description: |-
+                                    The margin related information before switching account mode
+
+                                     Applicable when sCode is `0/4`, return null for other scenarios
+                                properties:
+                                    acctAvailEq:
+                                        default: ""
+                                        description: |-
+                                            Account available equity in USD
+
+                                             Applicable when curAcctLv is `3/4`, return "" for other scenarios
+                                        type: string
+                                    availEq:
+                                        default: ""
+                                        description: Available equity of currency
+                                        type: string
+                                    ccy:
+                                        default: ""
+                                        description: Currency
+                                        type: string
+                                    details:
+                                        description: |-
+                                            Detailed information
+
+                                             Only applicable when curAcctLv is `2`, return "" for other scenarios
+                                        items:
+                                            properties:
+                                                availEq:
+                                                    default: ""
+                                                    description: Available equity of currency
+                                                    type: string
+                                                ccy:
+                                                    default: ""
+                                                    description: Currency
+                                                    type: string
+                                                mgnRatio:
+                                                    default: ""
+                                                    description: Margin ratio of currency
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    mgnRatio:
+                                        default: ""
+                                        description: Margin ratio of currency
+                                        type: string
+                                type: object
+                            posList:
+                                description: |-
+                                    Cross margin contract position list
+
+                                     Applicable when curAcctLv is `4`, acctLv is `2/3` and user has cross margin contract positions
+
+                                     Applicable when sCode is `0/3/4`
+                                items:
+                                    properties:
+                                        lever:
+                                            default: ""
+                                            description: Leverage of cross margin contract positions after switch
+                                            type: string
+                                        posId:
+                                            default: ""
+                                            description: Position ID
+                                            type: string
+                                    type: object
+                                type: array
+                            posTierCheck:
+                                description: |-
+                                    Cross margin contract positions that don't pass the position tier check
+
+                                     Only applicable when sCode is `4`
+                                items:
+                                    properties:
+                                        instFamily:
+                                            default: ""
+                                            description: Instrument family
+                                            type: string
+                                        instType:
+                                            default: ""
+                                            description: |-
+                                                Instrument type
+
+                                                 `SWAP`
+
+                                                 `FUTURES`
+
+                                                 `OPTION`
+                                            type: string
+                                        lever:
+                                            default: ""
+                                            description: Leverage
+                                            type: string
+                                        maxSz:
+                                            default: ""
+                                            description: If acctLv is `2/3`, it refers to the maximum position size allowed at the current leverage. If acctLv is `4`, it refers to the maximum position limit for cross-margin positions under the PM mode.
+                                            type: string
+                                        pos:
+                                            default: ""
+                                            description: Quantity of position
+                                            type: string
+                                    type: object
+                                type: array
+                            riskOffsetType:
+                                default: ""
+                                deprecated: true
+                                description: |-
+                                    Risk offset type
+
+                                     `1`: Spot-derivatives (USDT) risk offset
+
+                                     `2`: Spot-derivatives (Crypto) risk offset
+
+                                     `3`: Derivatives only mode
+
+                                     `4`: Spot-derivatives (USDC) risk offset
+
+                                     Applicable when acctLv is `4`, return "" for other scenarios
+
+                                     If the user preset before, it will use the user's specified value; if not, the default value `3` will be applied(Deprecated)
+                                type: string
+                            sCode:
+                                default: ""
+                                description: |-
+                                    Check code
+
+                                     `0`: pass all checks
+
+                                     `1`: unmatched information
+
+                                     `3`: leverage setting is not finished
+
+                                     `4`: position tier or margin check is not passed
+                                type: string
+                            unmatchedInfoCheck:
+                                description: |-
+                                    Unmatched information list
+
+                                     Applicable when sCode is `1`, indicating there is unmatched information; return [] for other scenarios
+                                items:
+                                    properties:
+                                        posList:
+                                            description: |-
+                                                Unmatched position list (posId)
+
+                                                 Applicable when type is related to positions, return [] for other scenarios
+                                            items:
+                                                type: string
+                                            type: array
+                                        totalAsset:
+                                            default: ""
+                                            description: |-
+                                                Total assets
+
+                                                 Only applicable when type is `asset_validation`, return "" for other scenarios
+                                            type: string
+                                        type:
+                                            default: ""
+                                            description: |-
+                                                Unmatched information type
+
+                                                 `asset_validation`: asset validation
+
+                                                 `pending_orders`: order book pending orders
+
+                                                 `pending_algos`: pending algo orders and trading bots, such as iceberg, recurring buy and twap
+
+                                                 `isolated_margin`: isolated margin (quick margin and manual transfers)
+
+                                                 `isolated_contract`: isolated contract (manual transfers)
+
+                                                 `contract_long_short`: contract positions in hedge mode
+
+                                                 `cross_margin`: cross margin positions
+
+                                                 `cross_option_buyer`: cross options buyer
+
+                                                 `isolated_option`: isolated options (only applicable to spot mode)
+
+                                                 `growth_fund`: positions with trial funds
+
+                                                 `all_positions`: all positions
+
+                                                 `spot_lead_copy_only_simple_single`: copy trader and customize lead trader can only use spot mode or spot and futures mode
+
+                                                 `stop_spot_custom`: spot customize copy trading
+
+                                                 `stop_futures_custom`: contract customize copy trading
+
+                                                 `lead_portfolio`: lead trader can not switch to portfolio margin mode
+
+                                                 `futures_smart_sync`: you can not switch to spot mode when having smart contract sync
+
+                                                 `vip_fixed_loan`: vip loan
+
+                                                 `repay_borrowings`: borrowings
+
+                                                 `compliance_restriction`: due to compliance restrictions, margin trading services are unavailable
+
+                                                 `compliance_kyc2`: Due to compliance restrictions, margin trading services are unavailable. If you are not a resident of this region, please complete kyc2 identity verification.
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/set-account-switch-precheck:
+        get:
+            description: "Retrieve precheck information for account mode switching.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountSetAccountSwitchPrecheckV5
+            parameters:
+                - description: |-
+                    Account mode
+
+                     `1`: Spot mode
+
+                     `2`: Spot and futures mode
+
+                     `3`: Multi-currency margin code
+
+                     `4`: Portfolio margin mode
+                  in: query
+                  name: acctLv
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Account mode
+
+                         `1`: Spot mode
+
+                         `2`: Spot and futures mode
+
+                         `3`: Multi-currency margin code
+
+                         `4`: Portfolio margin mode
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountSetAccountSwitchPrecheckV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieve precheck information for account mode switching.
+
+            tags:
+                - Trading Account

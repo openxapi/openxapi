@@ -1,0 +1,267 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetWithdrawalHistoryV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                      "note": "",
+                      "chain": "ETH-Ethereum",
+                      "fee": "0.007",
+                      "feeCcy": "ETH",
+                      "ccy": "ETH",
+                      "clientId": "",
+                      "amt": "0.029809",
+                      "txId": "0x35c******b360a174d",
+                      "from": "156****359",
+                      "areaCodeFrom": "86",
+                      "to": "0xa30d1fab********7CF18C7B6C579",
+                      "areaCodeTo": "",
+                      "state": "2",
+                      "ts": "1655251200000",
+                      "nonTradableAsset": false,
+                      "wdId": "15447421"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            addrEx:
+                                description: Withdrawal address attachment (This will not be returned if the currency does not require this) e.g. TONCOIN attached tag name is comment, the return will be {'comment':'123456'}
+                                type: object
+                            amt:
+                                default: ""
+                                description: Withdrawal amount
+                                type: string
+                            areaCodeFrom:
+                                default: ""
+                                description: |-
+                                    Area code for the phone number
+
+                                    If `from` is a phone number, this parameter returns the area code for the phone number
+                                type: string
+                            areaCodeTo:
+                                default: ""
+                                description: |-
+                                    Area code for the phone number
+
+                                    If `to` is a phone number, this parameter returns the area code for the phone number
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            chain:
+                                default: ""
+                                description: Chain name, e.g. `USDT-ERC20`, `USDT-TRC20`
+                                type: string
+                            clientId:
+                                default: ""
+                                description: Client-supplied ID
+                                type: string
+                            fee:
+                                default: ""
+                                description: Withdrawal fee amount
+                                type: string
+                            feeCcy:
+                                default: ""
+                                description: Withdrawal fee currency, e.g. `USDT`
+                                type: string
+                            from:
+                                default: ""
+                                description: "Withdrawal account \n\nIt can be `email`/`phone`/`sub-account name`"
+                                type: string
+                            memo:
+                                default: ""
+                                description: Some currencies require this parameter for withdrawals. This is not returned if not required.
+                                type: string
+                            nonTradableAsset:
+                                description: |-
+                                    Whether it is a non-tradable asset or not
+
+                                    `true`: non-tradable asset, `false`: tradable asset
+                                type: boolean
+                            note:
+                                default: ""
+                                description: Withdrawal note
+                                type: string
+                            pmtId:
+                                default: ""
+                                description: Some currencies require a payment ID for withdrawals. This is not returned if not required.
+                                type: string
+                            state:
+                                default: ""
+                                description: Status of withdrawal
+                                type: string
+                            tag:
+                                default: ""
+                                description: Some currencies require a tag for withdrawals. This is not returned if not required.
+                                type: string
+                            to:
+                                default: ""
+                                description: Receiving address
+                                type: string
+                            ts:
+                                default: ""
+                                description: Time the withdrawal request was submitted, Unix timestamp format in milliseconds, e.g. `1655251200000`.
+                                type: string
+                            txId:
+                                default: ""
+                                description: |-
+                                    Hash record of the withdrawal
+
+                                    This parameter will return "" for internal transfers.
+                                type: string
+                            wdId:
+                                default: ""
+                                description: Withdrawal ID
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/withdrawal-history:
+        get:
+            description: "Retrieve the withdrawal records according to the currency, withdrawal status, and time range in reverse chronological order. The 100 most recent records are returned by default.\n\n\nWebsocket API is also available, refer to .\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetWithdrawalHistoryV5
+            parameters:
+                - description: Currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency, e.g. `BTC`
+                    type: string
+                - description: Withdrawal ID
+                  in: query
+                  name: wdId
+                  schema:
+                    default: ""
+                    description: Withdrawal ID
+                    type: string
+                - description: |-
+                    Client-supplied ID
+
+                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                  in: query
+                  name: clientId
+                  schema:
+                    default: ""
+                    description: |-
+                        Client-supplied ID
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                - description: Hash record of the deposit
+                  in: query
+                  name: txId
+                  schema:
+                    default: ""
+                    description: Hash record of the deposit
+                    type: string
+                - description: |-
+                    Withdrawal type
+
+                    `3`: Internal transfer
+
+                    `4`: On-chain withdrawal
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: |-
+                        Withdrawal type
+
+                        `3`: Internal transfer
+
+                        `4`: On-chain withdrawal
+                    type: string
+                - description: "Status of withdrawal\n\n\n\n`17`: Pending response from Travel Rule vendor\n\n`10`: Waiting transfer\n\n`0`: Waiting withdrawal\n\n`4`/`5`/`6`/`8`/`9`/`12`: Waiting manual review\n\n`7`: Approved\n\n\n\n`1`: Broadcasting your transaction to chain\n\n`15`: Pending transaction validation\n\n`16`: Due to local laws and regulations, your withdrawal may take up to 24 hours to arrive\n\n`-3`: Canceling \n\n\n\n`-2`: Canceled \n\n`-1`: Failed\n\n`2`: Success"
+                  in: query
+                  name: state
+                  schema:
+                    default: ""
+                    description: "Status of withdrawal\n\n\n\n`17`: Pending response from Travel Rule vendor\n\n`10`: Waiting transfer\n\n`0`: Waiting withdrawal\n\n`4`/`5`/`6`/`8`/`9`/`12`: Waiting manual review\n\n`7`: Approved\n\n\n\n`1`: Broadcasting your transaction to chain\n\n`15`: Pending transaction validation\n\n`16`: Due to local laws and regulations, your withdrawal may take up to 24 hours to arrive\n\n`-3`: Canceling \n\n\n\n`-2`: Canceled \n\n`-1`: Failed\n\n`2`: Success"
+                    type: string
+                - description: Pagination of data to return records earlier than the requested ts, Unix timestamp format in milliseconds, e.g. `1654041600000`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested ts, Unix timestamp format in milliseconds, e.g. `1654041600000`
+                    type: string
+                - description: Pagination of data to return records newer than the requested ts, Unix timestamp format in milliseconds, e.g. `1656633600000`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested ts, Unix timestamp format in milliseconds, e.g. `1656633600000`
+                    type: string
+                - description: Number of results per request. The maximum is `100`; The default is `100`
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is `100`; The default is `100`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetWithdrawalHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieve the withdrawal records according to the currency, withdrawal status, and time range in reverse chronological order. The 100 most recent records are returned by default.
+
+
+                Websocket API is also available, refer to .
+
+            tags:
+                - Funding Account

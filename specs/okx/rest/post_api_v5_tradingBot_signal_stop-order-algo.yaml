@@ -1,0 +1,114 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotSignalStopOrderAlgoV5Req:
+            properties:
+                algoId:
+                    default: ""
+                    description: Algo ID
+                    type: string
+            required:
+                - algoId
+            type: object
+        CreateTradingBotSignalStopOrderAlgoV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "algoId": "448965992920907776",
+                            "sCode": "0",
+                            "sMsg": "",
+                            "algoClOrdId": ""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoClOrdId:
+                                default: ""
+                                description: Client-supplied Algo ID
+                                type: string
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, `0` means success.
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection or success message of event execution.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/signal/stop-order-algo:
+        post:
+            description: "A maximum of 10 orders can be stopped per request.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradingBotSignalStopOrderAlgoV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotSignalStopOrderAlgoV5Req'
+                description: The request body for CreateTradingBotSignalStopOrderAlgoV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotSignalStopOrderAlgoV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                A maximum of 10 orders can be stopped per request.
+
+            tags:
+                - Signal Bot Trading

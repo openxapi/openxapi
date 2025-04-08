@@ -1,0 +1,135 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradeOneClickRepayCurrencyListV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "debtData": [
+                                {
+                                    "debtAmt": "29.653478",
+                                    "debtCcy": "LTC"
+                                },
+                                {
+                                    "debtAmt": "237803.6828295906051002",
+                                    "debtCcy": "USDT"
+                                }
+                            ],
+                            "debtType": "cross",
+                            "repayData": [
+                                {
+                                    "repayAmt": "0.4978335419825104",
+                                    "repayCcy": "ETH"
+                                }
+                            ]
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            debtData:
+                                description: Debt currency data list
+                                items:
+                                    properties:
+                                        debtAmt:
+                                            default: ""
+                                            description: "Debt currency amount \n\nIncluding principal and interest"
+                                            type: string
+                                        debtCcy:
+                                            default: ""
+                                            description: Debt currency
+                                            type: string
+                                    type: object
+                                type: array
+                            debtType:
+                                default: ""
+                                description: "Debt type \n\n`cross`: cross \n\n`isolated`: isolated"
+                                type: string
+                            repayData:
+                                description: Repay currency data list
+                                items:
+                                    properties:
+                                        repayAmt:
+                                            default: ""
+                                            description: Repay currency's available balance amount
+                                            type: string
+                                        repayCcy:
+                                            default: ""
+                                            description: Repay currency
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/one-click-repay-currency-list:
+        get:
+            description: "Get list of debt currency data and repay currencies. Debt currencies include both cross and isolated debts. Only applicable to `Multi-currency margin`/`Portfolio margin`.\n\n#### Rate Limit: 1 request per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetTradeOneClickRepayCurrencyListV5
+            parameters:
+                - description: "Debt type \n\n`cross`: cross \n\n`isolated`: isolated"
+                  in: query
+                  name: debtType
+                  schema:
+                    default: ""
+                    description: "Debt type \n\n`cross`: cross \n\n`isolated`: isolated"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradeOneClickRepayCurrencyListV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Get list of debt currency data and repay currencies. Debt currencies include both cross and isolated debts. Only applicable to `Multi-currency margin`/`Portfolio margin`.
+
+            tags:
+                - Trade

@@ -1,0 +1,187 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateCopytradingAmendCopySettingsV5Req:
+            properties:
+                copyAmt:
+                    default: ""
+                    description: Copy amount per order in USDT
+                    type: string
+                copyInstIdType:
+                    default: ""
+                    description: |-
+                        Copy contract type setted
+
+                        `custom`: custom by `instId` which is required；
+
+                        `copy`: Keep your contracts consistent with this trader by automatically adding or removing contracts when they do
+                    type: string
+                copyMgnMode:
+                    default: ""
+                    description: |-
+                        Copy margin mode
+
+                        `cross`: cross
+
+                        `isolated`: isolated
+
+                        `copy`: Use the same margin mode as lead trader when opening positions
+                    type: string
+                copyMode:
+                    default: ""
+                    description: "Copy mode\n\n`fixed_amount`: set the same fixed amount for each order, and `copyAmt` is required；\n\n`ratio_copy`: set amount as a multiple of the lead trader’s order value, and `copyRatio` is required \n\nThe default is `fixed_amount`"
+                    type: string
+                copyRatio:
+                    default: ""
+                    description: Copy ratio per order.
+                    type: string
+                copyTotalAmt:
+                    default: ""
+                    description: "Maximum total amount in USDT. \n\nThe maximum total amount you'll invest at any given time across all orders in this copy trade\n\nYou won’t copy new orders if you exceed this amount"
+                    type: string
+                instId:
+                    default: ""
+                    description: "Instrument ID. \n\nIf there are multiple instruments, separate them with commas."
+                    type: string
+                instType:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`
+                    type: string
+                slRatio:
+                    default: ""
+                    description: Stop loss per order. 0.1 represents 10%
+                    type: string
+                slTotalAmt:
+                    default: ""
+                    description: |-
+                        Total stop loss in USDT for trader.
+
+                        If your net loss (total profit - total loss) reaches this amount, you'll stop copying this trader
+                    type: string
+                subPosCloseType:
+                    default: ""
+                    description: |-
+                        Action type for open positions
+
+                        `market_close`: immediately close at market price
+
+                        `copy_close`：close when trader closes
+
+                        `manual_close`: close manually
+
+                        The default is `copy_close`
+                    type: string
+                tag:
+                    default: ""
+                    description: |-
+                        Order tag
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters.
+                    type: string
+                tpRatio:
+                    default: ""
+                    description: Take profit per order. 0.1 represents 10%
+                    type: string
+                uniqueCode:
+                    default: ""
+                    description: |-
+                        Lead trader unique code
+
+                        A combination of case-sensitive alphanumerics, all numbers and the length is 16 characters, e.g. 213E8C92DC61EFAC
+                    type: string
+            required:
+                - uniqueCode
+                - copyMgnMode
+                - copyInstIdType
+                - copyTotalAmt
+                - subPosCloseType
+            type: object
+        CreateCopytradingAmendCopySettingsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "result": true
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            result:
+                                description: "The result of setting \n\n`true`"
+                                type: boolean
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/amend-copy-settings:
+        post:
+            description: "You need to use this endpoint to amend copy settings\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateCopytradingAmendCopySettingsV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateCopytradingAmendCopySettingsV5Req'
+                description: The request body for CreateCopytradingAmendCopySettingsV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateCopytradingAmendCopySettingsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                You need to use this endpoint to amend copy settings
+
+            tags:
+                - Copy Trading

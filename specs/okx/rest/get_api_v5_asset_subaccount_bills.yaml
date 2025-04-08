@@ -1,0 +1,147 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetSubaccountBillsV5Resp:
+            example: "{\n    \"code\": \"0\",\n    \"msg\": \"\",\n    \"data\": [\n      {\n        \"amt\": \"1.1\",\n        \"billId\": \"89887685\",\n        \"ccy\": \"USDT\", \n        \"subAcct\": \"hahatest1\",\n        \"ts\": \"1712560959000\",\n        \"type\": \"0\"\n      }\n    ]\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Transfer amount
+                                type: string
+                            billId:
+                                default: ""
+                                description: Bill ID
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Transfer currency
+                                type: string
+                            subAcct:
+                                default: ""
+                                description: Sub-account name
+                                type: string
+                            ts:
+                                default: ""
+                                description: Bill ID creation time, Unix timestamp in millisecond format, e.g. `1597026383085`
+                                type: string
+                            type:
+                                default: ""
+                                description: Bill type
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/subaccount/bills:
+        get:
+            description: "Applies to master accounts only.\n\n#### Rate limit：6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetSubaccountBillsV5
+            parameters:
+                - description: Currency, such as BTC
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency, such as BTC
+                    type: string
+                - description: |-
+                    Transfer type
+
+                    `0`: Transfers from master account to sub-account
+
+                    `1` : Transfers from sub-account to master account.
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: |-
+                        Transfer type
+
+                        `0`: Transfers from master account to sub-account
+
+                        `1` : Transfers from sub-account to master account.
+                    type: string
+                - description: Sub-account name
+                  in: query
+                  name: subAcct
+                  schema:
+                    default: ""
+                    description: Sub-account name
+                    type: string
+                - description: Query the data prior to the requested bill ID creation time (exclude), the value should be a Unix timestamp in millisecond format. e.g. `1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Query the data prior to the requested bill ID creation time (exclude), the value should be a Unix timestamp in millisecond format. e.g. `1597026383085`
+                    type: string
+                - description: Query the data after the requested bill ID creation time (exclude), the value should be a Unix timestamp in millisecond format. e.g. `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Query the data after the requested bill ID creation time (exclude), the value should be a Unix timestamp in millisecond format. e.g. `1597026383085`
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetSubaccountBillsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Applies to master accounts only.
+
+            tags:
+                - Sub Account

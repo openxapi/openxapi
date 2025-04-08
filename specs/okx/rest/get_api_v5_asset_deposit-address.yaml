@@ -1,0 +1,162 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetDepositAddressV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "chain": "BTC-Bitcoin",
+                            "ctAddr": "",
+                            "ccy": "BTC",
+                            "to": "6",
+                            "addr": "39XNxK1Ryqgg3Bsyn6HzoqV4Xji25pNkv6",
+                            "verifiedName":"John Corner",
+                            "selected": true
+                        },
+                        {
+                            "chain": "BTC-OKC",
+                            "ctAddr": "",
+                            "ccy": "BTC",
+                            "to": "6",
+                            "addr": "0x66d0edc2e63b6b992381ee668fbcb01f20ae0428",
+                            "verifiedName":"John Corner",
+                            "selected": true
+                        },
+                        {
+                            "chain": "BTC-ERC20",
+                            "ctAddr": "5807cf",
+                            "ccy": "BTC",
+                            "to": "6",
+                            "addr": "0x66d0edc2e63b6b992381ee668fbcb01f20ae0428",
+                            "verifiedName":"John Corner",
+                            "selected": true
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            addr:
+                                default: ""
+                                description: Deposit address
+                                type: string
+                            addrEx:
+                                description: |-
+                                    Deposit address attachment (This will not be returned if the currency does not require this)
+
+                                    e.g. `TONCOIN` attached tag name is `comment`, the return will be `{'comment':'123456'}`
+                                type: object
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `BTC`
+                                type: string
+                            chain:
+                                default: ""
+                                description: Chain name, e.g. `USDT-ERC20`, `USDT-TRC20`
+                                type: string
+                            ctAddr:
+                                default: ""
+                                description: Last 6 digits of contract address
+                                type: string
+                            memo:
+                                default: ""
+                                description: Deposit memo (This will not be returned if the currency does not require a memo for deposit)
+                                type: string
+                            pmtId:
+                                default: ""
+                                description: Deposit payment ID (This will not be returned if the currency does not require a payment_id for deposit)
+                                type: string
+                            selected:
+                                description: Return `true` if the current deposit address is selected by the website page
+                                type: boolean
+                            tag:
+                                default: ""
+                                description: Deposit tag (This will not be returned if the currency does not require a tag for deposit)
+                                type: string
+                            to:
+                                default: ""
+                                description: |-
+                                    The beneficiary account
+
+                                    `6`: Funding account `18`: Trading account
+
+                                    The users under some entity (e.g. Brazil) only support deposit to trading account.
+                                type: string
+                            verifiedName:
+                                default: ""
+                                description: Verified name (for recipient)
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/deposit-address:
+        get:
+            description: "Retrieve the deposit addresses of currencies, including previously-used addresses.\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetDepositAddressV5
+            parameters:
+                - description: Currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Currency, e.g. `BTC`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetDepositAddressV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieve the deposit addresses of currencies, including previously-used addresses.
+
+            tags:
+                - Funding Account

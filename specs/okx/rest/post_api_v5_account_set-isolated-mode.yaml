@@ -1,0 +1,117 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountSetIsolatedModeV5Req:
+            properties:
+                isoMode:
+                    default: ""
+                    description: |-
+                        Isolated margin trading settings
+
+                         `auto_transfers_ccy`: New auto transfers, enabling both base and quote currency as the margin for isolated margin trading. Only applicable to `MARGIN`.
+
+                        `automatic`: Auto transfers
+                    type: string
+                type:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `MARGIN`
+
+                        `CONTRACTS`
+                    type: string
+            required:
+                - isoMode
+                - type
+            type: object
+        CreateAccountSetIsolatedModeV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "isoMode": "automatic"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            isoMode:
+                                default: ""
+                                description: |-
+                                    Isolated margin trading settings
+
+                                    `automatic`: Auto transfers
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/set-isolated-mode:
+        post:
+            description: "You can set the currency margin and futures/perpetual Isolated margin trading mode\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAccountSetIsolatedModeV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSetIsolatedModeV5Req'
+                description: The request body for CreateAccountSetIsolatedModeV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSetIsolatedModeV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                You can set the currency margin and futures/perpetual Isolated margin trading mode
+
+            tags:
+                - Trading Account

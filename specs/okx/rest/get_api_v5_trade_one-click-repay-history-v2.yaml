@@ -1,0 +1,228 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradeOneClickRepayHistoryV2V5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "debtCcy": "USDC",
+                            "fillDebtSz": "9.079631989",
+                            "ordIdInfo": [
+                                {
+                                    "cTime": "1742194485439",
+                                    "fillPx": "1",
+                                    "fillSz": "9.088651",
+                                    "instId": "USDC-USDT",
+                                    "ordId": "2338478342062235648",
+                                    "ordType": "ioc",
+                                    "px": "1.0049",
+                                    "side": "buy",
+                                    "state": "filled",
+                                    "sz": "9.0886514537313433"
+                                },
+                                {
+                                    "cTime": "1742194482326",
+                                    "fillPx": "83271.9",
+                                    "fillSz": "0.00010969",
+                                    "instId": "BTC-USDT",
+                                    "ordId": "2338478237607288832",
+                                    "ordType": "ioc",
+                                    "px": "82856.7",
+                                    "side": "sell",
+                                    "state": "filled",
+                                    "sz": "0.000109696512171"
+                                }
+                            ],
+                            "repayCcyList": [
+                                "USDC",
+                                "BTC"
+                            ],
+                            "status": "filled",
+                            "ts": "1742194481852"
+                        },
+                        {
+                            "debtCcy": "USDC",
+                            "fillDebtSz": "100",
+                            "ordIdInfo": [],
+                            "repayCcyList": [
+                                "USDC",
+                                "BTC"
+                            ],
+                            "status": "filled",
+                            "ts": "1742192217511"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            debtCcy:
+                                default: ""
+                                description: Debt currency
+                                type: string
+                            fillDebtSz:
+                                default: ""
+                                description: Amount of debt currency transacted
+                                type: string
+                            ordIdInfo:
+                                description: Order info
+                                items:
+                                    properties:
+                                        cTime:
+                                            default: ""
+                                            description: Creation time for order, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                            type: string
+                                        fillPx:
+                                            default: ""
+                                            description: |-
+                                                Last filled price.
+
+                                                If none is filled, it will return "".
+                                            type: string
+                                        fillSz:
+                                            default: ""
+                                            description: Last filled quantity
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. `BTC-USDT`
+                                            type: string
+                                        ordId:
+                                            default: ""
+                                            description: Order ID
+                                            type: string
+                                        ordType:
+                                            default: ""
+                                            description: |-
+                                                Order type
+
+                                                `ioc`: Immediate-or-cancel order
+                                            type: string
+                                        px:
+                                            default: ""
+                                            description: Price
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: |-
+                                                Side
+
+                                                `buy`
+
+                                                `sell`
+                                            type: string
+                                        state:
+                                            default: ""
+                                            description: |-
+                                                State
+
+                                                `filled`
+
+                                                `canceled`
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: Quantity to buy or sell
+                                            type: string
+                                    type: object
+                                type: array
+                            repayCcyList:
+                                description: Repay currency list, e.g. ["USDC","BTC"]
+                                items:
+                                    type: string
+                                type: array
+                            status:
+                                default: ""
+                                description: "Current status of one-click repay \n\n`running`: Running \n\n`filled`: Filled \n\n`failed`: Failed"
+                                type: string
+                            ts:
+                                default: ""
+                                description: Request time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/one-click-repay-history-v2:
+        get:
+            description: "Get the history and status of one-click repay trades in the past 7 days. Only applicable to `SPOT mode`.\n\n#### Rate Limit: 1 request per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetTradeOneClickRepayHistoryV2V5
+            parameters:
+                - description: Pagination of data to return records earlier than (included) the requested time `ts` , Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than (included) the requested time `ts` , Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Pagination of data to return records newer than (included) the requested time `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than (included) the requested time `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradeOneClickRepayHistoryV2V5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Get the history and status of one-click repay trades in the past 7 days. Only applicable to `SPOT mode`.
+
+            tags:
+                - Trade

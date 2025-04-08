@@ -1,0 +1,97 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetRubikStatOptionOpenInterestVolumeV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        [
+                            "1630368000000",
+                            "3458.1000",
+                            "78.8000"
+                        ]
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            oi:
+                                default: ""
+                                description: Total open interest , unit in `ccy` (in request parameter)
+                                type: string
+                            ts:
+                                default: ""
+                                description: Timestamp
+                                type: string
+                            vol:
+                                default: ""
+                                description: Total trading volume , unit in `ccy` (in request parameter)
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rubik/stat/option/open-interest-volume:
+        get:
+            description: "Retrieve the open interest and trading volume for options.\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetRubikStatOptionOpenInterestVolumeV5
+            parameters:
+                - description: Currency
+                  in: query
+                  name: ccy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Currency
+                    type: string
+                - description: "Period, the default is `8H`. e.g. [`8H/1D`]  \n\nEach granularity can only query 72 pieces of data at the earliest"
+                  in: query
+                  name: period
+                  schema:
+                    default: ""
+                    description: "Period, the default is `8H`. e.g. [`8H/1D`]  \n\nEach granularity can only query 72 pieces of data at the earliest"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRubikStatOptionOpenInterestVolumeV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the open interest and trading volume for options.
+
+            tags:
+                - Trading Statistics

@@ -1,0 +1,111 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetRubikStatContractsOpenInterestVolumeV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        [
+                            "1630502400000",
+                            "1713028741.6898",
+                            "39800873.554"
+                        ]
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            oi:
+                                default: ""
+                                description: Total open interest（USD）
+                                type: string
+                            ts:
+                                default: ""
+                                description: Timestamp
+                                type: string
+                            vol:
+                                default: ""
+                                description: Total trading volume（USD）
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rubik/stat/contracts/open-interest-volume:
+        get:
+            description: "Retrieve the open interest and trading volume for Expiry Futures and Perpetual Futures.\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetRubikStatContractsOpenInterestVolumeV5
+            parameters:
+                - description: Currency
+                  in: query
+                  name: ccy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Currency
+                    type: string
+                - description: Begin time, e.g. `1597026383085`
+                  in: query
+                  name: begin
+                  schema:
+                    default: ""
+                    description: Begin time, e.g. `1597026383085`
+                    type: string
+                - description: End time, e.g. `1597026383011`
+                  in: query
+                  name: end
+                  schema:
+                    default: ""
+                    description: End time, e.g. `1597026383011`
+                    type: string
+                - description: "Period, the default is `5m`, e.g. [`5m/1H/1D`]  \n\n`5m` granularity can only query data within two days at most\n\n`1H` granularity can only query data within 30 days at most \n\n`1D` granularity can only query data within 180 days at most"
+                  in: query
+                  name: period
+                  schema:
+                    default: ""
+                    description: "Period, the default is `5m`, e.g. [`5m/1H/1D`]  \n\n`5m` granularity can only query data within two days at most\n\n`1H` granularity can only query data within 30 days at most \n\n`1D` granularity can only query data within 180 days at most"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRubikStatContractsOpenInterestVolumeV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the open interest and trading volume for Expiry Futures and Perpetual Futures.
+
+            tags:
+                - Trading Statistics

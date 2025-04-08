@@ -1,0 +1,153 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountPositionTiersV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "data": [
+                    {
+                      "instFamily": "BTC-USDT",
+                      "maxSz": "10000",
+                      "posType": "",
+                      "uly": "BTC-USDT"
+                    }
+                  ],
+                  "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instFamily:
+                                default: ""
+                                description: |-
+                                    Instrument family
+
+                                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                                type: string
+                            maxSz:
+                                default: ""
+                                description: Max number of positions
+                                type: string
+                            posType:
+                                default: ""
+                                description: "Limitation of position type, only applicable to cross `OPTION` under portfolio margin mode \n\n`1`: Contracts of pending orders and open positions for all derivatives instruments. `2`: Contracts of pending orders for all derivatives instruments. `3`: Pending orders for all derivatives instruments. `4`: Contracts of pending orders and open positions for all derivatives instruments on the same side. `5`: Pending orders for one derivatives instrument. `6`: Contracts of pending orders and open positions for one derivatives instrument. `7`: Contracts of one pending order."
+                                type: string
+                            uly:
+                                default: ""
+                                description: |-
+                                    Underlying
+
+                                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/position-tiers:
+        get:
+            description: "Retrieve cross position limitation of SWAP/FUTURES/OPTION under Portfolio margin mode.\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountPositionTiersV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: |-
+                    Single underlying or multiple underlyings (no more than 3) separated with comma.
+
+                    Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: |-
+                        Single underlying or multiple underlyings (no more than 3) separated with comma.
+
+                        Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                    type: string
+                - description: |-
+                    Single instrument family or instrument families (no more than 5) separated with comma.
+
+                    Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Single instrument family or instrument families (no more than 5) separated with comma.
+
+                        Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountPositionTiersV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieve cross position limitation of SWAP/FUTURES/OPTION under Portfolio margin mode.
+
+            tags:
+                - Trading Account

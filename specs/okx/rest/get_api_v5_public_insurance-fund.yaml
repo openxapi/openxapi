@@ -1,0 +1,235 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicInsuranceFundV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "details": [
+                                {
+                                    "adlType": "",
+                                    "amt": "",
+                                    "balance": "1343.1308",
+                                    "ccy": "ETH",
+                                    "maxBal": "",
+                                    "maxBalTs": "",
+                                    "ts": "1704883083000",
+                                    "type": "regular_update"
+                                }
+                            ],
+                            "instFamily": "ETH-USD",
+                            "instType": "OPTION",
+                            "total": "1369179138.7489"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            details:
+                                description: Insurance fund data
+                                items:
+                                    properties:
+                                        adlType:
+                                            default: ""
+                                            description: "ADL related events \n\n`rate_adl_start`: ADL begins due to high insurance fund decline rate \n\n`bal_adl_start`: ADL begins due to insurance fund balance falling \n\n`pos_adl_start`：ADL begins due to the volume of liquidation orders falls to a certain level (only applicable to premarket symbols) \n\n`adl_end`: ADL ends \n\nOnly applicable when type is `adl`"
+                                            type: string
+                                        amt:
+                                            default: ""
+                                            description: "The change in the balance of insurance fund \n\nApplicable when type is `liquidation_balance_deposit`, `bankruptcy_loss` or `platform_revenue`"
+                                            type: string
+                                        balance:
+                                            default: ""
+                                            description: The balance of insurance fund
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: The currency of insurance fund
+                                            type: string
+                                        decRate:
+                                            default: ""
+                                            deprecated: true
+                                            description: "Real-time insurance fund decline rate (compare balance and maxBal) \n\nOnly applicable when type is `adl`(Deprecated)"
+                                            type: string
+                                        maxBal:
+                                            default: ""
+                                            description: "Maximum insurance fund balance in the past eight hours \n\nOnly applicable when type is `adl`"
+                                            type: string
+                                        maxBalTs:
+                                            default: ""
+                                            description: "Timestamp when insurance fund balance reached maximum in the past eight hours, Unix timestamp format in milliseconds, e.g. `1597026383085` \n\nOnly applicable when type is `adl`"
+                                            type: string
+                                        ts:
+                                            default: ""
+                                            description: The update timestamp of insurance fund. Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                            type: string
+                                        type:
+                                            default: ""
+                                            description: The type of insurance fund
+                                            type: string
+                                    type: object
+                                type: array
+                            instFamily:
+                                default: ""
+                                description: |-
+                                    Instrument family
+
+                                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            total:
+                                default: ""
+                                description: The total balance of insurance fund, in `USD`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/insurance-fund:
+        get:
+            description: "Get insurance fund balance information\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicInsuranceFundV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `MARGIN`
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `MARGIN`
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: "Type\n\n`regular_update` \n\n`liquidation_balance_deposit`\n\n`bankruptcy_loss`\n\n`platform_revenue` \n\n`adl`: ADL historical data \n\nThe default is `all type`"
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: "Type\n\n`regular_update` \n\n`liquidation_balance_deposit`\n\n`bankruptcy_loss`\n\n`platform_revenue` \n\n`adl`: ADL historical data \n\nThe default is `all type`"
+                    type: string
+                - description: |-
+                    Underlying
+
+                    Required for `FUTURES`/`SWAP`/`OPTION`
+
+                    Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: |-
+                        Underlying
+
+                        Required for `FUTURES`/`SWAP`/`OPTION`
+
+                        Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                    type: string
+                - description: |-
+                    Instrument family
+
+                    Required for `FUTURES`/`SWAP`/`OPTION`
+
+                    Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family
+
+                        Required for `FUTURES`/`SWAP`/`OPTION`
+
+                        Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                    type: string
+                - description: Currency, only applicable to `MARGIN`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency, only applicable to `MARGIN`
+                    type: string
+                - description: Pagination of data to return records newer than the requested `ts`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `ts`
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `ts`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `ts`
+                    type: string
+                - description: Number of results per request. The maximum is `100`; The default is `100`
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is `100`; The default is `100`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicInsuranceFundV5Resp'
+                    description: Successful operation
+            summary: |+
+                Get insurance fund balance information
+
+            tags:
+                - Public Data

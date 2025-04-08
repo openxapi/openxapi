@@ -1,0 +1,132 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateCopytradingCloseSubpositionV5Req:
+            properties:
+                instType:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`, the default value
+                    type: string
+                ordType:
+                    default: ""
+                    description: |+
+                        Order type
+
+                        `market`：Market order, the default value
+
+                        `limit`：Limit order
+
+                    type: string
+                px:
+                    default: ""
+                    description: "Order price. Only applicable to `limit` order and `SPOT` lead trader \n\nIf the price is 0, the pending order will be canceled. \n\nIt is modifying order if you set `px` after placing limit order."
+                    type: string
+                subPosId:
+                    default: ""
+                    description: Lead position ID
+                    type: string
+                tag:
+                    default: ""
+                    description: |-
+                        Order tag
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters.
+                    type: string
+            required:
+                - subPosId
+            type: object
+        CreateCopytradingCloseSubpositionV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "subPosId": "518560559046594560",
+                            "tag":""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            subPosId:
+                                default: ""
+                                description: Lead position ID
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/close-subposition:
+        post:
+            description: "You can only close a lead position once a time. \n\n\nIt is required to pass subPosId which can get from .\n\n#### Rate limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateCopytradingCloseSubpositionV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateCopytradingCloseSubpositionV5Req'
+                description: The request body for CreateCopytradingCloseSubpositionV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateCopytradingCloseSubpositionV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "You can only close a lead position once a time. \n\n\nIt is required to pass subPosId which can get from .\n\n"
+            tags:
+                - Copy Trading

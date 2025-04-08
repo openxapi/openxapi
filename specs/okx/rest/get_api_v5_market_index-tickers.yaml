@@ -1,0 +1,127 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetMarketIndexTickersV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "instId": "BTC-USDT",
+                            "idxPx": "43350",
+                            "high24h": "43649.7",
+                            "sodUtc0": "43444.1",
+                            "open24h": "43640.8",
+                            "low24h": "43261.9",
+                            "sodUtc8": "43328.7",
+                            "ts": "1649419644492"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            high24h:
+                                default: ""
+                                description: Highest price in the past 24 hours
+                                type: string
+                            idxPx:
+                                default: ""
+                                description: Latest index price
+                                type: string
+                            instId:
+                                default: ""
+                                description: Index
+                                type: string
+                            low24h:
+                                default: ""
+                                description: Lowest price in the past 24 hours
+                                type: string
+                            open24h:
+                                default: ""
+                                description: Open price in the past 24 hours
+                                type: string
+                            sodUtc0:
+                                default: ""
+                                description: Open price in the UTC 0
+                                type: string
+                            sodUtc8:
+                                default: ""
+                                description: Open price in the UTC 8
+                                type: string
+                            ts:
+                                default: ""
+                                description: Index price update time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/market/index-tickers:
+        get:
+            description: "Retrieve index tickers.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketIndexTickersV5
+            parameters:
+                - description: "Quote currency \n\nCurrently there is only an index with `USD/USDT/BTC/USDC` as the quote currency."
+                  in: query
+                  name: quoteCcy
+                  schema:
+                    default: ""
+                    description: "Quote currency \n\nCurrently there is only an index with `USD/USDT/BTC/USDC` as the quote currency."
+                    type: string
+                - description: |-
+                    Index, e.g. `BTC-USD`
+
+                    Either `quoteCcy` or `instId` is required.
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: |-
+                        Index, e.g. `BTC-USD`
+
+                        Either `quoteCcy` or `instId` is required.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketIndexTickersV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve index tickers.
+
+            tags:
+                - Public Data

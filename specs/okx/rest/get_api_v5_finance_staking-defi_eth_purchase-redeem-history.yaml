@@ -1,0 +1,182 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFinanceStaking-DefiEthPurchaseRedeemHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "amt": "0.62666630",
+                            "completedTime": "1683413171000",
+                            "estCompletedTime": "",
+                            "redeemingAmt": "",
+                            "requestTime": "1683413171000",
+                            "status": "success",
+                            "type": "purchase"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Purchase/Redeem amount
+                                type: string
+                            completedTime:
+                                default: ""
+                                description: Completed time of redeem settlement, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            estCompletedTime:
+                                default: ""
+                                description: Estimated completed time of redeem settlement, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            redeemingAmt:
+                                default: ""
+                                description: Redeeming amount
+                                type: string
+                            requestTime:
+                                default: ""
+                                description: Request time of make purchase/redeem, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            status:
+                                default: ""
+                                description: |-
+                                    Status
+
+                                    `pending`
+
+                                    `success`
+
+                                    `failed`
+                                type: string
+                            type:
+                                default: ""
+                                description: |-
+                                    Type
+
+                                    `purchase`
+
+                                    `redeem`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/staking-defi/eth/purchase-redeem-history:
+        get:
+            description: "#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetFinanceStaking-DefiEthPurchaseRedeemHistoryV5
+            parameters:
+                - description: |-
+                    Type
+
+                    `purchase`
+
+                    `redeem`
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: |-
+                        Type
+
+                        `purchase`
+
+                        `redeem`
+                    type: string
+                - description: |-
+                    Status
+
+                    `pending`
+
+                    `success`
+
+                    `failed`
+                  in: query
+                  name: status
+                  schema:
+                    default: ""
+                    description: |-
+                        Status
+
+                        `pending`
+
+                        `success`
+
+                        `failed`
+                    type: string
+                - description: Pagination of data to return records earlier than the `requestTime`. The value passed is the corresponding `timestamp`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the `requestTime`. The value passed is the corresponding `timestamp`
+                    type: string
+                - description: Pagination of data to return records newer than the `requestTime`. The value passed is the corresponding `timestamp`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the `requestTime`. The value passed is the corresponding `timestamp`
+                    type: string
+                - description: Number of results per request. The default is `100`. The maximum is `100`.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The default is `100`. The maximum is `100`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFinanceStaking-DefiEthPurchaseRedeemHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            tags:
+                - Eth Staking

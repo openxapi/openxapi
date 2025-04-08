@@ -1,0 +1,185 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotGridMinInvestmentV5Req:
+            properties:
+                algoOrdType:
+                    default: ""
+                    description: |-
+                        Algo order type
+
+                        `grid`: Spot grid
+
+                        `contract_grid`: Contract grid
+                    type: string
+                basePos:
+                    description: |-
+                        Whether or not open a position when the strategy activates
+
+                        Default is `false`
+
+                        Neutral contract grid should omit the parameter
+
+                        Only applicable to `contract grid`
+                    type: boolean
+                direction:
+                    default: ""
+                    description: |-
+                        Contract grid type
+
+                        `long`,`short`,`neutral`
+
+                        Only applicable to `contract grid`
+                    type: string
+                gridNum:
+                    default: ""
+                    description: Grid quantity
+                    type: string
+                instId:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                    type: string
+                investmentData:
+                    description: Invest Data
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Invest amount
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Invest currency
+                                type: string
+                        type: object
+                    type: array
+                investmentType:
+                    default: ""
+                    description: |-
+                        Investment type, only applicable to `grid`
+
+                         `quote`
+
+                        `base`
+
+                        `dual`
+                    type: string
+                lever:
+                    default: ""
+                    description: |-
+                        Leverage
+
+                        Only applicable to `contract grid`
+                    type: string
+                maxPx:
+                    default: ""
+                    description: Upper price of price range
+                    type: string
+                minPx:
+                    default: ""
+                    description: Lower price of price range
+                    type: string
+                runType:
+                    default: ""
+                    description: |-
+                        Grid type
+
+                        `1`: Arithmetic, `2`: Geometric
+                    type: string
+                triggerStrategy:
+                    default: ""
+                    description: "Trigger stragety, \n\n `instant`\n\n`price`\n\n`rsi`"
+                    type: string
+            required:
+                - instId
+                - algoOrdType
+                - maxPx
+                - minPx
+                - gridNum
+                - runType
+            type: object
+        CreateTradingBotGridMinInvestmentV5Resp:
+            example: "{\n    \"code\":\"0\",\n    \"msg\":\"\",\n    \"data\":[\n        {\n           \"minInvestmentData\": [  \n               {\n                   \"amt\":\"0.1\",\n                   \"ccy\":\"ETH\"\n               },\n               {\n                   \"amt\":\"100\",\n                   \"ccy\":\"USDT\"\n               }\n           ],\n           \"singleAmt\":\"10\"\n       }\n    ]\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            minInvestmentData:
+                                description: Minimum invest Data
+                                items:
+                                    properties:
+                                        amt:
+                                            default: ""
+                                            description: Minimum invest amount
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: Minimum Invest currency
+                                            type: string
+                                    type: object
+                                type: array
+                            singleAmt:
+                                default: ""
+                                description: |-
+                                    Single grid trading amount
+
+                                    In terms of `spot grid`, the unit is `quote currency`
+
+                                    In terms of `contract grid`, the unit is `contract`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/grid/min-investment:
+        post:
+            description: "Authentication is not required for this public endpoint.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: CreateTradingBotGridMinInvestmentV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotGridMinInvestmentV5Req'
+                description: The request body for CreateTradingBotGridMinInvestmentV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotGridMinInvestmentV5Resp'
+                    description: Successful operation
+            summary: |+
+                Authentication is not required for this public endpoint.
+
+            tags:
+                - Grid Trading

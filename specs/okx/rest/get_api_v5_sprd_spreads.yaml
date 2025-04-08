@@ -1,0 +1,223 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetSprdSpreadsV5Resp:
+            example: |+
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                            "sprdId": "ETH-USD-SWAP_ETH-USD-231229",
+                            "sprdType": "inverse",
+                            "state": "live",
+                            "baseCcy": "ETH",
+                            "szCcy": "USD",
+                            "quoteCcy": "USD",
+                            "tickSz": "0.01",
+                            "minSz": "10",
+                            "lotSz": "10",
+                            "listTime": "1686903000159",
+                            "legs": [{
+                                    "instId": "ETH-USD-SWAP",
+                                    "side": "sell"
+                                },
+                                {
+                                    "instId": "ETH-USD-231229",
+                                    "side": "buy"
+                                }
+                            ],
+                            "expTime": "1703836800000",
+                            "uTime": "1691376905595"
+                        },
+                        {
+                            "sprdId": "BTC-USDT_BTC-USDT-SWAP",
+                            "sprdType": "linear",
+                            "state": "live",
+                            "baseCcy": "BTC",
+                            "szCcy": "BTC",
+                            "quoteCcy": "USDT",
+                            "tickSz": "0.0001",
+                            "minSz": "0.001",
+                            "lotSz": "1",
+                            "listTime": "1597026383085",
+                            "expTime": "1597029999085",
+                            "uTime": "1597028888085",
+                            "legs": [{
+                                    "instId": "BTC-USDT",
+                                    "side": "sell"
+                                },
+                                {
+                                    "instId": "BTC-USDT-SWAP",
+                                    "side": "buy"
+                                }
+                            ]
+                        },
+                        {
+                            "sprdId": "BTC-USDT_BTC-USDT-230317",
+                            "sprdType": "linear",
+                            "state": "live",
+                            "baseCcy": "BTC",
+                            "szCcy": "BTC",
+                            "quoteCcy": "USDT",
+                            "tickSz": "0.0001",
+                            "minSz": "0.001",
+                            "lotSz": "1",
+                            "listTime": "1597026383085",
+                            "expTime": "1597029999085",
+                            "uTime": "1597028888085",
+                            "legs": [{
+                                    "instId": "BTC-USDT",
+                                    "side": "sell"
+                                },
+                                {
+                                    "instId": "BTC-USDT-230317",
+                                    "side": "buy"
+                                }
+                            ]
+                        }
+                    ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            baseCcy:
+                                default: ""
+                                description: Currency instrument is based in. Valid values include BTC, ETH
+                                type: string
+                            expTime:
+                                default: ""
+                                description: Expiry time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            legs:
+                                items:
+                                    properties:
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. BTC-USD-SWAP
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: The direction of the leg of the spread. Valid Values include `buy` and `sell`.
+                                            type: string
+                                    type: object
+                                type: array
+                            listTime:
+                                default: ""
+                                description: The timestamp the spread was created. Unix timestamp format in milliseconds, , e.g. `1597026383085`
+                                type: string
+                            lotSz:
+                                default: ""
+                                description: The minimum order size increment the spread can be traded in the szCcy of the spread.
+                                type: string
+                            minSz:
+                                default: ""
+                                description: Minimum order size in the szCcy of the spread.
+                                type: string
+                            quoteCcy:
+                                default: ""
+                                description: The currency the spread is priced in, e.g. USDT, USD
+                                type: string
+                            sprdId:
+                                default: ""
+                                description: spread ID
+                                type: string
+                            sprdType:
+                                default: ""
+                                description: spread Type. Valid values are `linear`, `inverse`, `hybrid`
+                                type: string
+                            state:
+                                default: ""
+                                description: Current state of the spread. Valid values include `live`, `expired`, `suspend`.
+                                type: string
+                            szCcy:
+                                default: ""
+                                description: The currency the spread order size is submitted to the underlying venue in, e.g. USD, BTC, ETH.
+                                type: string
+                            tickSz:
+                                default: ""
+                                description: Tick size, e.g. 0.0001 in the quoteCcy of the spread.
+                                type: string
+                            uTime:
+                                default: ""
+                                description: The timestamp the spread was last updated. Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/sprd/spreads:
+        get:
+            description: "Retrieve all available spreads based on the request parameters.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetSprdSpreadsV5
+            parameters:
+                - description: Currency instrument is based in, e.g. BTC, ETH
+                  in: query
+                  name: baseCcy
+                  schema:
+                    default: ""
+                    description: Currency instrument is based in, e.g. BTC, ETH
+                    type: string
+                - description: The instrument ID to be included in the spread.
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: The instrument ID to be included in the spread.
+                    type: string
+                - description: The spread ID
+                  in: query
+                  name: sprdId
+                  schema:
+                    default: ""
+                    description: The spread ID
+                    type: string
+                - description: Spreads which are available to trade, suspened or expired. Valid values include `live`, `suspend` and `expired`.
+                  in: query
+                  name: state
+                  schema:
+                    default: ""
+                    description: Spreads which are available to trade, suspened or expired. Valid values include `live`, `suspend` and `expired`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSprdSpreadsV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve all available spreads based on the request parameters.
+
+            tags:
+                - Spread Trading

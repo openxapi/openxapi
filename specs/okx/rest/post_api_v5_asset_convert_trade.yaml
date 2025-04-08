@@ -1,0 +1,207 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAssetConvertTradeV5Req:
+            properties:
+                baseCcy:
+                    default: ""
+                    description: Base currency, e.g. `BTC` in `BTC-USDT`
+                    type: string
+                clTReqId:
+                    default: ""
+                    description: |-
+                        Client Order ID as assigned by the client
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                quoteCcy:
+                    default: ""
+                    description: Quote currency, e.g. `USDT` in `BTC-USDT`
+                    type: string
+                quoteId:
+                    default: ""
+                    description: Quote ID
+                    type: string
+                side:
+                    default: ""
+                    description: |-
+                        Trade side based on `baseCcy`
+
+                        `buy` `sell`
+                    type: string
+                sz:
+                    default: ""
+                    description: |-
+                        Quote amount
+
+                        The quote amount should no more then RFQ amount
+                    type: string
+                szCcy:
+                    default: ""
+                    description: Quote currency
+                    type: string
+                tag:
+                    default: ""
+                    description: |-
+                        Order tag
+
+                        Applicable to broker user
+                    type: string
+            required:
+                - quoteId
+                - baseCcy
+                - quoteCcy
+                - side
+                - sz
+                - szCcy
+            type: object
+        CreateAssetConvertTradeV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "baseCcy": "ETH",
+                            "clTReqId": "",
+                            "fillBaseSz": "0.01023052",
+                            "fillPx": "2932.40104429",
+                            "fillQuoteSz": "30",
+                            "instId": "ETH-USDT",
+                            "quoteCcy": "USDT",
+                            "quoteId": "quoterETH-USDT16461885104612381",
+                            "side": "buy",
+                            "state": "fullyFilled",
+                            "tradeId": "trader16461885203381437",
+                            "ts": "1646188520338"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            baseCcy:
+                                default: ""
+                                description: Base currency, e.g. `BTC` in `BTC-USDT`
+                                type: string
+                            clTReqId:
+                                default: ""
+                                description: Client Order ID as assigned by the client
+                                type: string
+                            fillBaseSz:
+                                default: ""
+                                description: Filled amount for base currency
+                                type: string
+                            fillPx:
+                                default: ""
+                                description: Filled price based on quote currency
+                                type: string
+                            fillQuoteSz:
+                                default: ""
+                                description: Filled amount for quote currency
+                                type: string
+                            instId:
+                                default: ""
+                                description: Currency pair, e.g. `BTC-USDT`
+                                type: string
+                            quoteCcy:
+                                default: ""
+                                description: Quote currency, e.g. `USDT` in `BTC-USDT`
+                                type: string
+                            quoteId:
+                                default: ""
+                                description: Quote ID
+                                type: string
+                            side:
+                                default: ""
+                                description: |-
+                                    Trade side based on `baseCcy`
+
+                                    `buy`
+
+                                    `sell`
+                                type: string
+                            state:
+                                default: ""
+                                description: |-
+                                    Trade state
+
+                                    `fullyFilled`: success
+
+                                    `rejected`: failed
+                                type: string
+                            tradeId:
+                                default: ""
+                                description: Trade ID
+                                type: string
+                            ts:
+                                default: ""
+                                description: Convert trade time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/convert/trade:
+        post:
+            description: "You should make  before convert trade. \n\n**_Only assets in the trading account supported convert._**\n\n#### Rate Limit: 10 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\nFor the same side (buy/sell), there's a trading limit of 1 request per 5 seconds.\n\n"
+            operationId: CreateAssetConvertTradeV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetConvertTradeV5Req'
+                description: The request body for CreateAssetConvertTradeV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetConvertTradeV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "You should make  before convert trade. \n\nFor the same side (buy/sell), there's a trading limit of 1 request per 5 seconds.\n\n"
+            tags:
+                - Funding Account

@@ -1,0 +1,123 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountMaxWithdrawalV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                            "ccy": "BTC",
+                            "maxWd": "124",
+                            "maxWdEx": "125",
+                            "spotOffsetMaxWd": "",
+                            "spotOffsetMaxWdEx": ""
+                        },
+                        {
+                            "ccy": "ETH",
+                            "maxWd": "10",
+                            "maxWdEx": "12",
+                            "spotOffsetMaxWd": "",
+                            "spotOffsetMaxWdEx": ""
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            maxWd:
+                                default: ""
+                                description: Max withdrawal (excluding borrowed assets under `Spot mode`/`Multi-currency margin`/`Portfolio margin`)
+                                type: string
+                            maxWdEx:
+                                default: ""
+                                description: Max withdrawal (including borrowed assets under `Spot mode`/`Multi-currency margin`/`Portfolio margin`)
+                                type: string
+                            spotOffsetMaxWd:
+                                default: ""
+                                description: |-
+                                    Max withdrawal under Spot-Derivatives risk offset mode (excluding borrowed assets under `Portfolio margin`)
+
+                                    Applicable to `Portfolio margin`
+                                type: string
+                            spotOffsetMaxWdEx:
+                                default: ""
+                                description: |-
+                                    Max withdrawal under Spot-Derivatives risk offset mode (including borrowed assets under `Portfolio margin`)
+
+                                    Applicable to `Portfolio margin`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/max-withdrawal:
+        get:
+            description: "Retrieve the maximum transferable amount from trading account to funding account. If no currency is specified, the transferable amount of all owned currencies will be returned.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountMaxWithdrawalV5
+            parameters:
+                - description: Single currency or multiple currencies (no more than 20) separated with comma, e.g. `BTC` or `BTC,ETH`.
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Single currency or multiple currencies (no more than 20) separated with comma, e.g. `BTC` or `BTC,ETH`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountMaxWithdrawalV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieve the maximum transferable amount from trading account to funding account. If no currency is specified, the transferable amount of all owned currencies will be returned.
+
+            tags:
+                - Trading Account

@@ -1,0 +1,117 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicPremiumHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "instId": "BTC-USDT-SWAP",
+                            "premium": "0.0000578896878167",
+                            "ts": "1713925924000"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                type: string
+                            premium:
+                                default: ""
+                                description: Premium between the mid price of perps market and the index price
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data generation time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/premium-history:
+        get:
+            description: "It will return premium data in the past 6 months.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicPremiumHistoryV5
+            parameters:
+                - description: |-
+                    Instrument ID, e.g. `BTC-USDT-SWAP`
+
+                    Applicable to `SWAP`
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument ID, e.g. `BTC-USDT-SWAP`
+
+                        Applicable to `SWAP`
+                    type: string
+                - description: Pagination of data to return records earlier than the requested ts(not included)
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested ts(not included)
+                    type: string
+                - description: Pagination of data to return records newer than the requested ts(not included)
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested ts(not included)
+                    type: string
+                - description: Number of results per request. The maximum is `100`. The default is `100`.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is `100`. The default is `100`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicPremiumHistoryV5Resp'
+                    description: Successful operation
+            summary: |+
+                It will return premium data in the past 6 months.
+
+            tags:
+                - Public Data

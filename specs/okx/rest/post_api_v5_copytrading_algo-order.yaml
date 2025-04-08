@@ -1,0 +1,157 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateCopytradingAlgoOrderV5Req:
+            properties:
+                instType:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`, the default value
+                    type: string
+                slOrdPx:
+                    default: ""
+                    description: |-
+                        Stop-loss order price
+
+                        If the price is -1, stop-loss will be executed at the market price, the default is `-1`
+
+                        Only applicable to `SPOT` lead trader
+                    type: string
+                slTriggerPx:
+                    default: ""
+                    description: Stop-loss trigger price. Stop-loss order price will be the market price after triggering. The stop loss order will be deleted if it is 0
+                    type: string
+                slTriggerPxType:
+                    default: ""
+                    description: "Stop-loss trigger price type\n\n`last`: last price \n\n`index`: index price \n\n`mark`: mark price \n\nDefault is last"
+                    type: string
+                subPosId:
+                    default: ""
+                    description: Lead position ID
+                    type: string
+                tag:
+                    default: ""
+                    description: |-
+                        Order tag
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters.
+                    type: string
+                tpOrdPx:
+                    default: ""
+                    description: |-
+                        Take-profit order price
+
+                        If the price is -1, take-profit will be executed at the market price, the default is `-1`
+
+                        Only applicable to `SPOT` lead trader
+                    type: string
+                tpTriggerPx:
+                    default: ""
+                    description: |-
+                        Take-profit trigger price. Take-profit order price will be the market price after triggering. At least one of tpTriggerPx and slTriggerPx must be filled
+
+                        The take profit order will be deleted if it is 0
+                    type: string
+                tpTriggerPxType:
+                    default: ""
+                    description: "Take-profit trigger price type \n\n\n\n`last`: last price\n\n`index`: index price\n\n`mark`: mark price \n\nDefault is `last`"
+                    type: string
+            required:
+                - subPosId
+            type: object
+        CreateCopytradingAlgoOrderV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "subPosId": "518560559046594560",
+                            "tag":""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            subPosId:
+                                default: ""
+                                description: Lead position ID
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/algo-order:
+        post:
+            description: "Set TP/SL for the current lead position that are not closed.\n\n#### Rate limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateCopytradingAlgoOrderV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateCopytradingAlgoOrderV5Req'
+                description: The request body for CreateCopytradingAlgoOrderV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateCopytradingAlgoOrderV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Set TP/SL for the current lead position that are not closed.
+
+            tags:
+                - Copy Trading

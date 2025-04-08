@@ -1,0 +1,130 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateRfqCancelBatchQuotesV5Req:
+            properties:
+                clQuoteIds:
+                    description: Client-supplied Quote IDs. Either `quoteIds` or `clQuoteIds` is required.If both attributes are sent, `quoteIds` will be used as primary identifier.
+                    items:
+                        type: string
+                    type: array
+                quoteIds:
+                    description: Quote IDs .
+                    items:
+                        type: string
+                    type: array
+            type: object
+        CreateRfqCancelBatchQuotesV5Resp:
+            example: |
+                {
+                    "code":"1",
+                    "msg":"Operation failed.",
+                    "data":[
+                        {
+                            "quoteId":"1150",
+                            "clQuoteId":"q1",
+                            "sCode":"70001",
+                            "sMsg":"Quote does not exist."
+                        },
+                        {
+                            "quoteId":"1151",
+                            "clQuoteId":"q2",
+                            "sCode":"70001",
+                            "sMsg":"Quote does not exist."
+                        },
+                        {
+                            "quoteId":"1151",
+                            "clQuoteId":"q3",
+                            "sCode":"70001",
+                            "sMsg":"Quote does not exist."
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            clQuoteId:
+                                default: ""
+                                description: Client-supplied Quote ID.
+                                type: string
+                            quoteId:
+                                default: ""
+                                description: Quote ID
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, `0` means success.
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection message if the request is unsuccessful.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/cancel-batch-quotes:
+        post:
+            description: "Cancel one or multiple active Quote(s) in a single batch. Maximum 100 quote orders can be canceled per request.\n\n#### Rate Limit: 2 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateRfqCancelBatchQuotesV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateRfqCancelBatchQuotesV5Req'
+                description: The request body for CreateRfqCancelBatchQuotesV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateRfqCancelBatchQuotesV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Cancel one or multiple active Quote(s) in a single batch. Maximum 100 quote orders can be canceled per request.
+
+            tags:
+                - Block Trading

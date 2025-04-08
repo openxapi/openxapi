@@ -1,0 +1,246 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFinanceStaking-DefiOrdersHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                       {
+                            "ordId": "1579252",
+                            "ccy": "DOT",
+                            "productId": "101",
+                            "state": "3",
+                            "protocol": "Polkadot",
+                            "protocolType": "defi",
+                            "term": "0",
+                            "apy": "0.1704",
+                            "investData": [
+                                {
+                                    "ccy": "DOT",
+                                    "amt": "2"
+                                }
+                            ],
+                            "earningData": [
+                                {
+                                    "ccy": "DOT",
+                                    "earningType": "0",
+                                    "realizedEarnings": "0"
+                                }
+                            ],
+                            "purchasedTime": "1712908001000",
+                            "redeemedTime": "1712914294000",
+                            "tag": ""
+                       }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            apy:
+                                default: ""
+                                description: |-
+                                    Estimated APY
+
+                                    If the estimated APY is 7% , this field is `0.07`
+
+                                    Retain to 4 decimal places (truncated)
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `BTC`
+                                type: string
+                            earningData:
+                                description: Earning data
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: Earning currency, e.g. `BTC`
+                                            type: string
+                                        earningType:
+                                            default: ""
+                                            description: |-
+                                                Earning type
+
+                                                `0`: Estimated earning
+
+                                                `1`: Cumulative earning
+                                            type: string
+                                        realizedEarnings:
+                                            default: ""
+                                            description: |-
+                                                Cumulative earning of redeemed orders
+
+                                                This field is just valid when the order is in redemption state
+                                            type: string
+                                    type: object
+                                type: array
+                            investData:
+                                description: Investment data
+                                items:
+                                    properties:
+                                        amt:
+                                            default: ""
+                                            description: Invested amount
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: Investment currency, e.g. `BTC`
+                                            type: string
+                                    type: object
+                                type: array
+                            ordId:
+                                default: ""
+                                description: Order ID
+                                type: string
+                            productId:
+                                default: ""
+                                description: Product ID
+                                type: string
+                            protocol:
+                                default: ""
+                                description: Protocol
+                                type: string
+                            protocolType:
+                                default: ""
+                                description: |-
+                                    Protocol type
+
+                                    `defi`: on-chain earn
+                                type: string
+                            purchasedTime:
+                                default: ""
+                                description: Order purchased time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            redeemedTime:
+                                default: ""
+                                description: Order redeemed time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            state:
+                                default: ""
+                                description: |-
+                                    Order state
+
+                                    `3`: Completed (including canceled and redeemed)
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                            term:
+                                default: ""
+                                description: |-
+                                    Protocol term
+
+                                    It will return the days of fixed term and will return `0` for flexible product
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/staking-defi/orders-history:
+        get:
+            description: "#### Rate Limit: 3 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetFinanceStaking-DefiOrdersHistoryV5
+            parameters:
+                - description: Product ID
+                  in: query
+                  name: productId
+                  schema:
+                    default: ""
+                    description: Product ID
+                    type: string
+                - description: |-
+                    Protocol type
+
+                    `defi`: on-chain earn
+                  in: query
+                  name: protocolType
+                  schema:
+                    default: ""
+                    description: |-
+                        Protocol type
+
+                        `defi`: on-chain earn
+                    type: string
+                - description: Investment currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Investment currency, e.g. `BTC`
+                    type: string
+                - description: Pagination of data to return records earlier than the requested ID. The value passed is the corresponding `ordId`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested ID. The value passed is the corresponding `ordId`
+                    type: string
+                - description: Pagination of data to return records newer than the requested ID. The value passed is the corresponding `ordId`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested ID. The value passed is the corresponding `ordId`
+                    type: string
+                - description: Number of results per request. The default is `100`. The maximum is `100`.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The default is `100`. The maximum is `100`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFinanceStaking-DefiOrdersHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            tags:
+                - On Chain Earn

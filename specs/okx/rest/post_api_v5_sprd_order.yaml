@@ -1,0 +1,113 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateSprdOrderV5Req:
+            properties:
+                clOrdId:
+                    default: ""
+                    description: "Client Order ID as assigned by the client \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters."
+                    type: string
+                ordType:
+                    default: ""
+                    description: "Order type\n\n`market`: Market order \n\n`limit`: Limit order \n\n`post_only`: Post-only order\n\n`ioc`: Immediate-or-cancel order"
+                    type: string
+                px:
+                    default: ""
+                    description: Order price. Only applicable to `limit`, `post_only`, `ioc`
+                    type: string
+                side:
+                    default: ""
+                    description: Order side, `buy` `sell`
+                    type: string
+                sprdId:
+                    default: ""
+                    description: spread ID, e.g. BTC-USDT_BTC-USD-SWAP
+                    type: string
+                sz:
+                    default: ""
+                    description: Quantity to buy or sell. The unit is USD for inverse spreads, and the corresponding baseCcy for linear and hybrid spreads.
+                    type: string
+                tag:
+                    default: ""
+                    description: "Order tag \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters."
+                    type: string
+            required:
+                - sprdId
+                - side
+                - ordType
+                - sz
+                - px
+            type: object
+        CreateSprdOrderV5Resp:
+            example: ""
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/sprd/order:
+        post:
+            description: "Place a new order\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateSprdOrderV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSprdOrderV5Req'
+                description: The request body for CreateSprdOrderV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSprdOrderV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Place a new order
+
+            tags:
+                - Spread Trading

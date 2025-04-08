@@ -1,0 +1,122 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateCopytradingSetInstrumentsV5Req:
+            properties:
+                instId:
+                    default: ""
+                    description: Instrument ID, e.g. BTC-USDT-SWAP. If there are multiple instruments, separate them with commas.
+                    type: string
+                instType:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`, the default value
+                    type: string
+            required:
+                - instId
+            type: object
+        CreateCopytradingSetInstrumentsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "enabled": true,
+                            "instId": "BTC-USDT-SWAP"
+                        },
+                        {
+                            "enabled": true,
+                            "instId": "ETH-USDT-SWAP"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            enabled:
+                                description: |-
+                                    Whether you set it successfully
+
+                                     `true` or `false`
+                                type: boolean
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/set-instruments:
+        post:
+            description: "The leading trader can amend current leading instruments, need to set initial leading instruments while applying to become a leading trader.\n\n\nAll non-leading instruments can't have position or pending orders for the current request when setting non-leading instruments as leading instruments.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateCopytradingSetInstrumentsV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateCopytradingSetInstrumentsV5Req'
+                description: The request body for CreateCopytradingSetInstrumentsV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateCopytradingSetInstrumentsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                The leading trader can amend current leading instruments, need to set initial leading instruments while applying to become a leading trader.
+
+
+                All non-leading instruments can't have position or pending orders for the current request when setting non-leading instruments as leading instruments.
+
+            tags:
+                - Copy Trading

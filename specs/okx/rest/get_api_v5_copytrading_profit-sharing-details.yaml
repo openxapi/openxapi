@@ -1,0 +1,165 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingProfitSharingDetailsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "ccy": "USDT",
+                            "nickName": "Potato",
+                            "profitSharingAmt": "0.00536",
+                            "profitSharingId": "148",
+                            "portLink": "",
+                            "ts": "1723392000000",
+                            "instType": "SWAP"
+                        },
+                        {
+                            "ccy": "USDT",
+                            "nickName": "Apple",
+                            "profitSharingAmt": "0.00336",
+                            "profitSharingId": "20",
+                            "portLink": "",
+                            "ts": "1723392000000",
+                            "instType": "SWAP"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: The currency of profit sharing.
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            nickName:
+                                default: ""
+                                description: Nickname of copy trader.
+                                type: string
+                            portLink:
+                                default: ""
+                                description: Portrait link
+                                type: string
+                            profitSharingAmt:
+                                default: ""
+                                description: Profit sharing amount. It would be 0 if there is no any profit sharing.
+                                type: string
+                            profitSharingId:
+                                default: ""
+                                description: Profit sharing ID.
+                                type: string
+                            ts:
+                                default: ""
+                                description: Profit sharing time.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/profit-sharing-details:
+        get:
+            description: "The leading trader gets profits shared details for the last 3 months.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingProfitSharingDetailsV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SPOT`
+
+                    `SWAP`
+
+                    It returns all types by default.
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`
+
+                        It returns all types by default.
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `profitSharingId`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `profitSharingId`
+                    type: string
+                - description: Pagination of data to return records newer than the requested `profitSharingId`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `profitSharingId`
+                    type: string
+                - description: Number of results per request. Maximum is 100. Default is 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. Maximum is 100. Default is 100.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingProfitSharingDetailsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                The leading trader gets profits shared details for the last 3 months.
+
+            tags:
+                - Copy Trading

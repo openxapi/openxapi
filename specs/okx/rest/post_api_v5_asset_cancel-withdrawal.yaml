@@ -1,0 +1,90 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAssetCancelWithdrawalV5Req:
+            properties:
+                wdId:
+                    default: ""
+                    description: Withdrawal ID
+                    type: string
+            required:
+                - wdId
+            type: object
+        CreateAssetCancelWithdrawalV5Resp:
+            example: "{\n  \"code\": \"0\",\n  \"msg\": \"\",\n  \"data\": [\n    {\n      \"wdId\": \"1123456\"   \n    }\n  ]\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            wdId:
+                                default: ""
+                                description: Withdrawal ID
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/cancel-withdrawal:
+        post:
+            description: "You can cancel normal withdrawal requests, but you cannot cancel withdrawal requests on Lightning.\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAssetCancelWithdrawalV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetCancelWithdrawalV5Req'
+                description: The request body for CreateAssetCancelWithdrawalV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetCancelWithdrawalV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                You can cancel normal withdrawal requests, but you cannot cancel withdrawal requests on Lightning.
+
+            tags:
+                - Funding Account

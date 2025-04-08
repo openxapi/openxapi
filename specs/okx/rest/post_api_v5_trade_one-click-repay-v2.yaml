@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradeOneClickRepayV2V5Req:
+            properties:
+                debtCcy:
+                    default: ""
+                    description: Debt currency
+                    type: string
+                repayCcyList:
+                    description: |-
+                        Repay currency list, e.g. ["USDC","BTC"]
+
+                        The priority of currency to repay is consistent with the order in the array. (The first item has the highest priority)
+                    items:
+                        type: string
+                    type: array
+            required:
+                - debtCcy
+                - repayCcyList
+            type: object
+        CreateTradeOneClickRepayV2V5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "debtCcy": "USDC",
+                            "repayCcyList": [
+                                "USDC",
+                                "BTC"
+                            ],
+                            "ts": "1742192217514"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            debtCcy:
+                                default: ""
+                                description: Debt currency
+                                type: string
+                            repayCcyList:
+                                description: Repay currency list, e.g. ["USDC","BTC"]
+                                items:
+                                    type: string
+                                type: array
+                            ts:
+                                default: ""
+                                description: Request time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/one-click-repay-v2:
+        post:
+            description: "Trade one-click repay to repay debts. Only applicable to `SPOT mode`. \n\n#### Rate Limit: 1 request per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradeOneClickRepayV2V5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradeOneClickRepayV2V5Req'
+                description: The request body for CreateTradeOneClickRepayV2V5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradeOneClickRepayV2V5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "Trade one-click repay to repay debts. Only applicable to `SPOT mode`. \n\n"
+            tags:
+                - Trade

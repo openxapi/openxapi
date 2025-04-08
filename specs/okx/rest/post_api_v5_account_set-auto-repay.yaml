@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountSetAutoRepayV5Req:
+            properties:
+                autoRepay:
+                    description: |-
+                        Whether auto repay is allowed or not under `Spot mode`
+
+                        `true`: Enable auto repay
+
+                        `false`: Disable auto repay
+                    type: boolean
+            required:
+                - autoRepay
+            type: object
+        CreateAccountSetAutoRepayV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "autoRepay": true
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            autoRepay:
+                                description: |-
+                                    Whether auto repay is allowed or not under `Spot mode`
+
+                                    `true`: Enable auto repay
+
+                                    `false`: Disable auto repay
+                                type: boolean
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/set-auto-repay:
+        post:
+            description: "Only applicable to `Spot mode` (enabled borrowing)\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAccountSetAutoRepayV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSetAutoRepayV5Req'
+                description: The request body for CreateAccountSetAutoRepayV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSetAutoRepayV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Only applicable to `Spot mode` (enabled borrowing)
+
+            tags:
+                - Trading Account

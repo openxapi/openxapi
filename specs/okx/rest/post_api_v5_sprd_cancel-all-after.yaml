@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateSprdCancelAllAfterV5Req:
+            properties:
+                timeOut:
+                    default: ""
+                    description: "The countdown for order cancellation, with second as the unit.\n\nRange of value can be 0, [10, 120]. \n\nSetting timeOut to 0 disables Cancel All After."
+                    type: string
+            required:
+                - timeOut
+            type: object
+        CreateSprdCancelAllAfterV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "triggerTime":"1587971460",
+                            "ts":"1587971400"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            triggerTime:
+                                default: ""
+                                description: |-
+                                    The time the cancellation is triggered.
+
+                                    triggerTime=0 means Cancel All After is disabled.
+                                type: string
+                            ts:
+                                default: ""
+                                description: The time the request is received.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/sprd/cancel-all-after:
+        post:
+            description: "Cancel all pending orders after the countdown timeout. Only applicable to spread trading.\n\n#### Rate Limit: 1 request per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateSprdCancelAllAfterV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSprdCancelAllAfterV5Req'
+                description: The request body for CreateSprdCancelAllAfterV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSprdCancelAllAfterV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Cancel all pending orders after the countdown timeout. Only applicable to spread trading.
+
+            tags:
+                - Spread Trading

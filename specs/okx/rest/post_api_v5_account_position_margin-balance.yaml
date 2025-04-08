@@ -1,0 +1,144 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountPositionMarginBalanceV5Req:
+            properties:
+                amt:
+                    default: ""
+                    description: Amount to be increased or decreased.
+                    type: string
+                ccy:
+                    default: ""
+                    description: "Currency \n\nApplicable to `isolated` `MARGIN` orders"
+                    type: string
+                instId:
+                    default: ""
+                    description: Instrument ID
+                    type: string
+                posSide:
+                    default: ""
+                    description: "Position side, the default is `net`\n\n`long` \n\n`short` \n\n`net`"
+                    type: string
+                type:
+                    default: ""
+                    description: "`add`: add margin \n\n`reduce`: reduce margin"
+                    type: string
+            required:
+                - instId
+                - posSide
+                - type
+                - amt
+            type: object
+        CreateAccountPositionMarginBalanceV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                            "amt": "0.3",
+                            "ccy": "BTC",
+                            "instId": "BTC-USDT",
+                            "leverage": "",
+                            "posSide": "net",
+                            "type": "add"
+                        }]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Amount to be increase or decrease
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            leverage:
+                                default: ""
+                                description: Real leverage after the margin adjustment
+                                type: string
+                            posSide:
+                                default: ""
+                                description: Position side, `long`  `short`
+                                type: string
+                            type:
+                                default: ""
+                                description: |-
+                                    `add`: add margin
+
+                                    `reduce`: reduce margin
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/position/margin-balance:
+        post:
+            description: "Increase or decrease the margin of the isolated position. Margin reduction may result in the change of the actual leverage.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAccountPositionMarginBalanceV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountPositionMarginBalanceV5Req'
+                description: The request body for CreateAccountPositionMarginBalanceV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountPositionMarginBalanceV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Increase or decrease the margin of the isolated position. Margin reduction may result in the change of the actual leverage.
+
+            tags:
+                - Trading Account

@@ -1,0 +1,190 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingPublicCurrentSubpositionsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "ccy": "USDT",
+                            "instId": "ETH-USDT-SWAP",
+                            "instType": "SWAP",
+                            "lever": "5",
+                            "margin": "16.23304",
+                            "markPx": "2027.31",
+                            "mgnMode": "isolated",
+                            "openAvgPx": "2029.13",
+                            "openTime": "1701144639417",
+                            "posSide": "short",
+                            "subPos": "4",
+                            "subPosId": "649582930998104064",
+                            "uniqueCode": "D9ADEAB33AE9EABD",
+                            "upl": "0.0728",
+                            "uplRatio": "0.0044846806266725"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            lever:
+                                default: ""
+                                description: Leverage
+                                type: string
+                            margin:
+                                default: ""
+                                description: Margin
+                                type: string
+                            markPx:
+                                default: ""
+                                description: Latest mark price, only applicable to contract
+                                type: string
+                            mgnMode:
+                                default: ""
+                                description: Margin mode. `cross` `isolated`
+                                type: string
+                            openAvgPx:
+                                default: ""
+                                description: Average open price
+                                type: string
+                            openTime:
+                                default: ""
+                                description: Open time
+                                type: string
+                            posSide:
+                                default: ""
+                                description: "Position side\n\n`long` \n\n`short` \n\n`net`\n\n(Long positions have positive subPos; short positions have negative subPos)"
+                                type: string
+                            subPos:
+                                default: ""
+                                description: Quantity of positions
+                                type: string
+                            subPosId:
+                                default: ""
+                                description: Lead position ID
+                                type: string
+                            uniqueCode:
+                                default: ""
+                                description: Lead trader unique code
+                                type: string
+                            upl:
+                                default: ""
+                                description: Unrealized profit and loss
+                                type: string
+                            uplRatio:
+                                default: ""
+                                description: Unrealized profit and loss ratio
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/public-current-subpositions:
+        get:
+            description: "Public endpoint. Get current leading positions of lead trader\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingPublicCurrentSubpositionsV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`, the default value.
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`, the default value.
+                    type: string
+                - description: |-
+                    Lead trader unique code
+
+                    A combination of case-sensitive alphanumerics, all numbers and the length is 16 characters, e.g. 213E8C92DC61EFAC
+                  in: query
+                  name: uniqueCode
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Lead trader unique code
+
+                        A combination of case-sensitive alphanumerics, all numbers and the length is 16 characters, e.g. 213E8C92DC61EFAC
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `subPosId`.
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `subPosId`.
+                    type: string
+                - description: Pagination of data to return records newer than the requested `subPosId`.
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `subPosId`.
+                    type: string
+                - description: Number of results per request. Maximum is 100. Default is 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. Maximum is 100. Default is 100.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingPublicCurrentSubpositionsV5Resp'
+                    description: Successful operation
+            summary: |+
+                Public endpoint. Get current leading positions of lead trader
+
+            tags:
+                - Copy Trading

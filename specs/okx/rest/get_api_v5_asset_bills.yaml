@@ -1,0 +1,160 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetBillsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                        "billId": "12344",
+                        "ccy": "BTC",
+                        "clientId": "",
+                        "balChg": "2",
+                        "bal": "12",
+                        "type": "1",
+                        "ts": "1597026383085"
+                    }]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            bal:
+                                default: ""
+                                description: Balance at the account level
+                                type: string
+                            balChg:
+                                default: ""
+                                description: Change in balance at the account level
+                                type: string
+                            billId:
+                                default: ""
+                                description: Bill ID
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Account balance currency
+                                type: string
+                            clientId:
+                                default: ""
+                                description: Client-supplied ID for transfer or withdrawal
+                                type: string
+                            ts:
+                                default: ""
+                                description: Creation time, Unix timestamp format in milliseconds, e.g.`1597026383085`
+                                type: string
+                            type:
+                                default: ""
+                                description: Bill type
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/bills:
+        get:
+            description: "Query the billing record in the past month.\n\n#### Rate Limit: 6 Requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetBillsV5
+            parameters:
+                - description: Currency
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency
+                    type: string
+                - description: "Bill type\n\n`1`: Deposit\n\n`2`: Withdrawal\n\n`13`: Canceled withdrawal\n\n`20`: Transfer to sub account (for master account)\n\n`21`: Transfer from sub account (for master account)\n\n`22`: Transfer out from sub to master account (for sub-account)\n\n`23`: Transfer in from master to sub account (for sub-account)\n\n`28`: Manually claimed Airdrop\n\n`47`: System reversal\n\n`48`: Event Reward\n\n`49`: Event Giveaway\n\n`68`: Fee rebate (by rebate card)\n\n`72`: Token received\n\n`73`: Token given away\n\n`74`: Token refunded\n\n`75`: Subscription to savings\n\n`76`: Redemption to savings\n\n`77`: Jumpstart distribute\n\n`78`: Jumpstart lock up\n\n`80`: DEFI/Staking purchase\n\n`82`: DEFI/Staking redemption\n\n`83`: Staking yield\n\n`84`: Violation fee\n\n`89`: Deposit yield\n\n`116`: [Fiat] Place an order\n\n`117`: [Fiat] Fulfill an order\n\n`118`: [Fiat] Cancel an order\n\n`124`: Jumpstart unlocking\n\n`130`: Transferred from Trading account\n\n`131`: Transferred to Trading account\n\n`132`: [P2P] Frozen by customer service\n\n`133`: [P2P] Unfrozen by customer service\n\n`134`: [P2P] Transferred by customer service\n\n`135`: Cross chain exchange\n\n`137`: [ETH Staking] Subscription\n\n`138`: [ETH Staking] Swapping\n\n`139`: [ETH Staking] Earnings\n\n`146`: Customer feedback\n\n`150`: Affiliate commission\n\n`151`: Referral reward\n\n`152`: Broker reward\n\n`160`: Dual Investment subscribe\n\n`161`: Dual Investment collection\n\n`162`: Dual Investment profit\n\n`163`: Dual Investment refund\n\n`172`: [Affiliate] Sub-affiliate commission\n\n`173`: [Affiliate] Fee rebate (by trading fee)\n\n`174`: Jumpstart Pay\n\n`175`: Locked collateral\n\n`176`: Loan\n\n`177`: Added collateral\n\n`178`: Returned collateral\n\n`179`: Repayment\n\n`180`: Unlocked collateral\n\n`181`: Airdrop payment\n\n`185`: [Broker] Convert reward\n\n`187`: [Broker] Convert transfer\n\n`189`: Mystery box bonus\n\n`195`: Untradable asset withdrawal\n\n`196`: Untradable asset withdrawal revoked\n\n`197`: Untradable asset deposit\n\n`198`: Untradable asset collection reduce\n\n`199`: Untradable asset collection increase\n\n`200`: Buy\n\n`202`: Price Lock Subscribe\n\n`203`: Price Lock Collection\n\n`204`: Price Lock Profit\n\n`205`: Price Lock Refund\n\n`207`: Dual Investment Lite Subscribe\n\n`208`: Dual Investment Lite Collection\n\n`209`: Dual Investment Lite Profit\n\n`210`: Dual Investment Lite Refund\n\n`212`: [Flexible loan] Multi-collateral loan collateral locked\n\n`215`: [Flexible loan] Multi-collateral loan collateral released\n\n`217`: [Flexible loan] Multi-collateral loan borrowed\n\n`218`: [Flexible loan] Multi-collateral loan repaid\n\n`232`: [Flexible loan] Subsidized interest received\n\n`220`: Delisted crypto\n\n`221`: Blockchain's withdrawal fee\n\n`222`: Withdrawal fee refund\n\n`223`: SWAP lead trading profit share\n\n`225`: Shark Fin subscribe\n\n`226`: Shark Fin collection\n\n`227`: Shark Fin profit\n\n`228`: Shark Fin refund\n\n`229`: Airdrop\n\n`232`: Subsidized interest received\n\n`233`: Broker rebate compensation\n\n`240`: Snowball subscribe\n\n`241`: Snowball refund\n\n`242`: Snowball profit\n\n`243`: Snowball trading failed\n\n`249`: Seagull subscribe\n\n`250`: Seagull collection\n\n`251`: Seagull profit\n\n`252`: Seagull refund\n\n`263`: Strategy bots profit share\n\n`265`: Signal revenue\n\n`266`: SPOT lead trading profit share\n\n`270`: DCD broker transfer\n\n`271`: DCD broker rebate\n\n`272`: [Convert] Buy Crypto/Fiat\n\n`273`: [Convert] Sell Crypto/Fiat\n\n`284`: [Custody] Transfer out trading sub-account\n\n`285`: [Custody] Transfer in trading sub-account\n\n`286`: [Custody] Transfer out custody funding account\n\n`287`: [Custody] Transfer in custody funding account\n\n`288`: [Custody] Fund delegation \n\n`289`: [Custody] Fund undelegation\n\n`299`: Affiliate recommendation commission\n\n`300`: Fee discount rebate\n\n`303`: Snowball market maker transfer\n\n`304`: [Simple Earn Fixed] Order submission\n\n`305`: [Simple Earn Fixed] Order redemption\n\n`306`: [Simple Earn Fixed] Principal distribution\n\n`307`: [Simple Earn Fixed] Interest distribution (early termination compensation)\n\n`308`: [Simple Earn Fixed] Interest distribution\n\n`309`: [Simple Earn Fixed] Interest distribution (extension compensation) \n\n`311`: Crypto dust auto-transfer in\n\n`313`: Sent by gift\n\n`314`: Received from gift\n\n`315`: Refunded from gift\n\n`328`: [SOL staking] Send Liquidity Staking Token reward\n\n`329`: [SOL staking] Subscribe Liquidity Staking Token staking\n\n`330`: [SOL staking] Mint Liquidity Staking Token\n\n`331`: [SOL staking] Redeem Liquidity Staking Token order\n\n`332`: [SOL staking] Settle Liquidity Staking Token order\n\n`333`: Trial fund reward\n\n`336`: [Credit line] Loan Forced Repayment\n\n`338`: [Credit line] Forced Repayment Refund\n\n`354`: Copy and bot rewards\n\n`361`: Deposit from closed sub-account"
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: "Bill type\n\n`1`: Deposit\n\n`2`: Withdrawal\n\n`13`: Canceled withdrawal\n\n`20`: Transfer to sub account (for master account)\n\n`21`: Transfer from sub account (for master account)\n\n`22`: Transfer out from sub to master account (for sub-account)\n\n`23`: Transfer in from master to sub account (for sub-account)\n\n`28`: Manually claimed Airdrop\n\n`47`: System reversal\n\n`48`: Event Reward\n\n`49`: Event Giveaway\n\n`68`: Fee rebate (by rebate card)\n\n`72`: Token received\n\n`73`: Token given away\n\n`74`: Token refunded\n\n`75`: Subscription to savings\n\n`76`: Redemption to savings\n\n`77`: Jumpstart distribute\n\n`78`: Jumpstart lock up\n\n`80`: DEFI/Staking purchase\n\n`82`: DEFI/Staking redemption\n\n`83`: Staking yield\n\n`84`: Violation fee\n\n`89`: Deposit yield\n\n`116`: [Fiat] Place an order\n\n`117`: [Fiat] Fulfill an order\n\n`118`: [Fiat] Cancel an order\n\n`124`: Jumpstart unlocking\n\n`130`: Transferred from Trading account\n\n`131`: Transferred to Trading account\n\n`132`: [P2P] Frozen by customer service\n\n`133`: [P2P] Unfrozen by customer service\n\n`134`: [P2P] Transferred by customer service\n\n`135`: Cross chain exchange\n\n`137`: [ETH Staking] Subscription\n\n`138`: [ETH Staking] Swapping\n\n`139`: [ETH Staking] Earnings\n\n`146`: Customer feedback\n\n`150`: Affiliate commission\n\n`151`: Referral reward\n\n`152`: Broker reward\n\n`160`: Dual Investment subscribe\n\n`161`: Dual Investment collection\n\n`162`: Dual Investment profit\n\n`163`: Dual Investment refund\n\n`172`: [Affiliate] Sub-affiliate commission\n\n`173`: [Affiliate] Fee rebate (by trading fee)\n\n`174`: Jumpstart Pay\n\n`175`: Locked collateral\n\n`176`: Loan\n\n`177`: Added collateral\n\n`178`: Returned collateral\n\n`179`: Repayment\n\n`180`: Unlocked collateral\n\n`181`: Airdrop payment\n\n`185`: [Broker] Convert reward\n\n`187`: [Broker] Convert transfer\n\n`189`: Mystery box bonus\n\n`195`: Untradable asset withdrawal\n\n`196`: Untradable asset withdrawal revoked\n\n`197`: Untradable asset deposit\n\n`198`: Untradable asset collection reduce\n\n`199`: Untradable asset collection increase\n\n`200`: Buy\n\n`202`: Price Lock Subscribe\n\n`203`: Price Lock Collection\n\n`204`: Price Lock Profit\n\n`205`: Price Lock Refund\n\n`207`: Dual Investment Lite Subscribe\n\n`208`: Dual Investment Lite Collection\n\n`209`: Dual Investment Lite Profit\n\n`210`: Dual Investment Lite Refund\n\n`212`: [Flexible loan] Multi-collateral loan collateral locked\n\n`215`: [Flexible loan] Multi-collateral loan collateral released\n\n`217`: [Flexible loan] Multi-collateral loan borrowed\n\n`218`: [Flexible loan] Multi-collateral loan repaid\n\n`232`: [Flexible loan] Subsidized interest received\n\n`220`: Delisted crypto\n\n`221`: Blockchain's withdrawal fee\n\n`222`: Withdrawal fee refund\n\n`223`: SWAP lead trading profit share\n\n`225`: Shark Fin subscribe\n\n`226`: Shark Fin collection\n\n`227`: Shark Fin profit\n\n`228`: Shark Fin refund\n\n`229`: Airdrop\n\n`232`: Subsidized interest received\n\n`233`: Broker rebate compensation\n\n`240`: Snowball subscribe\n\n`241`: Snowball refund\n\n`242`: Snowball profit\n\n`243`: Snowball trading failed\n\n`249`: Seagull subscribe\n\n`250`: Seagull collection\n\n`251`: Seagull profit\n\n`252`: Seagull refund\n\n`263`: Strategy bots profit share\n\n`265`: Signal revenue\n\n`266`: SPOT lead trading profit share\n\n`270`: DCD broker transfer\n\n`271`: DCD broker rebate\n\n`272`: [Convert] Buy Crypto/Fiat\n\n`273`: [Convert] Sell Crypto/Fiat\n\n`284`: [Custody] Transfer out trading sub-account\n\n`285`: [Custody] Transfer in trading sub-account\n\n`286`: [Custody] Transfer out custody funding account\n\n`287`: [Custody] Transfer in custody funding account\n\n`288`: [Custody] Fund delegation \n\n`289`: [Custody] Fund undelegation\n\n`299`: Affiliate recommendation commission\n\n`300`: Fee discount rebate\n\n`303`: Snowball market maker transfer\n\n`304`: [Simple Earn Fixed] Order submission\n\n`305`: [Simple Earn Fixed] Order redemption\n\n`306`: [Simple Earn Fixed] Principal distribution\n\n`307`: [Simple Earn Fixed] Interest distribution (early termination compensation)\n\n`308`: [Simple Earn Fixed] Interest distribution\n\n`309`: [Simple Earn Fixed] Interest distribution (extension compensation) \n\n`311`: Crypto dust auto-transfer in\n\n`313`: Sent by gift\n\n`314`: Received from gift\n\n`315`: Refunded from gift\n\n`328`: [SOL staking] Send Liquidity Staking Token reward\n\n`329`: [SOL staking] Subscribe Liquidity Staking Token staking\n\n`330`: [SOL staking] Mint Liquidity Staking Token\n\n`331`: [SOL staking] Redeem Liquidity Staking Token order\n\n`332`: [SOL staking] Settle Liquidity Staking Token order\n\n`333`: Trial fund reward\n\n`336`: [Credit line] Loan Forced Repayment\n\n`338`: [Credit line] Forced Repayment Refund\n\n`354`: Copy and bot rewards\n\n`361`: Deposit from closed sub-account"
+                    type: string
+                - description: |-
+                    Client-supplied ID for transfer or withdrawal
+
+                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                  in: query
+                  name: clientId
+                  schema:
+                    default: ""
+                    description: |-
+                        Client-supplied ID for transfer or withdrawal
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Pagination of data to return records newer than the requested `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Number of results per request. The maximum is `100`. The default is `100`.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is `100`. The default is `100`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetBillsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Query the billing record in the past month.
+
+            tags:
+                - Funding Account

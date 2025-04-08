@@ -1,0 +1,181 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradeOrderAlgoV5Req:
+            properties:
+                algoClOrdId:
+                    default: ""
+                    description: |-
+                        Client-supplied Algo ID
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                ccy:
+                    default: ""
+                    description: "Margin currency \n\nApplicable to all `isolated` `MARGIN` orders and `cross` `MARGIN` orders in `Spot and futures mode`."
+                    type: string
+                closeFraction:
+                    default: ""
+                    description: "Fraction of position to be closed when the algo order is triggered. \n\nCurrently the system supports fully closing the position only so the only accepted value is `1`. For the same position, only one TPSL pending order for fully closing the position is supported. \n\nThis is only applicable to `FUTURES` or `SWAP` instruments.\n\nIf `posSide` is `net`, `reduceOnly` must be `true`.\n\nThis is only applicable if `ordType` is `conditional` or `oco`.\n\nThis is only applicable if the stop loss and take profit order is executed as market order.\n\nThis is not supported in Portfolio Margin mode.\n\nEither `sz` or `closeFraction` is required."
+                    type: string
+                instId:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT`
+                    type: string
+                ordType:
+                    default: ""
+                    description: "Order type  \n\n`conditional`: One-way stop order\n\n`oco`: One-cancels-the-other order\n\n`chase`: chase order, only applicable to FUTURES and SWAP\n\n`trigger`: Trigger order\n\n`move_order_stop`: Trailing order\n\n`twap`: TWAP order"
+                    type: string
+                posSide:
+                    default: ""
+                    description: "Position side \n\nRequired in `long/short` mode and only be `long` or `short`"
+                    type: string
+                side:
+                    default: ""
+                    description: Order side, `buy` `sell`
+                    type: string
+                sz:
+                    default: ""
+                    description: |-
+                        Quantity to buy or sell
+
+                        Either `sz` or `closeFraction` is required.
+                    type: string
+                tag:
+                    default: ""
+                    description: "Order tag  \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters."
+                    type: string
+                tdMode:
+                    default: ""
+                    description: |-
+                        Trade mode
+
+                        Margin mode `cross` `isolated`
+
+                        Non-Margin mode `cash`
+
+                        `spot_isolated` (only applicable to SPOT lead trading)
+                    type: string
+                tgtCcy:
+                    default: ""
+                    description: "Order quantity unit setting for `sz`\n\n`base_ccy`: Base currency ,`quote_ccy`: Quote currency  \n\nOnly applicable to `SPOT` traded with Market buy `conditional` order\n\nDefault is `quote_ccy` for buy, `base_ccy` for sell"
+                    type: string
+            required:
+                - instId
+                - tdMode
+                - side
+                - ordType
+            type: object
+        CreateTradeOrderAlgoV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "algoClOrdId": "order1234",
+                            "algoId": "1836487817828872192",
+                            "clOrdId": "",
+                            "sCode": "0",
+                            "sMsg": "",
+                            "tag": ""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoClOrdId:
+                                default: ""
+                                description: Client-supplied Algo ID
+                                type: string
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                            clOrdId:
+                                default: ""
+                                deprecated: true
+                                description: Client Order ID as assigned by the client(Deprecated)
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, `0` means success.
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection message if the request is unsuccessful.
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/order-algo:
+        post:
+            description: "The algo order includes `trigger` order, `oco` order, `chase` order, `conditional` order, `twap` order and trailing order.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate Limit of lead instruments for Copy Trading: 1 request per 2 seconds \n\n#### Rate limit rule (except Options): User ID + Instrument ID \n\n#### Rate limit rule (Options only): User ID + Instrument Family \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradeOrderAlgoV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradeOrderAlgoV5Req'
+                description: The request body for CreateTradeOrderAlgoV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradeOrderAlgoV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                The algo order includes `trigger` order, `oco` order, `chase` order, `conditional` order, `twap` order and trailing order.
+
+            tags:
+                - Algo Trading

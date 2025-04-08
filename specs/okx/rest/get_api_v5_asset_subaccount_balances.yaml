@@ -1,0 +1,113 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetSubaccountBalancesV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                            "availBal": "37.11827078",
+                            "bal": "37.11827078",
+                            "ccy": "ETH",
+                            "frozenBal": "0"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            availBal:
+                                default: ""
+                                description: Available balance
+                                type: string
+                            bal:
+                                default: ""
+                                description: Balance
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            frozenBal:
+                                default: ""
+                                description: Frozen balance
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/subaccount/balances:
+        get:
+            description: "Query detailed balance info of Funding Account of a sub-account via the master account (applies to master accounts only)\n\n#### Rate limit：6 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetSubaccountBalancesV5
+            parameters:
+                - description: Sub-account name
+                  in: query
+                  name: subAcct
+                  required: true
+                  schema:
+                    default: ""
+                    description: Sub-account name
+                    type: string
+                - description: Single currency or multiple currencies (no more than 20) separated with comma, e.g. `BTC` or `BTC,ETH`.
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Single currency or multiple currencies (no more than 20) separated with comma, e.g. `BTC` or `BTC,ETH`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetSubaccountBalancesV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Query detailed balance info of Funding Account of a sub-account via the master account (applies to master accounts only)
+
+            tags:
+                - Sub Account

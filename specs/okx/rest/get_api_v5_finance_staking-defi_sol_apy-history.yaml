@@ -1,0 +1,95 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFinanceStaking-DefiSolApyHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "rate": "0.11280000",
+                            "ts": "1734192000000"
+                        },
+                        {
+                            "rate": "0.11270000",
+                            "ts": "1734105600000"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            rate:
+                                default: ""
+                                description: APY(Annual percentage yield), e.g. `0.01` represents `1%`
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/staking-defi/sol/apy-history:
+        get:
+            description: "Public endpoints don't need authorization.\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetFinanceStaking-DefiSolApyHistoryV5
+            parameters:
+                - description: |-
+                    Get the days of APY(Annual percentage yield) history record in the past
+
+                    No more than 365 days
+                  in: query
+                  name: days
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Get the days of APY(Annual percentage yield) history record in the past
+
+                        No more than 365 days
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFinanceStaking-DefiSolApyHistoryV5Resp'
+                    description: Successful operation
+            summary: |+
+                Public endpoints don't need authorization.
+
+            tags:
+                - Sol Staking

@@ -1,0 +1,164 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountMaxLoanV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                      "instId": "BTC-USDT",
+                      "mgnMode": "isolated",
+                      "mgnCcy": "",
+                      "maxLoan": "0.1",
+                      "ccy": "BTC",
+                      "side": "sell"
+                    },
+                    {
+                      "instId": "BTC-USDT",
+                      "mgnMode": "isolated",
+                      "mgnCcy": "",
+                      "maxLoan": "0.2",
+                      "ccy": "USDT",
+                      "side": "buy"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            maxLoan:
+                                default: ""
+                                description: Max loan
+                                type: string
+                            mgnCcy:
+                                default: ""
+                                description: Margin currency
+                                type: string
+                            mgnMode:
+                                default: ""
+                                description: Margin mode
+                                type: string
+                            side:
+                                default: ""
+                                description: |-
+                                    Order side
+
+                                    `buy` `sell`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/max-loan:
+        get:
+            description: "#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountMaxLoanV5
+            parameters:
+                - description: |-
+                    Margin mode
+
+                    `isolated` `cross`
+                  in: query
+                  name: mgnMode
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Margin mode
+
+                        `isolated` `cross`
+                    type: string
+                - description: Single instrument or multiple instruments (no more than 5) separated with comma, e.g. `BTC-USDT,ETH-USDT`
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: Single instrument or multiple instruments (no more than 5) separated with comma, e.g. `BTC-USDT,ETH-USDT`
+                    type: string
+                - description: |-
+                    Currency
+
+                    Applicable to get Max loan of manual borrow for the currency in `Spot mode` (enabled borrowing)
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: |-
+                        Currency
+
+                        Applicable to get Max loan of manual borrow for the currency in `Spot mode` (enabled borrowing)
+                    type: string
+                - description: |-
+                    Margin currency
+
+                    Applicable to `isolated` `MARGIN` and `cross` `MARGIN` in `Spot and futures mode`.
+                  in: query
+                  name: mgnCcy
+                  schema:
+                    default: ""
+                    description: |-
+                        Margin currency
+
+                        Applicable to `isolated` `MARGIN` and `cross` `MARGIN` in `Spot and futures mode`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountMaxLoanV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            tags:
+                - Trading Account

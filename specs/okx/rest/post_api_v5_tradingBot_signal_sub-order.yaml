@@ -1,0 +1,122 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotSignalSubOrderV5Req:
+            properties:
+                algoId:
+                    default: ""
+                    description: Algo ID
+                    type: string
+                instId:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                    type: string
+                ordType:
+                    default: ""
+                    description: "Order type \n\n`market`: Market order \n\n`limit`: Limit order"
+                    type: string
+                px:
+                    default: ""
+                    description: Order price. Only applicable to `limit` order.
+                    type: string
+                reduceOnly:
+                    description: "Whether orders can only reduce in position size. \n\nValid options: `true` or `false`. The default value is `false`. \n\nOnly applicable to `Spot and futures mode`/`Multi-currency margin`"
+                    type: boolean
+                side:
+                    default: ""
+                    description: Order side, `buy` `sell`
+                    type: string
+                sz:
+                    default: ""
+                    description: Quantity to buy or sell
+                    type: string
+            required:
+                - instId
+                - algoId
+                - side
+                - ordType
+                - sz
+            type: object
+        CreateTradingBotSignalSubOrderV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/signal/sub-order:
+        post:
+            description: "You can place an order only if you have sufficient funds.\n\n\n\n\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradingBotSignalSubOrderV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotSignalSubOrderV5Req'
+                description: The request body for CreateTradingBotSignalSubOrderV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotSignalSubOrderV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                You can place an order only if you have sufficient funds.
+
+
+
+
+
+            tags:
+                - Signal Bot Trading

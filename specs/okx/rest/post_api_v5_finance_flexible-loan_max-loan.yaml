@@ -1,0 +1,125 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateFinanceFlexible-LoanMaxLoanV5Req:
+            properties:
+                borrowCcy:
+                    default: ""
+                    description: Currency to borrow, e.g. `USDT`
+                    type: string
+                supCollateral:
+                    description: Supplementary collateral assets
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Amount
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `BTC`
+                                type: string
+                        type: object
+                    type: array
+            required:
+                - borrowCcy
+            type: object
+        CreateFinanceFlexible-LoanMaxLoanV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "borrowCcy": "USDT",
+                            "maxLoan": "0.01113",
+                            "notionalUsd": "0.01113356",
+                            "remainingQuota": "3395000"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            borrowCcy:
+                                default: ""
+                                description: Currency to borrow, e.g. `USDT`
+                                type: string
+                            maxLoan:
+                                default: ""
+                                description: Maximum available loan
+                                type: string
+                            notionalUsd:
+                                default: ""
+                                description: Maximum available loan notional value, unit in `USD`
+                                type: string
+                            remainingQuota:
+                                default: ""
+                                description: Remaining quota, unit in `borrowCcy`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/flexible-loan/max-loan:
+        post:
+            description: "#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: CreateFinanceFlexible-LoanMaxLoanV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateFinanceFlexible-LoanMaxLoanV5Req'
+                description: The request body for CreateFinanceFlexible-LoanMaxLoanV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateFinanceFlexible-LoanMaxLoanV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            tags:
+                - Flexible Loan

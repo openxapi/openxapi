@@ -1,0 +1,166 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetMarketOptionInstrumentFamilyTradesV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "vol24h": "103381",
+                            "tradeInfo": [
+                                {
+                                    "instId": "BTC-USD-221111-17750-C",
+                                    "side": "sell",
+                                    "sz": "1",
+                                    "px": "0.0075",
+                                    "tradeId": "20",
+                                    "ts": "1668090715058"
+                                },
+                                {
+                                    "instId": "BTC-USD-221111-17750-C",
+                                    "side": "sell",
+                                    "sz": "91",
+                                    "px": "0.01",
+                                    "tradeId": "19",
+                                    "ts": "1668090421062"
+                                }
+                            ],
+                            "optType": "C"
+                        },
+                        {
+                            "vol24h": "144499",
+                            "tradeInfo": [
+                                {
+                                    "instId": "BTC-USD-230127-10000-P",
+                                    "side": "sell",
+                                    "sz": "82",
+                                    "px": "0.019",
+                                    "tradeId": "23",
+                                    "ts": "1668090967057"
+                                },
+                                {
+                                    "instId": "BTC-USD-221111-16250-P",
+                                    "side": "sell",
+                                    "sz": "102",
+                                    "px": "0.0045",
+                                    "tradeId": "24",
+                                    "ts": "1668090885050"
+                                }
+                            ],
+                            "optType": "P"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            optType:
+                                default: ""
+                                description: 'Option type, C: Call P: Put'
+                                type: string
+                            tradeInfo:
+                                description: The list trade data
+                                items:
+                                    properties:
+                                        instId:
+                                            default: ""
+                                            description: The Instrument ID
+                                            type: string
+                                        px:
+                                            default: ""
+                                            description: Trade price
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: |-
+                                                Trade side
+
+                                                `buy`
+
+                                                `sell`
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: Trade quantity. The unit is contract.
+                                            type: string
+                                        tradeId:
+                                            default: ""
+                                            description: Trade ID
+                                            type: string
+                                        ts:
+                                            default: ""
+                                            description: Trade time, Unix timestamp format in milliseconds, e.g. 1597026383085.
+                                            type: string
+                                    type: object
+                                type: array
+                            vol24h:
+                                default: ""
+                                description: 24h trading volume, with a unit of contract.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/market/option/instrument-family-trades:
+        get:
+            description: "Retrieve the recent transactions of an instrument under same instFamily. The maximum is 100.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketOptionInstrumentFamilyTradesV5
+            parameters:
+                - description: |-
+                    Instrument family, e.g. BTC-USD
+
+                    Applicable to `OPTION`
+                  in: query
+                  name: instFamily
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family, e.g. BTC-USD
+
+                        Applicable to `OPTION`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketOptionInstrumentFamilyTradesV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the recent transactions of an instrument under same instFamily. The maximum is 100.
+
+            tags:
+                - Market Data

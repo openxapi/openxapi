@@ -1,0 +1,266 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetSprdTradesV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "sprdId": "BTC-USDT-SWAP_BTC-USDT-200329",
+                            "tradeId": "123",
+                            "ordId": "123445",
+                            "clOrdId": "b16",
+                            "tag": "",
+                            "fillPx": "999",
+                            "fillSz": "3",
+                            "state": "filled",
+                            "side": "buy",
+                            "execType": "M",
+                            "ts": "1597026383085",
+                            "legs": [
+                                {
+                                    "instId": "BTC-USDT-SWAP",
+                                    "px": "20000",
+                                    "sz": "3",
+                                    "szCont": "0.03",
+                                    "side": "buy",
+                                    "fillPnl": "",
+                                    "fee": "",
+                                    "feeCcy": "",
+                                    "tradeId": "1232342342"
+                                },
+                                {
+                                    "instId": "BTC-USDT-200329",
+                                    "px": "21000",
+                                    "sz": "3",
+                                    "szCont": "0.03",
+                                    "side": "sell",
+                                    "fillPnl": "",
+                                    "fee": "",
+                                    "feeCcy": "",
+                                    "tradeId": "5345646634"
+                                }
+                            ],
+                            "code": "",
+                            "msg": ""
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            clOrdId:
+                                default: ""
+                                description: Client Order ID as assigned by the client
+                                type: string
+                            code:
+                                default: ""
+                                description: Error Code, the default is 0
+                                type: string
+                            execType:
+                                default: ""
+                                description: 'Liquidity taker or maker, `T`: taker  `M`: maker'
+                                type: string
+                            fillPx:
+                                default: ""
+                                description: Filled price
+                                type: string
+                            fillSz:
+                                default: ""
+                                description: Filled quantity
+                                type: string
+                            legs:
+                                description: Legs of trade
+                                items:
+                                    properties:
+                                        fee:
+                                            default: ""
+                                            description: Fee. Negative number represents the user transaction fee charged by the platform. Positive number represents rebate.
+                                            type: string
+                                        feeCcy:
+                                            default: ""
+                                            description: Fee currency
+                                            type: string
+                                        fillPnl:
+                                            default: ""
+                                            description: Last filled profit and loss, applicable to orders which have a trade and aim to close position. It always is 0 in other conditions
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. BTC-USDT-SWAP
+                                            type: string
+                                        px:
+                                            default: ""
+                                            description: The price the leg executed
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: The direction of the leg. Valid value can be `buy` or `sell`.
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: The size of each leg
+                                            type: string
+                                        szCont:
+                                            default: ""
+                                            description: "Filled amount of the contract  \n\nOnly applicable to contracts, return \"\" for spot"
+                                            type: string
+                                        tradeId:
+                                            default: ""
+                                            description: Traded ID in the OKX orderbook.
+                                            type: string
+                                    type: object
+                                type: array
+                            msg:
+                                default: ""
+                                description: Error Message, the default is ""
+                                type: string
+                            ordId:
+                                default: ""
+                                description: Order ID
+                                type: string
+                            side:
+                                default: ""
+                                description: Order side, `buy` `sell`
+                                type: string
+                            sprdId:
+                                default: ""
+                                description: spread ID
+                                type: string
+                            state:
+                                default: ""
+                                description: "Trade state. \n\nValid values are `filled` and `rejected`"
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                            tradeId:
+                                default: ""
+                                description: Trade ID
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data generation time, Unix timestamp format in milliseconds, e.g. `1597026383085`.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/sprd/trades:
+        get:
+            description: "Retrieve historical transaction details . Results are returned in counter chronological order.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetSprdTradesV5
+            parameters:
+                - description: spread ID, e.g.
+                  in: query
+                  name: sprdId
+                  schema:
+                    default: ""
+                    description: spread ID, e.g.
+                    type: string
+                - description: Trade ID
+                  in: query
+                  name: tradeId
+                  schema:
+                    default: ""
+                    description: Trade ID
+                    type: string
+                - description: Order ID
+                  in: query
+                  name: ordId
+                  schema:
+                    default: ""
+                    description: Order ID
+                    type: string
+                - description: Start trade ID the request to begin with. Pagination of data to return records newer than the requested tradeId, not including beginId
+                  in: query
+                  name: beginId
+                  schema:
+                    default: ""
+                    description: Start trade ID the request to begin with. Pagination of data to return records newer than the requested tradeId, not including beginId
+                    type: string
+                - description: End trade ID the request to end with. Pagination of data to return records earlier than the requested tradeId, not including endId
+                  in: query
+                  name: endId
+                  schema:
+                    default: ""
+                    description: End trade ID the request to end with. Pagination of data to return records earlier than the requested tradeId, not including endId
+                    type: string
+                - description: Filter with a begin timestamp. Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: begin
+                  schema:
+                    default: ""
+                    description: Filter with a begin timestamp. Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Filter with an end timestamp. Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: end
+                  schema:
+                    default: ""
+                    description: Filter with an end timestamp. Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSprdTradesV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieve historical transaction details . Results are returned in counter chronological order.
+
+            tags:
+                - Spread Trading

@@ -1,0 +1,144 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetMarketIndexComponentsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": {
+                        "components": [
+                            {
+                                "symbol": "BTC/USDT",
+                                "symPx": "52733.2",
+                                "wgt": "0.25",
+                                "cnvPx": "52733.2",
+                                "exch": "OKX"
+                            },
+                            {
+                                "symbol": "BTC/USDT",
+                                "symPx": "52739.87000000",
+                                "wgt": "0.25",
+                                "cnvPx": "52739.87000000",
+                                "exch": "Binance"
+                            },
+                            {
+                                "symbol": "BTC/USDT",
+                                "symPx": "52729.1",
+                                "wgt": "0.25",
+                                "cnvPx": "52729.1",
+                                "exch": "Huobi"
+                            },
+                            {
+                                "symbol": "BTC/USDT",
+                                "symPx": "52739.47929397",
+                                "wgt": "0.25",
+                                "cnvPx": "52739.47929397",
+                                "exch": "Poloniex"
+                            }
+                        ],
+                        "last": "52735.4123234925",
+                        "index": "BTC-USDT",
+                        "ts": "1630985335599"
+                    }
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            components:
+                                description: Components
+                                items:
+                                    properties:
+                                        cnvPx:
+                                            default: ""
+                                            description: Price converted to index
+                                            type: string
+                                        exch:
+                                            default: ""
+                                            description: Name of Exchange
+                                            type: string
+                                        symPx:
+                                            default: ""
+                                            description: Price of Exchange Trading Pairs
+                                            type: string
+                                        symbol:
+                                            default: ""
+                                            description: Name of Exchange Trading Pairs
+                                            type: string
+                                        wgt:
+                                            default: ""
+                                            description: Weights
+                                            type: string
+                                    type: object
+                                type: array
+                            index:
+                                default: ""
+                                description: Index
+                                type: string
+                            last:
+                                default: ""
+                                description: Latest Index Price
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data generation time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/market/index-components:
+        get:
+            description: "Get the index component information data on the market\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketIndexComponentsV5
+            parameters:
+                - description: index, e.g `BTC-USDT`
+                  in: query
+                  name: index
+                  required: true
+                  schema:
+                    default: ""
+                    description: index, e.g `BTC-USDT`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketIndexComponentsV5Resp'
+                    description: Successful operation
+            summary: |+
+                Get the index component information data on the market
+
+            tags:
+                - Public Data

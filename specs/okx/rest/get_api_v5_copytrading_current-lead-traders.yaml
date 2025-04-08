@@ -1,0 +1,152 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingCurrentLeadTradersV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "beginCopyTime": "1701224821936",
+                            "ccy": "USDT",
+                            "copyTotalAmt": "500",
+                            "copyTotalPnl": "0",
+                            "leadMode": "public",
+                            "margin": "1.89395",
+                            "nickName": "Trader9527",
+                            "portLink": "",
+                            "profitSharingRatio": "0.08",
+                            "todayPnl": "0",
+                            "uniqueCode": "25CD5A80241D6FE6",
+                            "upl": "0"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            beginCopyTime:
+                                default: ""
+                                description: Begin copying time. Unix timestamp format in milliseconds, e.g.1597026383085
+                                type: string
+                            ccy:
+                                default: ""
+                                description: margin currency
+                                type: string
+                            copyTotalAmt:
+                                default: ""
+                                description: Copy total amount
+                                type: string
+                            copyTotalPnl:
+                                default: ""
+                                description: Copy total pnl
+                                type: string
+                            leadMode:
+                                default: ""
+                                description: Lead mode `public` `private`
+                                type: string
+                            margin:
+                                default: ""
+                                description: Margin for copy trading
+                                type: string
+                            nickName:
+                                default: ""
+                                description: Nick name
+                                type: string
+                            portLink:
+                                default: ""
+                                description: Portrait link
+                                type: string
+                            profitSharingRatio:
+                                default: ""
+                                description: Profit sharing ratio. 0.1 represents 10%
+                                type: string
+                            todayPnl:
+                                default: ""
+                                description: Today pnl
+                                type: string
+                            uniqueCode:
+                                default: ""
+                                description: Lead trader unique code
+                                type: string
+                            upl:
+                                default: ""
+                                description: Unrealized profit & loss
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/current-lead-traders:
+        get:
+            description: "Retrieve my lead traders.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingCurrentLeadTradersV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`, the default value
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`, the default value
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingCurrentLeadTradersV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieve my lead traders.
+
+            tags:
+                - Copy Trading

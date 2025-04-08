@@ -1,0 +1,151 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicDiscountRateInterestFreeQuotaV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "amt": "0",
+                            "ccy": "BTC",
+                            "details": [
+                                {
+                                    "discountRate": "0.98",
+                                    "liqPenaltyRate": "0.02",
+                                    "maxAmt": "20",
+                                    "minAmt": "0",
+                                    "tier": "1",
+                                    "disCcyEq": "1000"
+                                },
+                                {
+                                    "discountRate": "0.9775",
+                                    "liqPenaltyRate": "0.0225",
+                                    "maxAmt": "25",
+                                    "minAmt": "20",
+                                    "tier": "2",
+                                    "disCcyEq": "2000"
+                                }
+                            ],
+                            "discountLv": "1",
+                            "minDiscountRate": "0"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Interest-free quota
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            details:
+                                description: New discount details.
+                                items:
+                                    properties:
+                                        disCcyEq:
+                                            default: ""
+                                            description: Discount equity in currency for quick calculation if your equity is the`maxAmt`
+                                            type: string
+                                        discountRate:
+                                            default: ""
+                                            description: Discount rate
+                                            type: string
+                                        liqPenaltyRate:
+                                            default: ""
+                                            description: Liquidation penalty rate
+                                            type: string
+                                        maxAmt:
+                                            default: ""
+                                            description: "Tier - upper bound. \n\nThe unit is the currency like BTC. \"\" means positive infinity"
+                                            type: string
+                                        minAmt:
+                                            default: ""
+                                            description: "Tier - lower bound. \n\nThe unit is the currency like BTC. The minimum is 0"
+                                            type: string
+                                        tier:
+                                            default: ""
+                                            description: Tiers
+                                            type: string
+                                    type: object
+                                type: array
+                            discountLv:
+                                default: ""
+                                deprecated: true
+                                description: Discount rate level.(Deprecated)
+                                type: string
+                            minDiscountRate:
+                                default: ""
+                                description: Minimum discount rate when it exceeds the maximum amount of the last tier.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/discount-rate-interest-free-quota:
+        get:
+            description: "Retrieve discount rate level and interest-free quota.\n\n#### Rate Limit: 2 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicDiscountRateInterestFreeQuotaV5
+            parameters:
+                - description: Currency
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency
+                    type: string
+                - description: 'Discount level (Deprecated) '
+                  in: query
+                  name: discountLv
+                  schema:
+                    default: ""
+                    deprecated: true
+                    description: 'Discount level (Deprecated) '
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicDiscountRateInterestFreeQuotaV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve discount rate level and interest-free quota.
+
+            tags:
+                - Public Data

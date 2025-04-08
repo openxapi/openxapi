@@ -1,0 +1,101 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetMonthlyStatementV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "fileHref": "http://xxx",
+                            "state": "finished",
+                            "ts": 1646892328000
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            fileHref:
+                                default: ""
+                                description: Download file link
+                                type: string
+                            state:
+                                default: ""
+                                description: "Download link status \n\n\"finished\" \"ongoing\""
+                                type: string
+                            ts:
+                                description: Download link generation time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: integer
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/monthly-statement:
+        get:
+            description: "Retrieve monthly statement in the past year.\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetMonthlyStatementV5
+            parameters:
+                - description: Month, valid value is `Jan`, `Feb`, `Mar`, `Apr`,`May`, `Jun`, `Jul`,`Aug`, `Sep`,`Oct`,`Nov`,`Dec`
+                  in: query
+                  name: month
+                  required: true
+                  schema:
+                    default: ""
+                    description: Month, valid value is `Jan`, `Feb`, `Mar`, `Apr`,`May`, `Jun`, `Jul`,`Aug`, `Sep`,`Oct`,`Nov`,`Dec`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetMonthlyStatementV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Retrieve monthly statement in the past year.
+
+            tags:
+                - Funding Account

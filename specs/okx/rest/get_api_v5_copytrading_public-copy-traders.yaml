@@ -1,0 +1,157 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingPublicCopyTradersV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "ccy": "USDT",
+                            "copyTotalPnl": "2060.12242",
+                            "copyTraderNumChg": "1",
+                            "copyTraderNumChgRatio": "0.5",
+                            "copyTraders": [
+                                {
+                                    "beginCopyTime": "1686125051000",
+                                    "nickName": "bre***@gmail.com",
+                                    "pnl": "1076.77388",
+                                    "portLink": ""
+                                },
+                                {
+                                    "beginCopyTime": "1698133811000",
+                                    "nickName": "MrYanDao505",
+                                    "pnl": "983.34854",
+                                    "portLink": "https://static.okx.com/cdn/okex/users/headimages/20231010/fd31f45e99fe41f7bb219c0b53ae0ada"
+                                }
+                            ]
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: The currency name of profit and loss
+                                type: string
+                            copyTotalPnl:
+                                default: ""
+                                description: Total copy trader profit and loss
+                                type: string
+                            copyTraderNumChg:
+                                default: ""
+                                description: Number change in last 7 days
+                                type: string
+                            copyTraderNumChgRatio:
+                                default: ""
+                                description: Ratio change in last 7 days
+                                type: string
+                            copyTraders:
+                                description: Copy trader information
+                                items:
+                                    properties:
+                                        beginCopyTime:
+                                            default: ""
+                                            description: Begin copying time. Unix timestamp format in milliseconds, e.g.1597026383085
+                                            type: string
+                                        nickName:
+                                            default: ""
+                                            description: Nick name
+                                            type: string
+                                        pnl:
+                                            default: ""
+                                            description: Copy trading profit and loss
+                                            type: string
+                                        portLink:
+                                            default: ""
+                                            description: Copy trader portrait link
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/public-copy-traders:
+        get:
+            description: "Public endpoint. Retrieve copy trader coming from certain lead trader. Return according to `pnl` from high to low\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingPublicCopyTradersV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`, the default value
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`, the default value
+                    type: string
+                - description: |-
+                    Lead trader unique code
+
+                    A combination of case-sensitive alphanumerics, all numbers and the length is 16 characters, e.g. 213E8C92DC61EFAC
+                  in: query
+                  name: uniqueCode
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Lead trader unique code
+
+                        A combination of case-sensitive alphanumerics, all numbers and the length is 16 characters, e.g. 213E8C92DC61EFAC
+                    type: string
+                - description: Number of results per request. The maximum is `100`; The default is `100`
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is `100`; The default is `100`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingPublicCopyTradersV5Resp'
+                    description: Successful operation
+            summary: |+
+                Public endpoint. Retrieve copy trader coming from certain lead trader. Return according to `pnl` from high to low
+
+            tags:
+                - Copy Trading

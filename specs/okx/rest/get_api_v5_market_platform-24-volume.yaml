@@ -1,0 +1,81 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetMarketPlatform24VolumeV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                     {
+                         "volCny": "230900886396766",
+                         "volUsd": "34462818865189",
+                         "ts": "1657856040389"
+                     }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ts:
+                                default: ""
+                                description: Data return time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            volCny:
+                                default: ""
+                                description: 24-hour total trading volume from the order book trading in "CNY"
+                                type: string
+                            volUsd:
+                                default: ""
+                                description: 24-hour total trading volume from the order book trading in "USD"
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/market/platform-24-volume:
+        get:
+            description: "The 24-hour trading volume is calculated on a rolling basis.\n\n#### Rate Limit: 2 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketPlatform24VolumeV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketPlatform24VolumeV5Resp'
+                    description: Successful operation
+            summary: |+
+                The 24-hour trading volume is calculated on a rolling basis.
+
+            tags:
+                - Market Data

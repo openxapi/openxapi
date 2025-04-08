@@ -9,6 +9,7 @@ import (
 
 	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/exchange/binance"
+	"github.com/openxapi/openxapi/internal/exchange/okx"
 	"github.com/openxapi/openxapi/internal/generator"
 	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
@@ -107,6 +108,8 @@ func main() {
 			} else {
 				p = binance.NewParser()
 			}
+		case "okx":
+			p = okx.NewParser() // Placeholder for OKX parser
 		default:
 			logrus.Warnf("Unsupported exchange: %s", exchangeName)
 			continue

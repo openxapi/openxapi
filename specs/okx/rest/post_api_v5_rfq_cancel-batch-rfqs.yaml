@@ -1,0 +1,131 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateRfqCancelBatchRfqsV5Req:
+            properties:
+                clRfqIds:
+                    description: "Client-supplied RFQ IDs. \n\nEither `rfqIds` or `clRfqIds` is required. \n\nIf both attributes are sent, `rfqIds` will be used as primary identifier."
+                    items:
+                        type: string
+                    type: array
+                rfqIds:
+                    description: RFQ IDs .
+                    items:
+                        type: string
+                    type: array
+            type: object
+        CreateRfqCancelBatchRfqsV5Resp:
+            example: |+
+                {
+                    "code":"1",
+                    "msg":"Operation failed.",
+                    "data":[
+                        {
+                            "rfqId":"2201",
+                            "clRfqId":"r1",
+                            "sCode":"70000",
+                            "sMsg":"RFQ does not exist."
+                        },
+                        {
+                            "rfqId":"2202",
+                            "clRfqId":"r2",
+                            "sCode":"70000",
+                            "sMsg":"RFQ does not exist."
+                        },
+                        {
+                            "rfqId":"2203",
+                            "clRfqId":"r3",
+                            "sCode":"70000",
+                            "sMsg":"RFQ does not exist."
+                        }
+                    ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            clRfqId:
+                                default: ""
+                                description: Client-supplied RFQ ID.
+                                type: string
+                            rfqId:
+                                default: ""
+                                description: RFQ ID
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, `0` means success.
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection message if the request is unsuccessful.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/cancel-batch-rfqs:
+        post:
+            description: "Cancel one or multiple active RFQ(s) in a single batch. Maximum 100 RFQ orders can be canceled per request.\n\n#### Rate Limit: 2 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateRfqCancelBatchRfqsV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateRfqCancelBatchRfqsV5Req'
+                description: The request body for CreateRfqCancelBatchRfqsV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateRfqCancelBatchRfqsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Cancel one or multiple active RFQ(s) in a single batch. Maximum 100 RFQ orders can be canceled per request.
+
+            tags:
+                - Block Trading

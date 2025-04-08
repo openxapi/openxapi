@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingTotalUnrealizedProfitSharingV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "profitSharingTs": "1705852800000",
+                            "totalUnrealizedProfitSharingAmt": "0.114402985553185"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            profitSharingTs:
+                                default: ""
+                                description: The settlement time for the total unrealized profit sharing amount. Unix timestamp format in milliseconds, e.g.1597026383085
+                                type: string
+                            totalUnrealizedProfitSharingAmt:
+                                default: ""
+                                description: Total unrealized profit sharing amount
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/total-unrealized-profit-sharing:
+        get:
+            description: "The leading trader gets the total unrealized amount of profit shared.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingTotalUnrealizedProfitSharingV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`, the default value.
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`, the default value.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingTotalUnrealizedProfitSharingV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                The leading trader gets the total unrealized amount of profit shared.
+
+            tags:
+                - Copy Trading

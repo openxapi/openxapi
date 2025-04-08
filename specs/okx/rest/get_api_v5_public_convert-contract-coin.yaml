@@ -1,0 +1,180 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicConvertContractCoinV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "instId": "BTC-USD-SWAP",
+                            "px": "35000",
+                            "sz": "311",
+                            "type": "1",
+                            "unit": "coin"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            px:
+                                default: ""
+                                description: Order price
+                                type: string
+                            sz:
+                                default: ""
+                                description: |-
+                                    Quantity to buy or sell
+
+                                    It is quantity of contract while converting currency to contract
+
+                                    It is quantity of currency while contract to currency.
+                                type: string
+                            type:
+                                default: ""
+                                description: "Convert type \n\n`1`: Convert currency to contract\n\n`2`: Convert contract to currency"
+                                type: string
+                            unit:
+                                default: ""
+                                description: |-
+                                    The unit of currency
+
+                                    `coin`
+
+                                    `usds`: USDT/USDC
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/convert-contract-coin:
+        get:
+            description: "Convert the crypto value to the number of contracts, or vice versa\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicConvertContractCoinV5
+            parameters:
+                - description: |-
+                    Convert type
+
+                    `1`: Convert currency to contract
+
+                    `2`: Convert contract to currency
+
+                    The default is `1`
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: |-
+                        Convert type
+
+                        `1`: Convert currency to contract
+
+                        `2`: Convert contract to currency
+
+                        The default is `1`
+                    type: string
+                - description: |-
+                    Instrument ID
+
+                    only applicable to `FUTURES`/`SWAP`/`OPTION`
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument ID
+
+                        only applicable to `FUTURES`/`SWAP`/`OPTION`
+                    type: string
+                - description: "Quantity to buy or sell\n\nIt is quantity of currency while converting currency to contract; \n\nIt is quantity of contract while converting contract to currency."
+                  in: query
+                  name: sz
+                  required: true
+                  schema:
+                    default: ""
+                    description: "Quantity to buy or sell\n\nIt is quantity of currency while converting currency to contract; \n\nIt is quantity of contract while converting contract to currency."
+                    type: string
+                - description: "Order price\n\nFor crypto-margined contracts, it is necessary while converting.\n\nFor USDT-margined contracts, it is necessary while converting between usdt and contract.\n\nIt is optional while converting between coin and contract. \n\nFor OPTION, it is optional."
+                  in: query
+                  name: px
+                  schema:
+                    default: ""
+                    description: "Order price\n\nFor crypto-margined contracts, it is necessary while converting.\n\nFor USDT-margined contracts, it is necessary while converting between usdt and contract.\n\nIt is optional while converting between coin and contract. \n\nFor OPTION, it is optional."
+                    type: string
+                - description: |-
+                    The unit of currency
+
+                    `coin`
+
+                    `usds`: USDT/USDC
+
+                    only applicable to USDⓈ-margined contracts from `FUTURES`/`SWAP`
+                  in: query
+                  name: unit
+                  schema:
+                    default: ""
+                    description: |-
+                        The unit of currency
+
+                        `coin`
+
+                        `usds`: USDT/USDC
+
+                        only applicable to USDⓈ-margined contracts from `FUTURES`/`SWAP`
+                    type: string
+                - description: "Order type\n\n`open`: round down sz when opening positions \n\n`close`: round sz to the nearest when closing positions \n\nThe default is `close` \n\nApplicable to `FUTURES` `SWAP`"
+                  in: query
+                  name: opType
+                  schema:
+                    default: ""
+                    description: "Order type\n\n`open`: round down sz when opening positions \n\n`close`: round sz to the nearest when closing positions \n\nThe default is `close` \n\nApplicable to `FUTURES` `SWAP`"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicConvertContractCoinV5Resp'
+                    description: Successful operation
+            summary: |+
+                Convert the crypto value to the number of contracts, or vice versa
+
+            tags:
+                - Public Data

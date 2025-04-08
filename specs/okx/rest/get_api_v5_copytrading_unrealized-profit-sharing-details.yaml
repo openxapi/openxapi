@@ -1,0 +1,141 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingUnrealizedProfitSharingDetailsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "ccy": "USDT",
+                            "nickName": "Potato",
+                            "portLink": "",
+                            "ts": "1669901824779",
+                            "unrealizedProfitSharingAmt": "0.455472",
+                            "instType": "SWAP"
+                        },
+                        {
+                            "ccy": "USDT",
+                            "nickName": "Apple",
+                            "portLink": "",
+                            "ts": "1669460210113",
+                            "unrealizedProfitSharingAmt": "0.033608",
+                            "instType": "SWAP"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: The currency of profit sharing. e.g. USDT
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            nickName:
+                                default: ""
+                                description: Nickname of copy trader.
+                                type: string
+                            portLink:
+                                default: ""
+                                description: Portrait link
+                                type: string
+                            ts:
+                                default: ""
+                                description: Update time.
+                                type: string
+                            unrealizedProfitSharingAmt:
+                                default: ""
+                                description: Unrealized profit sharing amount.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/unrealized-profit-sharing-details:
+        get:
+            description: "The leading trader gets the profit sharing details that are expected to be shared in the next settlement cycle.\n\n\nThe unrealized profit sharing details will update once there copy position is closed.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingUnrealizedProfitSharingDetailsV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SPOT`
+
+                    `SWAP`
+
+                    It returns all types by default.
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`
+
+                        It returns all types by default.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingUnrealizedProfitSharingDetailsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                The leading trader gets the profit sharing details that are expected to be shared in the next settlement cycle.
+
+
+                The unrealized profit sharing details will update once there copy position is closed.
+
+            tags:
+                - Copy Trading

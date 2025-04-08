@@ -1,0 +1,156 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradeClosePositionV5Req:
+            properties:
+                autoCxl:
+                    description: |-
+                        Whether any pending orders for closing out needs to be automatically canceled when close position via a market order.
+
+                        `false` or `true`, the default is `false`.
+                    type: boolean
+                ccy:
+                    default: ""
+                    description: Margin currency, required in the case of closing `cross` `MARGIN` position for `Spot and futures mode`.
+                    type: string
+                clOrdId:
+                    default: ""
+                    description: |-
+                        Client-supplied ID
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                instId:
+                    default: ""
+                    description: Instrument ID
+                    type: string
+                mgnMode:
+                    default: ""
+                    description: |-
+                        Margin mode
+
+                        `cross` `isolated`
+                    type: string
+                posSide:
+                    default: ""
+                    description: "Position side \n\nThis parameter can be omitted in `net` mode, and the default value is `net`. You can only fill with `net`.\n\nThis parameter must be filled in under the `long/short` mode. Fill in `long` for close-long and `short` for close-short."
+                    type: string
+                tag:
+                    default: ""
+                    description: |-
+                        Order tag
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters.
+                    type: string
+            required:
+                - instId
+                - mgnMode
+            type: object
+        CreateTradeClosePositionV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "clOrdId": "",
+                            "instId": "BTC-USDT-SWAP",
+                            "posSide": "long",
+                            "tag": ""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            clOrdId:
+                                default: ""
+                                description: |-
+                                    Client-supplied ID
+
+                                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            posSide:
+                                default: ""
+                                description: Position side
+                                type: string
+                            tag:
+                                default: ""
+                                description: |-
+                                    Order tag
+
+                                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/close-position:
+        post:
+            description: "Close the position of an instrument via a market order.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule (except Options): User ID + Instrument ID \n\n#### Rate limit rule (Options only): User ID + Instrument Family \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradeClosePositionV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradeClosePositionV5Req'
+                description: The request body for CreateTradeClosePositionV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradeClosePositionV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: |+
+                Close the position of an instrument via a market order.
+
+            tags:
+                - Trade

@@ -1,0 +1,177 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetRfqMakerInstrumentSettingsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "instType": "OPTION",
+                            "includeAll": true,
+                            "data": [
+                                {
+                                    "instFamily": "BTC-USD",
+                                    "maxBlockSz": "10000",
+                                    "makerPxBand": "5"
+                                },
+                                {
+                                    "instFamily": "SOL-USD",
+                                    "maxBlockSz": "100000",
+                                    "makerPxBand": "15"
+                                }
+                            ]
+                        },
+                        {
+                            "instType": "FUTURES",
+                            "includeAll": false,
+                            "data": [
+                                {
+                                    "instFamily": "BTC-USD",
+                                    "maxBlockSz": "10000",
+                                    "makerPxBand": "5"
+                                },
+                                {
+                                    "instFamily": "ETH-USDT",
+                                    "maxBlockSz": "100000",
+                                    "makerPxBand": "15"
+                                }
+                            ]
+                        },
+                        {
+                            "instType:": "SWAP",
+                            "includeAll": false,
+                            "data": [
+                                {
+                                    "instFamily": "BTC-USD",
+                                    "maxBlockSz": "10000",
+                                    "makerPxBand": "5"
+                                },
+                                {
+                                    "instFamily": "ETH-USDT"
+                                }
+                            ]
+                        },
+                        {
+                            "instType:": "SPOT",
+                            "includeAll": false,
+                            "data": [
+                                {
+                                    "instId": "BTC-USDT"
+                                },
+                                {
+                                    "instId": "TRX-USDT"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            data:
+                                description: Elements of the instType.
+                                items:
+                                    properties:
+                                        instFamily:
+                                            default: ""
+                                            description: Instrument family. Required for `FUTURES`, `OPTION` and `SWAP` only.
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID. Required for `SPOT` only.
+                                            type: string
+                                        makerPxBand:
+                                            default: ""
+                                            description: "Price bands in unit of ticks, measured against mark price. \n\nSetting makerPxBand to 1 tick means: \n\nIf Bid price > Mark + 1 tick, it will be stopped \n\nIf Ask price < Mark - 1 tick, It will be stopped"
+                                            type: string
+                                        maxBlockSz:
+                                            default: ""
+                                            description: "Max trade quantity for the product(s). \n\nFor `FUTURES`, `OPTION` and `SWAP`, the max quantity of the RFQ/Quote is in unit of contracts. For `SPOT`, this parameter is in base currency."
+                                            type: string
+                                    type: object
+                                type: array
+                            includeAll:
+                                description: "Receive all instruments or not under specific instType setting. \n\nValid value can be boolean (`True`/`False`). By default, the value will be `false`."
+                                type: boolean
+                            instFamily:
+                                default: ""
+                                description: Instrument family. Required for `FUTURES`, `OPTION` and `SWAP` only.
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID. Required for `SPOT` only.
+                                type: string
+                            instType:
+                                default: ""
+                                description: Type of instrument. Valid value can be `FUTURES`, `OPTION`, `SWAP` or `SPOT`.
+                                type: string
+                            makerPxBand:
+                                default: ""
+                                description: "Price bands in unit of ticks, measured against mark price. \n\nSetting makerPxBand to 1 tick means: \n\nIf Bid price > Mark + 1 tick, it will be stopped \n\nIf Ask price < Mark - 1 tick, It will be stopped"
+                                type: string
+                            maxBlockSz:
+                                default: ""
+                                description: "Max trade quantity for the product(s). \n\nFor `FUTURES`, `OPTION` and `SWAP`, the max quantity of the RFQ/Quote is in unit of contracts. For `SPOT`, this parameter is in base currency."
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        OK-ACCESS-KEY:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        OK-ACCESS-PASSPHRASE:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/maker-instrument-settings:
+        get:
+            description: "Retrieve the products which makers want to quote and receive RFQs for, and the corresponding price and size limit. \n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetRfqMakerInstrumentSettingsV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRfqMakerInstrumentSettingsV5Resp'
+                    description: Successful operation
+            security:
+                - OK-ACCESS-KEY: []
+                - OK-ACCESS-PASSPHRASE: []
+            summary: "Retrieve the products which makers want to quote and receive RFQs for, and the corresponding price and size limit. \n\n"
+            tags:
+                - Block Trading

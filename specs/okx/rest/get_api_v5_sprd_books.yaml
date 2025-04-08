@@ -1,0 +1,110 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetSprdBooksV5Resp:
+            example: |+
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "asks": [
+                                [
+                                    "41006.8", // price
+                                    "0.60038921", // quantity
+                                    "1" // number of orders at the price
+                                ]
+                            ],
+                            "bids": [
+                                [
+                                    "41006.3",
+                                    "0.30178218",
+                                    "2"
+                                ]
+                            ],
+                            "ts": "1629966436396"
+                        }
+                    ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            asks:
+                                default: ""
+                                description: Order book on sell side
+                                type: string
+                            bids:
+                                default: ""
+                                description: Order book on buy side
+                                type: string
+                            ts:
+                                default: ""
+                                description: Order book generation time
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/sprd/books:
+        get:
+            description: "Retrieve the order book of the spread.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetSprdBooksV5
+            parameters:
+                - description: spread ID, e.g. BTC-USDT_BTC-USDT-SWAP
+                  in: query
+                  name: sprdId
+                  required: true
+                  schema:
+                    default: ""
+                    description: spread ID, e.g. BTC-USDT_BTC-USDT-SWAP
+                    type: string
+                - description: Order book depth per side. Maximum value is 400. Default value is 5.
+                  in: query
+                  name: sz
+                  schema:
+                    default: ""
+                    description: Order book depth per side. Maximum value is 400. Default value is 5.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSprdBooksV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the order book of the spread.
+
+            tags:
+                - Spread Trading
