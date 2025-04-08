@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/adshao/openxapi/internal/parser"
+	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
 )
@@ -28,7 +28,7 @@ var ManualAPISchemaMap map[string]parser.Schema = map[string]parser.Schema{
 	},
 }
 
-// DocumentParser is a parser for Binance documents
+// DocumentParser is a parser for OKX documents
 type DocumentParser struct {
 	parser.HTTPDocumentParser
 	docType string
@@ -226,7 +226,7 @@ func createSchema(name, paramType, paramName string, row *goquery.Selection) (*p
 	}
 }
 
-// normalizeType converts Binance types to OpenAPI types
+// normalizeType converts OKX types to OpenAPI types
 func normalizeType(typ string) string {
 	switch strings.ToUpper(typ) {
 	case "INT", "LONG", "INTEGER":
