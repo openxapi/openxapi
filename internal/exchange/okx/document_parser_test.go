@@ -174,37 +174,37 @@ func TestOperationID(t *testing.T) {
 			docType:  "rest",
 			method:   "GET",
 			path:     "/api/v5/account/balance",
-			expected: "RestGetAccountBalanceV5",
+			expected: "GetAccountBalanceV5",
 		},
 		{
 			docType:  "rest",
 			method:   "POST",
 			path:     "/api/v5/trade/order",
-			expected: "RestCreateTradeOrderV5",
+			expected: "CreateTradeOrderV5",
 		},
 		{
 			docType:  "market",
 			method:   "DELETE",
 			path:     "/api/v5/market/books",
-			expected: "MarketDeleteMarketBooksV5",
+			expected: "DeleteMarketBooksV5",
 		},
 		{
 			docType:  "market",
 			method:   "PUT",
 			path:     "/api/v5/market/ticker",
-			expected: "MarketUpdateMarketTickerV5",
+			expected: "UpdateMarketTickerV5",
 		},
 		{
 			docType:  "market",
 			method:   "GET",
 			path:     "/api/v5/market/ticker-price",
-			expected: "MarketGetMarketTickerPriceV5",
+			expected: "GetMarketTickerPriceV5",
 		},
 		{
 			docType:  "rest",
 			method:   "POST",
 			path:     "/api/v5/tradingBot/signal/create-signal",
-			expected: "RestCreateTradingBotSignalCreateSignalV5",
+			expected: "CreateTradingBotSignalCreateSignalV5",
 		},
 	}
 
