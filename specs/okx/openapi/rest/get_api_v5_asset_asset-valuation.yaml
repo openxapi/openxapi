@@ -1,0 +1,123 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetAssetValuationV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "details": {
+                                "classic": "124.6",
+                                "earn": "1122.73",
+                                "funding": "0.09",
+                                "trading": "2544.28"
+                            },
+                            "totalBal": "3790.09",
+                            "ts": "1637566660769"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            details:
+                                description: Asset valuation details for each account
+                                properties:
+                                    classic:
+                                        default: ""
+                                        deprecated: true
+                                        description: '[Deprecated] Classic account'
+                                        type: string
+                                    earn:
+                                        default: ""
+                                        description: Earn account
+                                        type: string
+                                    funding:
+                                        default: ""
+                                        description: Funding account
+                                        type: string
+                                    trading:
+                                        default: ""
+                                        description: Trading account
+                                        type: string
+                                type: object
+                            totalBal:
+                                default: ""
+                                description: Valuation of total account assets
+                                type: string
+                            ts:
+                                default: ""
+                                description: Unix timestamp format in milliseconds, e.g.`1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/asset-valuation:
+        get:
+            description: "View account asset valuation\n\n#### Rate Limit: 1 request per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetAssetValuationV5
+            parameters:
+                - description: "Asset valuation calculation unit \n\nBTC, USDT\n\nUSD, CNY, JP, KRW, RUB, EUR\n\nVND, IDR, INR, PHP, THB, TRY \n\nAUD, SGD, ARS, SAR, AED, IQD \n\nThe default is the valuation in BTC."
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: "Asset valuation calculation unit \n\nBTC, USDT\n\nUSD, CNY, JP, KRW, RUB, EUR\n\nVND, IDR, INR, PHP, THB, TRY \n\nAUD, SGD, ARS, SAR, AED, IQD \n\nThe default is the valuation in BTC."
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetAssetValuationV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                View account asset valuation
+
+            tags:
+                - Funding Account

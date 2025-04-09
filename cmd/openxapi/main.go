@@ -9,6 +9,7 @@ import (
 
 	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/exchange/binance"
+	"github.com/openxapi/openxapi/internal/exchange/okx"
 	"github.com/openxapi/openxapi/internal/generator"
 	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
@@ -106,6 +107,13 @@ func main() {
 				logrus.Infof("Using sample files from %s", exchangeSamplesDir)
 			} else {
 				p = binance.NewParser()
+			}
+		case "okx":
+			if useSamples {
+				p = okx.NewParserWithOptions(useSamples, exchangeSamplesDir)
+				logrus.Infof("Using sample files from %s", exchangeSamplesDir)
+			} else {
+				p = okx.NewParser()
 			}
 		default:
 			logrus.Warnf("Unsupported exchange: %s", exchangeName)

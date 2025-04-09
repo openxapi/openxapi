@@ -1,0 +1,105 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountSetPositionModeV5Req:
+            properties:
+                posMode:
+                    default: ""
+                    description: |-
+                        Position mode
+
+                        `long_short_mode`: long/short, only applicable to `FUTURES`/`SWAP`
+
+                        `net_mode`: net
+                    type: string
+            required:
+                - posMode
+            type: object
+        CreateAccountSetPositionModeV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                        "posMode": "long_short_mode"
+                    }]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            posMode:
+                                default: ""
+                                description: Position mode
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/set-position-mode:
+        post:
+            description: "Spot and futures mode and Multi-currency mode: `FUTURES` and `SWAP` support both `long/short` mode and `net` mode. In `net` mode, users can only have positions in one direction; In `long/short` mode, users can hold positions in long and short directions.\n\n\nPortfolio margin mode: `FUTURES` and `SWAP` only support `net` mode\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAccountSetPositionModeV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSetPositionModeV5Req'
+                description: The request body for CreateAccountSetPositionModeV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSetPositionModeV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Spot and futures mode and Multi-currency mode: `FUTURES` and `SWAP` support both `long/short` mode and `net` mode. In `net` mode, users can only have positions in one direction; In `long/short` mode, users can hold positions in long and short directions.
+
+
+                Portfolio margin mode: `FUTURES` and `SWAP` only support `net` mode
+
+            tags:
+                - Trading Account

@@ -1,0 +1,242 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountAdjustLeverageInfoV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "estAvailQuoteTrans": "",
+                            "estAvailTrans": "1.1398040558348279",
+                            "estLiqPx": "",
+                            "estMaxAmt": "10.6095865868904898",
+                            "estMgn": "0.0701959441651721",
+                            "estQuoteMaxAmt": "176889.6871254563042714",
+                            "estQuoteMgn": "",
+                            "existOrd": false,
+                            "maxLever": "10",
+                            "minLever": "0.01"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            estAvailQuoteTrans:
+                                default: ""
+                                description: |-
+                                    The estimated margin(in quote currency) can be transferred out under the corresponding leverage
+
+                                    For cross, it is the maximum quantity that can be transferred from the trading account.
+
+                                    For isolated, it is the maximum quantity that can be transferred from the isolated position
+
+                                    Only applicable to `MARGIN`
+                                type: string
+                            estAvailTrans:
+                                default: ""
+                                description: |-
+                                    The estimated margin can be transferred out under the corresponding leverage.
+
+                                    For cross, it is the maximum quantity that can be transferred from the trading account.
+
+                                    For isolated, it is the maximum quantity that can be transferred from the isolated position
+
+                                     The unit is base currency for `MARGIN`
+
+                                     It is not applicable to the scenario when increasing leverage for isolated position under `FUTURES` and `SWAP`
+                                type: string
+                            estLiqPx:
+                                default: ""
+                                description: The estimated liquidation price under the corresponding leverage. Only return when there is a position.
+                                type: string
+                            estMaxAmt:
+                                default: ""
+                                description: |-
+                                    For `MARGIN`, it is the estimated maximum loan in base currency under the corresponding leverage
+
+                                    For `SWAP` and `FUTURES`, it is the estimated maximum quantity of contracts that can be opened under the corresponding leverage
+                                type: string
+                            estMgn:
+                                default: ""
+                                description: |-
+                                    The estimated margin needed by position under the corresponding leverage.
+
+                                    For the `MARGIN` position, it is margin in base currency
+                                type: string
+                            estQuoteMaxAmt:
+                                default: ""
+                                description: The `MARGIN` estimated maximum loan in quote currency under the corresponding leverage.
+                                type: string
+                            estQuoteMgn:
+                                default: ""
+                                description: The estimated margin (in quote currency) needed by position under the corresponding leverage
+                                type: string
+                            existOrd:
+                                description: "Whether there is pending orders \n\n`true`\n\n`false`"
+                                type: boolean
+                            maxLever:
+                                default: ""
+                                description: Maximum leverage
+                                type: string
+                            minLever:
+                                default: ""
+                                description: Minimum leverage
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/adjust-leverage-info:
+        get:
+            description: "#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountAdjustLeverageInfoV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `MARGIN`
+
+                    `SWAP`
+
+                    `FUTURES`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `MARGIN`
+
+                        `SWAP`
+
+                        `FUTURES`
+                    type: string
+                - description: |-
+                    Margin mode
+
+                    `isolated`
+
+                    `cross`
+                  in: query
+                  name: mgnMode
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Margin mode
+
+                        `isolated`
+
+                        `cross`
+                    type: string
+                - description: Leverage
+                  in: query
+                  name: lever
+                  required: true
+                  schema:
+                    default: ""
+                    description: Leverage
+                    type: string
+                - description: |-
+                    Instrument ID, e.g. BTC-USDT
+
+                    It is required for these scenarioes: `SWAP` and `FUTURES`, Margin isolation, Margin cross in `Spot and futures mode`.
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument ID, e.g. BTC-USDT
+
+                        It is required for these scenarioes: `SWAP` and `FUTURES`, Margin isolation, Margin cross in `Spot and futures mode`.
+                    type: string
+                - description: |-
+                    Currency used for margin, e.g. BTC
+
+                    It is required for isolated margin and cross margin in `Spot and futures mode`, `Multi-currency margin` and `Portfolio margin`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: |-
+                        Currency used for margin, e.g. BTC
+
+                        It is required for isolated margin and cross margin in `Spot and futures mode`, `Multi-currency margin` and `Portfolio margin`
+                    type: string
+                - description: |-
+                    posSide
+
+                    `net`: The default value
+
+                    `long`
+
+                    `short`
+                  in: query
+                  name: posSide
+                  schema:
+                    default: ""
+                    description: |-
+                        posSide
+
+                        `net`: The default value
+
+                        `long`
+
+                        `short`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountAdjustLeverageInfoV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Trading Account

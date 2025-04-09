@@ -1,0 +1,100 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountInterestRateV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "ccy":"BTC",
+                            "interestRate":"0.0001"
+                        },
+                        {
+                            "ccy":"LTC",
+                            "interestRate":"0.0003"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: currency
+                                type: string
+                            interestRate:
+                                default: ""
+                                description: interest rate(the current hour)
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/interest-rate:
+        get:
+            description: "Get the user's current leveraged currency borrowing market interest rate\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountInterestRateV5
+            parameters:
+                - description: Currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency, e.g. `BTC`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountInterestRateV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Get the user's current leveraged currency borrowing market interest rate
+
+            tags:
+                - Trading Account

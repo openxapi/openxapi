@@ -1,0 +1,104 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotSignalClosePositionV5Req:
+            properties:
+                algoId:
+                    default: ""
+                    description: Algo ID
+                    type: string
+                instId:
+                    default: ""
+                    description: Instrument ID
+                    type: string
+            required:
+                - algoId
+                - instId
+            type: object
+        CreateTradingBotSignalClosePositionV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "algoId": "448965992920907776"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/signal/close-position:
+        post:
+            description: "Close the position of an instrument via a market order.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradingBotSignalClosePositionV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotSignalClosePositionV5Req'
+                description: The request body for CreateTradingBotSignalClosePositionV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotSignalClosePositionV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Close the position of an instrument via a market order.
+
+            tags:
+                - Signal Bot Trading

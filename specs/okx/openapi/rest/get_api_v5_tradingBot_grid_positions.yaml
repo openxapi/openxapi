@@ -1,0 +1,219 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradingBotGridPositionsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "adl": "1",
+                            "algoClOrdId": "",
+                            "algoId": "449327675342323712",
+                            "avgPx": "29215.0142857142857149",
+                            "cTime": "1653400065917",
+                            "ccy": "USDT",
+                            "imr": "2045.386",
+                            "instId": "BTC-USDT-SWAP",
+                            "instType": "SWAP",
+                            "last": "29206.7",
+                            "lever": "5",
+                            "liqPx": "661.1684795867162",
+                            "markPx": "29213.9",
+                            "mgnMode": "cross",
+                            "mgnRatio": "217.19370606167573",
+                            "mmr": "40.907720000000005",
+                            "notionalUsd": "10216.70307",
+                            "pos": "35",
+                            "posSide": "net",
+                            "uTime": "1653400066938",
+                            "upl": "1.674999999999818",
+                            "uplRatio": "0.0008190504784478"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            adl:
+                                default: ""
+                                description: |-
+                                    Auto decrease line, signal area
+
+                                    Divided into 5 levels, from 1 to 5, the smaller the number, the weaker the adl intensity.
+                                type: string
+                            algoClOrdId:
+                                default: ""
+                                description: Client-supplied Algo ID
+                                type: string
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                            avgPx:
+                                default: ""
+                                description: Average open price
+                                type: string
+                            cTime:
+                                default: ""
+                                description: Algo order created time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Margin currency
+                                type: string
+                            imr:
+                                default: ""
+                                description: Initial margin requirement
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            last:
+                                default: ""
+                                description: Latest traded price
+                                type: string
+                            lever:
+                                default: ""
+                                description: Leverage
+                                type: string
+                            liqPx:
+                                default: ""
+                                description: Estimated liquidation price
+                                type: string
+                            markPx:
+                                default: ""
+                                description: Mark price
+                                type: string
+                            mgnMode:
+                                default: ""
+                                description: |-
+                                    Margin mode
+
+                                    `cross`
+
+                                    `isolated`
+                                type: string
+                            mgnRatio:
+                                default: ""
+                                description: Margin ratio
+                                type: string
+                            mmr:
+                                default: ""
+                                description: Maintenance margin requirement
+                                type: string
+                            notionalUsd:
+                                default: ""
+                                description: Notional value of positions in `USD`
+                                type: string
+                            pos:
+                                default: ""
+                                description: Quantity of positions
+                                type: string
+                            posSide:
+                                default: ""
+                                description: |-
+                                    Position side
+
+                                    `net`
+                                type: string
+                            uTime:
+                                default: ""
+                                description: Algo order updated time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            upl:
+                                default: ""
+                                description: Unrealized profit and loss
+                                type: string
+                            uplRatio:
+                                default: ""
+                                description: Unrealized profit and loss ratio
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/grid/positions:
+        get:
+            description: "#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetTradingBotGridPositionsV5
+            parameters:
+                - description: |-
+                    Algo order type
+
+                    `contract_grid`: Contract grid
+                  in: query
+                  name: algoOrdType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Algo order type
+
+                        `contract_grid`: Contract grid
+                    type: string
+                - description: Algo ID
+                  in: query
+                  name: algoId
+                  required: true
+                  schema:
+                    default: ""
+                    description: Algo ID
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradingBotGridPositionsV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Grid Trading

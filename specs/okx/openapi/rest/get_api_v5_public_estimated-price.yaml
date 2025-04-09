@@ -1,0 +1,100 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicEstimatedPriceV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                    {
+                        "instType":"FUTURES",
+                        "instId":"BTC-USDT-201227",
+                        "settlePx":"200",
+                        "ts":"1597026383085"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. `BTC-USD-200214`
+                                type: string
+                            instType:
+                                default: ""
+                                description: |-
+                                    Instrument type
+
+                                    `FUTURES`
+
+                                    `OPTION`
+                                type: string
+                            settlePx:
+                                default: ""
+                                description: Estimated delivery/exercise price
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data return time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/estimated-price:
+        get:
+            description: "Retrieve the estimated delivery price which will only have a return value one hour before the delivery/exercise.\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: IP + Instrument ID \n\n"
+            operationId: GetPublicEstimatedPriceV5
+            parameters:
+                - description: "Instrument ID, e.g. `BTC-USD-200214` \n\nonly applicable to `FUTURES`/`OPTION`"
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: "Instrument ID, e.g. `BTC-USD-200214` \n\nonly applicable to `FUTURES`/`OPTION`"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicEstimatedPriceV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the estimated delivery price which will only have a return value one hour before the delivery/exercise.
+
+            tags:
+                - Public Data

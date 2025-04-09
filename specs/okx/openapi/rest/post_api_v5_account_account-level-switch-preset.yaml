@@ -1,0 +1,141 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountAccountLevelSwitchPresetV5Req:
+            properties:
+                acctLv:
+                    default: ""
+                    description: |-
+                        Account mode
+
+                         `2`: Spot and futures mode
+
+                         `3`: Multi-currency margin code
+
+                         `4`: Portfolio margin mode
+                    type: string
+                lever:
+                    default: ""
+                    description: |-
+                        Leverage
+
+                         Required when switching from Portfolio margin mode to Spot and futures mode or Multi-currency margin mode, and the user holds cross-margin positions.
+                    type: string
+                riskOffsetType:
+                    default: ""
+                    deprecated: true
+                    description: |-
+                        Risk offset type
+
+                         `1`: Spot-derivatives (USDT) risk offset
+
+                         `2`: Spot-derivatives (Crypto) risk offset
+
+                         `3`: Derivatives only mode
+
+                         `4`: Spot-derivatives (USDC) risk offset
+
+                         Applicable when switching from Spot and futures mode or Multi-currency margin mode to Portfolio margin mode.(Deprecated)
+                    type: string
+            required:
+                - acctLv
+            type: object
+        CreateAccountAccountLevelSwitchPresetV5Resp:
+            example: |
+                {
+                    "acctLv": "3",
+                    "curAcctLv": "4",
+                    "lever": "",
+                    "riskOffsetType": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            acctLv:
+                                default: ""
+                                description: Account mode after switch
+                                type: string
+                            curAcctLv:
+                                default: ""
+                                description: Current account mode
+                                type: string
+                            lever:
+                                default: ""
+                                description: The leverage user preset for cross-margin positions
+                                type: string
+                            riskOffsetType:
+                                default: ""
+                                deprecated: true
+                                description: The risk offset type user preset(Deprecated)
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/account-level-switch-preset:
+        post:
+            description: "Pre-set the required information for account mode switching. When switching from `Portfolio margin mode` back to `Spot and futures mode` / `Multi-currency margin mode`, and if there are existing cross-margin contract positions, it is mandatory to pre-set leverage.\n\nIf the user does not follow the required settings, they will receive an error message during the pre-check or when setting the account mode.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAccountAccountLevelSwitchPresetV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountAccountLevelSwitchPresetV5Req'
+                description: The request body for CreateAccountAccountLevelSwitchPresetV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountAccountLevelSwitchPresetV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Pre-set the required information for account mode switching. When switching from `Portfolio margin mode` back to `Spot and futures mode` / `Multi-currency margin mode`, and if there are existing cross-margin contract positions, it is mandatory to pre-set leverage.
+
+                If the user does not follow the required settings, they will receive an error message during the pre-check or when setting the account mode.
+
+            tags:
+                - Trading Account

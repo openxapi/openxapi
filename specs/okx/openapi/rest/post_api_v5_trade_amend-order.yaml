@@ -1,0 +1,228 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradeAmendOrderV5Req:
+            properties:
+                attachAlgoOrds:
+                    description: TP/SL information attached when placing order
+                    items:
+                        properties:
+                            amendPxOnTriggerType:
+                                default: ""
+                                description: "Whether to enable Cost-price SL. Only applicable to SL order of split TPs. \n\n`0`: disable, the default value \n\n`1`: Enable"
+                                type: string
+                            attachAlgoClOrdId:
+                                default: ""
+                                description: |-
+                                    Client-supplied Algo ID when placing order attaching TP/SL
+
+                                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+
+                                    It will be posted to `algoClOrdId` when placing TP/SL order once the general order is filled completely.
+                                type: string
+                            attachAlgoId:
+                                default: ""
+                                description: The order ID of attached TP/SL order. It can be used to identity the TP/SL order when amending. It will not be posted to algoId when placing TP/SL order after the general order is filled completely.
+                                type: string
+                            newSlOrdPx:
+                                default: ""
+                                description: |-
+                                    Stop-loss order price
+
+                                    If the price is -1, stop-loss will be executed at the market price.
+                                type: string
+                            newSlTriggerPx:
+                                default: ""
+                                description: |-
+                                    Stop-loss trigger price
+
+                                    Either the stop loss trigger price or order price is 0, it means that the stop loss is deleted.
+                                type: string
+                            newSlTriggerPxType:
+                                default: ""
+                                description: "Stop-loss trigger price type\n\n`last`: last price \n\n`index`: index price \n\n`mark`: mark price\n\nOnly applicable to `FUTURES`/`SWAP`\n\nIf you want to add the stop-loss, this parameter is required"
+                                type: string
+                            newTpOrdKind:
+                                default: ""
+                                description: |-
+                                    TP order kind
+
+                                    `condition`
+
+                                    `limit`
+                                type: string
+                            newTpOrdPx:
+                                default: ""
+                                description: |-
+                                    Take-profit order price
+
+                                    If the price is -1, take-profit will be executed at the market price.
+                                type: string
+                            newTpTriggerPx:
+                                default: ""
+                                description: "Take-profit trigger price. \n\nEither the take profit trigger price or order price is 0, it means that the take profit is deleted."
+                                type: string
+                            newTpTriggerPxType:
+                                default: ""
+                                description: "Take-profit trigger price type\n\n`last`: last price \n\n`index`: index price \n\n`mark`: mark price\n\nOnly applicable to `FUTURES`/`SWAP`\n\nIf you want to add the take-profit, this parameter is required"
+                                type: string
+                            sz:
+                                default: ""
+                                description: New size. Only applicable to TP order of split TPs, and it is required for TP order of split TPs
+                                type: string
+                        type: object
+                    type: array
+                clOrdId:
+                    default: ""
+                    description: Client Order ID as assigned by the client
+                    type: string
+                cxlOnFail:
+                    description: "Whether the order needs to be automatically canceled when the order amendment fails  \n\nValid options: `false` or `true`, the default is `false`."
+                    type: boolean
+                instId:
+                    default: ""
+                    description: Instrument ID
+                    type: string
+                newPx:
+                    default: ""
+                    description: "New price after amendment. \n\nWhen modifying options orders, users can only fill in one of the following: newPx, newPxUsd, or newPxVol. It must be consistent with parameters when placing orders. For example, if users placed the order using px, they should use newPx when modifying the order."
+                    type: string
+                newPxUsd:
+                    default: ""
+                    description: "Modify options orders using USD prices \n\nOnly applicable to options. \n\nWhen modifying options orders, users can only fill in one of the following: newPx, newPxUsd, or newPxVol."
+                    type: string
+                newPxVol:
+                    default: ""
+                    description: "Modify options orders based on implied volatility, where 1 represents 100% \n\nOnly applicable to options. \n\nWhen modifying options orders, users can only fill in one of the following: newPx, newPxUsd, or newPxVol."
+                    type: string
+                newSz:
+                    default: ""
+                    description: New quantity after amendment and it has to be larger than 0. When amending a partially-filled order, the `newSz` should include the amount that has been filled.
+                    type: string
+                ordId:
+                    default: ""
+                    description: "Order ID  \n\nEither `ordId` or `clOrdId` is required. If both are passed, `ordId` will be used."
+                    type: string
+                reqId:
+                    default: ""
+                    description: "Client Request ID as assigned by the client for order amendment \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters. \n\nThe response will include the corresponding `reqId` to help you identify the request if you provide it in the request."
+                    type: string
+            required:
+                - instId
+            type: object
+        CreateTradeAmendOrderV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                         "clOrdId":"",
+                         "ordId":"12344",
+                         "ts":"1695190491421",
+                         "reqId":"b12344",
+                         "sCode":"0",
+                         "sMsg":""
+                        }
+                    ],
+                    "inTime": "1695190491421339",
+                    "outTime": "1695190491423240"
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            clOrdId:
+                                default: ""
+                                description: Client Order ID as assigned by the client
+                                type: string
+                            ordId:
+                                default: ""
+                                description: Order ID
+                                type: string
+                            reqId:
+                                default: ""
+                                description: Client Request ID as assigned by the client for order amendment.
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, `0` means success.
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection message if the request is unsuccessful.
+                                type: string
+                            ts:
+                                default: ""
+                                description: Timestamp when the order request processing is finished by our system, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/amend-order:
+        post:
+            description: "Amend an incomplete order.\n\n#### Rate Limit: 60 requests per 2 seconds \n\n#### Rate Limit of lead instruments for Copy Trading: 4 requests per 2 seconds \n\n#### Rate limit rule (except Options): User ID + Instrument ID \n\n#### Rate limit rule (Options only): User ID + Instrument Family \n\n#### Permission: Trade \n\nRate limit of this endpoint will also be affected by the rules  and .\n\n"
+            operationId: CreateTradeAmendOrderV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradeAmendOrderV5Req'
+                description: The request body for CreateTradeAmendOrderV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradeAmendOrderV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Amend an incomplete order.
+
+                Rate limit of this endpoint will also be affected by the rules  and .
+
+            tags:
+                - Trade

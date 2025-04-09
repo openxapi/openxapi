@@ -1,0 +1,128 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetRubikStatOptionOpenInterestVolumeStrikeV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        [
+                            "1630540800000",
+                            "10000",
+                            "0",
+                            "0.5",
+                            "0",
+                            "0"
+                        ],
+                        [
+                            "1630540800000",
+                            "14000",
+                            "0",
+                            "5.2",
+                            "0",
+                            "0"
+                        ]
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            callOI:
+                                default: ""
+                                description: Total call open interest (`coin` as the unit)
+                                type: string
+                            callVol:
+                                default: ""
+                                description: Total call trading volume (`coin` as the unit)
+                                type: string
+                            putOI:
+                                default: ""
+                                description: Total put open interest (`coin` as the unit)
+                                type: string
+                            putVol:
+                                default: ""
+                                description: Total put trading volume (`coin` as the unit)
+                                type: string
+                            strike:
+                                default: ""
+                                description: Strike price
+                                type: string
+                            ts:
+                                default: ""
+                                description: Timestamp
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rubik/stat/option/open-interest-volume-strike:
+        get:
+            description: "Retrieve the taker volume for both buyers and sellers of calls and puts.\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetRubikStatOptionOpenInterestVolumeStrikeV5
+            parameters:
+                - description: Currency
+                  in: query
+                  name: ccy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Currency
+                    type: string
+                - description: Contract expiry date, the format is `YYYYMMdd`, e.g. `20210623`
+                  in: query
+                  name: expTime
+                  required: true
+                  schema:
+                    default: ""
+                    description: Contract expiry date, the format is `YYYYMMdd`, e.g. `20210623`
+                    type: string
+                - description: "Period, the default is `8H`. e.g. [`8H/1D`]  \n\nEach granularity can provide only one latest piece of data"
+                  in: query
+                  name: period
+                  schema:
+                    default: ""
+                    description: "Period, the default is `8H`. e.g. [`8H/1D`]  \n\nEach granularity can provide only one latest piece of data"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRubikStatOptionOpenInterestVolumeStrikeV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the taker volume for both buyers and sellers of calls and puts.
+
+            tags:
+                - Trading Statistics

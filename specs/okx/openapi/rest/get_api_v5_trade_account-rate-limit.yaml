@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradeAccountRateLimitV5Resp:
+            example: |+
+                {
+                   "code":"0",
+                   "data":[
+                      {
+                         "accRateLimit":"2000",
+                         "fillRatio":"0.1234",
+                         "mainFillRatio":"0.1234",
+                         "nextAccRateLimit":"2000",
+                         "ts":"123456789000"
+                      }
+                   ],
+                   "msg":""
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            accRateLimit:
+                                default: ""
+                                description: Current sub-account rate limit per two seconds
+                                type: string
+                            fillRatio:
+                                default: ""
+                                description: "Sub account fill ratio during the monitoring period \n\nApplicable for users with trading fee level >= VIP 5 and return \"\" for others \n\nFor accounts with no trading volume during the monitoring period, return \"0\". For accounts with trading volume but no order count due to our counting logic, return \"9999\"."
+                                type: string
+                            mainFillRatio:
+                                default: ""
+                                description: "Master account aggregated fill ratio during the monitoring period \n\nApplicable for users with trading fee level >= VIP 5 and return \"\" for others \n\nFor accounts with no trading volume during the monitoring period, return \"0\""
+                                type: string
+                            nextAccRateLimit:
+                                default: ""
+                                description: "Expected sub-account rate limit (per two seconds) in the next period \n\nApplicable for users with trading fee level >= VIP 5 and return \"\" for others"
+                                type: string
+                            ts:
+                                default: ""
+                                description: "Data update time \n\nFor users with trading fee level >= VIP 5, the data will be generated at 08:00 am (UTC) \n\nFor users with trading fee level < VIP 5, return the current timestamp"
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/account-rate-limit:
+        get:
+            description: "Get account rate limit related information. \n\n\n\nOnly new order requests and amendment order requests will be counted towards this limit. For batch order requests consisting of multiple orders, each order will be counted individually. \n\n\n\nFor details, please refer to \n\n#### Rate Limit: 1 request per second \n\n#### Rate limit rule: User ID \n\n"
+            operationId: GetTradeAccountRateLimitV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradeAccountRateLimitV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: "Get account rate limit related information. \n\n\n\nOnly new order requests and amendment order requests will be counted towards this limit. For batch order requests consisting of multiple orders, each order will be counted individually. \n\n\n\nFor details, please refer to \n\n"
+            tags:
+                - Trade

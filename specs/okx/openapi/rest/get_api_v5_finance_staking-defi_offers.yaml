@@ -1,0 +1,237 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFinanceStaking-DefiOffersV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "ccy": "DOT",
+                            "productId": "101",
+                            "protocol": "Polkadot",
+                            "protocolType": "defi",
+                            "term": "0",
+                            "apy": "0.1767",
+                            "earlyRedeem": false,
+                            "state": "purchasable",
+                            "investData": [
+                                {
+                                    "bal": "0",
+                                    "ccy": "DOT",
+                                    "maxAmt": "0",
+                                    "minAmt": "2"
+                                }
+                            ],
+                            "earningData": [
+                                {
+                                    "ccy": "DOT",
+                                    "earningType": "0"
+                                }
+                            ],
+                            "fastRedemptionDailyLimit": "",
+                            "redeemPeriod": [
+                                "28D",
+                                "28D"
+                            ]
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            apy:
+                                default: ""
+                                description: |-
+                                    Estimated annualization
+
+                                    If the annualization is 7% , this field is 0.07
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency type, e.g. `BTC`
+                                type: string
+                            earlyRedeem:
+                                description: Whether the protocol supports early redemption
+                                type: boolean
+                            earningData:
+                                description: Earning data
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: Earning currency, e.g. `BTC`
+                                            type: string
+                                        earningType:
+                                            default: ""
+                                            description: |-
+                                                Earning type
+
+                                                `0`: Estimated earning
+
+                                                `1`: Cumulative earning
+                                            type: string
+                                    type: object
+                                type: array
+                            fastRedemptionDailyLimit:
+                                default: ""
+                                description: |-
+                                    Fast redemption daily limit
+
+                                    If fast redemption is not supported, it will return ''.
+                                type: string
+                            investData:
+                                description: Current target currency information available for investment
+                                items:
+                                    properties:
+                                        bal:
+                                            default: ""
+                                            description: Available balance to invest
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: Investment currency, e.g. `BTC`
+                                            type: string
+                                        maxAmt:
+                                            default: ""
+                                            description: Maximum available subscription amount
+                                            type: string
+                                        minAmt:
+                                            default: ""
+                                            description: Minimum subscription amount
+                                            type: string
+                                    type: object
+                                type: array
+                            productId:
+                                default: ""
+                                description: Product ID
+                                type: string
+                            protocol:
+                                default: ""
+                                description: Protocol
+                                type: string
+                            protocolType:
+                                default: ""
+                                description: |-
+                                    Protocol type
+
+                                    `defi`: on-chain earn
+                                type: string
+                            redeemPeriod:
+                                description: |-
+                                    Redemption Period, format in [min time,max time]
+
+                                    `H`: Hour, `D`: Day
+
+                                    e.g. ["1H","24H"] represents redemption period is between 1 Hour and 24 Hours.
+
+                                    ["14D","14D"] represents redemption period is 14 days.
+                                items:
+                                    type: string
+                                type: array
+                            state:
+                                default: ""
+                                description: |-
+                                    Product state
+
+                                    `purchasable`: Purchasable
+
+                                    `sold_out`: Sold out
+
+                                    `Stop`: Suspension of subscription
+                                type: string
+                            term:
+                                default: ""
+                                description: |-
+                                    Protocol term
+
+                                    It will return the days of fixed term and will return `0` for flexible product
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/staking-defi/offers:
+        get:
+            description: "#### Rate Limit: 3 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetFinanceStaking-DefiOffersV5
+            parameters:
+                - description: Product ID
+                  in: query
+                  name: productId
+                  schema:
+                    default: ""
+                    description: Product ID
+                    type: string
+                - description: |-
+                    Protocol type
+
+                    `defi`: on-chain earn
+                  in: query
+                  name: protocolType
+                  schema:
+                    default: ""
+                    description: |-
+                        Protocol type
+
+                        `defi`: on-chain earn
+                    type: string
+                - description: Investment currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Investment currency, e.g. `BTC`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFinanceStaking-DefiOffersV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - On Chain Earn

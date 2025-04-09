@@ -1,0 +1,149 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateUsersSubaccountModifyApikeyV5Req:
+            properties:
+                apiKey:
+                    default: ""
+                    description: Sub-account APIKey
+                    type: string
+                ip:
+                    default: ""
+                    description: |-
+                        Sub-account API Key linked IP addresses, separate with commas if more than one. Support up to 20 IP addresses.
+
+                        The IP will be reset if this is passed through.
+
+                        If `ip` is set to "", then no IP addresses is linked to the APIKey.
+                    type: string
+                label:
+                    default: ""
+                    description: Sub-account API Key label. The label will be reset if this is passed through.
+                    type: string
+                perm:
+                    default: ""
+                    description: "Sub-account API Key permissions\n\n`read_only`: Read\n\n`trade`: Trade\n\nSeparate with commas if more than one. \n\nThe permission will be reset if this is passed through."
+                    type: string
+                subAcct:
+                    default: ""
+                    description: Sub-account name
+                    type: string
+            required:
+                - subAcct
+                - apiKey
+            type: object
+        CreateUsersSubaccountModifyApikeyV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                        "subAcct": "yongxu",
+                        "label": "v5",
+                        "apiKey": "arg13sdfgs",
+                        "perm": "read,trade",
+                        "ip": "1.1.1.1",
+                        "ts": "1597026383085"
+                    }]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            apiKey:
+                                default: ""
+                                description: Sub-accountAPI public key
+                                type: string
+                            ip:
+                                default: ""
+                                description: Sub-account API Key IP addresses that linked with API Key
+                                type: string
+                            label:
+                                default: ""
+                                description: Sub-account API Key label
+                                type: string
+                            perm:
+                                default: ""
+                                description: |-
+                                    Sub-account API Key permissions
+
+                                    `read_only`: Read
+
+                                    `trade`: Trade
+                                type: string
+                            subAcct:
+                                default: ""
+                                description: Sub-account name
+                                type: string
+                            ts:
+                                default: ""
+                                description: Creation time
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/users/subaccount/modify-apikey:
+        post:
+            description: "Applies to master accounts only and master accounts API Key must be linked to IP addresses. Only API keys with `Trade` privilege can call this endpoint.\n\n#### Rate limit：1 request per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateUsersSubaccountModifyApikeyV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateUsersSubaccountModifyApikeyV5Req'
+                description: The request body for CreateUsersSubaccountModifyApikeyV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateUsersSubaccountModifyApikeyV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Applies to master accounts only and master accounts API Key must be linked to IP addresses. Only API keys with `Trade` privilege can call this endpoint.
+
+            tags:
+                - Sub Account

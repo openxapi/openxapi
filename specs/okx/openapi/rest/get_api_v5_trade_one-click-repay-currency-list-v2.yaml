@@ -1,0 +1,137 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradeOneClickRepayCurrencyListV2V5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "debtData": [
+                                {
+                                    "debtAmt": "100",
+                                    "debtCcy": "USDC"
+                                }
+                            ],
+                            "repayData": [
+                                {
+                                    "repayAmt": "1.000022977",
+                                    "repayCcy": "BTC"
+                                },
+                                {
+                                    "repayAmt": "4998.0002397",
+                                    "repayCcy": "USDT"
+                                },
+                                {
+                                    "repayAmt": "100",
+                                    "repayCcy": "OKB"
+                                },
+                                {
+                                    "repayAmt": "1",
+                                    "repayCcy": "ETH"
+                                },
+                                {
+                                    "repayAmt": "100",
+                                    "repayCcy": "USDC"
+                                }
+                            ]
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            debtData:
+                                description: Debt currency data list
+                                items:
+                                    properties:
+                                        debtAmt:
+                                            default: ""
+                                            description: |-
+                                                Debt currency amount
+
+                                                Including principal and interest
+                                            type: string
+                                        debtCcy:
+                                            default: ""
+                                            description: Debt currency
+                                            type: string
+                                    type: object
+                                type: array
+                            repayData:
+                                description: Repay currency data list
+                                items:
+                                    properties:
+                                        repayAmt:
+                                            default: ""
+                                            description: Repay currency's available balance amount
+                                            type: string
+                                        repayCcy:
+                                            default: ""
+                                            description: Repay currency
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/one-click-repay-currency-list-v2:
+        get:
+            description: "Get list of debt currency data and repay currencies. Only applicable to `SPOT mode`.\n\n#### Rate Limit: 1 request per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetTradeOneClickRepayCurrencyListV2V5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradeOneClickRepayCurrencyListV2V5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Get list of debt currency data and repay currencies. Only applicable to `SPOT mode`.
+
+            tags:
+                - Trade

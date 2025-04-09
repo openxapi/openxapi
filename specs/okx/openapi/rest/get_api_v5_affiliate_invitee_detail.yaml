@@ -1,0 +1,164 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAffiliateInviteeDetailV5Resp:
+            example: |
+                {
+                    "msg": "",
+                    "code": "0",
+                    "data": [
+                        {
+                            "accFee": "0",
+                            "affiliateCode": "HIIIIII",
+                            "depAmt": "0",
+                            "firstTradeTime": "",
+                            "inviteeLevel": "2",
+                            "inviteeRebateRate": "0.39",
+                            "joinTime": "1712546713000",
+                            "kycTime": "",
+                            "level": "Lv1",
+                            "region": "Vietnam",
+                            "totalCommission": "0",
+                            "volMonth": "0"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            accFee:
+                                default: ""
+                                description: |-
+                                    Accumulated Amount of trading fee in USDT
+
+                                    If there is no any fee, 0 will be returned
+                                type: string
+                            affiliateCode:
+                                default: ""
+                                description: Affiliate invite code that the invitee registered/recalled via
+                                type: string
+                            depAmt:
+                                default: ""
+                                description: |-
+                                    Accumulated amount of deposit in USDT
+
+                                    If user has not deposited, 0 will be returned
+                                type: string
+                            firstTradeTime:
+                                default: ""
+                                description: |-
+                                    Timestamp that the first trade is completed after the latest rebate relationship is established with the parent affiliate
+
+                                     Unix timestamp in millisecond format, e.g. 1597026383085
+
+                                    If user has not traded, "" will be returned
+                                type: string
+                            inviteeLevel:
+                                default: ""
+                                description: |-
+                                    Invitee's relative level to the affiliate
+
+                                    If the user is a invitee, the level will be `2`.
+                                type: string
+                            inviteeRebateRate:
+                                default: ""
+                                description: Self rebate rate of the invitee (in decimal), e.g. `0.01` represents `10%`
+                                type: string
+                            joinTime:
+                                default: ""
+                                description: Timestamp that the rebate relationship is established, Unix timestamp in millisecond format, e.g. `1597026383085`
+                                type: string
+                            kycTime:
+                                default: ""
+                                description: |-
+                                    KYC2 verification time. Unix timestamp in millisecond format and the precision is in day
+
+                                    If user has not passed KYC2, "" will be returned
+                                type: string
+                            level:
+                                default: ""
+                                description: Invitee trading fee level, e.g. Lv1
+                                type: string
+                            region:
+                                default: ""
+                                description: User country or region. e.g. "United Kingdom"
+                                type: string
+                            totalCommission:
+                                default: ""
+                                description: Total commission earned from the invitee, unit in `USDT`
+                                type: string
+                            volMonth:
+                                default: ""
+                                description: |-
+                                    Accumulated Trading volume in the current month in USDT
+
+                                    If user has not traded, 0 will be returned
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/affiliate/invitee/detail:
+        get:
+            description: "#### Rate limit：20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n"
+            operationId: GetAffiliateInviteeDetailV5
+            parameters:
+                - description: "UID of the invitee. Only applicable to the UID of invitee master account. \n\n The data returned covers invitee master account and invitee sub-accounts."
+                  in: query
+                  name: uid
+                  required: true
+                  schema:
+                    default: ""
+                    description: "UID of the invitee. Only applicable to the UID of invitee master account. \n\n The data returned covers invitee master account and invitee sub-accounts."
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAffiliateInviteeDetailV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Affiliate

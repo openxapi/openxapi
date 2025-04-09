@@ -1,0 +1,111 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateUsersSubaccountSetTransferOutV5Req:
+            properties:
+                canTransOut:
+                    description: "Whether the sub-account has the right to transfer out. The default is `true`.\n\n`false`: cannot transfer out \n\n`true`: can transfer out"
+                    type: boolean
+                subAcct:
+                    default: ""
+                    description: Name of the sub-account. Single sub-account or multiple sub-account (no more than 20) separated with comma.
+                    type: string
+            required:
+                - subAcct
+            type: object
+        CreateUsersSubaccountSetTransferOutV5Resp:
+            example: |+
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "subAcct": "Test001",
+                            "canTransOut": true
+                        },
+                        {
+                            "subAcct": "Test002",
+                            "canTransOut": true
+                        }
+                    ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            canTransOut:
+                                description: "Whether the sub-account has the right to transfer out. \n\n`false`: cannot transfer out \n\n`true`: can transfer out"
+                                type: boolean
+                            subAcct:
+                                default: ""
+                                description: Name of the sub-account
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/users/subaccount/set-transfer-out:
+        post:
+            description: "Set permission of transfer out for sub-account (only applicable to master account API key). Sub-account can transfer out to master account by default.\n\n#### Rate Limit: 1 request per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateUsersSubaccountSetTransferOutV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateUsersSubaccountSetTransferOutV5Req'
+                description: The request body for CreateUsersSubaccountSetTransferOutV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateUsersSubaccountSetTransferOutV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Set permission of transfer out for sub-account (only applicable to master account API key). Sub-account can transfer out to master account by default.
+
+            tags:
+                - Sub Account

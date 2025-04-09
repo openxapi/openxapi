@@ -1,0 +1,77 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetConvertCurrencyPairV5Resp:
+            example: |+
+                GET /api/v5/asset/convert/currency-pair?fromCcy=USDT&toCcy=BTC
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            fromCcy:
+                                default: ""
+                                description: Currency to convert from, e.g. `USDT`
+                                type: string
+                            toCcy:
+                                default: ""
+                                description: Currency to convert to, e.g. `BTC`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/convert/currency-pair:
+        get:
+            description: "#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetConvertCurrencyPairV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetConvertCurrencyPairV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Funding Account

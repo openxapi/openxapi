@@ -1,0 +1,195 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetUsersSubaccountListV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "canTransOut": false,
+                            "enable": true,
+                            "frozenFunc": [
+                            ],
+                            "gAuth": false,
+                            "label": "D456DDDLx",
+                            "mobile": "",
+                            "subAcct": "D456DDDL",
+                            "ts": "1659334756000",
+                            "type": "1",
+                            "uid": "3400***********7413",
+                            "subAcctLv": "1",
+                            "firstLvSubAcct": "D456DDDL",
+                            "ifDma": false
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            canTransOut:
+                                description: "Whether the sub-account has the right to transfer out. \n\n`true`: can transfer out \n\n`false`: cannot transfer out"
+                                type: boolean
+                            enable:
+                                description: |-
+                                    Sub-account status
+
+                                    `true`: Normal
+
+                                    `false`: Frozen (global)
+                                type: boolean
+                            firstLvSubAcct:
+                                default: ""
+                                description: "The first level sub-account. \n\nFor subAcctLv: 1, firstLvSubAcct is equal to subAcct\n\nFor subAcctLv: 2, subAcct belongs to firstLvSubAcct."
+                                type: string
+                            frozenFunc:
+                                description: |-
+                                    Frozen functions
+
+                                    `trading`
+
+                                    `convert`
+
+                                    `transfer`
+
+                                    `withdrawal`
+
+                                    `deposit`
+
+                                    `flexible_loan`
+                                items:
+                                    type: string
+                                type: array
+                            gAuth:
+                                description: "If the sub-account switches on the Google Authenticator for login authentication. \n\n`true`: On  `false`: Off"
+                                type: boolean
+                            ifDma:
+                                description: "Whether it is dma broker sub-account. \n\n`true`: Dma broker sub-account\n\n `false`: It is not dma broker sub-account."
+                                type: boolean
+                            label:
+                                default: ""
+                                description: Sub-account note
+                                type: string
+                            mobile:
+                                default: ""
+                                description: Mobile number that linked with the sub-account.
+                                type: string
+                            subAcct:
+                                default: ""
+                                description: Sub-account name
+                                type: string
+                            subAcctLv:
+                                default: ""
+                                description: "Sub-account level \n\n`1`: First level sub-account\n\n`2`: Second level sub-account."
+                                type: string
+                            ts:
+                                default: ""
+                                description: Sub-account creation time, Unix timestamp in millisecond format. e.g. `1597026383085`
+                                type: string
+                            type:
+                                default: ""
+                                description: "Sub-account type \n\n`1`: Standard sub-account \n\n`2`: Managed trading sub-account \n\n`5`: Custody trading sub-account - Copper\n\n`9`: Managed trading sub-account - Copper\n\n `12`: Custody trading sub-account - Komainu"
+                                type: string
+                            uid:
+                                default: ""
+                                description: Sub-account uid
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/users/subaccount/list:
+        get:
+            description: "Applies to master accounts only\n\n#### Rate limit：2 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetUsersSubaccountListV5
+            parameters:
+                - description: "Sub-account status \n\n`true`: Normal  `false`: Frozen"
+                  in: query
+                  name: enable
+                  schema:
+                    default: ""
+                    description: "Sub-account status \n\n`true`: Normal  `false`: Frozen"
+                    type: string
+                - description: Sub-account name
+                  in: query
+                  name: subAcct
+                  schema:
+                    default: ""
+                    description: Sub-account name
+                    type: string
+                - description: Query the data earlier than the requested subaccount creation timestamp, the value should be a Unix timestamp in millisecond format. e.g. `1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Query the data earlier than the requested subaccount creation timestamp, the value should be a Unix timestamp in millisecond format. e.g. `1597026383085`
+                    type: string
+                - description: Query the data newer than the requested subaccount creation timestamp, the value should be a Unix timestamp in millisecond format. e.g. `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Query the data newer than the requested subaccount creation timestamp, the value should be a Unix timestamp in millisecond format. e.g. `1597026383085`
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetUsersSubaccountListV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Applies to master accounts only
+
+            tags:
+                - Sub Account

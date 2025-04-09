@@ -1,0 +1,144 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicOptionTradesV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "fillVol": "0.24415013671875",
+                            "fwdPx": "16676.907614127158",
+                            "idxPx": "16667",
+                            "instFamily": "BTC-USD",
+                            "instId": "BTC-USD-221230-16600-P",
+                            "markPx": "0.006308943261227884",
+                            "optType": "P",
+                            "px": "0.005",
+                            "side": "sell",
+                            "sz": "30",
+                            "tradeId": "65",
+                            "ts": "1672225112048"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            fillVol:
+                                default: ""
+                                description: Implied volatility while trading (Correspond to trade price)
+                                type: string
+                            fwdPx:
+                                default: ""
+                                description: Forward price while trading
+                                type: string
+                            idxPx:
+                                default: ""
+                                description: Index price while trading
+                                type: string
+                            instFamily:
+                                default: ""
+                                description: Instrument family
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            markPx:
+                                default: ""
+                                description: Mark price while trading
+                                type: string
+                            optType:
+                                default: ""
+                                description: 'Option type, C: Call P: Put'
+                                type: string
+                            px:
+                                default: ""
+                                description: Trade price
+                                type: string
+                            side:
+                                default: ""
+                                description: "Trade side \n\n`buy`  \n\n`sell`"
+                                type: string
+                            tradeId:
+                                default: ""
+                                description: Trade ID
+                                type: string
+                            ts:
+                                default: ""
+                                description: Trade time, Unix timestamp format in milliseconds, e.g. `1597026383085`.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/option-trades:
+        get:
+            description: "The maximum is 100.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicOptionTradesV5
+            parameters:
+                - description: Instrument ID, e.g. BTC-USD-221230-4000-C, Either `instId` or `instFamily` is required. If both are passed, `instId` will be used.
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: Instrument ID, e.g. BTC-USD-221230-4000-C, Either `instId` or `instFamily` is required. If both are passed, `instId` will be used.
+                    type: string
+                - description: Instrument family, e.g. BTC-USD
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: Instrument family, e.g. BTC-USD
+                    type: string
+                - description: 'Option type, `C`: Call  `P`: put'
+                  in: query
+                  name: optType
+                  schema:
+                    default: ""
+                    description: 'Option type, `C`: Call  `P`: put'
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicOptionTradesV5Resp'
+                    description: Successful operation
+            summary: |+
+                The maximum is 100.
+
+            tags:
+                - Market Data

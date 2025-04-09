@@ -1,0 +1,137 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingPublicStatsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "avgSubPosNotional": "213.1038",
+                            "ccy": "USDT",
+                            "curCopyTraderPnl": "96.8071",
+                            "investAmt": "265.095252476476294",
+                            "lossDays": "1",
+                            "profitDays": "2",
+                            "winRatio": "0.6667"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            avgSubPosNotional:
+                                default: ""
+                                description: Average lead position notional (USDT)
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Margin currency
+                                type: string
+                            curCopyTraderPnl:
+                                default: ""
+                                description: Current copy trader pnl (USDT)
+                                type: string
+                            investAmt:
+                                default: ""
+                                description: Investment amount (USDT)
+                                type: string
+                            lossDays:
+                                default: ""
+                                description: Loss days
+                                type: string
+                            profitDays:
+                                default: ""
+                                description: Profit days
+                                type: string
+                            winRatio:
+                                default: ""
+                                description: Win ratio
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/public-stats:
+        get:
+            description: "Public endpoint. Key data related to lead trader performance.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingPublicStatsV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`, the default value
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`, the default value
+                    type: string
+                - description: |-
+                    Lead trader unique code
+
+                    A combination of case-sensitive alphanumerics, all numbers and the length is 16 characters, e.g. 213E8C92DC61EFAC
+                  in: query
+                  name: uniqueCode
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Lead trader unique code
+
+                        A combination of case-sensitive alphanumerics, all numbers and the length is 16 characters, e.g. 213E8C92DC61EFAC
+                    type: string
+                - description: "Last days\n\n`1`: last 7 days \n\n`2`: last 30 days\n\n`3`: last 90 days \n\n`4`: last 365 days"
+                  in: query
+                  name: lastDays
+                  required: true
+                  schema:
+                    default: ""
+                    description: "Last days\n\n`1`: last 7 days \n\n`2`: last 30 days\n\n`3`: last 90 days \n\n`4`: last 365 days"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingPublicStatsV5Resp'
+                    description: Successful operation
+            summary: |+
+                Public endpoint. Key data related to lead trader performance.
+
+            tags:
+                - Copy Trading

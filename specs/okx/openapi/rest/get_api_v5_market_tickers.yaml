@@ -1,0 +1,211 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetMarketTickersV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                     {
+                        "instType":"SWAP",
+                        "instId":"LTC-USD-SWAP",
+                        "last":"9999.99",
+                        "lastSz":"1",
+                        "askPx":"9999.99",
+                        "askSz":"11",
+                        "bidPx":"8888.88",
+                        "bidSz":"5",
+                        "open24h":"9000",
+                        "high24h":"10000",
+                        "low24h":"8888.88",
+                        "volCcy24h":"2222",
+                        "vol24h":"2222",
+                        "sodUtc0":"0.1",
+                        "sodUtc8":"0.1",
+                        "ts":"1597026383085"
+                     },
+                     {
+                        "instType":"SWAP",
+                        "instId":"BTC-USD-SWAP",
+                        "last":"9999.99",
+                        "lastSz":"1",
+                        "askPx":"9999.99",
+                        "askSz":"11",
+                        "bidPx":"8888.88",
+                        "bidSz":"5",
+                        "open24h":"9000",
+                        "high24h":"10000",
+                        "low24h":"8888.88",
+                        "volCcy24h":"2222",
+                        "vol24h":"2222",
+                        "sodUtc0":"0.1",
+                        "sodUtc8":"0.1",
+                        "ts":"1597026383085"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            askPx:
+                                default: ""
+                                description: Best ask price
+                                type: string
+                            askSz:
+                                default: ""
+                                description: Best ask size
+                                type: string
+                            bidPx:
+                                default: ""
+                                description: Best bid price
+                                type: string
+                            bidSz:
+                                default: ""
+                                description: Best bid size
+                                type: string
+                            high24h:
+                                default: ""
+                                description: Highest price in the past 24 hours
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            last:
+                                default: ""
+                                description: Last traded price
+                                type: string
+                            lastSz:
+                                default: ""
+                                description: Last traded size. 0 represents there is no trading volume
+                                type: string
+                            low24h:
+                                default: ""
+                                description: Lowest price in the past 24 hours
+                                type: string
+                            open24h:
+                                default: ""
+                                description: Open price in the past 24 hours
+                                type: string
+                            sodUtc0:
+                                default: ""
+                                description: Open price in the UTC 0
+                                type: string
+                            sodUtc8:
+                                default: ""
+                                description: Open price in the UTC 8
+                                type: string
+                            ts:
+                                default: ""
+                                description: Ticker data generation time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            vol24h:
+                                default: ""
+                                description: "24h trading volume, with a unit of `contract`. \n\nIf it is a `derivatives` contract, the value is the number of contracts. \n\nIf it is `SPOT`/`MARGIN`, the value is the quantity in base currency."
+                                type: string
+                            volCcy24h:
+                                default: ""
+                                description: "24h trading volume, with a unit of `currency`. \n\nIf it is a `derivatives` contract, the value is the number of base currency. \n\nIf it is `SPOT`/`MARGIN`, the value is the quantity in quote currency."
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/market/tickers:
+        get:
+            description: "Retrieve the latest price snapshot, best bid/ask price, and trading volume in the last 24 hours.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketTickersV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SPOT`
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: "Underlying, e.g. `BTC-USD` \n\nApplicable to `FUTURES`/`SWAP`/`OPTION`"
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: "Underlying, e.g. `BTC-USD` \n\nApplicable to `FUTURES`/`SWAP`/`OPTION`"
+                    type: string
+                - description: |-
+                    Instrument family
+
+                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family
+
+                        Applicable to `FUTURES`/`SWAP`/`OPTION`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketTickersV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the latest price snapshot, best bid/ask price, and trading volume in the last 24 hours.
+
+            tags:
+                - Market Data

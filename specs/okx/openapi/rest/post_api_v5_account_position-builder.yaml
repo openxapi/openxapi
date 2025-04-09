@@ -1,0 +1,859 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountPositionBuilderV5Req:
+            properties:
+                acctLv:
+                    default: ""
+                    description: |-
+                        Switch to account mode
+
+                        `3`: Multi-currency margin
+
+                        `4`: Portfolio margin
+
+                        The default is `4`
+                    type: string
+                greeksType:
+                    default: ""
+                    description: |-
+                        Greeks type
+
+                        `BS`: Black-Scholes Model Greeks
+
+                        `PA`: Crypto Greeks
+
+                        `CASH`: Empirical Greeks
+
+                        The default is `BS`
+                    type: string
+                inclRealPosAndEq:
+                    description: |-
+                        Whether import existing positions and assets
+
+                        The default is `true`
+                    type: boolean
+                lever:
+                    default: ""
+                    description: |-
+                        Cross margin leverage in Multi-currency margin mode, the default is `1`.
+
+                        If the allowed leverage is exceeded, set according to the maximum leverage.
+
+                        Only applicable to `Multi-currency margin`
+                    type: string
+                simAsset:
+                    description: |-
+                        List of simulated assets
+
+                        When `inclRealPosAndEq` is `true`, only real assets are considered and virtual assets are ignored
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Currency amount
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `BTC`
+                                type: string
+                        type: object
+                    type: array
+                simPos:
+                    description: List of simulated positions
+                    items:
+                        properties:
+                            avgPx:
+                                default: ""
+                                description: Average open price
+                                type: string
+                            instId:
+                                default: ""
+                                description: |-
+                                    Instrument ID, e.g. `BTC-USDT-SWAP`
+
+                                    Applicable to `SWAP`/`FUTURES`/`OPTION`
+                                type: string
+                            lever:
+                                default: ""
+                                description: |-
+                                    leverage
+
+                                    Only applicable to `Multi-currency margin`
+
+                                    The default is `1`
+
+                                    If the allowed leverage is exceeded, set according to the maximum leverage.
+                                type: string
+                            pos:
+                                default: ""
+                                description: Quantity of positions
+                                type: string
+                        type: object
+                    type: array
+            type: object
+        CreateAccountPositionBuilderV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "acctLever": "-0.1364949794742562",
+                            "assets": [
+                                {
+                                    "availEq": "0",
+                                    "borrowImr": "0",
+                                    "borrowMmr": "",
+                                    "ccy": "BTC",
+                                    "spotInUse": "0"
+                                },
+                                {
+                                    "availEq": "0",
+                                    "borrowImr": "0",
+                                    "borrowMmr": "",
+                                    "ccy": "LTC",
+                                    "spotInUse": "0"
+                                },
+                                {
+                                    "availEq": "0",
+                                    "borrowImr": "0",
+                                    "borrowMmr": "",
+                                    "ccy": "USDC",
+                                    "spotInUse": "0"
+                                },
+                                {
+                                    "availEq": "-78589.37",
+                                    "borrowImr": "7855.32188898",
+                                    "borrowMmr": "",
+                                    "ccy": "USDT",
+                                    "spotInUse": "0"
+                                }
+                            ],
+                            "borrowMmr": "1571.064377796",
+                            "derivMmr": "1375.4837063088003",
+                            "eq": "-78553.21888979999",
+                            "marginRatio": "-25.95365779811705",
+                            "positions": [],
+                            "riskUnitData": [
+                                {
+                                    "delta": "-9704.903689800001",
+                                    "gamma": "0",
+                                    "imr": "1538.9669514070802",
+                                    "mmr": "1183.8207318516002",
+                                    "mr1": "1164.4109244719994",
+                                    "mr1FinalResult": {
+                                        "pnl": "-1164.4109244719994",
+                                        "spotShock": "0.12",
+                                        "volShock": "up"
+                                    },
+                                    "mr1Scenarios": {
+                                        "volSame": {
+                                            "0": "0",
+                                            "0.08": "-776.2739496480004",
+                                            "-0.08": "776.2739496480004",
+                                            "0.04": "-388.1369748240002",
+                                            "0.12": "-1164.4109244719994",
+                                            "-0.12": "1164.4109244719994",
+                                            "-0.04": "388.1369748240002"
+                                        },
+                                        "volShockDown": {
+                                            "0": "0",
+                                            "0.08": "-776.2739496480004",
+                                            "-0.08": "776.2739496480004",
+                                            "0.04": "-388.1369748240002",
+                                            "0.12": "-1164.4109244719994",
+                                            "-0.12": "1164.4109244719994",
+                                            "-0.04": "388.1369748240002"
+                                        },
+                                        "volShockUp": {
+                                            "0": "0",
+                                            "0.08": "-776.2739496480004",
+                                            "-0.08": "776.2739496480004",
+                                            "0.04": "-388.1369748240002",
+                                            "0.12": "-1164.4109244719994",
+                                            "-0.12": "1164.4109244719994",
+                                            "-0.04": "388.1369748240002"
+                                        }
+                                    },
+                                    "mr2": "0",
+                                    "mr3": "0",
+                                    "mr4": "19.4098073796",
+                                    "mr5": "0",
+                                    "mr6": "1164.4109244720003",
+                                    "mr6FinalResult": {
+                                        "pnl": "-2328.8218489440005",
+                                        "spotShock": "0.24"
+                                    },
+                                    "mr7": "43.67206660410001",
+                                    "mr8": "1571.064377796",
+                                    "mr9": "0",
+                                    "portfolios": [
+                                        {
+                                            "amt": "-10",
+                                            "avgPx": "100000",
+                                            "delta": "-9704.903689800001",
+                                            "floatPnl": "290.6300000000003",
+                                            "gamma": "0",
+                                            "instId": "BTC-USDT-SWAP",
+                                            "instType": "SWAP",
+                                            "isRealPos": false,
+                                            "markPx": "97093.7",
+                                            "notionalUsd": "9703.22",
+                                            "posSide": "net",
+                                            "theta": "0",
+                                            "vega": "0"
+                                        }
+                                    ],
+                                    "riskUnit": "BTC",
+                                    "theta": "0",
+                                    "upl": "290.49631020000027",
+                                    "vega": "0"
+                                },
+                                {
+                                    "delta": "1019.5308",
+                                    "gamma": "0",
+                                    "imr": "249.16186679436",
+                                    "mmr": "191.6629744572",
+                                    "mr1": "183.50672805719995",
+                                    "mr1FinalResult": {
+                                        "pnl": "-183.50672805719995",
+                                        "spotShock": "-0.18",
+                                        "volShock": "up"
+                                    },
+                                    "mr1Scenarios": {
+                                        "volSame": {
+                                            "0": "0",
+                                            "-0.06": "-61.168909352399936",
+                                            "0.06": "61.168909352399936",
+                                            "-0.18": "-183.50672805719995",
+                                            "0.18": "183.50672805719995",
+                                            "0.12": "122.33781870480001",
+                                            "-0.12": "-122.33781870480001"
+                                        },
+                                        "volShockDown": {
+                                            "0": "0",
+                                            "-0.06": "-61.168909352399936",
+                                            "0.06": "61.168909352399936",
+                                            "-0.18": "-183.50672805719995",
+                                            "0.18": "183.50672805719995",
+                                            "0.12": "122.33781870480001",
+                                            "-0.12": "-122.33781870480001"
+                                        },
+                                        "volShockUp": {
+                                            "0": "0",
+                                            "-0.06": "-61.168909352399936",
+                                            "0.06": "61.168909352399936",
+                                            "-0.18": "-183.50672805719995",
+                                            "0.18": "183.50672805719995",
+                                            "0.12": "122.33781870480001",
+                                            "-0.12": "-122.33781870480001"
+                                        }
+                                    },
+                                    "mr2": "0",
+                                    "mr3": "0",
+                                    "mr4": "8.1562464",
+                                    "mr5": "0",
+                                    "mr6": "183.5067280572",
+                                    "mr6FinalResult": {
+                                        "pnl": "-367.0134561144",
+                                        "spotShock": "-0.36"
+                                    },
+                                    "mr7": "7.1367156",
+                                    "mr8": "1571.064377796",
+                                    "mr9": "0",
+                                    "portfolios": [
+                                        {
+                                            "amt": "10",
+                                            "avgPx": "8000",
+                                            "delta": "1019.5308",
+                                            "floatPnl": "-78980",
+                                            "gamma": "0",
+                                            "instId": "LTC-USDT-SWAP",
+                                            "instType": "SWAP",
+                                            "isRealPos": false,
+                                            "markPx": "102",
+                                            "notionalUsd": "1018.9",
+                                            "posSide": "net",
+                                            "theta": "0",
+                                            "vega": "0"
+                                        }
+                                    ],
+                                    "riskUnit": "LTC",
+                                    "theta": "0",
+                                    "upl": "-78943.6692",
+                                    "vega": "0"
+                                }
+                            ],
+                            "totalImr": "9643.45070718144",
+                            "totalMmr": "2946.5480841048",
+                            "ts": "1736936801642",
+                            "upl": "-78653.1728898"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            acctLever:
+                                default: ""
+                                description: Leverage of the account
+                                type: string
+                            assets:
+                                description: Asset info
+                                items:
+                                    properties:
+                                        availEq:
+                                            default: ""
+                                            description: Currency equity
+                                            type: string
+                                        borrowImr:
+                                            default: ""
+                                            description: Borrowing IMR (`USD`)
+                                            type: string
+                                        borrowMmr:
+                                            default: ""
+                                            deprecated: true
+                                            description: Borrowing MMR (`USD`)(Deprecated)
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: Currency, e.g. `BTC`
+                                            type: string
+                                        spotInUse:
+                                            default: ""
+                                            description: Spot in use
+                                            type: string
+                                    type: object
+                                type: array
+                            borrowMmr:
+                                default: ""
+                                description: Borrow MMR (`USD`) for the account
+                                type: string
+                            derivMmr:
+                                default: ""
+                                description: Derivatives MMR (`USD`) for the account
+                                type: string
+                            eq:
+                                default: ""
+                                description: Adjusted equity (`USD`) for the account
+                                type: string
+                            marginRatio:
+                                default: ""
+                                description: Cross margin ratio for the account
+                                type: string
+                            positions:
+                                description: |-
+                                    Position info
+
+                                    Only applicable to `Multi-currency margin`
+                                items:
+                                    properties:
+                                        amt:
+                                            default: ""
+                                            description: |-
+                                                When `instType` is `SPOT`, it represents spot in use.
+
+                                                When `instType` is `SWAP`/`FUTURES`/`OPTION`, it represents position amount.
+                                            type: string
+                                        avgPx:
+                                            default: ""
+                                            description: Average open price
+                                            type: string
+                                        floatPnl:
+                                            default: ""
+                                            description: Float P&L
+                                            type: string
+                                        imr:
+                                            default: ""
+                                            description: IMR
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                            type: string
+                                        instType:
+                                            default: ""
+                                            description: |-
+                                                Instrument type
+
+                                                `SPOT`
+
+                                                `SWAP`
+
+                                                `FUTURES`
+
+                                                `OPTION`
+                                            type: string
+                                        isRealPos:
+                                            description: |-
+                                                Whether it is a real position
+
+                                                If `instType` is `SWAP`/`FUTURES`/`OPTION`, it is a valid parameter, else it will returns `false`
+                                            type: boolean
+                                        lever:
+                                            default: ""
+                                            description: Leverage
+                                            type: string
+                                        markPx:
+                                            default: ""
+                                            description: Mark price
+                                            type: string
+                                        mgnRatio:
+                                            default: ""
+                                            description: Margin ratio
+                                            type: string
+                                        notionalUsd:
+                                            default: ""
+                                            description: Notional in `USD`
+                                            type: string
+                                        posSide:
+                                            default: ""
+                                            description: |-
+                                                Position side
+
+                                                `long`
+
+                                                `short`
+
+                                                `net`
+                                            type: string
+                                    type: object
+                                type: array
+                            riskUnitData:
+                                description: Risk unit info
+                                items:
+                                    properties:
+                                        amt:
+                                            default: ""
+                                            description: |-
+                                                When `instType` is `SPOT`, it represents spot in use.
+
+                                                When `instType` is `SWAP`/`FUTURES`/`OPTION`, it represents position amount.
+                                            type: string
+                                        avgPx:
+                                            default: ""
+                                            description: Average open price
+                                            type: string
+                                        delta:
+                                            default: ""
+                                            description: |-
+                                                When `instType` is `SPOT`, it represents asset amount.
+
+                                                When `instType` is `SWAP`/`FUTURES`/`OPTION`, it represents the rate of change in the contract’s price with respect to changes in the underlying asset’s price (by Instrument ID).
+                                            type: string
+                                        floatPnl:
+                                            default: ""
+                                            description: Float P&L
+                                            type: string
+                                        gamma:
+                                            default: ""
+                                            description: "The rate of change in the delta with respect to changes in the underlying price (by Instrument ID). \n\nWhen `instType` is `SPOT`, it will returns \"\"."
+                                            type: string
+                                        imr:
+                                            default: ""
+                                            description: Risk unit IMR (`USD`)
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                            type: string
+                                        instType:
+                                            default: ""
+                                            description: |-
+                                                Instrument type
+
+                                                `SPOT`
+
+                                                `SWAP`
+
+                                                `FUTURES`
+
+                                                `OPTION`
+                                            type: string
+                                        isRealPos:
+                                            description: |-
+                                                Whether it is a real position
+
+                                                If `instType` is `SWAP`/`FUTURES`/`OPTION`, it is a valid parameter, else it will returns `false`
+                                            type: boolean
+                                        markPx:
+                                            default: ""
+                                            description: Mark price
+                                            type: string
+                                        mmr:
+                                            default: ""
+                                            description: Risk unit MMR (`USD`)
+                                            type: string
+                                        mr1:
+                                            default: ""
+                                            description: Stress testing value of spot and volatility (all derivatives, and spot trading in spot-derivatives risk offset mode)
+                                            type: string
+                                        mr1FinalResult:
+                                            description: MR1 worst-case scenario
+                                            properties:
+                                                pnl:
+                                                    default: ""
+                                                    description: MR1 stress P&L (`USD`)
+                                                    type: string
+                                                spotShock:
+                                                    default: ""
+                                                    description: MR1 worst-case scenario spot shock (in percentage), e.g. `0.01` representing `1%`
+                                                    type: string
+                                                volShock:
+                                                    default: ""
+                                                    description: |-
+                                                        MR1 worst-case scenario volatility shock
+
+                                                        `down`: volatility shock down
+
+                                                        `unchange`: volatility unchanged
+
+                                                        `up`: volatility shock up
+                                                    type: string
+                                            type: object
+                                        mr1Scenarios:
+                                            description: MR1 scenario analysis
+                                            properties:
+                                                volSame:
+                                                    description: |-
+                                                        When the volatility keep the same, the P&L of stress tests under different price volatility ratios, format in {`change`: `value`,...}
+
+                                                        `change`: price volatility ratio (in percentage), e.g. `0.01` representing `1%`
+
+                                                        `value`: P&L under stress tests, measured in `USD`
+
+                                                        e.g. {"-0.15":"-2333.23", ...}
+                                                    type: object
+                                                volShockDown:
+                                                    description: |-
+                                                        When the volatility shock down, the P&L of stress tests under different price volatility ratios, format in {`change`: `value`,...}
+
+                                                        `change`: price volatility ratio (in percentage), e.g. `0.01` representing `1%`
+
+                                                        `value`: P&L under stress tests, measured in `USD`
+
+                                                        e.g. {"-0.15":"-2333.23", ...}
+                                                    type: object
+                                                volShockUp:
+                                                    description: |-
+                                                        When the volatility shock up, the P&L of stress tests under different price volatility ratios, format in {`change`: `value`,...}
+
+                                                        `change`: price volatility ratio (in percentage), e.g. `0.01` representing `1%`
+
+                                                        `value`: P&L under stress tests, measured in `USD`
+
+                                                        e.g. {"-0.15":"-2333.23", ...}
+                                                    type: object
+                                            type: object
+                                        mr2:
+                                            default: ""
+                                            description: Stress testing value of time value of money (TVM) (for options)
+                                            type: string
+                                        mr3:
+                                            default: ""
+                                            description: Stress testing value of volatility span (for options)
+                                            type: string
+                                        mr4:
+                                            default: ""
+                                            description: Stress testing value of basis (for all derivatives)
+                                            type: string
+                                        mr5:
+                                            default: ""
+                                            description: Stress testing value of interest rate risk (for options)
+                                            type: string
+                                        mr6:
+                                            default: ""
+                                            description: Stress testing value of extremely volatile markets (for all derivatives, and spot trading in spot-derivatives risk offset mode)
+                                            type: string
+                                        mr6FinalResult:
+                                            description: MR6 scenario analysis
+                                            properties:
+                                                pnl:
+                                                    default: ""
+                                                    description: MR6 stress P&L (`USD`)
+                                                    type: string
+                                                spotShock:
+                                                    default: ""
+                                                    description: MR6 worst-case scenario spot shock (in percentage), e.g. `0.01` representing `1%`
+                                                    type: string
+                                            type: object
+                                        mr7:
+                                            default: ""
+                                            description: Stress testing value of position reduction cost (for all derivatives)
+                                            type: string
+                                        mr8:
+                                            default: ""
+                                            description: Borrowing MMR/IMR
+                                            type: string
+                                        mr9:
+                                            default: ""
+                                            description: USDT-USDC-USD hedge risk
+                                            type: string
+                                        notionalUsd:
+                                            default: ""
+                                            description: Notional in `USD`
+                                            type: string
+                                        pnl:
+                                            default: ""
+                                            description: MR6 stress P&L (`USD`)
+                                            type: string
+                                        portfolios:
+                                            description: |-
+                                                Portfolios info
+
+                                                Only applicable to `Portfolio margin`
+                                            items:
+                                                properties:
+                                                    amt:
+                                                        default: ""
+                                                        description: |-
+                                                            When `instType` is `SPOT`, it represents spot in use.
+
+                                                            When `instType` is `SWAP`/`FUTURES`/`OPTION`, it represents position amount.
+                                                        type: string
+                                                    avgPx:
+                                                        default: ""
+                                                        description: Average open price
+                                                        type: string
+                                                    delta:
+                                                        default: ""
+                                                        description: |-
+                                                            When `instType` is `SPOT`, it represents asset amount.
+
+                                                            When `instType` is `SWAP`/`FUTURES`/`OPTION`, it represents the rate of change in the contract’s price with respect to changes in the underlying asset’s price (by Instrument ID).
+                                                        type: string
+                                                    floatPnl:
+                                                        default: ""
+                                                        description: Float P&L
+                                                        type: string
+                                                    gamma:
+                                                        default: ""
+                                                        description: "The rate of change in the delta with respect to changes in the underlying price (by Instrument ID). \n\nWhen `instType` is `SPOT`, it will returns \"\"."
+                                                        type: string
+                                                    instId:
+                                                        default: ""
+                                                        description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                                        type: string
+                                                    instType:
+                                                        default: ""
+                                                        description: |-
+                                                            Instrument type
+
+                                                            `SPOT`
+
+                                                            `SWAP`
+
+                                                            `FUTURES`
+
+                                                            `OPTION`
+                                                        type: string
+                                                    isRealPos:
+                                                        description: |-
+                                                            Whether it is a real position
+
+                                                            If `instType` is `SWAP`/`FUTURES`/`OPTION`, it is a valid parameter, else it will returns `false`
+                                                        type: boolean
+                                                    markPx:
+                                                        default: ""
+                                                        description: Mark price
+                                                        type: string
+                                                    notionalUsd:
+                                                        default: ""
+                                                        description: Notional in `USD`
+                                                        type: string
+                                                    posSide:
+                                                        default: ""
+                                                        description: |-
+                                                            Position side
+
+                                                            `long`
+
+                                                            `short`
+
+                                                            `net`
+                                                        type: string
+                                                    theta:
+                                                        default: ""
+                                                        description: |-
+                                                            The change in contract price each day closer to expiry (by Instrument ID).
+
+                                                            When `instType` is `SPOT`, it will returns "".
+                                                        type: string
+                                                    vega:
+                                                        default: ""
+                                                        description: |-
+                                                            The change of the option price when underlying volatility increases by 1% (by Instrument ID).
+
+                                                            When `instType` is `SPOT`, it will returns "".
+                                                        type: string
+                                                type: object
+                                            type: array
+                                        posSide:
+                                            default: ""
+                                            description: |-
+                                                Position side
+
+                                                `long`
+
+                                                `short`
+
+                                                `net`
+                                            type: string
+                                        riskUnit:
+                                            default: ""
+                                            description: Risk unit, e.g. `BTC`
+                                            type: string
+                                        spotShock:
+                                            default: ""
+                                            description: MR6 worst-case scenario spot shock (in percentage), e.g. `0.01` representing `1%`
+                                            type: string
+                                        theta:
+                                            default: ""
+                                            description: |-
+                                                The change in contract price each day closer to expiry (by Instrument ID).
+
+                                                When `instType` is `SPOT`, it will returns "".
+                                            type: string
+                                        upl:
+                                            default: ""
+                                            description: Risk unit UPL (`USD`)
+                                            type: string
+                                        vega:
+                                            default: ""
+                                            description: |-
+                                                The change of the option price when underlying volatility increases by 1% (by Instrument ID).
+
+                                                When `instType` is `SPOT`, it will returns "".
+                                            type: string
+                                        volSame:
+                                            description: |-
+                                                When the volatility keep the same, the P&L of stress tests under different price volatility ratios, format in {`change`: `value`,...}
+
+                                                `change`: price volatility ratio (in percentage), e.g. `0.01` representing `1%`
+
+                                                `value`: P&L under stress tests, measured in `USD`
+
+                                                e.g. {"-0.15":"-2333.23", ...}
+                                            type: object
+                                        volShock:
+                                            default: ""
+                                            description: |-
+                                                MR1 worst-case scenario volatility shock
+
+                                                `down`: volatility shock down
+
+                                                `unchange`: volatility unchanged
+
+                                                `up`: volatility shock up
+                                            type: string
+                                        volShockDown:
+                                            description: |-
+                                                When the volatility shock down, the P&L of stress tests under different price volatility ratios, format in {`change`: `value`,...}
+
+                                                `change`: price volatility ratio (in percentage), e.g. `0.01` representing `1%`
+
+                                                `value`: P&L under stress tests, measured in `USD`
+
+                                                e.g. {"-0.15":"-2333.23", ...}
+                                            type: object
+                                        volShockUp:
+                                            description: |-
+                                                When the volatility shock up, the P&L of stress tests under different price volatility ratios, format in {`change`: `value`,...}
+
+                                                `change`: price volatility ratio (in percentage), e.g. `0.01` representing `1%`
+
+                                                `value`: P&L under stress tests, measured in `USD`
+
+                                                e.g. {"-0.15":"-2333.23", ...}
+                                            type: object
+                                    type: object
+                                type: array
+                            totalImr:
+                                default: ""
+                                description: Total IMR (`USD`) for the account
+                                type: string
+                            totalMmr:
+                                default: ""
+                                description: Total MMR (`USD`) for the account
+                                type: string
+                            ts:
+                                default: ""
+                                description: Update time for the account, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            upl:
+                                default: ""
+                                description: UPL for the account
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/position-builder:
+        post:
+            description: "Calculates portfolio margin information for virtual position/assets or current position of the user.\n\n\nYou can add up to 200 virtual positions and 200 virtual assets in one request.\n\n#### Rate Limit: 2 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: CreateAccountPositionBuilderV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountPositionBuilderV5Req'
+                description: The request body for CreateAccountPositionBuilderV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountPositionBuilderV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Calculates portfolio margin information for virtual position/assets or current position of the user.
+
+
+                You can add up to 200 virtual positions and 200 virtual assets in one request.
+
+            tags:
+                - Trading Account

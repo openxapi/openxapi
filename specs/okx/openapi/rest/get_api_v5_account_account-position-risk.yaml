@@ -1,0 +1,219 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountAccountPositionRiskV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "data":[
+                        {
+                            "adjEq":"174238.6793649711331679",
+                            "balData":[
+                                {
+                                    "ccy":"BTC",
+                                    "disEq":"78846.7803721021362242",
+                                    "eq":"1.3863533369419636"
+                                },
+                                {
+                                    "ccy":"USDT",
+                                    "disEq":"73417.2495112863300127",
+                                    "eq":"73323.395564963177146"
+                                }
+                            ],
+                            "posData":[
+                                {
+                                    "baseBal": "0.4",
+                                    "ccy": "",
+                                    "instId": "BTC-USDT",
+                                    "instType": "MARGIN",
+                                    "mgnMode": "isolated",
+                                    "notionalCcy": "0",
+                                    "notionalUsd": "0",
+                                    "pos": "0",
+                                    "posCcy": "",
+                                    "posId": "310388685292318723",
+                                    "posSide": "net",
+                                    "quoteBal": "0"
+                                }
+                            ],
+                            "ts":"1620282889345"
+                        }
+                    ],
+                    "msg":""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            adjEq:
+                                default: ""
+                                description: |-
+                                    Adjusted / Effective equity in `USD`
+
+                                    Applicable to `Multi-currency margin` and `Portfolio margin`
+                                type: string
+                            balData:
+                                description: Detailed asset information in all currencies
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: Currency
+                                            type: string
+                                        disEq:
+                                            default: ""
+                                            description: Discount equity of currency in `USD`.
+                                            type: string
+                                        eq:
+                                            default: ""
+                                            description: Equity of currency
+                                            type: string
+                                    type: object
+                                type: array
+                            posData:
+                                description: Detailed position information in all currencies
+                                items:
+                                    properties:
+                                        baseBal:
+                                            default: ""
+                                            deprecated: true
+                                            description: Base currency balance, only applicable to `MARGIN`（Quick Margin Mode）(Deprecated)
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: Currency used for margin
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                            type: string
+                                        instType:
+                                            default: ""
+                                            description: Instrument type
+                                            type: string
+                                        mgnMode:
+                                            default: ""
+                                            description: "Margin mode\n\n`cross`  \n\n`isolated`"
+                                            type: string
+                                        notionalCcy:
+                                            default: ""
+                                            description: Notional value of positions in `coin`
+                                            type: string
+                                        notionalUsd:
+                                            default: ""
+                                            description: Notional value of positions in `USD`
+                                            type: string
+                                        pos:
+                                            default: ""
+                                            description: Quantity of positions `contract`. In the isolated margin mode, when doing manual transfers, a position with pos of `0` will be generated after the deposit is transferred
+                                            type: string
+                                        posCcy:
+                                            default: ""
+                                            description: Position currency, only applicable to `MARGIN` positions.
+                                            type: string
+                                        posId:
+                                            default: ""
+                                            description: Position ID
+                                            type: string
+                                        posSide:
+                                            default: ""
+                                            description: "Position side\n\n`long` \n\n`short` \n\n`net` (`FUTURES`/`SWAP`/`OPTION`: positive `pos` means long position and negative `pos` means short position. `MARGIN`: `posCcy` being base currency means long position, `posCcy` being quote currency means short position.)"
+                                            type: string
+                                        quoteBal:
+                                            default: ""
+                                            deprecated: true
+                                            description: Quote currency balance, only applicable to `MARGIN`（Quick Margin Mode）(Deprecated)
+                                            type: string
+                                    type: object
+                                type: array
+                            ts:
+                                default: ""
+                                description: Update time of account information, millisecond format of Unix timestamp, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/account-position-risk:
+        get:
+            description: "Get account and position risk\n\n**_Obtain basic information about accounts and positions on the same time snapshot_**\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountAccountPositionRiskV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `MARGIN`
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `MARGIN`
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountAccountPositionRiskV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Get account and position risk
+
+            tags:
+                - Trading Account

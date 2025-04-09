@@ -1,0 +1,316 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountPositionsHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "cTime": "1654177169995",
+                            "ccy": "BTC",
+                            "closeAvgPx": "29786.5999999789081085",
+                            "closeTotalPos": "1",
+                            "instId": "BTC-USD-SWAP",
+                            "instType": "SWAP",
+                            "lever": "10.0",
+                            "mgnMode": "cross",
+                            "openAvgPx": "29783.8999999995535393",
+                            "openMaxPos": "1",
+                            "realizedPnl": "0.001",
+                            "fee": "-0.0001",
+                            "fundingFee": "0",
+                            "liqPenalty": "0",
+                            "pnl": "0.0011",
+                            "pnlRatio": "0.000906447858888",
+                            "posId": "452587086133239818",
+                            "posSide": "long",
+                            "direction": "long",
+                            "triggerPx": "",
+                            "type": "1",
+                            "uTime": "1654177174419",
+                            "uly": "BTC-USD",
+                            "nonSettleAvgPx":"",
+                            "settledPnl":""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            cTime:
+                                default: ""
+                                description: Created time of position
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency used for margin
+                                type: string
+                            closeAvgPx:
+                                default: ""
+                                description: Average price of closing position
+                                type: string
+                            closeTotalPos:
+                                default: ""
+                                description: Position's cumulative closed volume
+                                type: string
+                            direction:
+                                default: ""
+                                description: |-
+                                    Direction: `long` `short`
+
+                                    Only applicable to `MARGIN/FUTURES/SWAP/OPTION`
+                                type: string
+                            fee:
+                                default: ""
+                                description: |-
+                                    Accumulated fee
+
+                                    Negative number represents the user transaction fee charged by the platform.Positive number represents rebate.
+                                type: string
+                            fundingFee:
+                                default: ""
+                                description: Accumulated funding fee
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            lever:
+                                default: ""
+                                description: Leverage
+                                type: string
+                            liqPenalty:
+                                default: ""
+                                description: Accumulated liquidation penalty. It is negative when there is a value.
+                                type: string
+                            mgnMode:
+                                default: ""
+                                description: |-
+                                    Margin mode
+
+                                    `cross` `isolated`
+                                type: string
+                            nonSettleAvgPx:
+                                default: ""
+                                description: |-
+                                    Non-settlement entry price
+
+                                    The non-settlement entry price only reflects the average price at which the position is opened or increased.
+
+                                    Only applicable to `cross` `FUTURES`
+                                type: string
+                            openAvgPx:
+                                default: ""
+                                description: |-
+                                    Average price of opening position
+
+                                    Under cross-margin mode, the entry price of expiry futures will update at settlement to the last settlement price, and when the position is opened or increased.
+                                type: string
+                            openMaxPos:
+                                default: ""
+                                description: Max quantity of position
+                                type: string
+                            pnl:
+                                default: ""
+                                description: Profit and loss
+                                type: string
+                            pnlRatio:
+                                default: ""
+                                description: Realized P&L ratio
+                                type: string
+                            posId:
+                                default: ""
+                                description: Position ID
+                                type: string
+                            posSide:
+                                default: ""
+                                description: |-
+                                    Position mode side
+
+                                     `long`: Hedge mode long
+
+                                     `short`: Hedge mode short
+
+                                     `net`: Net mode
+                                type: string
+                            realizedPnl:
+                                default: ""
+                                description: |-
+                                    Realized profit and loss
+
+                                    Only applicable to `FUTURES`/`SWAP`/`OPTION`
+
+                                    `realizedPnl`=`pnl`+`fee`+`fundingFee`+`liqPenalty`+`settledPnl`
+                                type: string
+                            settledPnl:
+                                default: ""
+                                description: |-
+                                    Accumulated settled profit and loss (calculated by settlement price)
+
+                                    Only applicable to `cross` `FUTURES`
+                                type: string
+                            triggerPx:
+                                default: ""
+                                description: trigger mark price. There is value when `type` is equal to `3`, `4` or `5`. It is "" when `type` is equal to `1` or `2`
+                                type: string
+                            type:
+                                default: ""
+                                description: "The type of latest close position\n\n`1`：Close position partially;`2`：Close all;`3`：Liquidation;`4`：Partial liquidation; `5`：ADL; \n\nIt is the latest type if there are several types for the same position."
+                                type: string
+                            uTime:
+                                default: ""
+                                description: Updated time of position
+                                type: string
+                            uly:
+                                default: ""
+                                description: Underlying
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/positions-history:
+        get:
+            description: "Retrieve the updated position data for the last 3 months. Return in reverse chronological order using utime. Getting positions history is supported under Portfolio margin mode since .\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountPositionsHistoryV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `MARGIN`
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `MARGIN`
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: Instrument ID, e.g. `BTC-USD-SWAP`
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USD-SWAP`
+                    type: string
+                - description: |-
+                    Margin mode
+
+                    `cross` `isolated`
+                  in: query
+                  name: mgnMode
+                  schema:
+                    default: ""
+                    description: |-
+                        Margin mode
+
+                        `cross` `isolated`
+                    type: string
+                - description: "The type of latest close position\n\n`1`: Close position partially;`2`：Close all;`3`：Liquidation;`4`：Partial liquidation; `5`：ADL; \n\nIt is the latest type if there are several types for the same position."
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: "The type of latest close position\n\n`1`: Close position partially;`2`：Close all;`3`：Liquidation;`4`：Partial liquidation; `5`：ADL; \n\nIt is the latest type if there are several types for the same position."
+                    type: string
+                - description: Position ID. There is attribute expiration. The posId will be expired if it is more than 30 days after the last full close position, then position will use new posId.
+                  in: query
+                  name: posId
+                  schema:
+                    default: ""
+                    description: Position ID. There is attribute expiration. The posId will be expired if it is more than 30 days after the last full close position, then position will use new posId.
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `uTime`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `uTime`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Pagination of data to return records newer than the requested `uTime`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `uTime`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100. All records that have the same `uTime` will be returned at the current request
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100. All records that have the same `uTime` will be returned at the current request
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountPositionsHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Retrieve the updated position data for the last 3 months. Return in reverse chronological order using utime. Getting positions history is supported under Portfolio margin mode since .
+
+            tags:
+                - Trading Account

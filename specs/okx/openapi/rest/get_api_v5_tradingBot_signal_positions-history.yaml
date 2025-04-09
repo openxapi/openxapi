@@ -1,0 +1,170 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradingBotSignalPositionsHistoryV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "data": [
+                    {
+                      "cTime": "1704724451471",
+                      "closeAvgPx": "200",
+                      "direction": "net",
+                      "instId": "ETH-USDT-SWAP",
+                      "lever": "5.0",
+                      "mgnMode": "cross",
+                      "openAvgPx": "220",
+                      "pnl": "-2.021",
+                      "pnlRatio": "-0.4593181818181818",
+                      "uTime": "1704724456322",
+                      "uly": "ETH-USDT"
+                    }
+                  ],
+                  "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            cTime:
+                                default: ""
+                                description: Created time of position
+                                type: string
+                            closeAvgPx:
+                                default: ""
+                                description: Average price of closing position
+                                type: string
+                            direction:
+                                default: ""
+                                description: 'Direction: `long` `short`'
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            lever:
+                                default: ""
+                                description: Leverage
+                                type: string
+                            mgnMode:
+                                default: ""
+                                description: Margin mode `cross` `isolated`
+                                type: string
+                            openAvgPx:
+                                default: ""
+                                description: Average price of opening position
+                                type: string
+                            pnl:
+                                default: ""
+                                description: Profit and loss
+                                type: string
+                            pnlRatio:
+                                default: ""
+                                description: P&L ratio
+                                type: string
+                            uTime:
+                                default: ""
+                                description: Updated time of position
+                                type: string
+                            uly:
+                                default: ""
+                                description: Underlying
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/signal/positions-history:
+        get:
+            description: "Retrieve the updated position data for the last 3 months. Return in reverse chronological order using utime.\n\n#### Rate Limit: 1 request per 10 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetTradingBotSignalPositionsHistoryV5
+            parameters:
+                - description: Algo ID
+                  in: query
+                  name: algoId
+                  required: true
+                  schema:
+                    default: ""
+                    description: Algo ID
+                    type: string
+                - description: Instrument ID, e.g.：`BTC-USD-SWAP`
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: Instrument ID, e.g.：`BTC-USD-SWAP`
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `uTime`, Unix timestamp format in milliseconds, e.g.`1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `uTime`, Unix timestamp format in milliseconds, e.g.`1597026383085`
+                    type: string
+                - description: Pagination of data to return records newer than the requested `uTime`, Unix timestamp format in milliseconds, e.g `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `uTime`, Unix timestamp format in milliseconds, e.g `1597026383085`
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100.
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradingBotSignalPositionsHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Retrieve the updated position data for the last 3 months. Return in reverse chronological order using utime.
+
+            tags:
+                - Signal Bot Trading

@@ -1,0 +1,156 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicOpenInterestV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                    {
+                        "instType":"SWAP",
+                        "instId":"BTC-USDT-SWAP",
+                        "oi":"5000",
+                        "oiCcy":"555.55",
+                        "oiUsd": "50000",
+                        "ts":"1597026383085"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            oi:
+                                default: ""
+                                description: Open interest in number of contracts
+                                type: string
+                            oiCcy:
+                                default: ""
+                                description: Open interest in number of coin
+                                type: string
+                            oiUsd:
+                                default: ""
+                                description: Open interest in number of USD
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data return time,  Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/open-interest:
+        get:
+            description: "Retrieve the total open interest for contracts on OKX.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP + Instrument ID \n\n"
+            operationId: GetPublicOpenInterestV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: "Underlying\n\nApplicable to `FUTURES`/`SWAP`/`OPTION`. \n\nIf instType is `OPTION`, either `uly` or `instFamily` is required."
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: "Underlying\n\nApplicable to `FUTURES`/`SWAP`/`OPTION`. \n\nIf instType is `OPTION`, either `uly` or `instFamily` is required."
+                    type: string
+                - description: |-
+                    Instrument family
+
+                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+
+                    If instType is `OPTION`, either `uly` or `instFamily` is required.
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family
+
+                        Applicable to `FUTURES`/`SWAP`/`OPTION`
+
+                        If instType is `OPTION`, either `uly` or `instFamily` is required.
+                    type: string
+                - description: |-
+                    Instrument ID, e.g. `BTC-USDT-SWAP`
+
+                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument ID, e.g. `BTC-USDT-SWAP`
+
+                        Applicable to `FUTURES`/`SWAP`/`OPTION`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicOpenInterestV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the total open interest for contracts on OKX.
+
+            tags:
+                - Public Data

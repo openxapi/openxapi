@@ -1,0 +1,158 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicInterestRateLoanQuotaV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "basic": [
+                                {
+                                    "ccy": "USDT",
+                                    "quota": "500000",
+                                    "rate": "0.00043728"
+                                },
+                                {
+                                    "ccy": "BTC",
+                                    "quota": "10",
+                                    "rate": "0.00019992"
+                                }
+                            ],
+                            "vip": [
+                                {
+                                    "irDiscount": "",
+                                    "loanQuotaCoef": "6",
+                                    "level": "VIP1"
+                                },
+                                {
+                                    "irDiscount": "",
+                                    "loanQuotaCoef": "7",
+                                    "level": "VIP2"
+                                }
+                            ],
+                            "regular": [
+                                {
+                                    "irDiscount": "",
+                                    "loanQuotaCoef": "1",
+                                    "level": "Lv1"
+                                },
+                                {
+                                    "irDiscount": "",
+                                    "loanQuotaCoef": "2",
+                                    "level": "Lv2"
+                                }
+                            ]
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            basic:
+                                description: Basic interest rate
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: Currency
+                                            type: string
+                                        quota:
+                                            default: ""
+                                            description: Max borrow
+                                            type: string
+                                        rate:
+                                            default: ""
+                                            description: Daily rate
+                                            type: string
+                                    type: object
+                                type: array
+                            regular:
+                                description: Interest info for regular users
+                                items:
+                                    properties:
+                                        irDiscount:
+                                            default: ""
+                                            deprecated: true
+                                            description: Interest rate discount(Deprecated)
+                                            type: string
+                                        level:
+                                            default: ""
+                                            description: Regular user Level, e.g. `Lv1`
+                                            type: string
+                                        loanQuotaCoef:
+                                            default: ""
+                                            description: Loan quota coefficient. Loan quota = `quota` * `level`
+                                            type: string
+                                    type: object
+                                type: array
+                            vip:
+                                description: Interest info for vip users
+                                items:
+                                    properties:
+                                        irDiscount:
+                                            default: ""
+                                            deprecated: true
+                                            description: Interest rate discount(Deprecated)
+                                            type: string
+                                        level:
+                                            default: ""
+                                            description: VIP Level, e.g. `VIP1`
+                                            type: string
+                                        loanQuotaCoef:
+                                            default: ""
+                                            description: Loan quota coefficient. Loan quota = `quota` * `level`
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/interest-rate-loan-quota:
+        get:
+            description: "Retrieve interest rate\n\n#### Rate Limit: 2 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicInterestRateLoanQuotaV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicInterestRateLoanQuotaV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve interest rate
+
+            tags:
+                - Public Data

@@ -1,0 +1,129 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountSpotManualBorrowRepayV5Req:
+            properties:
+                amt:
+                    default: ""
+                    description: Amount
+                    type: string
+                ccy:
+                    default: ""
+                    description: Currency, e.g. `BTC`
+                    type: string
+                side:
+                    default: ""
+                    description: |-
+                        Side
+
+                        `borrow`
+
+                        `repay`
+                    type: string
+            required:
+                - ccy
+                - side
+                - amt
+            type: object
+        CreateAccountSpotManualBorrowRepayV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "ccy":"USDT",
+                            "side":"borrow",
+                            "amt":"100"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Actual amount
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `BTC`
+                                type: string
+                            side:
+                                default: ""
+                                description: |-
+                                    Side
+
+                                    `borrow`
+
+                                    `repay`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/spot-manual-borrow-repay:
+        post:
+            description: "Only applicable to `Spot mode` (enabled borrowing)\n\n#### Rate Limit: 1 request per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAccountSpotManualBorrowRepayV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSpotManualBorrowRepayV5Req'
+                description: The request body for CreateAccountSpotManualBorrowRepayV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSpotManualBorrowRepayV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Only applicable to `Spot mode` (enabled borrowing)
+
+            tags:
+                - Trading Account

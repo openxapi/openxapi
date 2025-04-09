@@ -1,0 +1,255 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateRfqCreateRfqV5Req:
+            properties:
+                allowPartialExecution:
+                    description: "Whether the RFQ can be partially filled provided that the shape of legs stays the same. Valid values are `true` or `false`. \n\n`false` by default."
+                    type: boolean
+                anonymous:
+                    description: "Submit RFQ on a disclosed or anonymous basis. Valid values are `true` or `false`. \n\nIf not specified, the default value is `false`. \n\nWhen anonymous = true, the taker’s identify is not disclosed to maker even after trade execution."
+                    type: boolean
+                clRfqId:
+                    default: ""
+                    description: "Client-supplied RFQ ID. \n\nA combination of case-sensitive alpha-numeric, all numbers, or all letters of up to 32 characters."
+                    type: string
+                counterparties:
+                    description: The trader code(s) of the counterparties who receive the RFQ. Can be found via /api/v5/rfq/counterparties/
+                    items:
+                        type: string
+                    type: array
+                legs:
+                    description: An Array of objects containing each leg of the RFQ. Maximum 15 legs can be placed per request
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: "Margin currency. \n\nOnly applicable to `cross` `MARGIN` orders in `Spot and futures mode`. The parameter will be ignored in other scenarios."
+                                type: string
+                            instId:
+                                default: ""
+                                description: 'The Instrument ID of each leg. Example : "BTC-USDT-SWAP"'
+                                type: string
+                            lmtPx:
+                                default: ""
+                                description: |-
+                                    Taker expected price for the RFQ
+
+
+
+                                     If provided, RFQ trade will be automatically executed if the price from the quote is better than or equal to the price specified until the RFQ is canceled or expired.
+
+                                     This field has to be provided for all legs to have the RFQ automatically executed, or leave empty for all legs, otherwise request will be rejected.
+
+                                     The auto execution side depends on the leg side of the RFQ.
+
+                                     For `SPOT/MARGIN/FUTURES/SWAP`, lmtPx will be in unit of the quote ccy.
+
+                                     For `OPTION`, lmtPx will be in unit of settle ccy.
+
+                                     The field will not be disclosed to counterparties.
+                                type: string
+                            posSide:
+                                default: ""
+                                description: "Position side. \n\nThe default is `net` in the net mode. It can only be `long` or `short` in the long/short mode. \n\nIf not specified, users in long/short mode always open new positions. \n\nOnly applicable to `FUTURES`/`SWAP`."
+                                type: string
+                            side:
+                                default: ""
+                                description: The direction of each leg. Valid values can be `buy` or `sell`.
+                                type: string
+                            sz:
+                                default: ""
+                                description: The size of each leg
+                                type: string
+                            tdMode:
+                                default: ""
+                                description: "Trade mode \n\nMargin mode: `cross` `isolated` \n\nNon-Margin mode: `cash`. \n\nIf not provided, tdMode will inherit default values set by the system shown below: \n\nSpot and futures mode & SPOT: `cash` \n\nBuy options in Spot and futures mode and Multi-currency Margin: `isolated` \n\nOther cases: `cross`"
+                                type: string
+                            tgtCcy:
+                                default: ""
+                                description: "Defines the unit of the “sz” attribute. \n\nOnly applicable to instType = SPOT. \n\nThe valid enumerations are `base_ccy` and `quote_ccy`. When not specified, this is equal to `base_ccy` by default."
+                                type: string
+                        type: object
+                    type: array
+                tag:
+                    default: ""
+                    description: "RFQ tag. \n\nThe block trade associated with the RFQ will have the same tag. \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters."
+                    type: string
+            required:
+                - counterparties
+                - legs
+            type: object
+        CreateRfqCreateRfqV5Resp:
+            example: "{\n    \"code\":\"0\",\n    \"msg\":\"\",\n    \"data\":[\n        {\n            \"cTime\":\"1611033737572\",\n            \"uTime\":\"1611033737572\",\n            \"traderCode\":\"SATOSHI\",\n            \"tag\":\"123456\",\n            \"rfqId\":\"22534\",\n            \"clRfqId\":\"rfq01\",\n            \"allowPartialExecution\":false,\n            \"state\":\"active\",\n            \"validUntil\":\"1611033857557\",\n            \"counterparties\":[\n                \"Trader1\",\n                \"Trader2\"\n            ],\n            \"legs\":[\n                {\n                    \"instId\":\"BTC-USD-221208-100000-C\",\n                    \"tdMode\":\"cross\",\n                    \"ccy\":\"USDT\",\n                    \"sz\":\"25\",\n                    \"side\":\"buy\",\n                    \"posSide\": \"long\",\n                    \"tgtCcy\":\"\"\n                },\n                {\n                    \"instId\":\"ETH-USDT\",\n                    \"tdMode\":\"cross\",\n                    \"ccy\":\"USDT\",\n                    \"sz\":\"150\",\n                    \"side\":\"buy\",\n                    \"posSide\": \"long\",\n                    \"tgtCcy\":\"base_ccy\"     \n                }\n            ]\n        }\n    ]\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            allowPartialExecution:
+                                description: Whether the RFQ can be partially filled provided that the shape of legs stays the same.
+                                type: boolean
+                            cTime:
+                                default: ""
+                                description: The timestamp the RFQ was created. Unix timestamp format in milliseconds.
+                                type: string
+                            ccy:
+                                default: ""
+                                description: "Margin currency. \n\nOnly applicable to `cross` `MARGIN` orders in `Spot and futures mode`. The parameter will be ignored in other scenarios."
+                                type: string
+                            clRfqId:
+                                default: ""
+                                description: Client-supplied RFQ ID. This attribute is treated as client sensitive information. It will not be exposed to the Maker, only return empty string.
+                                type: string
+                            counterparties:
+                                description: The list of counterparties traderCode the RFQ was broadcast to.
+                                items:
+                                    type: string
+                                type: array
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                            legs:
+                                description: An Array of objects containing each leg of the RFQ.
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: "Margin currency. \n\nOnly applicable to `cross` `MARGIN` orders in `Spot and futures mode`. The parameter will be ignored in other scenarios."
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. BTC-USDT-SWAP
+                                            type: string
+                                        posSide:
+                                            default: ""
+                                            description: "Position side. \n\nThe default is `net` in the net mode. If not specified, return \"\", which is equivalent to net. \n\nIt can only be `long` or `short` in the long/short mode. If not specified, return \"\", which corresponds to the direction that opens new positions for the trade (buy => long, sell => short). \n\nOnly applicable to FUTURES/SWAP."
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: The direction of the leg. Valid values can be buy or sell.
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: Size of the leg in contracts or spot.
+                                            type: string
+                                        tdMode:
+                                            default: ""
+                                            description: "Trade mode \n\nMargin mode: `cross` `isolated` \n\nNon-Margin mode: `cash`. \n\nIf not provided, tdMode will inherit default values set by the system shown below: \n\nSpot and futures mode & SPOT: `cash` \n\nBuy options in Spot and futures mode and Multi-currency Margin: `isolated` \n\nOther cases: `cross`"
+                                            type: string
+                                        tgtCcy:
+                                            default: ""
+                                            description: "Defines the unit of the “sz” attribute. \n\nOnly applicable to instType = SPOT. \n\nThe valid enumerations are `base_ccy` and `quote_ccy`. When not specified this is equal to `base_ccy` by default."
+                                            type: string
+                                    type: object
+                                type: array
+                            posSide:
+                                default: ""
+                                description: "Position side. \n\nThe default is `net` in the net mode. If not specified, return \"\", which is equivalent to net. \n\nIt can only be `long` or `short` in the long/short mode. If not specified, return \"\", which corresponds to the direction that opens new positions for the trade (buy => long, sell => short). \n\nOnly applicable to FUTURES/SWAP."
+                                type: string
+                            rfqId:
+                                default: ""
+                                description: The unique identifier of the RFQ generated by system.
+                                type: string
+                            side:
+                                default: ""
+                                description: The direction of the leg. Valid values can be buy or sell.
+                                type: string
+                            state:
+                                default: ""
+                                description: "The status of the RFQ. \n\nValid values can be `active` `canceled` `pending_fill` `filled` `expired` `traded_away` `failed`. \n\n`traded_away` only applies to Maker"
+                                type: string
+                            sz:
+                                default: ""
+                                description: Size of the leg in contracts or spot.
+                                type: string
+                            tag:
+                                default: ""
+                                description: RFQ tag. The block trade associated with the RFQ will have the same tag.
+                                type: string
+                            tdMode:
+                                default: ""
+                                description: "Trade mode \n\nMargin mode: `cross` `isolated` \n\nNon-Margin mode: `cash`. \n\nIf not provided, tdMode will inherit default values set by the system shown below: \n\nSpot and futures mode & SPOT: `cash` \n\nBuy options in Spot and futures mode and Multi-currency Margin: `isolated` \n\nOther cases: `cross`"
+                                type: string
+                            tgtCcy:
+                                default: ""
+                                description: "Defines the unit of the “sz” attribute. \n\nOnly applicable to instType = SPOT. \n\nThe valid enumerations are `base_ccy` and `quote_ccy`. When not specified this is equal to `base_ccy` by default."
+                                type: string
+                            traderCode:
+                                default: ""
+                                description: A unique identifier of taker.
+                                type: string
+                            uTime:
+                                default: ""
+                                description: The timestamp the RFQ was last updated. Unix timestamp format in milliseconds.
+                                type: string
+                            validUntil:
+                                default: ""
+                                description: "The timestamp the RFQ expires. Unix timestamp format in milliseconds. \n\nIf all legs are options, the RFQ will expire after 10 minutes; otherwise, the RFQ will expire after 2 minutes."
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/create-rfq:
+        post:
+            description: "Creates a new RFQ\n\n**_Please select trading bot \"WAGMI\" as the counterparty when submitting RFQs in demo trading.Prices provided on RFQs by the trading bot are for reference only. _**\n\nTo learn more, please visit \n\n#### Rate Limit: 5 requests per 2 seconds; 150 requests per 12 hours \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateRfqCreateRfqV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateRfqCreateRfqV5Req'
+                description: The request body for CreateRfqCreateRfqV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateRfqCreateRfqV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: "Creates a new RFQ\n\nTo learn more, please visit \n\n"
+            tags:
+                - Block Trading

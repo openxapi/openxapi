@@ -1,0 +1,111 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingInstrumentsV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "enabled": true,
+                            "instId": "BTC-USDT-SWAP"
+                        },
+                        {
+                            "enabled": true,
+                            "instId": "ETH-USDT-SWAP"
+                        },
+                        {
+                            "enabled": false,
+                            "instId": "ADA-USDT-SWAP"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            enabled:
+                                description: Whether instrument is a lead instrument. `true` or `false`
+                                type: boolean
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/instruments:
+        get:
+            description: "Retrieve instruments that are supported to lead by the platform. \nRetrieve instruments that the lead trader has set.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingInstrumentsV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SPOT`
+
+                    `SWAP`, the default value
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SPOT`
+
+                        `SWAP`, the default value
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingInstrumentsV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: "Retrieve instruments that are supported to lead by the platform. \nRetrieve instruments that the lead trader has set.\n\n"
+            tags:
+                - Copy Trading

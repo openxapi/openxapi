@@ -1,0 +1,186 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetTransferStateV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "amt": "1.5",
+                            "ccy": "USDT",
+                            "clientId": "",
+                            "from": "18",
+                            "instId": "", //deprecated
+                            "state": "success",
+                            "subAcct": "test",
+                            "to": "6",
+                            "toInstId": "", //deprecated
+                            "transId": "1",
+                            "type": "1"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Amount to be transferred
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `USDT`
+                                type: string
+                            clientId:
+                                default: ""
+                                description: Client-supplied ID
+                                type: string
+                            from:
+                                default: ""
+                                description: |-
+                                    The remitting account
+
+                                    `6`: Funding account
+
+                                    `18`: Trading account
+                                type: string
+                            instId:
+                                default: ""
+                                deprecated: true
+                                description: deprecated
+                                type: string
+                            state:
+                                default: ""
+                                description: |-
+                                    Transfer state
+
+                                    `success`
+
+                                    `pending`
+
+                                    `failed`
+                                type: string
+                            subAcct:
+                                default: ""
+                                description: Name of the sub-account
+                                type: string
+                            to:
+                                default: ""
+                                description: |-
+                                    The beneficiary account
+
+                                    `6`: Funding account
+
+                                    `18`: Trading account
+                                type: string
+                            toInstId:
+                                default: ""
+                                deprecated: true
+                                description: deprecated
+                                type: string
+                            transId:
+                                default: ""
+                                description: Transfer ID
+                                type: string
+                            type:
+                                default: ""
+                                description: "Transfer type\n\n`0`: transfer within account\n\n`1`: master account to sub-account (Only applicable to API Key from master account) \n\n`2`: sub-account to master account (Only applicable to APIKey from master account)\n\n`3`: sub-account to master account (Only applicable to APIKey from sub-account)\n\n`4`: sub-account to sub-account (Only applicable to APIKey from sub-account, and target account needs to be another sub-account which belongs to same master account)"
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/transfer-state:
+        get:
+            description: "Retrieve the transfer state data of the last 2 weeks.\n\n#### Rate Limit: 10 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetTransferStateV5
+            parameters:
+                - description: |-
+                    Transfer ID
+
+                    Either transId or clientId is required. If both are passed, transId will be used.
+                  in: query
+                  name: transId
+                  schema:
+                    default: ""
+                    description: |-
+                        Transfer ID
+
+                        Either transId or clientId is required. If both are passed, transId will be used.
+                    type: string
+                - description: |-
+                    Client-supplied ID
+
+                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                  in: query
+                  name: clientId
+                  schema:
+                    default: ""
+                    description: |-
+                        Client-supplied ID
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                - description: "Transfer type\n\n`0`: transfer within account \n\n`1`: master account to sub-account (Only applicable to API Key from master account) \n\n`2`: sub-account to master account (Only applicable to API Key from master account)\n\n`3`: sub-account to master account (Only applicable to APIKey from sub-account)\n\n`4`: sub-account to sub-account (Only applicable to APIKey from sub-account, and target account needs to be another sub-account which belongs to same master account)\n\nThe default is `0`.\n\nFor Custody accounts, can choose not to pass this parameter or pass `0`."
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: "Transfer type\n\n`0`: transfer within account \n\n`1`: master account to sub-account (Only applicable to API Key from master account) \n\n`2`: sub-account to master account (Only applicable to API Key from master account)\n\n`3`: sub-account to master account (Only applicable to APIKey from sub-account)\n\n`4`: sub-account to sub-account (Only applicable to APIKey from sub-account, and target account needs to be another sub-account which belongs to same master account)\n\nThe default is `0`.\n\nFor Custody accounts, can choose not to pass this parameter or pass `0`."
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetTransferStateV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Retrieve the transfer state data of the last 2 weeks.
+
+            tags:
+                - Funding Account

@@ -1,0 +1,219 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicOptSummaryV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "askVol": "3.7207056835937498",
+                            "bidVol": "0",
+                            "delta": "0.8310206676289528",
+                            "deltaBS": "0.9857332101544538",
+                            "fwdPx": "39016.8143629068452065",
+                            "gamma": "-1.1965483553276135",
+                            "gammaBS": "0.000011933182397798109",
+                            "instId": "BTC-USD-220309-33000-C",
+                            "instType": "OPTION",
+                            "lever": "0",
+                            "markVol": "1.5551965233045728",
+                            "realVol": "0",
+                            "volLv": "0",
+                            "theta": "-0.0014131955002093717",
+                            "thetaBS": "-66.03526900575946",
+                            "ts": "1646733631242",
+                            "uly": "BTC-USD",
+                            "vega": "0.000018173851073258973",
+                            "vegaBS": "0.7089307622132419"
+                        },
+                        {
+                            "askVol": "1.7968814062499998",
+                            "bidVol": "0",
+                            "delta": "-0.014668822072611904",
+                            "deltaBS": "-0.01426678984554619",
+                            "fwdPx": "39016.8143629068452065",
+                            "gamma": "0.49483062407551576",
+                            "gammaBS": "0.000011933182397798109",
+                            "instId": "BTC-USD-220309-33000-P",
+                            "instType": "OPTION",
+                            "lever": "0",
+                            "markVol": "1.5551965233045728",
+                            "realVol": "0",
+                            "volLv": "0",
+                            "theta": "-0.0014131955002093717",
+                            "thetaBS": "-54.93377294845015",
+                            "ts": "1646733631242",
+                            "uly": "BTC-USD",
+                            "vega": "0.000018173851073258973",
+                            "vegaBS": "0.7089307622132419"
+                        }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            askVol:
+                                default: ""
+                                description: Ask volatility
+                                type: string
+                            bidVol:
+                                default: ""
+                                description: Bid volatility
+                                type: string
+                            delta:
+                                default: ""
+                                description: Sensitivity of option price to `uly` price
+                                type: string
+                            deltaBS:
+                                default: ""
+                                description: Sensitivity of option price to `uly` price in BS mode
+                                type: string
+                            fwdPx:
+                                default: ""
+                                description: Forward price
+                                type: string
+                            gamma:
+                                default: ""
+                                description: The delta is sensitivity to `uly` price
+                                type: string
+                            gammaBS:
+                                default: ""
+                                description: The delta is sensitivity to `uly` price in BS mode
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. `BTC-USD-200103-5500-C`
+                                type: string
+                            instType:
+                                default: ""
+                                description: |-
+                                    Instrument type
+
+                                    `OPTION`
+                                type: string
+                            lever:
+                                default: ""
+                                description: Leverage
+                                type: string
+                            markVol:
+                                default: ""
+                                description: Mark volatility
+                                type: string
+                            realVol:
+                                default: ""
+                                description: Realized volatility (not currently used)
+                                type: string
+                            theta:
+                                default: ""
+                                description: Sensitivity of option price to remaining maturity
+                                type: string
+                            thetaBS:
+                                default: ""
+                                description: Sensitivity of option price to remaining maturity in BS mode
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data update time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            uly:
+                                default: ""
+                                description: Underlying
+                                type: string
+                            vega:
+                                default: ""
+                                description: Sensitivity of option price to implied volatility
+                                type: string
+                            vegaBS:
+                                default: ""
+                                description: Sensitivity of option price to implied volatility in BS mode
+                                type: string
+                            volLv:
+                                default: ""
+                                description: Implied volatility of at-the-money options
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/opt-summary:
+        get:
+            description: "Retrieve option market data.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP +uly \n\n"
+            operationId: GetPublicOptSummaryV5
+            parameters:
+                - description: |-
+                    Underlying, only applicable to `OPTION`
+
+                    Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: |-
+                        Underlying, only applicable to `OPTION`
+
+                        Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                    type: string
+                - description: |-
+                    Instrument family, only applicable to `OPTION`
+
+                    Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family, only applicable to `OPTION`
+
+                        Either `uly` or `instFamily` is required. If both are passed, `instFamily` will be used.
+                    type: string
+                - description: Contract expiry date, the format is "YYMMDD", e.g. "200527"
+                  in: query
+                  name: expTime
+                  schema:
+                    default: ""
+                    description: Contract expiry date, the format is "YYMMDD", e.g. "200527"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicOptSummaryV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve option market data.
+
+            tags:
+                - Public Data

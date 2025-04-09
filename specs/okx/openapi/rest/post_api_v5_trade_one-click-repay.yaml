@@ -1,0 +1,118 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradeOneClickRepayV5Req:
+            properties:
+                debtCcy:
+                    description: "Debt currency type \n\nMaximum 5 currencies can be selected in one order. If there are multiple currencies, separate them with commas."
+                    items:
+                        type: string
+                    type: array
+                repayCcy:
+                    default: ""
+                    description: "Repay currency type \n\nOnly one receiving currency type can be selected in one order and cannot be the same as the small payment currencies."
+                    type: string
+            required:
+                - debtCcy
+                - repayCcy
+            type: object
+        CreateTradeOneClickRepayV5Resp:
+            example: "{\n    \"code\": \"0\",\n    \"data\": [\n        {\n            \"debtCcy\": \"ETH\", \n            \"fillDebtSz\": \"0.01023052\",\n            \"fillRepaySz\": \"30\", \n            \"repayCcy\": \"USDT\", \n            \"status\": \"filled\",\n            \"uTime\": \"1646188520338\"\n        },\n        {\n            \"debtCcy\": \"BTC\", \n            \"fillFromSz\": \"3\",\n            \"fillToSz\": \"60,221.15910001\",\n            \"repayCcy\": \"USDT\",\n            \"status\": \"filled\",\n            \"uTime\": \"1646188520338\"\n        }\n    ],\n    \"msg\": \"\"\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            debtCcy:
+                                default: ""
+                                description: Debt currency type
+                                type: string
+                            fillDebtSz:
+                                default: ""
+                                description: Filled amount of debt currency
+                                type: string
+                            fillRepaySz:
+                                default: ""
+                                description: Filled amount of repay currency
+                                type: string
+                            repayCcy:
+                                default: ""
+                                description: Repay currency type
+                                type: string
+                            status:
+                                default: ""
+                                description: "Current status of one-click repay \n\n`running`: Running \n\n`filled`: Filled \n\n`failed`: Failed"
+                                type: string
+                            uTime:
+                                default: ""
+                                description: Trade time, Unix timestamp format in milliseconds, e.g. 1597026383085
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/one-click-repay:
+        post:
+            description: "Trade one-click repay to repay cross debts. Isolated debts are not applicable.\nThe maximum repayment amount is based on the remaining available balance of funding and trading accounts.\nOnly applicable to `Multi-currency margin`/`Portfolio margin`.\n\n#### Rate Limit: 1 request per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradeOneClickRepayV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradeOneClickRepayV5Req'
+                description: The request body for CreateTradeOneClickRepayV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradeOneClickRepayV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Trade one-click repay to repay cross debts. Isolated debts are not applicable.
+                The maximum repayment amount is based on the remaining available balance of funding and trading accounts.
+                Only applicable to `Multi-currency margin`/`Portfolio margin`.
+
+            tags:
+                - Trade

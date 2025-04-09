@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetRfqCounterpartiesV5Resp:
+            example: "{\n    \"code\":\"0\",\n    \"msg\":\"\",\n    \"data\":[\n        {\n            \"traderName\" : \"Satoshi Nakamoto\",\n            \"traderCode\" : \"SATOSHI\",\n            \"type\" : \"\" \n        }\n    ]\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            traderCode:
+                                default: ""
+                                description: A unique identifier of maker which will be publicly visible on the platform. All RFQ and Quote endpoints will use this as the unique counterparty identifier.
+                                type: string
+                            traderName:
+                                default: ""
+                                description: The long formative username of trader or entity on the platform.
+                                type: string
+                            type:
+                                default: ""
+                                description: The counterparty type. `LP` refers to API connected auto market makers.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/counterparties:
+        get:
+            description: "Retrieves the list of counterparties that the user is permitted to trade with. \n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetRfqCounterpartiesV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRfqCounterpartiesV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: "Retrieves the list of counterparties that the user is permitted to trade with. \n\n"
+            tags:
+                - Block Trading

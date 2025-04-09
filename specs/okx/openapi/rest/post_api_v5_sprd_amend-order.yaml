@@ -1,0 +1,97 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateSprdAmendOrderV5Resp:
+            example: |+
+                POST /api/v5/sprd/amend-order
+                body
+                {
+                    "ordId":"2510789768709120",
+                    "newSz":"2"
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            clOrdId:
+                                default: ""
+                                description: Client Order ID as assigned by the client
+                                type: string
+                            newPx:
+                                default: ""
+                                description: "New price after amendment \n\nEither `newSz` or `newPx` is required."
+                                type: string
+                            newSz:
+                                default: ""
+                                description: "New quantity after amendment \n\nEither `newSz` or `newPx` is required. \n\nWhen amending a partially-filled order, the newSz should include the amount that has been filled."
+                                type: string
+                            ordId:
+                                default: ""
+                                description: "Order ID \n\nEither `ordId` or `clOrdId` is required. If both are passed, ordId will be used."
+                                type: string
+                            reqId:
+                                default: ""
+                                description: "Client Request ID as assigned by the client for order amendment \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters. \n\nThe response will include the corresponding reqId to help you identify the request if you provide it in the request."
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/sprd/amend-order:
+        post:
+            description: "Amend an incomplete order.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateSprdAmendOrderV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSprdAmendOrderV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Amend an incomplete order.
+
+            tags:
+                - Spread Trading

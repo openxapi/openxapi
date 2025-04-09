@@ -1,0 +1,217 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotRecurringOrderAlgoV5Req:
+            properties:
+                algoClOrdId:
+                    default: ""
+                    description: |-
+                        Client-supplied Algo ID
+
+                        There will be a value when algo order attaching algoClOrdId is triggered, or it will be "".
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                amt:
+                    default: ""
+                    description: Quantity invested per cycle
+                    type: string
+                investmentCcy:
+                    default: ""
+                    description: The invested quantity unit, can only be `USDT`/`USDC`
+                    type: string
+                period:
+                    default: ""
+                    description: |-
+                        Period
+
+                        `monthly`
+
+                        `weekly`
+
+                        `daily`
+
+                        `hourly`
+                    type: string
+                recurringDay:
+                    default: ""
+                    description: |-
+                        Recurring buy date
+
+                        When the period is `monthly`, the value range is an integer of [1,28]
+
+                        When the period is `weekly`, the value range is an integer of [1,7]
+
+                        When the period is `daily`/`hourly`, the parameter is not required.
+                    type: string
+                recurringHour:
+                    default: ""
+                    description: |-
+                        Recurring buy by hourly
+
+                        `1`/`4`/`8`/`12`, e.g. `4` represents "recurring buy every 4 hour"
+
+                        When the period is `hourly`, the parameter is required.
+                    type: string
+                recurringList:
+                    description: Recurring buy info
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Recurring currency, e.g. `BTC`
+                                type: string
+                            ratio:
+                                default: ""
+                                description: Proportion of recurring currency assets, e.g. "0.2" representing 20%
+                                type: string
+                        type: object
+                    type: array
+                recurringTime:
+                    default: ""
+                    description: |-
+                        Recurring buy time, the value range is an integer of [0,23]
+
+                        When the period is `hourly`, the parameter is the time of the first investment occurs.
+                    type: string
+                stgyName:
+                    default: ""
+                    description: Custom name for trading bot, no more than 40 characters
+                    type: string
+                tag:
+                    default: ""
+                    description: |-
+                        Order tag
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters.
+                    type: string
+                tdMode:
+                    default: ""
+                    description: |-
+                        Trading mode
+
+                        Margin mode: `cross`
+
+                        Non-Margin mode: `cash`
+                    type: string
+                timeZone:
+                    default: ""
+                    description: |-
+                        UTC time zone, the value range is an integer of [-12,14]
+
+                        e.g. "8" representing UTC+8 (East 8 District), Beijing Time
+                    type: string
+            required:
+                - stgyName
+                - recurringList
+                - period
+                - recurringTime
+                - timeZone
+                - amt
+                - investmentCcy
+                - tdMode
+            type: object
+        CreateTradingBotRecurringOrderAlgoV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "algoId":"560472804207104000",
+                            "algoClOrdId":"",
+                            "sCode":"0",
+                            "sMsg":"",
+                            "tag":""
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoClOrdId:
+                                default: ""
+                                description: Client-supplied Algo ID
+                                type: string
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, 0 means success
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection message if the request is unsuccessful
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/recurring/order-algo:
+        post:
+            description: "#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradingBotRecurringOrderAlgoV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotRecurringOrderAlgoV5Req'
+                description: The request body for CreateTradingBotRecurringOrderAlgoV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotRecurringOrderAlgoV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Recurring Buy

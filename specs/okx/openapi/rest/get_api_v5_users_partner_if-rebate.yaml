@@ -1,0 +1,92 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetUsersPartnerIfRebateV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": {
+                        "result": true,
+                        "type": "0"
+                    }
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            result:
+                                description: Whether the user is invited by the current affiliate. `true`, `false`
+                                type: boolean
+                            type:
+                                default: ""
+                                description: "Whether there is affiliate rebate.\n\n`0` There is affiliate rebate\n\n`1` There is no affiliate rebate. Because the account which is requesting this endpoint is not affiliate \n\n`2` There is no affiliate rebate. Because there is no relationship of invitation or recall, e.g. api key does not exist \n\n`4` There is no affiliate rebate. Because the user level is equal to or more than VIP6"
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/users/partner/if-rebate:
+        get:
+            description: "This endpoint will be offline soon, please use  \n\n\n\nIt is used to get the user's affiliate rebate information for affiliate.\n\n#### Rate limit：20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetUsersPartnerIfRebateV5
+            parameters:
+                - description: The user's API key. Only applicable to the API key of invitee master account
+                  in: query
+                  name: apiKey
+                  required: true
+                  schema:
+                    default: ""
+                    description: The user's API key. Only applicable to the API key of invitee master account
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetUsersPartnerIfRebateV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: "This endpoint will be offline soon, please use  \n\n\n\nIt is used to get the user's affiliate rebate information for affiliate.\n\n"
+            tags:
+                - Affiliate

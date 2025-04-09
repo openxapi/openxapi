@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingPublicConfigV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "maxCopyAmt": "1000",
+                            "maxCopyRatio": "100",
+                            "maxCopyTotalAmt": "30000",
+                            "maxSlRatio": "0.75",
+                            "maxTpRatio": "1.5",
+                            "minCopyAmt": "20",
+                            "minCopyRatio": "0.01"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            maxCopyAmt:
+                                default: ""
+                                description: Maximum copy amount per order in USDT when you are using copy mode `fixed_amount`
+                                type: string
+                            maxCopyRatio:
+                                default: ""
+                                description: Maximum ratio per order when you are using copy mode `ratio_copy`
+                                type: string
+                            maxCopyTotalAmt:
+                                default: ""
+                                description: Maximum copy total amount under the certain lead trader, the minimum is the same with `minCopyAmt`
+                                type: string
+                            maxSlRatio:
+                                default: ""
+                                description: Maximum ratio of stopping loss per order, the minimum is 0
+                                type: string
+                            maxTpRatio:
+                                default: ""
+                                description: Maximum ratio of taking profit per order, the minimum is 0
+                                type: string
+                            minCopyAmt:
+                                default: ""
+                                description: Minimum copy amount per order in USDT when you are using copy mode `fixed_amount`
+                                type: string
+                            minCopyRatio:
+                                default: ""
+                                description: Minimum ratio per order when you are using copy mode `ratio_copy`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/public-config:
+        get:
+            description: "Public endpoint. Retrieve copy trading parameter configuration information of copy settings\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingPublicConfigV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`, the default value
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`, the default value
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingPublicConfigV5Resp'
+                    description: Successful operation
+            summary: |+
+                Public endpoint. Retrieve copy trading parameter configuration information of copy settings
+
+            tags:
+                - Copy Trading

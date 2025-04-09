@@ -1,0 +1,122 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetFinanceSavingsLendingRateHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                        "ccy": "BTC",
+                        "amt": "0.01",
+                        "rate": "0.001",
+                        "ts": "1597026383085"
+                    }]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amt:
+                                default: ""
+                                description: Lending amount
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. `BTC`
+                                type: string
+                            rate:
+                                default: ""
+                                description: Lending annual interest rate
+                                type: string
+                            ts:
+                                default: ""
+                                description: Time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/finance/savings/lending-rate-history:
+        get:
+            description: "Authentication is not required for this public endpoint.\n\n\nOnly returned records after December 14, 2021.\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetFinanceSavingsLendingRateHistoryV5
+            parameters:
+                - description: Currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency, e.g. `BTC`
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: Pagination of data to return records newer than the requested `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `ts`, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                    type: string
+                - description: |-
+                    Number of results per request. The maximum is `100`. The default is `100`.
+
+                    If `ccy` is not specified, all data under the same `ts` will be returned, not limited by `limit`
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: |-
+                        Number of results per request. The maximum is `100`. The default is `100`.
+
+                        If `ccy` is not specified, all data under the same `ts` will be returned, not limited by `limit`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFinanceSavingsLendingRateHistoryV5Resp'
+                    description: Successful operation
+            summary: |+
+                Authentication is not required for this public endpoint.
+
+
+                Only returned records after December 14, 2021.
+
+            tags:
+                - Simple Earn Flexible

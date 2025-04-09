@@ -1,0 +1,154 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountMaxAvailSizeV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                      "instId": "BTC-USDT",
+                      "availBuy": "100",
+                      "availSell": "1"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            availBuy:
+                                default: ""
+                                description: Maximum available balance/equity to buy
+                                type: string
+                            availSell:
+                                default: ""
+                                description: Maximum available balance/equity to sell
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/max-avail-size:
+        get:
+            description: "Available balance for isolated margin positions and SPOT, available equity for cross margin positions.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountMaxAvailSizeV5
+            parameters:
+                - description: Single instrument or multiple instruments (no more than 5) separated with comma, e.g. `BTC-USDT,ETH-USDT`
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: Single instrument or multiple instruments (no more than 5) separated with comma, e.g. `BTC-USDT,ETH-USDT`
+                    type: string
+                - description: |-
+                    Currency used for margin
+
+                    Applicable to `isolated` `MARGIN` and `cross` `MARGIN` in `Spot and futures mode`.
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: |-
+                        Currency used for margin
+
+                        Applicable to `isolated` `MARGIN` and `cross` `MARGIN` in `Spot and futures mode`.
+                    type: string
+                - description: |-
+                    Trade mode
+
+                    `cross`
+
+                    `isolated`
+
+                    `cash`
+
+                    `spot_isolated`
+                  in: query
+                  name: tdMode
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Trade mode
+
+                        `cross`
+
+                        `isolated`
+
+                        `cash`
+
+                        `spot_isolated`
+                    type: string
+                - description: "Whether to reduce position only \n\nOnly applicable to `MARGIN`"
+                  in: query
+                  name: reduceOnly
+                  schema:
+                    description: "Whether to reduce position only \n\nOnly applicable to `MARGIN`"
+                    type: boolean
+                - description: "The price of closing position. \n\nOnly applicable to reduceOnly `MARGIN`."
+                  in: query
+                  name: px
+                  schema:
+                    default: ""
+                    description: "The price of closing position. \n\nOnly applicable to reduceOnly `MARGIN`."
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountMaxAvailSizeV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Available balance for isolated margin positions and SPOT, available equity for cross margin positions.
+
+            tags:
+                - Trading Account

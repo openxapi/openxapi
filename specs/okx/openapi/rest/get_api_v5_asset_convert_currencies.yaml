@@ -1,0 +1,97 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetConvertCurrenciesV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "min": "",  // Deprecated
+                            "max": "",  // Deprecated
+                            "ccy": "BTC"
+                        },
+                        {
+                            "min": "",
+                            "max": "",
+                            "ccy": "ETH"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Currency, e.g. BTC
+                                type: string
+                            max:
+                                default: ""
+                                deprecated: true
+                                description: Maximum amount to convert ( Deprecated )
+                                type: string
+                            min:
+                                default: ""
+                                deprecated: true
+                                description: Minimum amount to convert ( Deprecated )
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/convert/currencies:
+        get:
+            description: "#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetConvertCurrenciesV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetConvertCurrenciesV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Funding Account

@@ -1,0 +1,246 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicPositionTiersV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                    {
+                            "baseMaxLoan": "50",
+                            "imr": "0.1",
+                            "instId": "BTC-USDT",
+                            "maxLever": "10",
+                            "maxSz": "50",
+                            "minSz": "0",
+                            "mmr": "0.03",
+                            "optMgnFactor": "0",
+                            "quoteMaxLoan": "500000",
+                            "tier": "1",
+                            "uly": "",
+                            "instFamily": ""
+                        }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            baseMaxLoan:
+                                default: ""
+                                description: Base currency borrowing amount (only applicable to leverage and the case when `instId` takes effect)
+                                type: string
+                            imr:
+                                default: ""
+                                description: Initial margin requirement rate
+                                type: string
+                            instFamily:
+                                default: ""
+                                description: |-
+                                    Instrument family
+
+                                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            maxLever:
+                                default: ""
+                                description: Maximum available leverage
+                                type: string
+                            maxSz:
+                                default: ""
+                                description: |-
+                                    The maximum borrowing amount or number of positions held in this position is only applicable to margin/options/perpetual/delivery
+
+                                    It will return the maximum borrowing amount when `ccy` takes effect.
+                                type: string
+                            minSz:
+                                default: ""
+                                description: |-
+                                    The minimum borrowing amount or position of this gear is only applicable to margin/options/perpetual/delivery, the minimum position is 0 by default
+
+                                    It will return the minimum borrowing amount when `ccy` takes effect.
+                                type: string
+                            mmr:
+                                default: ""
+                                description: Maintenance margin requirement rate
+                                type: string
+                            optMgnFactor:
+                                default: ""
+                                description: Option Margin Coefficient (only applicable to options)
+                                type: string
+                            quoteMaxLoan:
+                                default: ""
+                                description: Quote currency borrowing amount (only applicable to leverage and the case when `instId` takes effect)
+                                type: string
+                            tier:
+                                default: ""
+                                description: Tiers
+                                type: string
+                            uly:
+                                default: ""
+                                description: |-
+                                    Underlying
+
+                                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/position-tiers:
+        get:
+            description: "Retrieve position tiers information, maximum leverage depends on your borrowings and margin ratio.\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicPositionTiersV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `MARGIN`
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `MARGIN`
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: |-
+                    Trade mode
+
+                    Margin mode `cross` `isolated`
+                  in: query
+                  name: tdMode
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Trade mode
+
+                        Margin mode `cross` `isolated`
+                    type: string
+                - description: |-
+                    Single underlying or multiple underlyings (no more than 3) separated with comma.
+
+                    If instType is `SWAP/FUTURES/OPTION`, either `uly` or `instFamily` is required.
+
+                    If both are passed, `instFamily` will be used.
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: |-
+                        Single underlying or multiple underlyings (no more than 3) separated with comma.
+
+                        If instType is `SWAP/FUTURES/OPTION`, either `uly` or `instFamily` is required.
+
+                        If both are passed, `instFamily` will be used.
+                    type: string
+                - description: |-
+                    Single instrument familiy or multiple instrument families (no more than 5) separated with comma.
+
+                    If instType is `SWAP/FUTURES/OPTION`, either `uly` or `instFamily` is required.
+
+                    If both are passed, `instFamily` will be used.
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Single instrument familiy or multiple instrument families (no more than 5) separated with comma.
+
+                        If instType is `SWAP/FUTURES/OPTION`, either `uly` or `instFamily` is required.
+
+                        If both are passed, `instFamily` will be used.
+                    type: string
+                - description: |-
+                    Single instrument or multiple instruments (no more than 5) separated with comma.
+
+                    Either instId or ccy is required, if both are passed, instId will be used, ignore when instType is one of `SWAP`,`FUTURES`,`OPTION`
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: |-
+                        Single instrument or multiple instruments (no more than 5) separated with comma.
+
+                        Either instId or ccy is required, if both are passed, instId will be used, ignore when instType is one of `SWAP`,`FUTURES`,`OPTION`
+                    type: string
+                - description: |-
+                    Margin currency
+
+                    Only applicable to cross MARGIN. It will return borrowing amount for `Multi-currency margin` and `Portfolio margin` when `ccy` takes effect.
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: |-
+                        Margin currency
+
+                        Only applicable to cross MARGIN. It will return borrowing amount for `Multi-currency margin` and `Portfolio margin` when `ccy` takes effect.
+                    type: string
+                - description: Tiers
+                  in: query
+                  name: tier
+                  schema:
+                    default: ""
+                    description: Tiers
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicPositionTiersV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve position tiers information, maximum leverage depends on your borrowings and margin ratio.
+
+            tags:
+                - Public Data

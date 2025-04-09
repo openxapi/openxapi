@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountBillsHistoryArchiveV5Req:
+            properties:
+                quarter:
+                    default: ""
+                    description: Quarter, valid value is `Q1`, `Q2`, `Q3`, `Q4`
+                    type: string
+                year:
+                    default: ""
+                    description: 4 digits year
+                    type: string
+            required:
+                - year
+                - quarter
+            type: object
+        CreateAccountBillsHistoryArchiveV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "result": "true",
+                            "ts": "1646892328000"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            result:
+                                default: ""
+                                description: "Whether there is already a download link for this section \n\n`true`: Existed, can check from \"Get bills details (since 2021)\". \n\n`false`: Does not exist and is generating, can check the download link after 2 hours\n\n The data of file is in reverse chronological order using `billId`."
+                                type: string
+                            ts:
+                                default: ""
+                                description: The first request time when the server receives. Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/bills-history-archive:
+        post:
+            description: "Apply for bill data since 1 February, 2021 except for the current quarter.\n\n#### Rate Limit：12 requests per day \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: CreateAccountBillsHistoryArchiveV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountBillsHistoryArchiveV5Req'
+                description: The request body for CreateAccountBillsHistoryArchiveV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountBillsHistoryArchiveV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Apply for bill data since 1 February, 2021 except for the current quarter.
+
+            tags:
+                - Trading Account

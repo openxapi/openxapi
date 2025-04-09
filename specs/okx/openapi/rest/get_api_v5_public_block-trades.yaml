@@ -1,0 +1,125 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicBlockTradesV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                            "fillVol": "5",
+                            "fwdPx": "26857.86591585",
+                            "idxPx": "26889.7",
+                            "instId": "BTC-USD-231013-22000-P",
+                            "markPx": "0.0000000000000001",
+                            "px": "0.0026",
+                            "side": "buy",
+                            "sz": "1",
+                            "tradeId": "632960608383700997",
+                            "ts": "1697181568974"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            fillVol:
+                                default: ""
+                                description: "Implied volatility \n\nOnly applicable to `OPTION`"
+                                type: string
+                            fwdPx:
+                                default: ""
+                                description: "Forward price \n\nOnly applicable to `OPTION`"
+                                type: string
+                            idxPx:
+                                default: ""
+                                description: "Index price  \n\nApplicable to `FUTURES`, `SWAP`, `OPTION`"
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            markPx:
+                                default: ""
+                                description: "Mark price  \n\nApplicable to `FUTURES`, `SWAP`, `OPTION`"
+                                type: string
+                            px:
+                                default: ""
+                                description: Trade price
+                                type: string
+                            side:
+                                default: ""
+                                description: "Trade side \n\n`buy`  \n\n`sell`"
+                                type: string
+                            sz:
+                                default: ""
+                                description: "Trade quantity \n\nFor spot trading, the unit is base currency\n\nFor `FUTURES`/`SWAP`/`OPTION`, the unit is contract."
+                                type: string
+                            tradeId:
+                                default: ""
+                                description: Trade ID
+                                type: string
+                            ts:
+                                default: ""
+                                description: Trade time, Unix timestamp format in milliseconds, e.g. `1597026383085`.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/block-trades:
+        get:
+            description: "Retrieve the recent block trading transactions of an instrument. Descending order by tradeId. The data will be updated 15 minutes after the block trade execution.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicBlockTradesV5
+            parameters:
+                - description: Instrument ID, e.g. `BTC-USDT`
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicBlockTradesV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve the recent block trading transactions of an instrument. Descending order by tradeId. The data will be updated 15 minutes after the block trade execution.
+
+            tags:
+                - Block Trading

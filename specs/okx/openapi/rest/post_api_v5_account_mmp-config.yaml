@@ -1,0 +1,139 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAccountMmpConfigV5Req:
+            properties:
+                frozenInterval:
+                    default: ""
+                    description: "Frozen period (ms). \n\n\"0\" means the trade will remain frozen until you request \"Reset MMP Status\" to unfrozen"
+                    type: string
+                instFamily:
+                    default: ""
+                    description: Instrument family
+                    type: string
+                qtyLimit:
+                    default: ""
+                    description: |-
+                        Trade qty limit in number of contracts
+
+                        Must be > 0
+                    type: string
+                timeInterval:
+                    default: ""
+                    description: |-
+                        Time window (ms). MMP interval where monitoring is done
+
+                        "0" means disable MMP
+                    type: string
+            required:
+                - instFamily
+                - timeInterval
+                - frozenInterval
+                - qtyLimit
+            type: object
+        CreateAccountMmpConfigV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                        "frozenInterval":"2000",
+                        "instFamily":"BTC-USD",
+                        "qtyLimit": "100",
+                        "timeInterval":"5000"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            frozenInterval:
+                                default: ""
+                                description: Frozen period (ms).
+                                type: string
+                            instFamily:
+                                default: ""
+                                description: Instrument family
+                                type: string
+                            qtyLimit:
+                                default: ""
+                                description: Trade qty limit in number of contracts
+                                type: string
+                            timeInterval:
+                                default: ""
+                                description: Time window (ms). MMP interval where monitoring is done
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/mmp-config:
+        post:
+            description: "This endpoint is used to set MMP configure\n\n\n\nOnly applicable to Option in Portfolio Margin mode, and MMP privilege is required.\n\n**_What is MMP?Market Maker Protection (MMP) is an automated mechanism for market makers to pull their quotes when their executions exceed a certain threshold(`qtyLimit`) within a certain time frame(`timeInterval`). Once mmp is triggered, any pre-existing mmp pending orders(`mmp` and `mmp_and_post_only` orders) will be automatically canceled, and new orders tagged as MMP will be rejected for a specific duration(`frozenInterval`), or until manual reset by makers.How to enable MMP?Please send an email to institutional@okx.com or contact your business development (BD) manager to apply for MMP. The initial threshold will be upon your request._**\n\n#### Rate Limit: 2 requests per 10 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateAccountMmpConfigV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountMmpConfigV5Req'
+                description: The request body for CreateAccountMmpConfigV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountMmpConfigV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                This endpoint is used to set MMP configure
+
+
+
+                Only applicable to Option in Portfolio Margin mode, and MMP privilege is required.
+
+            tags:
+                - Trading Account

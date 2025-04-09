@@ -1,0 +1,151 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicInstrumentTickBandsV5Resp:
+            example: |+
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "instType": "OPTION",
+                            "instFamily": "BTC-USD",
+                            "tickBand": [
+                                {
+                                    "minPx": "0",
+                                    "maxPx": "100",
+                                    "tickSz": "0.1"
+                                },
+                                {
+                                    "minPx": "100",
+                                    "maxPx": "10000",
+                                    "tickSz": "1"
+                                }
+                            ]
+                        },
+                        {
+                            "instType": "OPTION",
+                            "instFamily": "ETH-USD",
+                            "tickBand": [
+                                {
+                                    "minPx": "0",
+                                    "maxPx": "100",
+                                    "tickSz": "0.1"
+                                },
+                                {
+                                    "minPx": "100",
+                                    "maxPx": "10000",
+                                    "tickSz": "1"
+                                }
+                            ]
+                        }
+                    ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instFamily:
+                                default: ""
+                                description: Instrument family
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            tickBand:
+                                description: Tick size band
+                                items:
+                                    properties:
+                                        maxPx:
+                                            default: ""
+                                            description: Maximum price while placing an order
+                                            type: string
+                                        minPx:
+                                            default: ""
+                                            description: Minimum price while placing an order
+                                            type: string
+                                        tickSz:
+                                            default: ""
+                                            description: Tick size, e.g. 0.0001
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/instrument-tick-bands:
+        get:
+            description: "Get option tick bands information\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetPublicInstrumentTickBandsV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `OPTION`
+                    type: string
+                - description: |-
+                    Instrument family
+
+                    Only applicable to OPTION
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family
+
+                        Only applicable to OPTION
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicInstrumentTickBandsV5Resp'
+                    description: Successful operation
+            summary: |+
+                Get option tick bands information
+
+            tags:
+                - Public Data

@@ -1,0 +1,182 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountMaxSizeV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [{
+                        "ccy": "BTC",
+                        "instId": "BTC-USDT",
+                        "maxBuy": "0.0500695098559788",
+                        "maxSell": "64.4798671570072269"
+                  }]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Currency used for margin
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID
+                                type: string
+                            maxBuy:
+                                default: ""
+                                description: |-
+                                    `SPOT`/`MARGIN`: The maximum quantity in base currency that you can buy
+
+                                    The cross-margin order under `Spot and futures mode` mode, quantity of coins is based on base currency.
+
+                                    `FUTURES`/`SWAP`/`OPTIONS`: The maximum quantity of contracts that you can buy
+                                type: string
+                            maxSell:
+                                default: ""
+                                description: |-
+                                    `SPOT`/`MARGIN`: The maximum quantity in quote currency that you can sell
+
+                                    The cross-margin order under `Spot and futures mode` mode, quantity of coins is based on base currency.
+
+                                    `FUTURES`/`SWAP`/`OPTIONS`: The maximum quantity of contracts that you can sell
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/max-size:
+        get:
+            description: "The maximum quantity to buy or sell. It corresponds to the \"sz\" from placement.\n\n**_Under the Portfolio Margin account, the calculation of the maximum buy/sell amount or open amount is not supported under the cross mode of derivatives._**\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountMaxSizeV5
+            parameters:
+                - description: Single instrument or multiple instruments (no more than 5) in the smae instrument type separated with comma, e.g. `BTC-USDT,ETH-USDT`
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: Single instrument or multiple instruments (no more than 5) in the smae instrument type separated with comma, e.g. `BTC-USDT,ETH-USDT`
+                    type: string
+                - description: |-
+                    Trade mode
+
+                    `cross`
+
+                    `isolated`
+
+                    `cash`
+
+                    `spot_isolated`
+                  in: query
+                  name: tdMode
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Trade mode
+
+                        `cross`
+
+                        `isolated`
+
+                        `cash`
+
+                        `spot_isolated`
+                    type: string
+                - description: "Currency used for margin \n\nApplicable to `isolated` `MARGIN` and `cross` `MARGIN` orders in `Spot and futures mode`."
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: "Currency used for margin \n\nApplicable to `isolated` `MARGIN` and `cross` `MARGIN` orders in `Spot and futures mode`."
+                    type: string
+                - description: |-
+                    Price
+
+                    When the price is not specified, it will be calculated according to the current limit price for `FUTURES` and `SWAP`, the last traded price for other instrument types.
+
+                    The parameter will be ignored when multiple instruments are specified.
+                  in: query
+                  name: px
+                  schema:
+                    default: ""
+                    description: |-
+                        Price
+
+                        When the price is not specified, it will be calculated according to the current limit price for `FUTURES` and `SWAP`, the last traded price for other instrument types.
+
+                        The parameter will be ignored when multiple instruments are specified.
+                    type: string
+                - description: |-
+                    Leverage for instrument
+
+                    The default is current leverage
+
+                    Only applicable to `MARGIN/FUTURES/SWAP`
+                  in: query
+                  name: leverage
+                  schema:
+                    default: ""
+                    description: |-
+                        Leverage for instrument
+
+                        The default is current leverage
+
+                        Only applicable to `MARGIN/FUTURES/SWAP`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountMaxSizeV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                The maximum quantity to buy or sell. It corresponds to the "sz" from placement.
+
+            tags:
+                - Trading Account

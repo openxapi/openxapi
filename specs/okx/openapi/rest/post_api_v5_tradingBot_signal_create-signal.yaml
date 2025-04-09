@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotSignalCreateSignalV5Req:
+            properties:
+                signalChanDesc:
+                    default: ""
+                    description: Signal channel description
+                    type: string
+                signalChanName:
+                    default: ""
+                    description: Signal channel name
+                    type: string
+            required:
+                - signalChanName
+            type: object
+        CreateTradingBotSignalCreateSignalV5Resp:
+            example: |+
+                {
+                    "code": "0",
+                    "data": [
+                       {
+                           "signalChanId" :"572112109",
+                           "signalChanToken":"dojuckew331lkx"
+                       }
+
+                    ],
+                    "msg": ""
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            signalChanId:
+                                default: ""
+                                description: Signal channel Id
+                                type: string
+                            signalChanToken:
+                                default: ""
+                                description: User identify when placing orders via signal
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/signal/create-signal:
+        post:
+            description: "#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradingBotSignalCreateSignalV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotSignalCreateSignalV5Req'
+                description: The request body for CreateTradingBotSignalCreateSignalV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotSignalCreateSignalV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Signal Bot Trading

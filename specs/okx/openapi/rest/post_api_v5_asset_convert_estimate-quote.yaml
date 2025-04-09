@@ -1,0 +1,193 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAssetConvertEstimateQuoteV5Req:
+            properties:
+                baseCcy:
+                    default: ""
+                    description: Base currency, e.g. `BTC` in `BTC-USDT`
+                    type: string
+                clQReqId:
+                    default: ""
+                    description: |-
+                        Client Order ID as assigned by the client
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                quoteCcy:
+                    default: ""
+                    description: Quote currency, e.g. `USDT` in `BTC-USDT`
+                    type: string
+                rfqSz:
+                    default: ""
+                    description: RFQ amount
+                    type: string
+                rfqSzCcy:
+                    default: ""
+                    description: RFQ currency
+                    type: string
+                side:
+                    default: ""
+                    description: |-
+                        Trade side based on `baseCcy`
+
+                        `buy` `sell`
+                    type: string
+                tag:
+                    default: ""
+                    description: |-
+                        Order tag
+
+                        Applicable to broker user
+                    type: string
+            required:
+                - baseCcy
+                - quoteCcy
+                - side
+                - rfqSz
+                - rfqSzCcy
+            type: object
+        CreateAssetConvertEstimateQuoteV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "baseCcy": "ETH",
+                            "baseSz": "0.01023052",
+                            "clQReqId": "",
+                            "cnvtPx": "2932.40104429",
+                            "origRfqSz": "30",
+                            "quoteCcy": "USDT",
+                            "quoteId": "quoterETH-USDT16461885104612381",
+                            "quoteSz": "30",
+                            "quoteTime": "1646188510461",
+                            "rfqSz": "30",
+                            "rfqSzCcy": "USDT",
+                            "side": "buy",
+                            "ttlMs": "10000"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            baseCcy:
+                                default: ""
+                                description: Base currency, e.g. `BTC` in `BTC-USDT`
+                                type: string
+                            baseSz:
+                                default: ""
+                                description: Convert amount of base currency
+                                type: string
+                            clQReqId:
+                                default: ""
+                                description: Client Order ID as assigned by the client
+                                type: string
+                            cnvtPx:
+                                default: ""
+                                description: Convert price based on quote currency
+                                type: string
+                            origRfqSz:
+                                default: ""
+                                description: Original RFQ amount
+                                type: string
+                            quoteCcy:
+                                default: ""
+                                description: Quote currency, e.g. `USDT` in `BTC-USDT`
+                                type: string
+                            quoteId:
+                                default: ""
+                                description: Quote ID
+                                type: string
+                            quoteSz:
+                                default: ""
+                                description: Convert amount of quote currency
+                                type: string
+                            quoteTime:
+                                default: ""
+                                description: Quotation generation time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            rfqSz:
+                                default: ""
+                                description: Real RFQ amount
+                                type: string
+                            rfqSzCcy:
+                                default: ""
+                                description: RFQ currency
+                                type: string
+                            side:
+                                default: ""
+                                description: Trade side based on `baseCcy`
+                                type: string
+                            ttlMs:
+                                default: ""
+                                description: Validity period of quotation in milliseconds
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/convert/estimate-quote:
+        post:
+            description: "#### Rate Limit: 10 requests per second \n\n#### Rate limit rule: User ID \n\n#### Rate Limit: 1 request per 5 seconds \n\n#### Rate limit rule: Instrument \n\n#### Permission: Read \n\n"
+            operationId: CreateAssetConvertEstimateQuoteV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetConvertEstimateQuoteV5Req'
+                description: The request body for CreateAssetConvertEstimateQuoteV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetConvertEstimateQuoteV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Funding Account

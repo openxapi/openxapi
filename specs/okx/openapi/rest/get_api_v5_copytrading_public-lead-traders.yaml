@@ -1,0 +1,317 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetCopytradingPublicLeadTradersV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "dataVer": "20231129213200",
+                            "ranks": [
+                                {
+                                    "accCopyTraderNum": "3536",
+                                    "aum": "1509265.3238761567721365",
+                                    "ccy": "USDT",
+                                    "copyState": "0",
+                                    "copyTraderNum": "999",
+                                    "leadDays": "156",
+                                    "maxCopyTraderNum": "1000",
+                                    "nickName": "Crypto to the moon",
+                                    "pnl": "48805.1105999999972258",
+                                    "pnlRatio": "1.6898",
+                                    "pnlRatios": [
+                                        {
+                                            "beginTs": "1701187200000",
+                                            "pnlRatio": "1.6744"
+                                        },
+                                        {
+                                            "beginTs": "1700755200000",
+                                            "pnlRatio": "1.649"
+                                        }
+                                    ],
+                                    "portLink": "https://static.okx.com/cdn/okex/users/headimages/20230624/f49a683aaf5949ea88b01bbc771fb9fc",
+                                    "traderInsts": [
+                                        "ICP-USDT-SWAP",
+                                        "MINA-USDT-SWAP"
+
+                                    ],
+                                    "uniqueCode": "540D011FDACCB47A",
+                                    "winRatio": "0.6957"
+                                }
+                            ],
+                            "totalPage": "1"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            dataVer:
+                                default: ""
+                                description: Data version
+                                type: string
+                            ranks:
+                                description: The rank information of lead traders
+                                items:
+                                    properties:
+                                        accCopyTraderNum:
+                                            default: ""
+                                            description: Accumulated number of copy traders
+                                            type: string
+                                        aum:
+                                            default: ""
+                                            description: assets under management
+                                            type: string
+                                        beginTs:
+                                            default: ""
+                                            description: Begin time of pnl ratio on that day
+                                            type: string
+                                        ccy:
+                                            default: ""
+                                            description: Margin currency
+                                            type: string
+                                        copyState:
+                                            default: ""
+                                            description: "Current copy state \n\n`0`: non-copy, `1`: copy"
+                                            type: string
+                                        copyTraderNum:
+                                            default: ""
+                                            description: Current number of copy traders
+                                            type: string
+                                        leadDays:
+                                            default: ""
+                                            description: Lead days
+                                            type: string
+                                        maxCopyTraderNum:
+                                            default: ""
+                                            description: Maximum number of copy traders
+                                            type: string
+                                        nickName:
+                                            default: ""
+                                            description: Nick name
+                                            type: string
+                                        pnl:
+                                            default: ""
+                                            description: Pnl (in USDT) of last 90 days.
+                                            type: string
+                                        pnlRatio:
+                                            default: ""
+                                            description: Pnl ratio on that day
+                                            type: string
+                                        pnlRatios:
+                                            description: Pnl ratios
+                                            items:
+                                                properties:
+                                                    beginTs:
+                                                        default: ""
+                                                        description: Begin time of pnl ratio on that day
+                                                        type: string
+                                                    pnlRatio:
+                                                        default: ""
+                                                        description: Pnl ratio on that day
+                                                        type: string
+                                                type: object
+                                            type: array
+                                        portLink:
+                                            default: ""
+                                            description: Portrait link
+                                            type: string
+                                        traderInsts:
+                                            description: Contract list which lead trader is leading
+                                            items:
+                                                type: string
+                                            type: array
+                                        uniqueCode:
+                                            default: ""
+                                            description: Lead trader unique code
+                                            type: string
+                                        winRatio:
+                                            default: ""
+                                            description: Win ratio, 0.1 represents 10%
+                                            type: string
+                                    type: object
+                                type: array
+                            totalPage:
+                                default: ""
+                                description: Total number of pages
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/copytrading/public-lead-traders:
+        get:
+            description: "Public endpoint. Retrieve lead trader ranks.\n\n#### Rate limit: 5 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetCopytradingPublicLeadTradersV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `SWAP`, the default value
+                  in: query
+                  name: instType
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `SWAP`, the default value
+                    type: string
+                - description: |-
+                    Sort type
+
+                    `overview`: overview, the default value
+
+                    `pnl`: profit and loss
+
+                    `aum`: assets under management
+
+                    `win_ratio`: win ratio
+
+                    `pnl_ratio`: pnl ratio
+
+                    `current_copy_trader_pnl`: current copy trader pnl
+                  in: query
+                  name: sortType
+                  schema:
+                    default: ""
+                    description: |-
+                        Sort type
+
+                        `overview`: overview, the default value
+
+                        `pnl`: profit and loss
+
+                        `aum`: assets under management
+
+                        `win_ratio`: win ratio
+
+                        `pnl_ratio`: pnl ratio
+
+                        `current_copy_trader_pnl`: current copy trader pnl
+                    type: string
+                - description: "Lead trader state\n\n`0`: All lead traders, the default, including vacancy and non-vacancy \n\n`1`: lead traders who have vacancy"
+                  in: query
+                  name: state
+                  schema:
+                    default: ""
+                    description: "Lead trader state\n\n`0`: All lead traders, the default, including vacancy and non-vacancy \n\n`1`: lead traders who have vacancy"
+                    type: string
+                - description: |-
+                    Minimum lead days
+
+                    `1`: 7 days
+
+                    `2`: 30 days
+
+                    `3`: 90 days
+
+                    `4`: 180 days
+                  in: query
+                  name: minLeadDays
+                  schema:
+                    default: ""
+                    description: |-
+                        Minimum lead days
+
+                        `1`: 7 days
+
+                        `2`: 30 days
+
+                        `3`: 90 days
+
+                        `4`: 180 days
+                    type: string
+                - description: Minimum assets in USDT
+                  in: query
+                  name: minAssets
+                  schema:
+                    default: ""
+                    description: Minimum assets in USDT
+                    type: string
+                - description: Maximum assets in USDT
+                  in: query
+                  name: maxAssets
+                  schema:
+                    default: ""
+                    description: Maximum assets in USDT
+                    type: string
+                - description: Minimum assets in USDT under management.
+                  in: query
+                  name: minAum
+                  schema:
+                    default: ""
+                    description: Minimum assets in USDT under management.
+                    type: string
+                - description: Maximum assets in USDT under management.
+                  in: query
+                  name: maxAum
+                  schema:
+                    default: ""
+                    description: Maximum assets in USDT under management.
+                    type: string
+                - description: "Data version. It is 14 numbers. e.g. 20231010182400. Generally, it is used for pagination \n\nA new version will be generated every 10 minutes. Only last 5 versions are stored\n\nThe default is latest version. If it is not exist, error will not be throwed and the latest version will be used."
+                  in: query
+                  name: dataVer
+                  schema:
+                    default: ""
+                    description: "Data version. It is 14 numbers. e.g. 20231010182400. Generally, it is used for pagination \n\nA new version will be generated every 10 minutes. Only last 5 versions are stored\n\nThe default is latest version. If it is not exist, error will not be throwed and the latest version will be used."
+                    type: string
+                - description: Page for pagination
+                  in: query
+                  name: page
+                  schema:
+                    default: ""
+                    description: Page for pagination
+                    type: string
+                - description: Number of results per request. The maximum is 20; the default is 10
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 20; the default is 10
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCopytradingPublicLeadTradersV5Resp'
+                    description: Successful operation
+            summary: |+
+                Public endpoint. Retrieve lead trader ranks.
+
+            tags:
+                - Copy Trading

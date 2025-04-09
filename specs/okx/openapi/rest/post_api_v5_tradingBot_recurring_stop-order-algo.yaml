@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotRecurringStopOrderAlgoV5Req:
+            properties:
+                algoId:
+                    default: ""
+                    description: Algo ID
+                    type: string
+            required:
+                - algoId
+            type: object
+        CreateTradingBotRecurringStopOrderAlgoV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "algoClOrdId": "",
+                            "algoId": "1839309556514557952",
+                            "sCode": "0",
+                            "sMsg": "",
+                            "tag": ""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoClOrdId:
+                                default: ""
+                                description: Client-supplied Algo ID
+                                type: string
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, 0 means success
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection message if the request is unsuccessful
+                                type: string
+                            tag:
+                                default: ""
+                                deprecated: true
+                                description: Order tag  (Deprecated)
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/recurring/stop-order-algo:
+        post:
+            description: "A maximum of 10 orders can be stopped per request.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradingBotRecurringStopOrderAlgoV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotRecurringStopOrderAlgoV5Req'
+                description: The request body for CreateTradingBotRecurringStopOrderAlgoV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotRecurringStopOrderAlgoV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                A maximum of 10 orders can be stopped per request.
+
+            tags:
+                - Recurring Buy

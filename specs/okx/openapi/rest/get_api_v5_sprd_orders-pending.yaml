@@ -1,0 +1,112 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetSprdOrdersPendingV5Resp:
+            example: ""
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/sprd/orders-pending:
+        get:
+            description: "Retrieve all incomplete orders under the current account.\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetSprdOrdersPendingV5
+            parameters:
+                - description: spread ID, e.g.
+                  in: query
+                  name: sprdId
+                  schema:
+                    default: ""
+                    description: spread ID, e.g.
+                    type: string
+                - description: "Order type\n\n`market`: Market order \n\n`limit`: Limit order \n\n`post_only`: Post-only order \n\n`ioc`: Immediate-or-cancel order"
+                  in: query
+                  name: ordType
+                  schema:
+                    default: ""
+                    description: "Order type\n\n`market`: Market order \n\n`limit`: Limit order \n\n`post_only`: Post-only order \n\n`ioc`: Immediate-or-cancel order"
+                    type: string
+                - description: "State \n\n`live` \n\n`partially_filled`"
+                  in: query
+                  name: state
+                  schema:
+                    default: ""
+                    description: "State \n\n`live` \n\n`partially_filled`"
+                    type: string
+                - description: Start order ID the request to begin with. Pagination of data to return records newer than the requested order Id, not including beginId
+                  in: query
+                  name: beginId
+                  schema:
+                    default: ""
+                    description: Start order ID the request to begin with. Pagination of data to return records newer than the requested order Id, not including beginId
+                    type: string
+                - description: End order ID the request to end with. Pagination of data to return records earlier than the requested order Id, not including endId
+                  in: query
+                  name: endId
+                  schema:
+                    default: ""
+                    description: End order ID the request to end with. Pagination of data to return records earlier than the requested order Id, not including endId
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSprdOrdersPendingV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Retrieve all incomplete orders under the current account.
+
+            tags:
+                - Spread Trading

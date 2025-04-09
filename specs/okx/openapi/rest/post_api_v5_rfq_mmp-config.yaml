@@ -1,0 +1,124 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateRfqMmpConfigV5Req:
+            properties:
+                countLimit:
+                    default: ""
+                    description: Limit in number of execution attempts.
+                    type: string
+                frozenInterval:
+                    default: ""
+                    description: "Frozen period (ms). \n\n\"0\" means the trade will remain frozen until you request \"Reset MMP Status\" to unfrozen."
+                    type: string
+                timeInterval:
+                    default: ""
+                    description: |-
+                        Time window (ms). MMP interval where monitoring is done.
+
+                        "0" means disable MMP. Maximum time interval is 600,000.
+                    type: string
+            required:
+                - timeInterval
+                - frozenInterval
+                - countLimit
+            type: object
+        CreateRfqMmpConfigV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                        "frozenInterval":"2000",
+                        "countLimit": "100",
+                        "timeInterval":"5000"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            countLimit:
+                                default: ""
+                                description: Limit in number of execution attempts
+                                type: string
+                            frozenInterval:
+                                default: ""
+                                description: Frozen period (ms).
+                                type: string
+                            timeInterval:
+                                default: ""
+                                description: Time window (ms). MMP interval where monitoring is done
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/mmp-config:
+        post:
+            description: "This endpoint is used to set MMP configure and only applicable to block trading makers\n\n\n\n#### Rate Limit: 1 request per 10 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateRfqMmpConfigV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateRfqMmpConfigV5Req'
+                description: The request body for CreateRfqMmpConfigV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateRfqMmpConfigV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                This endpoint is used to set MMP configure and only applicable to block trading makers
+
+
+
+            tags:
+                - Block Trading

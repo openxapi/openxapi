@@ -1,0 +1,264 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradingBotRecurringOrdersAlgoHistoryV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "algoClOrdId": "",
+                            "algoId": "644496098429767680",
+                            "algoOrdType": "recurring",
+                            "amt": "100",
+                            "cTime": "1699931844050",
+                            "cycles": "0",
+                            "instType": "SPOT",
+                            "investmentAmt": "0",
+                            "investmentCcy": "USDC",
+                            "mktCap": "0",
+                            "period": "hourly",
+                            "pnlRatio": "0",
+                            "recurringDay": "",
+                            "recurringHour": "1",
+                            "recurringList": [
+                                {
+                                    "ccy": "BTC",
+                                    "ratio": "0.2"
+                                },
+                                {
+                                    "ccy": "ETH",
+                                    "ratio": "0.8"
+                                }
+                            ],
+                            "recurringTime": "0",
+                            "state": "stopped",
+                            "stgyName": "stg1",
+                            "tag": "",
+                            "timeZone": "8",
+                            "totalAnnRate": "0",
+                            "totalPnl": "0",
+                            "uTime": "1699932177659"
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoClOrdId:
+                                default: ""
+                                description: Client-supplied Algo ID
+                                type: string
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                            algoOrdType:
+                                default: ""
+                                description: |-
+                                    Algo order type
+
+                                    `recurring`: recurring buy
+                                type: string
+                            amt:
+                                default: ""
+                                description: Quantity invested per cycle
+                                type: string
+                            cTime:
+                                default: ""
+                                description: Algo order created time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                            cycles:
+                                default: ""
+                                description: Accumulate recurring buy cycles
+                                type: string
+                            instType:
+                                default: ""
+                                description: Instrument type
+                                type: string
+                            investmentAmt:
+                                default: ""
+                                description: Accumulate quantity invested
+                                type: string
+                            investmentCcy:
+                                default: ""
+                                description: The invested quantity unit, can only be `USDT`/`USDC`
+                                type: string
+                            mktCap:
+                                default: ""
+                                description: Market value in unit of `USDT`
+                                type: string
+                            period:
+                                default: ""
+                                description: |-
+                                    Period
+
+                                    `monthly`
+
+                                    `weekly`
+
+                                    `daily`
+
+                                    `hourly`
+                                type: string
+                            pnlRatio:
+                                default: ""
+                                description: Rate of yield
+                                type: string
+                            recurringDay:
+                                default: ""
+                                description: |-
+                                    Recurring buy date
+
+                                    When the period is `monthly`, the value range is an integer of [1,28]
+
+                                    When the period is `weekly`, the value range is an integer of [1,7]
+                                type: string
+                            recurringHour:
+                                default: ""
+                                description: |-
+                                    Recurring buy by hourly
+
+                                    `1`/`4`/`8`/`12`, e.g. `4` represents "recurring buy every 4 hour"
+                                type: string
+                            recurringList:
+                                description: Recurring buy info
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: Recurring currency, e.g. `BTC`
+                                            type: string
+                                        ratio:
+                                            default: ""
+                                            description: Proportion of recurring currency assets, e.g. "0.2" representing 20%
+                                            type: string
+                                    type: object
+                                type: array
+                            recurringTime:
+                                default: ""
+                                description: Recurring buy time, the value range is an integer of [0,23]
+                                type: string
+                            state:
+                                default: ""
+                                description: |-
+                                    Algo order state
+
+                                    `stopped`
+                                type: string
+                            stgyName:
+                                default: ""
+                                description: Custom name for trading bot, no more than 40 characters
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                            timeZone:
+                                default: ""
+                                description: |-
+                                    UTC time zone, the value range is an integer of [-12,14]
+
+                                    e.g. "8" representing UTC+8 (East 8 District), Beijing Time
+                                type: string
+                            totalAnnRate:
+                                default: ""
+                                description: Total annualized rate of yield
+                                type: string
+                            totalPnl:
+                                default: ""
+                                description: Total P&L
+                                type: string
+                            uTime:
+                                default: ""
+                                description: Algo order updated time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/recurring/orders-algo-history:
+        get:
+            description: "#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetTradingBotRecurringOrdersAlgoHistoryV5
+            parameters:
+                - description: Algo ID
+                  in: query
+                  name: algoId
+                  schema:
+                    default: ""
+                    description: Algo ID
+                    type: string
+                - description: Pagination of data to return records earlier than the requested `algoId`.
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested `algoId`.
+                    type: string
+                - description: Pagination of data to return records newer than the requested `algoId`.
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested `algoId`.
+                    type: string
+                - description: Number of results per request. The maximum is 100. The default is 100
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is 100. The default is 100
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradingBotRecurringOrdersAlgoHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Recurring Buy

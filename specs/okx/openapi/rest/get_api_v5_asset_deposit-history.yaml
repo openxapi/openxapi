@@ -1,0 +1,230 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetDepositHistoryV5Resp:
+            example: |
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                        "actualDepBlkConfirm": "2",
+                        "amt": "1",
+                        "areaCodeFrom": "",
+                        "ccy": "USDT",
+                        "chain": "USDT-TRC20",
+                        "depId": "88****33",
+                        "from": "",
+                        "fromWdId": "",
+                        "state": "2",
+                        "to": "TN4hGjVXMzy*********9b4N1aGizqs",
+                        "ts": "1674038705000",
+                        "txId": "fee235b3e812********857d36bb0426917f0df1802"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            actualDepBlkConfirm:
+                                default: ""
+                                description: The actual amount of blockchain confirmed in a single deposit
+                                type: string
+                            amt:
+                                default: ""
+                                description: Deposit amount
+                                type: string
+                            areaCodeFrom:
+                                default: ""
+                                description: If `from` is a phone number, this parameter return area code of the phone number
+                                type: string
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            chain:
+                                default: ""
+                                description: Chain name
+                                type: string
+                            depId:
+                                default: ""
+                                description: Deposit ID
+                                type: string
+                            from:
+                                default: ""
+                                description: |-
+                                    Deposit account
+
+                                    If the deposit comes from an internal transfer, this field displays the account information of the internal transfer initiator, which can be a mobile phone number, email address, account name, and will return "" in other cases
+                                type: string
+                            fromWdId:
+                                default: ""
+                                description: |-
+                                    Internal transfer initiator's withdrawal ID
+
+                                    If the deposit comes from internal transfer, this field displays the withdrawal ID of the internal transfer initiator, and will return "" in other cases
+                                type: string
+                            state:
+                                default: ""
+                                description: "Status of deposit\n\n`0`: Waiting for confirmation\n\n`1`: Deposit credited  \n\n`2`: Deposit successful \n\n`8`: Pending due to temporary deposit suspension on this crypto currency\n\n`11`: Match the address blacklist\n\n`12`: Account or deposit is frozen\n\n`13`: Sub-account deposit interception\n\n`14`: KYC limit"
+                                type: string
+                            to:
+                                default: ""
+                                description: |-
+                                    Deposit address
+
+                                    If the deposit comes from the on-chain, this field displays the on-chain address, and will return "" in other cases
+                                type: string
+                            ts:
+                                default: ""
+                                description: The timestamp that the deposit record is created, Unix timestamp format in milliseconds, e.g. `1655251200000`
+                                type: string
+                            txId:
+                                default: ""
+                                description: Hash record of the deposit
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/deposit-history:
+        get:
+            description: "Retrieve the deposit records according to the currency, deposit status, and time range in reverse chronological order. The 100 most recent records are returned by default.\n\n\nWebsocket API is also available, refer to .\n\n#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetDepositHistoryV5
+            parameters:
+                - description: Currency, e.g. `BTC`
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Currency, e.g. `BTC`
+                    type: string
+                - description: Deposit ID
+                  in: query
+                  name: depId
+                  schema:
+                    default: ""
+                    description: Deposit ID
+                    type: string
+                - description: |-
+                    Internal transfer initiator's withdrawal ID
+
+                    If the deposit comes from internal transfer, this field displays the withdrawal ID of the internal transfer initiator
+                  in: query
+                  name: fromWdId
+                  schema:
+                    default: ""
+                    description: |-
+                        Internal transfer initiator's withdrawal ID
+
+                        If the deposit comes from internal transfer, this field displays the withdrawal ID of the internal transfer initiator
+                    type: string
+                - description: Hash record of the deposit
+                  in: query
+                  name: txId
+                  schema:
+                    default: ""
+                    description: Hash record of the deposit
+                    type: string
+                - description: |-
+                    Deposit Type
+
+                    `3`: internal transfer
+
+                    `4`: deposit from chain
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: |-
+                        Deposit Type
+
+                        `3`: internal transfer
+
+                        `4`: deposit from chain
+                    type: string
+                - description: "Status of deposit  \n\n`0`: waiting for confirmation\n\n`1`: deposit credited  \n\n`2`: deposit successful \n\n`8`: pending due to temporary deposit suspension on this crypto currency\n\n`11`: match the address blacklist\n\n`12`: account or deposit is frozen\n\n`13`: sub-account deposit interception\n\n`14`: KYC limit"
+                  in: query
+                  name: state
+                  schema:
+                    default: ""
+                    description: "Status of deposit  \n\n`0`: waiting for confirmation\n\n`1`: deposit credited  \n\n`2`: deposit successful \n\n`8`: pending due to temporary deposit suspension on this crypto currency\n\n`11`: match the address blacklist\n\n`12`: account or deposit is frozen\n\n`13`: sub-account deposit interception\n\n`14`: KYC limit"
+                    type: string
+                - description: Pagination of data to return records earlier than the requested ts, Unix timestamp format in milliseconds, e.g. `1654041600000`
+                  in: query
+                  name: after
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records earlier than the requested ts, Unix timestamp format in milliseconds, e.g. `1654041600000`
+                    type: string
+                - description: Pagination of data to return records newer than the requested ts, Unix timestamp format in milliseconds, e.g. `1656633600000`
+                  in: query
+                  name: before
+                  schema:
+                    default: ""
+                    description: Pagination of data to return records newer than the requested ts, Unix timestamp format in milliseconds, e.g. `1656633600000`
+                    type: string
+                - description: Number of results per request. The maximum is `100`; The default is `100`
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: Number of results per request. The maximum is `100`; The default is `100`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetDepositHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Retrieve the deposit records according to the currency, deposit status, and time range in reverse chronological order. The 100 most recent records are returned by default.
+
+
+                Websocket API is also available, refer to .
+
+            tags:
+                - Funding Account

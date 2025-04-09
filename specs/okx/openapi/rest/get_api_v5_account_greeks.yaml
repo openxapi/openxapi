@@ -1,0 +1,118 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountGreeksV5Resp:
+            example: "{\n    \"code\":\"0\",\n    \"data\":[\n        {            \n           \"thetaBS\": \"\",\n           \"thetaPA\":\"\",\n           \"deltaBS\":\"\",\n           \"deltaPA\":\"\",\n           \"gammaBS\":\"\",\n           \"gammaPA\":\"\",\n           \"vegaBS\":\"\",    \n           \"vegaPA\":\"\",\n           \"ccy\":\"BTC\",\n           \"ts\":\"1620282889345\"\n        }\n    ],\n    \"msg\":\"\"\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            deltaBS:
+                                default: ""
+                                description: 'delta: Black-Scholes Greeks in dollars'
+                                type: string
+                            deltaPA:
+                                default: ""
+                                description: 'delta: Greeks in coins'
+                                type: string
+                            gammaBS:
+                                default: ""
+                                description: 'gamma: Black-Scholes Greeks in dollars, only applicable to OPTION'
+                                type: string
+                            gammaPA:
+                                default: ""
+                                description: 'gamma: Greeks in coins, only applicable to OPTION'
+                                type: string
+                            thetaBS:
+                                default: ""
+                                description: 'theta: Black-Scholes Greeks in dollars, only applicable to `OPTION`'
+                                type: string
+                            thetaPA:
+                                default: ""
+                                description: 'theta: Greeks in coins, only applicable to `OPTION`'
+                                type: string
+                            ts:
+                                default: ""
+                                description: Time of getting Greeks, Unix timestamp format in milliseconds, e.g. 1597026383085
+                                type: string
+                            vegaBS:
+                                default: ""
+                                description: 'vega: Black-Scholes Greeks in dollars, only applicable to `OPTION`'
+                                type: string
+                            vegaPA:
+                                default: ""
+                                description: vega：Greeks in coins, only applicable to `OPTION`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/greeks:
+        get:
+            description: "Retrieve a greeks list of all assets in the account.\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountGreeksV5
+            parameters:
+                - description: Single currency, e.g. `BTC`.
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Single currency, e.g. `BTC`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountGreeksV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Retrieve a greeks list of all assets in the account.
+
+            tags:
+                - Trading Account

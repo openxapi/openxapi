@@ -1,0 +1,85 @@
+{{>partial_header}}
+package {{packageName}}
+
+import (
+	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+	"encoding/base64"
+)
+
+type KeyType string
+
+const (
+	KeyTypeHMAC KeyType = "HMAC"
+)
+
+func NewAuth(apiKey, passPhrase string) *Auth {
+	return &Auth{
+		APIKey:     apiKey,
+		Passphrase: passPhrase,
+		KeyType:    KeyTypeHMAC,
+	}
+}
+
+// Auth provides Binance API key based authentication to a request passed via context using ContextBinanceAuth
+type Auth struct {
+	APIKey     string
+	KeyType    KeyType
+	Passphrase string
+	secretKey  string
+}
+
+func (b *Auth) SetSecretKey(secretKey string) {
+	b.secretKey = secretKey
+}
+
+// ContextWithValue validates the Auth configuration parameters and returns a context
+// suitable for HTTP signature. An error is returned if the Auth configuration parameters
+// are invalid.
+func (b *Auth) ContextWithValue(ctx context.Context) (context.Context, error) {
+	return context.WithValue(ctx, ContextOKXAuth, *b), nil
+}
+
+// Sign signs the request with the API key and secret key
+// see https://www.okx.com/docs-v5/en/#overview-rest-authentication
+func (b *Auth) Sign(r *http.Request) (err error) {
+	requestURI := r.URL.RequestURI()
+
+	tsFormat := "2006-01-02T15:04:05.999Z07:00"
+	timestamp := time.Now().UTC().Format(tsFormat)
+
+	preHash := fmt.Sprintf("%s%s%s", timestamp, r.Method, requestURI)
+	var dataToSign []byte = []byte(preHash)
+
+	var bodyData []byte = []byte{}
+	if r.Body != nil {
+		reader, err := r.GetBody()
+		if err != nil {
+			return fmt.Errorf("failed to get request body: %s", err)
+		}
+		bodyData, err = io.ReadAll(reader)
+		if err != nil {
+			return fmt.Errorf("failed to read request body: %s", err)
+		}
+	}
+	if len(bodyData) > 0 {
+		dataToSign = append(dataToSign, bodyData...)
+	}
+
+	mac := hmac.New(sha256.New, []byte(b.secretKey))
+	_, err = mac.Write(dataToSign)
+	if err != nil {
+		return err
+	}
+	signature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
+
+	// Make sure signature is added to the end header
+	r.Header.Set("OK-ACCESS-SIGN", signature)
+	r.Header.Set("OK-ACCESS-TIMESTAMP", timestamp)
+	return nil
+}

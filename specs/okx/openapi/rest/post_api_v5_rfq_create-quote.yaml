@@ -1,0 +1,303 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateRfqCreateQuoteV5Req:
+            properties:
+                anonymous:
+                    description: "Submit Quote on a disclosed or anonymous basis. \n\nValid value is `true` or `false`. `false` by default."
+                    type: boolean
+                clQuoteId:
+                    default: ""
+                    description: "Client-supplied Quote ID. \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters."
+                    type: string
+                expiresIn:
+                    default: ""
+                    description: "Seconds that a quote expires in. \n\nMust be an integer between 10-120. Default is 60."
+                    type: string
+                legs:
+                    description: The legs of the Quote.
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: "Margin currency. \n\nOnly applicable to `cross` `MARGIN` orders in `Spot and futures mode`. The parameter will be ignored in other scenarios."
+                                type: string
+                            instId:
+                                default: ""
+                                description: The instrument ID of quoted leg.
+                                type: string
+                            posSide:
+                                default: ""
+                                description: "Position side. \n\nThe default is `net` in the net mode. It can only be `long` or `short` in the long/short mode. \n\nIf not specified, users in long/short mode always open new positions. \n\nOnly applicable to `FUTURES`/`SWAP`."
+                                type: string
+                            px:
+                                default: ""
+                                description: The price of the leg.
+                                type: string
+                            side:
+                                default: ""
+                                description: The direction of the leg. Valid values can be buy or sell.
+                                type: string
+                            sz:
+                                default: ""
+                                description: Size of the leg in contracts or spot.
+                                type: string
+                            tdMode:
+                                default: ""
+                                description: "Trade mode \n\nMargin mode: `cross` `isolated` \n\nNon-Margin mode: `cash`. \n\nIf not provided, tdMode will inherit default values set by the system shown below: \n\nSpot and futures mode mode & SPOT: `cash` \n\nBuy options in Spot and futures mode and Multi-currency Margin: `isolated` \n\nOther cases: `cross`"
+                                type: string
+                            tgtCcy:
+                                default: ""
+                                description: "Defines the unit of the “sz” attribute. \n\nOnly applicable to instType = SPOT. \n\nThe valid enumerations are `base_ccy` and `quote_ccy`. When not specified this is equal to `base_ccy` by default."
+                                type: string
+                        type: object
+                    type: array
+                quoteSide:
+                    default: ""
+                    description: "The trading direction of the Quote. Its value can be `buy` or `sell`. \n\nFor example, if quoteSide is `buy`, all the legs are executed in their leg sides; otherwise, all the legs are executed in the opposite of their leg sides."
+                    type: string
+                rfqId:
+                    default: ""
+                    description: RFQ ID .
+                    type: string
+                tag:
+                    default: ""
+                    description: "Quote tag. \n\nThe block trade associated with the Quote will have the same tag. \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 16 characters."
+                    type: string
+            required:
+                - rfqId
+                - quoteSide
+                - legs
+            type: object
+        CreateRfqCreateQuoteV5Resp:
+            example: |
+                {
+                    "code":"",
+                    "msg":"",
+                    "data":[
+                        {
+                            "validUntil":"1608997227834",
+                            "uTime":"1608267227834",
+                            "cTime":"1608267227834",
+                            "legs":[
+                                {
+                                    "px":"46000",
+                                    "sz":"25",
+                                    "instId":"BTC-USD-220114-25000-C",
+                                    "tdMode":"cross",
+                                    "ccy":"USDT",
+                                    "side":"sell",
+                                    "posSide": "long",
+                                    "tgtCcy":""
+                                },
+                                {
+                                    "px":"4000",
+                                    "sz":"25",
+                                    "instId":"ETH-USD-220114-25000-C",
+                                    "tdMode":"cross",
+                                    "ccy":"USDT",
+                                    "side":"buy",
+                                    "posSide": "long",
+                                    "tgtCcy":""
+                                }
+                            ],
+                            "quoteId":"25092",
+                            "rfqId":"18753",
+                            "tag":"123456",
+                            "quoteSide":"sell",
+                            "state":"active",
+                            "reason": "mmp_canceled",
+                            "clQuoteId":"",
+                            "clRfqId":"",
+                            "traderCode":"Aksha"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            cTime:
+                                default: ""
+                                description: The timestamp the Quote was created, Unix timestamp format in milliseconds.
+                                type: string
+                            ccy:
+                                default: ""
+                                description: "Margin currency. \n\nOnly applicable to `cross` `MARGIN` orders in `Spot and futures mode`. The parameter will be ignored in other scenarios."
+                                type: string
+                            clQuoteId:
+                                default: ""
+                                description: "Client-supplied Quote ID. \n\nThis attribute is treated as client sensitive information. It will not be exposed to the Taker, only return empty string."
+                                type: string
+                            clRfqId:
+                                default: ""
+                                description: "Client-supplied RFQ ID. \n\nThis attribute is treated as client sensitive information. It will not be exposed to the Maker, only return empty string."
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                type: string
+                            legs:
+                                description: The legs of the Quote.
+                                items:
+                                    properties:
+                                        ccy:
+                                            default: ""
+                                            description: "Margin currency. \n\nOnly applicable to `cross` `MARGIN` orders in `Spot and futures mode`. The parameter will be ignored in other scenarios."
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                                            type: string
+                                        posSide:
+                                            default: ""
+                                            description: "Position side. \n\nThe default is `net` in the net mode. If not specified, return \"\", which is equivalent to net. \n\nIt can only be `long` or `short` in the long/short mode. If not specified, return \"\", which corresponds to the direction that opens new positions for the trade (buy => long, sell => short). \n\nOnly applicable to FUTURES/SWAP."
+                                            type: string
+                                        px:
+                                            default: ""
+                                            description: The price of the leg.
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: The direction of the leg. Valid values can be buy or sell.
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: Size of the leg in contracts or spot.
+                                            type: string
+                                        tdMode:
+                                            default: ""
+                                            description: "Trade mode \n\nMargin mode: `cross` `isolated` \n\nNon-Margin mode: `cash`. \n\nIf not provided, tdMode will inherit default values set by the system shown below: \n\nSpot and futures mode & SPOT: `cash` \n\nBuy options in Spot and futures mode and Multi-currency Margin: `isolated` \n\nOther cases: `cross`"
+                                            type: string
+                                        tgtCcy:
+                                            default: ""
+                                            description: "Defines the unit of the “sz” attribute. \n\nOnly applicable to instType = SPOT. \n\nThe valid enumerations are `base_ccy` and `quote_ccy`. When not specified this is equal to `base_ccy` by default."
+                                            type: string
+                                    type: object
+                                type: array
+                            posSide:
+                                default: ""
+                                description: "Position side. \n\nThe default is `net` in the net mode. If not specified, return \"\", which is equivalent to net. \n\nIt can only be `long` or `short` in the long/short mode. If not specified, return \"\", which corresponds to the direction that opens new positions for the trade (buy => long, sell => short). \n\nOnly applicable to FUTURES/SWAP."
+                                type: string
+                            px:
+                                default: ""
+                                description: The price of the leg.
+                                type: string
+                            quoteId:
+                                default: ""
+                                description: Quote ID.
+                                type: string
+                            quoteSide:
+                                default: ""
+                                description: "The trading direction of the Quote. \n\nIts value can be `buy` or `sell`. For example, if quoteSide is `buy`, all the legs are executed in their leg sides; otherwise, all the legs are executed in the opposite of their leg sides."
+                                type: string
+                            reason:
+                                default: ""
+                                description: Reasons of state. Valid values can be `mmp_canceled`.
+                                type: string
+                            rfqId:
+                                default: ""
+                                description: RFQ ID
+                                type: string
+                            side:
+                                default: ""
+                                description: The direction of the leg. Valid values can be buy or sell.
+                                type: string
+                            state:
+                                default: ""
+                                description: The status of the quote. Valid values can be `active` `canceled` `pending_fill` `filled` `expired` or `failed`.
+                                type: string
+                            sz:
+                                default: ""
+                                description: Size of the leg in contracts or spot.
+                                type: string
+                            tag:
+                                default: ""
+                                description: "Quote tag. \n\nThe block trade associated with the Quote will have the same tag."
+                                type: string
+                            tdMode:
+                                default: ""
+                                description: "Trade mode \n\nMargin mode: `cross` `isolated` \n\nNon-Margin mode: `cash`. \n\nIf not provided, tdMode will inherit default values set by the system shown below: \n\nSpot and futures mode & SPOT: `cash` \n\nBuy options in Spot and futures mode and Multi-currency Margin: `isolated` \n\nOther cases: `cross`"
+                                type: string
+                            tgtCcy:
+                                default: ""
+                                description: "Defines the unit of the “sz” attribute. \n\nOnly applicable to instType = SPOT. \n\nThe valid enumerations are `base_ccy` and `quote_ccy`. When not specified this is equal to `base_ccy` by default."
+                                type: string
+                            traderCode:
+                                default: ""
+                                description: A unique identifier of maker.
+                                type: string
+                            uTime:
+                                default: ""
+                                description: The timestamp the Quote was last updated, Unix timestamp format in milliseconds.
+                                type: string
+                            validUntil:
+                                default: ""
+                                description: The timestamp the Quote expires. Unix timestamp format in milliseconds.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/create-quote:
+        post:
+            description: "Allows the user to Quote an RFQ that they are a counterparty to. The user MUST quote the entire RFQ and not part of the legs or part of the quantity. Partial quoting is not allowed. \n\n#### Rate Limit: 50 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateRfqCreateQuoteV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateRfqCreateQuoteV5Req'
+                description: The request body for CreateRfqCreateQuoteV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateRfqCreateQuoteV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: "Allows the user to Quote an RFQ that they are a counterparty to. The user MUST quote the entire RFQ and not part of the legs or part of the quantity. Partial quoting is not allowed. \n\n"
+            tags:
+                - Block Trading

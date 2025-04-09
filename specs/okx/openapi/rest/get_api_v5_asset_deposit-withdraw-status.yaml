@@ -1,0 +1,128 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAssetDepositWithdrawStatusV5Resp:
+            example: "{\n    \"code\":\"0\",\n    \"data\":[\n        {\n            \"wdId\": \"200045249\",\n            \"txId\": \"16f3638329xxxxxx42d988f97\", \n            \"state\": \"Pending withdrawal: Wallet is under maintenance, please wait.\",\n            \"estCompleteTime\": \"01/09/2023, 8:10:48 PM\"\n        }\n    ],\n    \"msg\": \"\"\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            estCompleteTime:
+                                default: ""
+                                description: "Estimated complete time\n\nThe timezone is `UTC+8`. The format is MM/dd/yyyy, h:mm:ss AM/PM \n\nestCompleteTime is only an approximate estimated time, for reference only."
+                                type: string
+                            state:
+                                default: ""
+                                description: "The detailed stage and status of the deposit/withdrawal \n\nThe message in front of the colon is the stage; the message after the colon is the ongoing status."
+                                type: string
+                            txId:
+                                default: ""
+                                description: |-
+                                    Hash record on-chain
+
+                                    For withdrawal, if the `txId` has already been generated, it will return the value, otherwise, it will return "".
+                                type: string
+                            wdId:
+                                default: ""
+                                description: |-
+                                    Withdrawal ID
+
+                                    When retrieving deposit status, wdId returns blank "".
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/deposit-withdraw-status:
+        get:
+            description: "Retrieve deposit's and withdrawal's detailed status and estimated complete time.\n\n#### Rate Limit: 1 request per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAssetDepositWithdrawStatusV5
+            parameters:
+                - description: "Withdrawal ID, use to retrieve withdrawal status \n\nRequired to input one and only one of `wdId` and `txId`"
+                  in: query
+                  name: wdId
+                  schema:
+                    default: ""
+                    description: "Withdrawal ID, use to retrieve withdrawal status \n\nRequired to input one and only one of `wdId` and `txId`"
+                    type: string
+                - description: "Hash record of the deposit, use to retrieve deposit status \n\nRequired to input one and only one of `wdId` and `txId`"
+                  in: query
+                  name: txId
+                  schema:
+                    default: ""
+                    description: "Hash record of the deposit, use to retrieve deposit status \n\nRequired to input one and only one of `wdId` and `txId`"
+                    type: string
+                - description: "Currency type, e.g. `USDT` \n\nRequired when retrieving deposit status with `txId`"
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: "Currency type, e.g. `USDT` \n\nRequired when retrieving deposit status with `txId`"
+                    type: string
+                - description: "To address, the destination address in deposit \n\nRequired when retrieving deposit status with `txId`"
+                  in: query
+                  name: to
+                  schema:
+                    default: ""
+                    description: "To address, the destination address in deposit \n\nRequired when retrieving deposit status with `txId`"
+                    type: string
+                - description: "Currency chain information, e.g. USDT-ERC20 \n\nRequired when retrieving deposit status with `txId`"
+                  in: query
+                  name: chain
+                  schema:
+                    default: ""
+                    description: "Currency chain information, e.g. USDT-ERC20 \n\nRequired when retrieving deposit status with `txId`"
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetDepositWithdrawStatusV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Retrieve deposit's and withdrawal's detailed status and estimated complete time.
+
+            tags:
+                - Funding Account

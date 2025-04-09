@@ -1,0 +1,285 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradingBotGridOrderAlgoV5Req:
+            properties:
+                algoClOrdId:
+                    default: ""
+                    description: |-
+                        Client-supplied Algo ID
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                algoOrdType:
+                    default: ""
+                    description: |-
+                        Algo order type
+
+                        `grid`: Spot grid
+
+                        `contract_grid`: Contract grid
+                    type: string
+                gridNum:
+                    default: ""
+                    description: Grid quantity
+                    type: string
+                instId:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT-SWAP`
+                    type: string
+                maxPx:
+                    default: ""
+                    description: Upper price of price range
+                    type: string
+                minPx:
+                    default: ""
+                    description: Lower price of price range
+                    type: string
+                profitSharingRatio:
+                    default: ""
+                    description: |-
+                        Profit sharing ratio, it only supports these values
+
+                        `0`,`0.1`,`0.2`,`0.3`
+
+                         0.1 represents 10%
+                    type: string
+                runType:
+                    default: ""
+                    description: |-
+                        Grid type
+
+                        `1`: Arithmetic, `2`: Geometric
+
+                        Default is Arithmetic
+                    type: string
+                slTriggerPx:
+                    default: ""
+                    description: |-
+                        SL tigger price
+
+                        Applicable to `Spot grid`/`Contract grid`
+                    type: string
+                tag:
+                    default: ""
+                    description: Order tag
+                    type: string
+                tpTriggerPx:
+                    default: ""
+                    description: |-
+                        TP tigger price
+
+                        Applicable to `Spot grid`/`Contract grid`
+                    type: string
+                triggerParams:
+                    description: |-
+                        Trigger Parameters
+
+                        Applicable to `Spot grid`/`Contract grid`
+                    items:
+                        properties:
+                            delaySeconds:
+                                default: ""
+                                description: Delay seconds after action triggered
+                                type: string
+                            stopType:
+                                default: ""
+                                description: |-
+                                    Stop type
+
+                                    Spot grid `1`: Sell base currency `2`: Keep base currency
+
+                                    Contract grid `1`: Market Close All positions `2`: Keep positions
+
+                                    This field is only valid when `triggerAction` is `stop`
+                                type: string
+                            thold:
+                                default: ""
+                                description: |-
+                                    Threshold
+
+                                    The value should be an integer between 1 to 100
+
+                                    This field is only valid when `triggerStrategy` is `rsi`
+                                type: string
+                            timePeriod:
+                                default: ""
+                                description: |-
+                                    Time Period
+
+                                    `14`
+
+                                    This field is only valid when `triggerStrategy` is `rsi`
+                                type: string
+                            timeframe:
+                                default: ""
+                                description: |-
+                                    K-line type
+
+                                    `3m`, `5m`, `15m`, `30m` (`m`: minute)
+
+                                    `1H`, `4H` (`H`: hour)
+
+                                    `1D` (`D`: day)
+
+                                    This field is only valid when `triggerStrategy` is `rsi`
+                                type: string
+                            triggerAction:
+                                default: ""
+                                description: |-
+                                    Trigger action
+
+                                    `start`
+
+                                    `stop`
+                                type: string
+                            triggerCond:
+                                default: ""
+                                description: |-
+                                    Trigger condition
+
+                                    `cross_up`
+
+                                    `cross_down`
+
+                                    `above`
+
+                                    `below`
+
+                                    `cross`
+
+                                    This field is only valid when `triggerStrategy` is `rsi`
+                                type: string
+                            triggerPx:
+                                default: ""
+                                description: |-
+                                    Trigger Price
+
+                                    This field is only valid when `triggerStrategy` is `price`
+                                type: string
+                            triggerStrategy:
+                                default: ""
+                                description: |-
+                                    Trigger strategy
+
+                                    `instant`
+
+                                    `price`
+
+                                    `rsi`
+
+                                    Default is `instant`
+                                type: string
+                        type: object
+                    type: array
+            required:
+                - instId
+                - algoOrdType
+                - maxPx
+                - minPx
+                - gridNum
+            type: object
+        CreateTradingBotGridOrderAlgoV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "algoClOrdId": "",
+                            "algoId": "447053782921515008",
+                            "sCode": "0",
+                            "sMsg": "",
+                            "tag": ""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoClOrdId:
+                                default: ""
+                                description: Client-supplied Algo ID
+                                type: string
+                            algoId:
+                                default: ""
+                                description: Algo ID
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, `0` means success.
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection message if the request is unsuccessful.
+                                type: string
+                            tag:
+                                default: ""
+                                description: Order tag
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/grid/order-algo:
+        post:
+            description: "#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID + Instrument ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradingBotGridOrderAlgoV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradingBotGridOrderAlgoV5Req'
+                description: The request body for CreateTradingBotGridOrderAlgoV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradingBotGridOrderAlgoV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            tags:
+                - Grid Trading

@@ -1,0 +1,203 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateRfqExecuteQuoteV5Req:
+            properties:
+                legs:
+                    description: "An Array of objects containing the execution size of each leg of the RFQ. \n\nThe ratio of the leg sizes needs to be the same as the RFQ. \n\n*Note: `tgtCcy` and `side` of each leg will be same as ones in the RFQ. `px` will be the same as the ones in the Quote."
+                    items:
+                        properties:
+                            instId:
+                                default: ""
+                                description: 'The Instrument ID, for example: "BTC-USDT-SWAP".'
+                                type: string
+                            sz:
+                                default: ""
+                                description: The size of each leg
+                                type: string
+                        type: object
+                    type: array
+                quoteId:
+                    default: ""
+                    description: Quote ID.
+                    type: string
+                rfqId:
+                    default: ""
+                    description: RFQ ID .
+                    type: string
+            required:
+                - rfqId
+                - quoteId
+            type: object
+        CreateRfqExecuteQuoteV5Resp:
+            example: "{  \n   \"code\":\"0\",\n   \"msg\":\"\",\n   \"data\":[\n       {\n            \"blockTdId\":\"180184\",\n            \"rfqId\":\"1419\",\n            \"clRfqId\":\"r0001\",\n            \"quoteId\":\"1046\",\n            \"clQuoteId\":\"q0001\",\n            \"tag\":\"123456\",\n            \"tTraderCode\":\"Trader1\",\n            \"mTraderCode\":\"Trader2\",\n            \"cTime\":\"1649670009\",\n            \"legs\":[\n                {\n                    \"px\":\"0.1\",\n                    \"sz\":\"25\",\n                    \"instId\":\"BTC-USD-20220114-13250-C\",\n                    \"side\":\"sell\",\n                    \"fee\":\"-1.001\",\n                    \"feeCcy\":\"BTC\",\n                    \"tradeId\":\"10211\"\n                },\n                {\n                    \"px\":\"0.2\",\n                    \"sz\":\"25\",\n                    \"instId\":\"BTC-USDT\",\n                    \"side\":\"buy\",\n                    \"fee\":\"-1.001\",\n                    \"feeCcy\":\"BTC\",\n                    \"tradeId\":\"10212\"\n                }\n            ]\n        }\n   ]\n}\n"
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            blockTdId:
+                                default: ""
+                                description: Block trade ID.
+                                type: string
+                            cTime:
+                                default: ""
+                                description: The execution time for the trade. Unix timestamp in milliseconds.
+                                type: string
+                            clQuoteId:
+                                default: ""
+                                description: Client-supplied Quote ID. This attribute is treated as client sensitive information. It will not be exposed to the Taker, only return empty string.
+                                type: string
+                            clRfqId:
+                                default: ""
+                                description: Client-supplied RFQ ID. This attribute is treated as client sensitive information. It will not be exposed to the Maker, only return empty string.
+                                type: string
+                            fee:
+                                default: ""
+                                description: "Fee for the individual leg. \n\nNegative fee represents the user transaction fee charged by the platform. Positive fee represents rebate."
+                                type: string
+                            feeCcy:
+                                default: ""
+                                description: Fee currency. To be read in conjunction with fee
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                            legs:
+                                description: Legs of trade
+                                items:
+                                    properties:
+                                        fee:
+                                            default: ""
+                                            description: "Fee for the individual leg. \n\nNegative fee represents the user transaction fee charged by the platform. Positive fee represents rebate."
+                                            type: string
+                                        feeCcy:
+                                            default: ""
+                                            description: Fee currency. To be read in conjunction with fee
+                                            type: string
+                                        instId:
+                                            default: ""
+                                            description: Instrument ID, e.g. BTC-USDT-SWAP
+                                            type: string
+                                        px:
+                                            default: ""
+                                            description: The price the leg executed
+                                            type: string
+                                        side:
+                                            default: ""
+                                            description: The direction of the leg from the Takers perspective. Valid value can be buy or sell.
+                                            type: string
+                                        sz:
+                                            default: ""
+                                            description: Size of the leg in contracts or spot.
+                                            type: string
+                                        tradeId:
+                                            default: ""
+                                            description: Last traded ID.
+                                            type: string
+                                    type: object
+                                type: array
+                            mTraderCode:
+                                default: ""
+                                description: A unique identifier of the maker. Empty if the anonymous parameter of the Quote is set to be `true`.
+                                type: string
+                            px:
+                                default: ""
+                                description: The price the leg executed
+                                type: string
+                            quoteId:
+                                default: ""
+                                description: Quote ID.
+                                type: string
+                            rfqId:
+                                default: ""
+                                description: RFQ ID.
+                                type: string
+                            side:
+                                default: ""
+                                description: The direction of the leg from the Takers perspective. Valid value can be buy or sell.
+                                type: string
+                            sz:
+                                default: ""
+                                description: Size of the leg in contracts or spot.
+                                type: string
+                            tTraderCode:
+                                default: ""
+                                description: A unique identifier of the taker. Empty if the anonymous parameter of the RFQ is set to be `true`.
+                                type: string
+                            tag:
+                                default: ""
+                                description: RFQ tag.
+                                type: string
+                            tradeId:
+                                default: ""
+                                description: Last traded ID.
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/rfq/execute-quote:
+        post:
+            description: "Executes a Quote. It is only used by the creator of the RFQ\n\n#### Rate Limit: 2 requests per 3 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateRfqExecuteQuoteV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateRfqExecuteQuoteV5Req'
+                description: The request body for CreateRfqExecuteQuoteV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateRfqExecuteQuoteV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Executes a Quote. It is only used by the creator of the RFQ
+
+            tags:
+                - Block Trading

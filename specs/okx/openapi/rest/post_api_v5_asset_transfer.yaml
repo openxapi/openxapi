@@ -1,0 +1,151 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateAssetTransferV5Req:
+            properties:
+                amt:
+                    default: ""
+                    description: Amount to be transferred
+                    type: string
+                ccy:
+                    default: ""
+                    description: Transfer currency, e.g. `USDT`
+                    type: string
+                clientId:
+                    default: ""
+                    description: |-
+                        Client-supplied ID
+
+                        A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+                    type: string
+                from:
+                    default: ""
+                    description: |-
+                        The remitting account
+
+                        `6`: Funding account
+
+                        `18`: Trading account
+                    type: string
+                loanTrans:
+                    description: |-
+                        Whether or not borrowed coins can be transferred out under `Spot mode`/`Multi-currency margin`/`Portfolio margin`
+
+                        `true`: borrowed coins can be transferred out
+
+                        `false`: borrowed coins cannot be transferred out
+
+                        the default is `false`
+                    type: boolean
+                omitPosRisk:
+                    default: ""
+                    description: |-
+                        Ignore position risk
+
+                        Default is `false`
+
+                        Applicable to `Portfolio margin`
+                    type: string
+                subAcct:
+                    default: ""
+                    description: |-
+                        Name of the sub-account
+
+                        When `type` is `1`/`2`/`4`, this parameter is required.
+                    type: string
+                to:
+                    default: ""
+                    description: |-
+                        The beneficiary account
+
+                        `6`: Funding account
+
+                        `18`: Trading account
+                    type: string
+                type:
+                    default: ""
+                    description: "Transfer type\n\n`0`: transfer within account\n\n`1`: master account to sub-account (Only applicable to API Key from master account)\n\n`2`: sub-account to master account (Only applicable to API Key from master account)\n\n`3`: sub-account to master account (Only applicable to APIKey from sub-account)\n\n`4`: sub-account to sub-account (Only applicable to APIKey from sub-account, and target account needs to be another sub-account which belongs to same master account. Sub-account directly transfer out permission is disabled by default, set permission please refer to )\n\nThe default is `0`.\n\nIf you want to make transfer between sub-accounts by master account API key, refer to "
+                    type: string
+            required:
+                - ccy
+                - amt
+                - from
+                - to
+            type: object
+        CreateAssetTransferV5Resp:
+            example: ""
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/asset/transfer:
+        post:
+            description: "Only API keys with `Trade` privilege can call this endpoint.\n\nThis endpoint supports the transfer of funds between your funding account and trading account, and from the master account to sub-accounts.\n\nSub-account can transfer out to master account by default. Need to call  to grant privilege first if you want sub-account transferring to another sub-account (sub-accounts need to belong to same master account.)\n\n**_Failure of the request does not mean the transfer has failed. Recommend to call \"Get funds transfer state\" to confirm the status._**\n\n#### Rate Limit: 2 requests per second \n\n#### Rate limit rule: User ID + Currency \n\n#### Permission: Trade \n\n"
+            operationId: CreateAssetTransferV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetTransferV5Req'
+                description: The request body for CreateAssetTransferV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetTransferV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Only API keys with `Trade` privilege can call this endpoint.
+
+                This endpoint supports the transfer of funds between your funding account and trading account, and from the master account to sub-accounts.
+
+                Sub-account can transfer out to master account by default. Need to call  to grant privilege first if you want sub-account transferring to another sub-account (sub-accounts need to belong to same master account.)
+
+            tags:
+                - Funding Account

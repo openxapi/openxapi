@@ -1,0 +1,230 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetTradingBotGridAiParamV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "algoOrdType": "grid",
+                            "annualizedRate": "1.5849",
+                            "ccy": "USDT",
+                            "direction": "",
+                            "duration": "7D",
+                            "gridNum": "5",
+                            "instId": "BTC-USDT",
+                            "lever": "0",
+                            "maxPx": "21373.3",
+                            "minInvestment": "0.89557758",
+                            "minPx": "15544.2",
+                            "perGridProfitRatio": "4.566226200302574",
+                            "perMaxProfitRate": "0.0733865364573281",
+                            "perMinProfitRate": "0.0561101403446263",
+                            "runType": "1",
+                            "sourceCcy": ""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            algoOrdType:
+                                default: ""
+                                description: |-
+                                    Algo order type
+
+                                    `grid`: Spot grid
+
+                                    `contract_grid`: Contract grid
+                                type: string
+                            annualizedRate:
+                                default: ""
+                                description: Grid annualized rate
+                                type: string
+                            ccy:
+                                default: ""
+                                description: The invest currency
+                                type: string
+                            direction:
+                                default: ""
+                                description: |-
+                                    Contract grid type
+
+                                    `long`,`short`,`neutral`
+
+                                    Only applicable to contract grid
+                                type: string
+                            duration:
+                                default: ""
+                                description: |-
+                                    Back testing duration
+
+                                    `7D`: 7 Days, `30D`: 30 Days, `180D`: 180 Days
+                                type: string
+                            gridNum:
+                                default: ""
+                                description: Grid quantity
+                                type: string
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. BTC-USDT-SWAP
+                                type: string
+                            lever:
+                                default: ""
+                                description: |-
+                                    Leverage
+
+                                    Only applicable to contract grid
+                                type: string
+                            maxPx:
+                                default: ""
+                                description: Upper price of price range
+                                type: string
+                            minInvestment:
+                                default: ""
+                                description: The minimum invest amount
+                                type: string
+                            minPx:
+                                default: ""
+                                description: Lower price of price range
+                                type: string
+                            perGridProfitRatio:
+                                default: ""
+                                description: Per grid profit ratio
+                                type: string
+                            perMaxProfitRate:
+                                default: ""
+                                description: Estimated maximum Profit margin per grid
+                                type: string
+                            perMinProfitRate:
+                                default: ""
+                                description: Estimated minimum Profit margin per grid
+                                type: string
+                            runType:
+                                default: ""
+                                description: |-
+                                    Grid type
+
+                                    `1`: Arithmetic, `2`: Geometric
+                                type: string
+                            sourceCcy:
+                                default: ""
+                                description: Source currency
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/tradingBot/grid/ai-param:
+        get:
+            description: "Authentication is not required for this public endpoint.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n#### Permission: Read \n\n"
+            operationId: GetTradingBotGridAiParamV5
+            parameters:
+                - description: |-
+                    Algo order type
+
+                    `grid`: Spot grid
+
+                    `contract_grid`: Contract grid
+                  in: query
+                  name: algoOrdType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Algo order type
+
+                        `grid`: Spot grid
+
+                        `contract_grid`: Contract grid
+                    type: string
+                - description: Instrument ID, e.g. `BTC-USDT`
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT`
+                    type: string
+                - description: |-
+                    Contract grid type
+
+                    `long`,`short`,`neutral`
+
+                    Required in the case of `contract_grid`
+                  in: query
+                  name: direction
+                  schema:
+                    default: ""
+                    description: |-
+                        Contract grid type
+
+                        `long`,`short`,`neutral`
+
+                        Required in the case of `contract_grid`
+                    type: string
+                - description: |-
+                    Back testing duration
+
+                    `7D`: 7 Days, `30D`: 30 Days, `180D`: 180 Days
+
+                    The default is `7D` for `Spot grid`
+
+                    Only `7D` is available for `Contract grid`
+                  in: query
+                  name: duration
+                  schema:
+                    default: ""
+                    description: |-
+                        Back testing duration
+
+                        `7D`: 7 Days, `30D`: 30 Days, `180D`: 180 Days
+
+                        The default is `7D` for `Spot grid`
+
+                        Only `7D` is available for `Contract grid`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetTradingBotGridAiParamV5Resp'
+                    description: Successful operation
+            summary: |+
+                Authentication is not required for this public endpoint.
+
+            tags:
+                - Grid Trading

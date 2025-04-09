@@ -1,0 +1,157 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetPublicMarkPriceV5Resp:
+            example: |
+                {
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                    {
+                        "instType":"SWAP",
+                        "instId":"BTC-USDT-SWAP",
+                        "markPx":"200",
+                        "ts":"1597026383085"
+                    }
+                  ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            instId:
+                                default: ""
+                                description: Instrument ID, e.g. `BTC-USD-200214`
+                                type: string
+                            instType:
+                                default: ""
+                                description: |-
+                                    Instrument type
+
+                                    `MARGIN`
+
+                                    `SWAP`
+
+                                    `FUTURES`
+
+                                    `OPTION`
+                                type: string
+                            markPx:
+                                default: ""
+                                description: Mark price
+                                type: string
+                            ts:
+                                default: ""
+                                description: Data return time, Unix timestamp format in milliseconds, e.g. `1597026383085`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/public/mark-price:
+        get:
+            description: "Retrieve mark price.\n\nWe set the mark price based on the SPOT index and at a reasonable basis to prevent individual users from manipulating the market and causing the contract price to fluctuate.\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: IP + Instrument ID \n\n"
+            operationId: GetPublicMarkPriceV5
+            parameters:
+                - description: |-
+                    Instrument type
+
+                    `MARGIN`
+
+                    `SWAP`
+
+                    `FUTURES`
+
+                    `OPTION`
+                  in: query
+                  name: instType
+                  required: true
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument type
+
+                        `MARGIN`
+
+                        `SWAP`
+
+                        `FUTURES`
+
+                        `OPTION`
+                    type: string
+                - description: |-
+                    Underlying
+
+                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                  in: query
+                  name: uly
+                  schema:
+                    default: ""
+                    description: |-
+                        Underlying
+
+                        Applicable to `FUTURES`/`SWAP`/`OPTION`
+                    type: string
+                - description: |-
+                    Instrument family
+
+                    Applicable to `FUTURES`/`SWAP`/`OPTION`
+                  in: query
+                  name: instFamily
+                  schema:
+                    default: ""
+                    description: |-
+                        Instrument family
+
+                        Applicable to `FUTURES`/`SWAP`/`OPTION`
+                    type: string
+                - description: Instrument ID, e.g. `BTC-USD-SWAP`
+                  in: query
+                  name: instId
+                  schema:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USD-SWAP`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPublicMarkPriceV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve mark price.
+
+                We set the mark price based on the SPOT index and at a reasonable basis to prevent individual users from manipulating the market and causing the contract price to fluctuate.
+
+            tags:
+                - Public Data

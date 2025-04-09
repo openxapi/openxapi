@@ -1,0 +1,105 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateFiatCancelWithdrawalV5Req:
+            properties:
+                ordId:
+                    default: ""
+                    description: Payment Order Id
+                    type: string
+            required:
+                - ordId
+            type: object
+        CreateFiatCancelWithdrawalV5Resp:
+            example: |+
+                {
+                  "code": "0",
+                  "msg": "",
+                  "data": [
+                    {
+                        "ordId": "124041201450544699",
+                        "state": "canceled"
+                    }
+                  ]
+                }
+
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ordId:
+                                default: ""
+                                description: Payment Order ID
+                                type: string
+                            state:
+                                default: ""
+                                description: The state of the transaction, e.g.`canceled`
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/fiat/cancel-withdrawal:
+        post:
+            description: "Cancel a pending fiat withdrawal order, currently only applicable to TRY\n\n#### Rate Limit: 3 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateFiatCancelWithdrawalV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateFiatCancelWithdrawalV5Req'
+                description: The request body for CreateFiatCancelWithdrawalV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateFiatCancelWithdrawalV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Cancel a pending fiat withdrawal order, currently only applicable to TRY
+
+            tags:
+                - Funding Account

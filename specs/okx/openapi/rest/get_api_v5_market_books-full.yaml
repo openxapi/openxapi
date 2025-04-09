@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetMarketBooksFullV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "msg": "",
+                    "data": [
+                        {
+                            "asks": [
+                                [
+                                    "41006.8",
+                                    "0.60038921",
+                                    "1"
+                                ]
+                            ],
+                            "bids": [
+                                [
+                                    "41006.3",
+                                    "0.30178218",
+                                    "2"
+                                ]
+                            ],
+                            "ts": "1629966436396"
+                        }
+                    ]
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            asks:
+                                default: ""
+                                description: Order book on sell side
+                                type: string
+                            bids:
+                                default: ""
+                                description: Order book on buy side
+                                type: string
+                            ts:
+                                default: ""
+                                description: Order book generation time
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/market/books-full:
+        get:
+            description: "Retrieve order book of the instrument. The data will be updated once a second.\n\n#### Rate Limit: 10 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketBooksFullV5
+            parameters:
+                - description: Instrument ID, e.g. `BTC-USDT`
+                  in: query
+                  name: instId
+                  required: true
+                  schema:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT`
+                    type: string
+                - description: "Order book depth per side. Maximum 5000, e.g. 5000 bids + 5000 asks \n\n Default returns to `1` depth data."
+                  in: query
+                  name: sz
+                  schema:
+                    default: ""
+                    description: "Order book depth per side. Maximum 5000, e.g. 5000 bids + 5000 asks \n\n Default returns to `1` depth data."
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketBooksFullV5Resp'
+                    description: Successful operation
+            summary: |+
+                Retrieve order book of the instrument. The data will be updated once a second.
+
+            tags:
+                - Market Data

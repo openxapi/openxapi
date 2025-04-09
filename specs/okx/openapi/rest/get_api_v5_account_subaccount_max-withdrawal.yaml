@@ -1,0 +1,133 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        GetAccountSubaccountMaxWithdrawalV5Resp:
+            example: |
+                {
+                   "code":"0",
+                   "data":[
+                      {
+                         "ccy":"BTC",
+                         "maxWd":"3",
+                         "maxWdEx":"",
+                         "spotOffsetMaxWd":"3",
+                         "spotOffsetMaxWdEx":""
+                      },
+                      {
+                         "ccy":"ETH",
+                         "maxWd":"15",
+                         "maxWdEx":"",
+                         "spotOffsetMaxWd":"15",
+                         "spotOffsetMaxWdEx":""
+                      },
+                      {
+                         "ccy":"USDT",
+                         "maxWd":"10600",
+                         "maxWdEx":"",
+                         "spotOffsetMaxWd":"10600",
+                         "spotOffsetMaxWdEx":""
+                      }
+                   ],
+                   "msg":""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            ccy:
+                                default: ""
+                                description: Currency
+                                type: string
+                            maxWd:
+                                default: ""
+                                description: Max withdrawal (excluding borrowed assets under `Multi-currency margin`)
+                                type: string
+                            maxWdEx:
+                                default: ""
+                                description: Max withdrawal (including borrowed assets under `Multi-currency margin`)
+                                type: string
+                            spotOffsetMaxWd:
+                                default: ""
+                                description: "Max withdrawal under Spot-Derivatives risk offset mode (excluding borrowed assets under `Portfolio margin`) \n\nApplicable to `Portfolio margin`"
+                                type: string
+                            spotOffsetMaxWdEx:
+                                default: ""
+                                description: "Max withdrawal under Spot-Derivatives risk offset mode (including borrowed assets under `Portfolio margin`) \n\nApplicable to `Portfolio margin`"
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/account/subaccount/max-withdrawal:
+        get:
+            description: "Retrieve the maximum withdrawal information of a sub-account via the master account (applies to master accounts only). If no currency is specified, the transferable amount of all owned currencies will be returned.\n\n#### Rate limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
+            operationId: GetAccountSubaccountMaxWithdrawalV5
+            parameters:
+                - description: Sub-account name
+                  in: query
+                  name: subAcct
+                  required: true
+                  schema:
+                    default: ""
+                    description: Sub-account name
+                    type: string
+                - description: Single currency or multiple currencies (no more than 20) separated with comma, e.g. `BTC` or `BTC,ETH`.
+                  in: query
+                  name: ccy
+                  schema:
+                    default: ""
+                    description: Single currency or multiple currencies (no more than 20) separated with comma, e.g. `BTC` or `BTC,ETH`.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountSubaccountMaxWithdrawalV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: |+
+                Retrieve the maximum withdrawal information of a sub-account via the master account (applies to master accounts only). If no currency is specified, the transferable amount of all owned currencies will be returned.
+
+            tags:
+                - Sub Account

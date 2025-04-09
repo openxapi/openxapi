@@ -1,0 +1,307 @@
+components:
+    schemas:
+        APIError:
+            description: OKX API error
+            properties:
+                code:
+                    type: string
+                msg:
+                    type: string
+            type: object
+        CreateTradeOrderPrecheckV5Req:
+            properties:
+                attachAlgoOrds:
+                    description: TP/SL information attached when placing order
+                    items:
+                        properties:
+                            attachAlgoClOrdId:
+                                default: ""
+                                description: |-
+                                    Client-supplied Algo ID when placing order attaching TP/SL
+
+                                    A combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters.
+
+                                    It will be posted to `algoClOrdId` when placing TP/SL order once the general order is filled completely.
+                                type: string
+                            slOrdPx:
+                                default: ""
+                                description: |-
+                                    Stop-loss order price
+
+                                    If you fill in this parameter, you should fill in the stop-loss trigger price.
+
+                                    If the price is -1, stop-loss will be executed at the market price.
+                                type: string
+                            slTriggerPx:
+                                default: ""
+                                description: |-
+                                    Stop-loss trigger price
+
+                                    If you fill in this parameter, you should fill in the stop-loss order price.
+                                type: string
+                            slTriggerPxType:
+                                default: ""
+                                description: "Stop-loss trigger price type\n\n`last`: last price \n\n`index`: index price \n\n`mark`: mark price \n\nThe default is last"
+                                type: string
+                            sz:
+                                default: ""
+                                description: Size. Only applicable to TP order of split TPs, and it is required for TP order of split TPs
+                                type: string
+                            tpOrdKind:
+                                default: ""
+                                description: |-
+                                    TP order kind
+
+                                    `condition`
+
+                                    `limit`
+
+                                     The default is `condition`
+                                type: string
+                            tpOrdPx:
+                                default: ""
+                                description: "Take-profit order price \n\n\n\nFor condition TP order, if you fill in this parameter, you should fill in the take-profit trigger price as well. \n\nFor limit TP order, you need to fill in this parameter, take-profit trigger needn‘t to be filled. \n\nIf the price is -1, take-profit will be executed at the market price."
+                                type: string
+                            tpTriggerPx:
+                                default: ""
+                                description: |-
+                                    Take-profit trigger price
+
+                                    For condition TP order, if you fill in this parameter, you should fill in the take-profit order price as well.
+                                type: string
+                            tpTriggerPxType:
+                                default: ""
+                                description: "Take-profit trigger price type\n\n`last`: last price \n\n`index`: index price \n\n`mark`: mark price \n\nThe default is last"
+                                type: string
+                        type: object
+                    type: array
+                instId:
+                    default: ""
+                    description: Instrument ID, e.g. `BTC-USDT`
+                    type: string
+                ordType:
+                    default: ""
+                    description: "Order type \n\n`market`: Market order \n\n`limit`: Limit order \n\n`post_only`: Post-only order \n\n`fok`: Fill-or-kill order \n\n`ioc`: Immediate-or-cancel order  \n\n`optimal_limit_ioc`: Market order with immediate-or-cancel order (applicable only to Expiry Futures and Perpetual Futures)."
+                    type: string
+                posSide:
+                    default: ""
+                    description: "Position side  \n\nThe default is `net` in the `net` mode \n\nIt is required in the `long/short` mode, and can only be `long` or `short`. \n\nOnly applicable to `FUTURES`/`SWAP`."
+                    type: string
+                px:
+                    default: ""
+                    description: Order price. Only applicable to `limit`,`post_only`,`fok`,`ioc`,`mmp`,`mmp_and_post_only` order.
+                    type: string
+                reduceOnly:
+                    description: "Whether orders can only reduce in position size.  \n\nValid options: `true` or `false`. The default value is `false`.\n\nOnly applicable to `MARGIN` orders, and `FUTURES`/`SWAP` orders in `net` mode \n\nOnly applicable to `Spot and futures mode` and `Multi-currency margin`"
+                    type: boolean
+                side:
+                    default: ""
+                    description: Order side, `buy` `sell`
+                    type: string
+                sz:
+                    default: ""
+                    description: Quantity to buy or sell
+                    type: string
+                tdMode:
+                    default: ""
+                    description: |-
+                        Trade mode
+
+                        Margin mode `cross` `isolated`
+
+                        Non-Margin mode `cash`
+
+                        `spot_isolated` (only applicable to SPOT lead trading, `tdMode` should be `spot_isolated` for `SPOT` lead trading.)
+                    type: string
+                tgtCcy:
+                    default: ""
+                    description: "Whether the target currency uses the quote or base currency.\n\n`base_ccy`: Base currency ,`quote_ccy`: Quote currency  \n\nOnly applicable to `SPOT` Market Orders\n\nDefault is `quote_ccy` for buy, `base_ccy` for sell"
+                    type: string
+            required:
+                - instId
+                - tdMode
+                - side
+                - ordType
+                - sz
+            type: object
+        CreateTradeOrderPrecheckV5Resp:
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "adjEq": "41.94347460746277",
+                            "adjEqChg": "-226.05616481626",
+                            "availBal": "0",
+                            "availBalChg": "0",
+                            "imr": "0",
+                            "imrChg": "57.74709688430927",
+                            "liab": "0",
+                            "liabChg": "0",
+                            "liabChgCcy": "",
+                            "liqPx": "6764.8556232031115",
+                            "liqPxDiff": "-57693.044376796888536773622035980224609375",
+                            "liqPxDiffRatio": "-0.8950500152315991",
+                            "mgnRatio": "0",
+                            "mgnRatioChg": "0",
+                            "mmr": "0",
+                            "mmrChg": "0",
+                            "posBal": "",
+                            "posBalChg": "",
+                            "type": ""
+                        }
+                    ],
+                    "msg": ""
+                }
+            properties:
+                code:
+                    default: ""
+                    type: string
+                data:
+                    items:
+                        properties:
+                            adjEq:
+                                default: ""
+                                description: Current adjusted / Effective equity in `USD`
+                                type: string
+                            adjEqChg:
+                                default: ""
+                                description: After placing order, changed quantity of adjusted / Effective equity in `USD`
+                                type: string
+                            availBal:
+                                default: ""
+                                description: Current available balance in margin coin currency, only applicable to turn auto borrow off
+                                type: string
+                            availBalChg:
+                                default: ""
+                                description: After placing order, changed quantity of available balance after placing order, only applicable to turn auto borrow off
+                                type: string
+                            imr:
+                                default: ""
+                                description: Current initial margin requirement in `USD`
+                                type: string
+                            imrChg:
+                                default: ""
+                                description: After placing order, changed quantity of initial margin requirement in `USD`
+                                type: string
+                            liab:
+                                default: ""
+                                description: |-
+                                    Current liabilities of currency
+
+                                     For cross, it is cross liabilities
+
+                                    For isolated position, it is isolated liabilities
+                                type: string
+                            liabChg:
+                                default: ""
+                                description: |-
+                                    After placing order, changed quantity of liabilities
+
+                                     For cross, it is cross liabilities
+
+                                    For isolated position, it is isolated liabilities
+                                type: string
+                            liabChgCcy:
+                                default: ""
+                                description: |-
+                                    After placing order, the unit of changed liabilities quantity
+
+                                     only applicable cross and in auto borrow
+                                type: string
+                            liqPx:
+                                default: ""
+                                description: Current estimated liquidation price
+                                type: string
+                            liqPxDiff:
+                                default: ""
+                                description: After placing order, the distance between estimated liquidation price and mark price
+                                type: string
+                            liqPxDiffRatio:
+                                default: ""
+                                description: After placing order, the distance rate between estimated liquidation price and mark price
+                                type: string
+                            mgnRatio:
+                                default: ""
+                                description: Current margin ratio in `USD`
+                                type: string
+                            mgnRatioChg:
+                                default: ""
+                                description: After placing order, changed quantity of margin ratio in `USD`
+                                type: string
+                            mmr:
+                                default: ""
+                                description: Current Maintenance margin requirement in `USD`
+                                type: string
+                            mmrChg:
+                                default: ""
+                                description: After placing order, changed quantity of maintenance margin requirement in `USD`
+                                type: string
+                            posBal:
+                                default: ""
+                                description: Current positive asset, only applicable to margin isolated position
+                                type: string
+                            posBalChg:
+                                default: ""
+                                description: After placing order, positive asset of margin isolated, only applicable to margin isolated position
+                                type: string
+                            type:
+                                default: ""
+                                description: "Unit type of positive asset, only applicable to margin isolated position\n\n`1`: it is both base currency before and after placing order \n\n `2`: before plaing order, it is base currency. after placing order, it is quota currency.\n\n`3`: before plaing order, it is quota currency. after placing order, it is base currency\n\n `4`: it is both quota currency before and after placing order"
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    default: ""
+                    type: string
+            type: object
+    securitySchemes:
+        APIKey:
+            in: header
+            name: OK-ACCESS-KEY
+            type: apiKey
+        Passphrase:
+            in: header
+            name: OK-ACCESS-PASSPHRASE
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /api/v5/trade/order-precheck:
+        post:
+            description: "This endpoint is used to precheck the account information before and after placing the order. \n\n\nOnly applicable to `Multi-currency margin mode`, and `Portfolio margin mode`.\n\n#### Rate Limit: 5 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
+            operationId: CreateTradeOrderPrecheckV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateTradeOrderPrecheckV5Req'
+                description: The request body for CreateTradeOrderPrecheckV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateTradeOrderPrecheckV5Resp'
+                    description: Successful operation
+            security:
+                - APIKey: []
+                  Passphrase: []
+            summary: "This endpoint is used to precheck the account information before and after placing the order. \n\n\nOnly applicable to `Multi-currency margin mode`, and `Portfolio margin mode`.\n\n"
+            tags:
+                - Trade
