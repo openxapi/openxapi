@@ -14,9 +14,9 @@ import (
 	"golang.org/x/net/html"
 )
 
-var AuthHeaders []string = []string{
-	"OK-ACCESS-KEY",
-	"OK-ACCESS-PASSPHRASE",
+var AuthHeaderMap map[string]string = map[string]string{
+	"APIKey":     "OK-ACCESS-KEY",
+	"Passphrase": "OK-ACCESS-PASSPHRASE",
 }
 
 var ManualAPISchemaMap map[string]parser.Schema = map[string]parser.Schema{
@@ -60,7 +60,6 @@ func isParameterDeprecated(paramDesc string) bool {
 }
 
 func formatParameterDescription(paramEle *html.Node) string {
-	// logrus.Info("formatParameterDescription: ", paramEle.Data)
 	nodes := paramEle.ChildNodes()
 	description := ""
 	for node := range nodes {
@@ -90,7 +89,7 @@ func checkEndpointIsProtected(rateLimitRule string) bool {
 		return false
 	}
 
-	// todo optional
+	// Todo optional
 	if strings.Contains(strings.ToLower(rateLimitRule), " or ") {
 		return false
 	}
@@ -347,12 +346,12 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 	subGroupAPIElements.Each(func(i int, subCategory *goquery.Selection) {
 		subAPIGroupID, exists := subCategory.Attr("id")
 		if exists {
-			// skip websocket endpoints
 			items := strings.Split(subCategory.Text(), "-")
 			for idx, item := range items {
 				items[idx] = strings.Title(strings.ToLower(item))
 			}
 			subGroupName := strings.Join(items, " ")
+			// skip websocket endpoints
 			if !strings.Contains(strings.ToLower(subAPIGroupID), "websocket") {
 				subAPIGroups[subAPIGroupID] = &OkxSubAPIGroup{
 					GroupName:    apiGroupName,
@@ -621,6 +620,8 @@ func (p *DocumentParser) processResponses(endpoint *parser.Endpoint) {
 }
 
 func (p *DocumentParser) processSecurities(endpoint *parser.Endpoint, rateLimitRuleEle *goquery.Selection) {
+	// okx use multiple api keys
+	// see https://swagger.io/docs/specification/v3_0/authentication/api-keys/#multiple-api-keys
 	if endpoint.SecuritySchemas == nil {
 		endpoint.SecuritySchemas = make(map[string]*parser.SecuritySchema)
 	}
@@ -635,15 +636,15 @@ func (p *DocumentParser) processSecurities(endpoint *parser.Endpoint, rateLimitR
 			endpoint.Security = make([]map[string][]string, 0)
 		}
 
-		for _, authHeader := range AuthHeaders {
-			endpoint.SecuritySchemas[authHeader] = &parser.SecuritySchema{
+		authHeaders := map[string][]string{}
+		for key, value := range AuthHeaderMap {
+			endpoint.SecuritySchemas[key] = &parser.SecuritySchema{
 				Type: parser.SecurityTypeApiKey,
 				In:   parser.SecurityLocationHeader,
-				Name: authHeader,
+				Name: value,
 			}
-			endpoint.Security = append(endpoint.Security, map[string][]string{
-				authHeader: {},
-			})
+			authHeaders[key] = []string{}
 		}
+		endpoint.Security = append(endpoint.Security, authHeaders)
 	}
 }

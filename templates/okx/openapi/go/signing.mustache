@@ -45,13 +45,18 @@ func (b *Auth) ContextWithValue(ctx context.Context) (context.Context, error) {
 	return context.WithValue(ctx, ContextOKXAuth, *b), nil
 }
 
+// Sign signs the request with the API key and secret key
+// see https://www.okx.com/docs-v5/en/#overview-rest-authentication
 func (b *Auth) Sign(r *http.Request) (err error) {
 	requestURI := r.URL.RequestURI()
-	format := "2006-01-02T15:04:05.999Z07:00"
-	now := time.Now().UTC().Format(format)
-	var dataToSign []byte = []byte(now)
-	var bodyData []byte = []byte{}
 
+	tsFormat := "2006-01-02T15:04:05.999Z07:00"
+	timestamp := time.Now().UTC().Format(tsFormat)
+
+	preHash := fmt.Sprintf("%s%s%s", timestamp, r.Method, requestURI)
+	var dataToSign []byte = []byte(preHash)
+
+	var bodyData []byte = []byte{}
 	if r.Body != nil {
 		reader, err := r.GetBody()
 		if err != nil {
@@ -62,25 +67,19 @@ func (b *Auth) Sign(r *http.Request) (err error) {
 			return fmt.Errorf("failed to read request body: %s", err)
 		}
 	}
-	dataToSign = append(dataToSign, []byte(r.Method)...)
-	dataToSign = append(dataToSign, []byte(requestURI)...)
 	if len(bodyData) > 0 {
 		dataToSign = append(dataToSign, bodyData...)
 	}
-
-	var signature string
 
 	mac := hmac.New(sha256.New, []byte(b.secretKey))
 	_, err = mac.Write(dataToSign)
 	if err != nil {
 		return err
 	}
-	signature = base64.StdEncoding.EncodeToString(mac.Sum(nil))
+	signature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 
-	// Make sure signature is added to the end of the query string
+	// Make sure signature is added to the end header
 	r.Header.Set("OK-ACCESS-SIGN", signature)
-	r.Header.Set("OK-ACCESS-TIMESTAMP", now)
-	r.Header.Set("OK-ACCESS-KEY", b.APIKey)
-	r.Header.Set("OK-ACCESS-PASSPHRASE", b.Passphrase)
+	r.Header.Set("OK-ACCESS-TIMESTAMP", timestamp)
 	return nil
 }

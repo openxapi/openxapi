@@ -41,16 +41,31 @@ os.Setenv("HTTP_PROXY", "http://proxy_name:proxy_port")
 Example
 
 ```go
-    conf := {{packageName}}.NewConfiguration()
-    client := {{packageName}}.NewAPIClient(conf)
-    ctx := context.Background()
+    package main
 
-    info, res, err := client.GeneralAPI.SpotGetExchangeInfoV3(ctx).Symbol("BTCUSDT").Execute()
-    if err != nil {
-        fmt.Println(err)
+    import (
+        "context"
+        "fmt"
+
+        okx "github.com/openxapi/okx-go/rest"
+    )
+
+    func main() {
+        conf := okx.NewConfiguration()
+        client := okx.NewAPIClient(conf)
+        ctx := context.Background()
+
+        data, resp, err := client.PublicDataAPI.GetMarketExchangeRateV5(ctx).Execute()
+        if err != nil {
+            fmt.Printf("failed to call API: %v\n, error type: %T\n", err, err)
+            e, ok := err.(*okx.GenericOpenAPIError)
+            if ok {
+                fmt.Printf("API error code: %v, msg: %v\n", e.Model().Code, e.Model().Msg)
+            }
+        }
+        fmt.Printf("%+v\n", data)
+        fmt.Printf("%+v\n", resp)
     }
-    fmt.Printf("%+v\n", info)
-    fmt.Printf("%+v\n", res)
 ```
 
 ## Authentication
@@ -64,25 +79,40 @@ The authentication is calculated per request, so you can use different keys for 
 Example
 
 ```go
-    conf := {{packageName}}.NewConfiguration()
-    client := {{packageName}}.NewAPIClient(conf)
-    ctx := context.Background()
+    import (
+	"context"
+	"fmt"
+	"os"
 
-    // get API key from env
-    apiKey := os.Getenv("OKX_API_KEY")
-    auth := {{packageName}}.NewAuth(apiKey)    
-    auth.SetSecretKey(os.Getenv("OKX_SECRET_KEY"))
-    ctx, err = auth.ContextWithValue(ctx)
-    if err != nil {
-        fmt.Println(err)
+	okx "github.com/openxapi/okx-go/rest"
+    )
+
+    func main() {
+        conf := okx.NewConfiguration()
+        client := okx.NewAPIClient(conf)
+        ctx := context.Background()
+
+        // get API key from env
+        apiKey := os.Getenv("OKX_API_KEY")
+        passPhrase := os.Getenv("OKX_PASS_PHRASE")
+        auth := okx.NewAuth(apiKey, passPhrase)
+        auth.SetSecretKey(os.Getenv("OKX_SECRET_KEY"))
+        ctx, err := auth.ContextWithValue(ctx)
+        if err != nil {
+            fmt.Println(err)
+        }
+
+        data, resp, err := client.BlockTradingAPI.GetRfqCounterpartiesV5(ctx).Execute()
+        if err != nil {
+            fmt.Printf("failed to call API: %v\n, error type: %T\n", err, err)
+            e, ok := err.(*okx.GenericOpenAPIError)
+            if ok {
+                fmt.Printf("API error code: %v, msg: %v\n", e.Model().Code, e.Model().Msg)
+            }
+        }
+        fmt.Printf("%+v\n", data)
+        fmt.Printf("%+v\n", resp)
     }
-    // Get current time in millisecond
-    user, res, err := client.AccountAPI.SpotGetAccountV3(ctx).Timestamp(time.Now().UnixMilli()).Execute()
-    if err != nil {
-        fmt.Println(err)
-    }
-    fmt.Printf("%+v\n", user)
-    fmt.Printf("%+v\n", res)
 ```
 
 ## Configuration

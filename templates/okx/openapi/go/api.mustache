@@ -319,7 +319,21 @@ func (a *{{{classname}}}Service) {{nickname}}Execute(r {{#structPrefix}}{{&class
 	// body params
 	localVarPostBody = r.{{paramName}}
 {{/bodyParams}}
-
+{{#hasAuthMethods}}
+	if r.ctx != nil {
+		// API Key Authentication
+		if auth, ok := r.ctx.Value(ContextOKXAuth).(Auth); ok {
+{{#authMethods}}
+{{#isApiKey}}
+{{#isKeyInHeader}}
+			localVarHeaderParams["{{keyParamName}}"] = auth.{{name}}
+			{{/isKeyInHeader}}
+{{/isApiKey}}
+{{/authMethods}}
+		}
+	}
+{{/hasAuthMethods}}
+	
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
 		return {{#returnType}}localVarReturnValue, {{/returnType}}nil, err
@@ -378,7 +392,7 @@ func (a *{{{classname}}}Service) {{nickname}}Execute(r {{#structPrefix}}{{&class
 				return {{#returnType}}localVarReturnValue, {{/returnType}}localVarHTTPResponse, newErr
 			}
 					newErr.error = formatErrorMessage(localVarHTTPResponse.Status, &v)
-					newErr.model = v
+					newErr.model = &v
 			{{^-last}}
 			return {{#returnType}}localVarReturnValue, {{/returnType}}localVarHTTPResponse, newErr
 			{{/-last}}
