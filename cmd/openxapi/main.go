@@ -109,7 +109,12 @@ func main() {
 				p = binance.NewParser()
 			}
 		case "okx":
-			p = okx.NewParser() // Placeholder for OKX parser
+			if useSamples {
+				p = okx.NewParserWithOptions(useSamples, exchangeSamplesDir)
+				logrus.Infof("Using sample files from %s", exchangeSamplesDir)
+			} else {
+				p = okx.NewParser()
+			}
 		default:
 			logrus.Warnf("Unsupported exchange: %s", exchangeName)
 			continue
