@@ -2136,7 +2136,7 @@ components:
                     "msg":"",
                     "data":[
                         {
-                            "transId":"12345",
+                            "transId":"12345"
                         }
                     ]
                 }
@@ -4721,13 +4721,43 @@ components:
                     default: ""
                     type: string
             type: object
+        CreateSprdAmendOrderV5Req:
+            properties:
+                clOrdId:
+                    default: ""
+                    description: Client Order ID as assigned by the client
+                    type: string
+                newPx:
+                    default: ""
+                    description: "New price after amendment \n\nEither `newSz` or `newPx` is required."
+                    type: string
+                newSz:
+                    default: ""
+                    description: "New quantity after amendment \n\nEither `newSz` or `newPx` is required. \n\nWhen amending a partially-filled order, the newSz should include the amount that has been filled."
+                    type: string
+                ordId:
+                    default: ""
+                    description: "Order ID \n\nEither `ordId` or `clOrdId` is required. If both are passed, ordId will be used."
+                    type: string
+                reqId:
+                    default: ""
+                    description: "Client Request ID as assigned by the client for order amendment \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters. \n\nThe response will include the corresponding reqId to help you identify the request if you provide it in the request."
+                    type: string
+            type: object
         CreateSprdAmendOrderV5Resp:
             example: |+
-                POST /api/v5/sprd/amend-order
-                body
                 {
-                    "ordId":"2510789768709120",
-                    "newSz":"2"
+                    "code":"0",
+                    "msg":"",
+                    "data":[
+                        {
+                         "clOrdId":"",
+                         "ordId":"12344",
+                         "reqId":"b12344",
+                         "sCode":"0",
+                         "sMsg":""
+                        }
+                    ]
                 }
 
             properties:
@@ -4739,23 +4769,23 @@ components:
                         properties:
                             clOrdId:
                                 default: ""
-                                description: Client Order ID as assigned by the client
-                                type: string
-                            newPx:
-                                default: ""
-                                description: "New price after amendment \n\nEither `newSz` or `newPx` is required."
-                                type: string
-                            newSz:
-                                default: ""
-                                description: "New quantity after amendment \n\nEither `newSz` or `newPx` is required. \n\nWhen amending a partially-filled order, the newSz should include the amount that has been filled."
+                                description: Client Order ID as assigned by the client.
                                 type: string
                             ordId:
                                 default: ""
-                                description: "Order ID \n\nEither `ordId` or `clOrdId` is required. If both are passed, ordId will be used."
+                                description: Order ID
                                 type: string
                             reqId:
                                 default: ""
-                                description: "Client Request ID as assigned by the client for order amendment \n\nA combination of case-sensitive alphanumerics, all numbers, or all letters of up to 32 characters. \n\nThe response will include the corresponding reqId to help you identify the request if you provide it in the request."
+                                description: Client Request ID as assigned by the client for order amendment.
+                                type: string
+                            sCode:
+                                default: ""
+                                description: The code of the event execution result, 0 means success.
+                                type: string
+                            sMsg:
+                                default: ""
+                                description: Rejection message if the request is unsuccessful.
                                 type: string
                         type: object
                     type: array
@@ -8964,7 +8994,7 @@ components:
                             "ordFroz": "",
                             "totalEq": "55837.43556134779",
                             "uTime": "1705474164160",
-                            "upl": "0",
+                            "upl": "0"
                         }
                     ],
                     "msg": ""
@@ -12477,7 +12507,7 @@ components:
                   "code": "0",
                   "msg": "",
                   "data": [{
-                    "category": "1", //Deprecated
+                    "category": "1",
                     "delivery": "",
                     "exercise": "",
                     "instType": "SPOT",
@@ -12857,8 +12887,8 @@ components:
                     "code": "0",
                     "data": [
                         {
-                            "min": "",  // Deprecated
-                            "max": "",  // Deprecated
+                            "min": "",
+                            "max": "",
                             "ccy": "BTC"
                         },
                         {
@@ -12897,9 +12927,22 @@ components:
                     type: string
             type: object
         GetAssetConvertCurrencyPairV5Resp:
-            example: |+
-                GET /api/v5/asset/convert/currency-pair?fromCcy=USDT&toCcy=BTC
-
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "baseCcy": "BTC",
+                            "baseCcyMax": "0.5",
+                            "baseCcyMin": "0.0001",
+                            "instId": "BTC-USDT",
+                            "quoteCcy": "USDT",
+                            "quoteCcyMax": "10000",
+                            "quoteCcyMin": "1"
+                        }
+                    ],
+                    "msg": ""
+                }
             properties:
                 code:
                     default: ""
@@ -12907,13 +12950,33 @@ components:
                 data:
                     items:
                         properties:
-                            fromCcy:
+                            baseCcy:
                                 default: ""
-                                description: Currency to convert from, e.g. `USDT`
+                                description: Base currency, e.g. `BTC` in `BTC-USDT`
                                 type: string
-                            toCcy:
+                            baseCcyMax:
                                 default: ""
-                                description: Currency to convert to, e.g. `BTC`
+                                description: Maximum amount of base currency
+                                type: string
+                            baseCcyMin:
+                                default: ""
+                                description: Minimum amount of base currency
+                                type: string
+                            instId:
+                                default: ""
+                                description: Currency pair, e.g. `BTC-USDT`
+                                type: string
+                            quoteCcy:
+                                default: ""
+                                description: Quote currency, e.g. `USDT` in `BTC-USDT`
+                                type: string
+                            quoteCcyMax:
+                                default: ""
+                                description: Maximum amount of quote currency
+                                type: string
+                            quoteCcyMin:
+                                default: ""
+                                description: Minimum amount of quote currency
                                 type: string
                         type: object
                     type: array
@@ -13769,11 +13832,11 @@ components:
                             "ccy": "USDT",
                             "clientId": "",
                             "from": "18",
-                            "instId": "", //deprecated
+                            "instId": "",
                             "state": "success",
                             "subAcct": "test",
                             "to": "6",
-                            "toInstId": "", //deprecated
+                            "toInstId": "",
                             "transId": "1",
                             "type": "1"
                         }
@@ -20979,7 +21042,7 @@ components:
                                 {
                                     "instId": "BTC-USDT",
                                     "side": "buy",
-                                    "sz": "0.1", //for public feed, spot "sz" is in baseccy
+                                    "sz": "0.1",
                                     "px": "10.1",
                                     "tradeId": "439161457415012356"
                                 },
@@ -21629,13 +21692,13 @@ components:
                     "msg":"",
                     "data":[
                         [
-                            "1701417600000",    // timestamp
-                            "1.1739"            // long/short account num ratio of top traders
+                            "1701417600000",
+                            "1.1739"
                         ],
                         [
-                            "1701417600000",    // timestamp
-                            "0.1236"            // long/short account num ratio of top traders
-                        ],
+                            "1701417600000",
+                            "0.1236"
+                        ]
                     ]
                 }
 
@@ -21660,13 +21723,13 @@ components:
                     "msg":"",
                     "data":[
                         [
-                            "1701417600000",    // timestamp
-                            "1.1739"            // long/short account num ratio of traders
+                            "1701417600000",
+                            "1.1739"
                         ],
                         [
-                            "1701417600000",    // timestamp
-                            "0.1236"            // long/short account num ratio of traders
-                        ],
+                            "1701417600000",
+                            "0.1236"
+                        ]
                     ]
                 }
 
@@ -21724,13 +21787,13 @@ components:
                     "msg":"",
                     "data":[
                         [
-                            "1701417600000",    // timestamp
-                            "1.1739"            // long/short position num ratio of top traders
+                            "1701417600000",
+                            "1.1739"
                         ],
                         [
-                            "1701417600000",    // timestamp
-                            "0.1236"            // long/short position num ratio of top traders
-                        ],
+                            "1701417600000",
+                            "0.1236"
+                        ]
                     ]
                 }
 
@@ -21755,16 +21818,16 @@ components:
                     "msg":"",
                     "data":[
                         [
-                            "1701417600000",    // timestamp
-                            "731377.57500501",   // open interest (oi, contracts)
-                            "111",              // open interest (oiCcy, coin)
-                            "8888888"         // open interest (oiUsd, USD)
+                            "1701417600000",
+                            "731377.57500501",
+                            "111",
+                            "8888888"
                         ],
                         [
-                            "1701417500000",    // timestamp
-                            "731377.57500501",   // open interest (oi, contracts)
-                            "111",              // open interest (oiCcy, coin)
-                            "8888888"         // open interest (oiUsd, USD)
+                            "1701417500000",
+                            "731377.57500501",
+                            "111",
+                            "8888888"
                         ]
                     ]
                 }
@@ -22124,14 +22187,14 @@ components:
                     "msg":"",
                     "data":[
                         [
-                            "1701417600000",    // timestamp
-                            "200",              // taker sell volume
-                            "380"               // taker buy volume
+                            "1701417600000",
+                            "200",
+                            "380"
                         ],
                         [
-                            "1701417600000",    // timestamp
-                            "100",              // taker sell volume
-                            "300"               // taker buy volume
+                            "1701417600000",
+                            "100",
+                            "300"
                         ]
                     ]
                 }
@@ -22249,9 +22312,9 @@ components:
                         {
                             "asks": [
                                 [
-                                    "41006.8", // price
-                                    "0.60038921", // quantity
-                                    "1" // number of orders at the price
+                                    "41006.8",
+                                    "0.60038921",
+                                    "1"
                                 ]
                             ],
                             "bids": [
@@ -33613,6 +33676,23 @@ paths:
         get:
             description: "#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
             operationId: GetAssetConvertCurrencyPairV5
+            parameters:
+                - description: Currency to convert from, e.g. `USDT`
+                  in: query
+                  name: fromCcy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Currency to convert from, e.g. `USDT`
+                    type: string
+                - description: Currency to convert to, e.g. `BTC`
+                  in: query
+                  name: toCcy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Currency to convert to, e.g. `BTC`
+                    type: string
             responses:
                 4XX:
                     content:
@@ -42425,6 +42505,13 @@ paths:
         post:
             description: "Amend an incomplete order.\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: User ID \n\n#### Permission: Trade \n\n"
             operationId: CreateSprdAmendOrderV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSprdAmendOrderV5Req'
+                description: The request body for CreateSprdAmendOrderV5
+                required: true
             responses:
                 4XX:
                     content:
