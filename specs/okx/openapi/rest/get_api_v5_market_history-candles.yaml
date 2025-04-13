@@ -8,7 +8,7 @@ components:
                 msg:
                     type: string
             type: object
-        GetMarketIndexCandlesV5Resp:
+        GetMarketHistoryCandlesV5Resp:
             example: |
                 {
                     "code":"0",
@@ -20,7 +20,10 @@ components:
                         "3.743",
                         "3.677",
                         "3.708",
-                        "0"
+                        "8422410",
+                        "22698348.04828491",
+                        "12698348.04828491",
+                        "1"
                     ],
                     [
                         "1597026383085",
@@ -28,6 +31,9 @@ components:
                         "3.799",
                         "3.494",
                         "3.72",
+                        "24912403",
+                        "67632347.24399722",
+                        "37632347.24399722",
                         "1"
                     ]
                     ]
@@ -51,18 +57,18 @@ info:
     version: ""
 openapi: ""
 paths:
-    /api/v5/market/index-candles:
+    /api/v5/market/history-candles:
         get:
-            description: "Retrieve the candlestick charts of the index. This endpoint can retrieve the latest 1,440 data entries. Charts are returned in groups based on the requested bar. \n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
-            operationId: GetMarketIndexCandlesV5
+            description: "Retrieve history candlestick charts from recent years(It is last 3 months supported for 1s candlestick).\n\n#### Rate Limit: 20 requests per 2 seconds \n\n#### Rate limit rule: IP \n\n"
+            operationId: GetMarketHistoryCandlesV5
             parameters:
-                - description: Index, e.g. `BTC-USD`
+                - description: Instrument ID, e.g. `BTC-USDT`
                   in: query
                   name: instId
                   required: true
                   schema:
                     default: ""
-                    description: Index, e.g. `BTC-USD`
+                    description: Instrument ID, e.g. `BTC-USDT`
                     type: string
                 - description: Pagination of data to return records earlier than the requested `ts`
                   in: query
@@ -78,19 +84,19 @@ paths:
                     default: ""
                     description: Pagination of data to return records newer than the requested `ts`. The latest data will be returned when using `before` individually
                     type: string
-                - description: "Bar size, the default is `1m`\n\ne.g. [`1m`/`3m`/`5m`/`15m`/`30m`/`1H`/`2H`/`4H`] \n\nHong Kong time opening price k-line: [`6H`/`12H`/`1D`/`1W`/`1M`/`3M`]\n\nUTC time opening price k-line: [`6Hutc`/`12Hutc`/`1Dutc`/`1Wutc`/`1Mutc`/`3Mutc`]"
+                - description: "Bar size, the default is `1m`\n\ne.g. [1s/1m/3m/5m/15m/30m/1H/2H/4H] \n\nHong Kong time opening price k-line: [6H/12H/1D/2D/3D/1W/1M/3M]\n\nUTC time opening price k-line: [6Hutc/12Hutc/1Dutc/2Dutc/3Dutc/1Wutc/1Mutc/3Mutc]"
                   in: query
                   name: bar
                   schema:
                     default: ""
-                    description: "Bar size, the default is `1m`\n\ne.g. [`1m`/`3m`/`5m`/`15m`/`30m`/`1H`/`2H`/`4H`] \n\nHong Kong time opening price k-line: [`6H`/`12H`/`1D`/`1W`/`1M`/`3M`]\n\nUTC time opening price k-line: [`6Hutc`/`12Hutc`/`1Dutc`/`1Wutc`/`1Mutc`/`3Mutc`]"
+                    description: "Bar size, the default is `1m`\n\ne.g. [1s/1m/3m/5m/15m/30m/1H/2H/4H] \n\nHong Kong time opening price k-line: [6H/12H/1D/2D/3D/1W/1M/3M]\n\nUTC time opening price k-line: [6Hutc/12Hutc/1Dutc/2Dutc/3Dutc/1Wutc/1Mutc/3Mutc]"
                     type: string
-                - description: Number of results per request. The maximum is `100`. The default is `100`
+                - description: Number of results per request. The maximum is `100`. The default is `100`.
                   in: query
                   name: limit
                   schema:
                     default: ""
-                    description: Number of results per request. The maximum is `100`. The default is `100`
+                    description: Number of results per request. The maximum is `100`. The default is `100`.
                     type: string
             responses:
                 4XX:
@@ -109,8 +115,8 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/GetMarketIndexCandlesV5Resp'
+                                $ref: '#/components/schemas/GetMarketHistoryCandlesV5Resp'
                     description: Successful operation
-            summary: Get index candlesticks
+            summary: GET / Candlesticks history
             tags:
-                - Public Data
+                - Market Data
