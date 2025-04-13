@@ -9,64 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCheckResponseIsArranged(t *testing.T) {
-	tests := []struct {
-		name     string
-		htmlStr  string
-		expected bool
-	}{
-		{
-			name: "response is arranged in array",
-			htmlStr: `
-				<table><tbody>
-					<tr><td>Test</td></tr>
-				<tbody></table>
-				<p>Response is arranged in an array of objects</p>
-				<h3>GET / Candlesticks history</h3>
-			`,
-			expected: true,
-		},
-		{
-			name: "response is not arranged in array",
-			htmlStr: `
-				<table><tbody>
-					<tr><td>Test</td></tr>
-				<tbody></table>
-				<p>Response contains object properties</p>
-				<h3>GET / Candlesticks history</h3>
-			`,
-			expected: false,
-		},
-		{
-			name: "response is arranged in array with aside",
-			htmlStr: `
-			<table><tbody>
-			<tr><td style="text-align: left">ts</td><td style="text-align: left">String</td><td style="text-align: left">Opening time of the candlestick, Unix timestamp format in milliseconds, e.g. <code>1597026383085</code></td>
-			</tr>
-			</tbody></table>
-			<aside class="notice">
-				<p>The first candlestick data may be incomplete, and should not be polled repeatedly.</p>
-				<p>The data returned will be arranged in an array like this: [ts,o,h,l,c,vol,volCcy,volCcyQuote,confirm]. </p>
-				For the current cycle of k-line data, when there is no transaction, the opening high and closing low default take the closing price of the previous cycle.
-			</aside>
-			<h3>GET / Candlesticks history</h3>
-			`,
-			expected: true,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tc.htmlStr))
-			assert.NoError(t, err)
-
-			table := doc.Find("table")
-			result := checkResponseIsArranged(table)
-			assert.Equal(t, tc.expected, result)
-		})
-	}
-}
-
 func TestIsParameterDeprecated(t *testing.T) {
 	tests := []struct {
 		desc     string
@@ -121,7 +63,7 @@ func TestFormatParameterDescription(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tc.htmlStr))
 			assert.NoError(t, err)
-			result := formatParameterDescription(doc.Find("td").First().Nodes[0])
+			result := generateParamDesc(doc.Find("td").First().Nodes[0])
 			assert.Contains(t, result, tc.expected)
 		})
 	}
@@ -171,13 +113,11 @@ func TestOperationID(t *testing.T) {
 		expected string
 	}{
 		{
-			docType:  "rest",
 			method:   "GET",
 			path:     "/api/v5/account/balance",
 			expected: "GetAccountBalanceV5",
 		},
 		{
-			docType:  "rest",
 			method:   "POST",
 			path:     "/api/v5/trade/order",
 			expected: "CreateTradeOrderV5",
@@ -201,16 +141,20 @@ func TestOperationID(t *testing.T) {
 			expected: "GetMarketTickerPriceV5",
 		},
 		{
-			docType:  "rest",
 			method:   "POST",
 			path:     "/api/v5/tradingBot/signal/create-signal",
 			expected: "CreateTradingBotSignalCreateSignalV5",
+		},
+		{
+			method:   "POST",
+			path:     "/api/v5/finance/flexible-loan/adjust-collateral",
+			expected: "CreateFinanceFlexibleLoanAdjustCollateralV5",
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.path, func(t *testing.T) {
-			result := operationID(tc.docType, tc.method, tc.path)
+			result := operationID(tc.method, tc.path)
 			assert.Equal(t, tc.expected, result)
 		})
 	}
@@ -270,45 +214,398 @@ func TestNormalizeType(t *testing.T) {
 	}
 }
 
-func TestGenerateSubAPIGroupName(t *testing.T) {
+type DocSectionResult struct {
+	DescElementsSize         int
+	RequestTableFound        bool
+	RequestTableID           string
+	ResponseTableFound       bool
+	ResponseTableID          string
+	ResponseExampleFound     bool
+	ResponseExampleElementID string
+	ExtraElementsSize        int
+}
+
+func TestExtractEndpointDocumentSection(t *testing.T) {
 	tests := []struct {
-		apiHeader string
-		expected  string
+		name     string
+		htmlStr  string
+		expected DocSectionResult
 	}{
 		{
-			apiHeader: "Get the invitee's detail",
-			expected:  "get-the-invitee-39-s-detail",
+			name: "normal section",
+			htmlStr: `
+			<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<p>Retrieve available instruments info of current account.</p>
+			<aside class="notice">Interest-free quota and discount rates are public data and not displayed on the account interface.</aside>
+			<p>Retrieve available instruments info of current account.</p>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-permission-read">Permission: Read</h4>
+			<h4 id="trading-account-rest-api-get-instruments-http-request">HTTP Request</h4>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-request-parameters">Request Parameters</h4>
+			<table id="request-parameters-table"></table>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<table id="response-parameters-table"></table>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         6,
+				RequestTableFound:        true,
+				RequestTableID:           "request-parameters-table",
+				ResponseTableFound:       true,
+				ResponseTableID:          "response-parameters-table",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        1,
+			},
 		},
 		{
-			apiHeader: "GET / Announcement types",
-			expected:  "get-announcement-types",
+			name: "with empty summary",
+			htmlStr: `<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-http-request">HTTP Request</h4>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-request-parameters">Request Parameters</h4>
+			<table id="request-parameters-table"></table>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<table id="response-parameters-table"></table>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         2,
+				RequestTableFound:        true,
+				RequestTableID:           "request-parameters-table",
+				ResponseTableFound:       true,
+				ResponseTableID:          "response-parameters-table",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        1,
+			},
 		},
 		{
-			apiHeader: "GET / Purchase&Redeem history",
-			expected:  "get-purchase-amp-redeem-history",
+			name: "with empty request parameter table",
+			htmlStr: `
+			<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<p>Retrieve available instruments info of current account.</p>
+			<aside class="notice">Interest-free quota and discount rates are public data and not displayed on the account interface.</aside>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-permission-read">Permission: Read</h4>
+			<h4 id="trading-account-rest-api-get-instruments-http-request">HTTP Request</h4>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example">code</code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-request-parameters">Request Parameters</h4>
+			<p>None</p>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example">code</code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<table id="response-parameters-table"></table>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         5,
+				RequestTableFound:        false,
+				RequestTableID:           "",
+				ResponseTableFound:       true,
+				ResponseTableID:          "response-parameters-table",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        1,
+			},
 		},
 		{
-			apiHeader: "Get history of sub-account transfer",
-			expected:  "get-history-of-sub-account-transfer",
+			name: "with empty response parameter table",
+			htmlStr: `<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<p>Retrieve available instruments info of current account.</p>
+			<aside class="notice">Interest-free quota and discount rates are public data and not displayed on the account interface.</aside>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-permission-read">Permission: Read</h4>
+			<h4 id="trading-account-rest-api-get-instruments-http-request">HTTP Request</h4>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-request-parameters">Request Parameters</h4>
+			<table id="request-parameters-table"></table>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<p>code = <code>0</code> means your request has been successfully handled.</p>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         5,
+				RequestTableFound:        true,
+				RequestTableID:           "request-parameters-table",
+				ResponseTableFound:       false,
+				ResponseTableID:          "",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        2,
+			},
 		},
 		{
-			apiHeader: "POST / Cancel purchases/redemptions",
-			expected:  "post-cancel-purchases-redemptions",
+			name: "with http request element tag typo",
+			htmlStr: `<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<p>Retrieve available instruments info of current account.</p>
+			<aside class="notice">Interest-free quota and discount rates are public data and not displayed on the account interface.</aside>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-permission-read">Permission: Read</h4>
+			<p>## HTTP Request</p>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-request-parameters">Request Parameters</h4>
+			<table id="request-parameters-table"></table>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<table id="response-parameters-table"></table>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         5,
+				RequestTableFound:        true,
+				RequestTableID:           "request-parameters-table",
+				ResponseTableFound:       true,
+				ResponseTableID:          "response-parameters-table",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        1,
+			},
 		},
 		{
-			apiHeader: "GET / APY history (Public)",
-			expected:  "get-apy-history-public",
+			name: "with http request element id typo",
+			htmlStr: `<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<p>Retrieve available instruments info of current account.</p>
+			<aside class="notice">Interest-free quota and discount rates are public data and not displayed on the account interface.</aside>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-permission-read">Permission: Read</h4>
+			<h4 id="trading-account-rest-api-get-instruments-http">HTTP Request</h4>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-request-parameters">Request Parameters</h4>
+			<table id="request-parameters-table"></table>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<table id="response-parameters-table"></table>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         5,
+				RequestTableFound:        true,
+				RequestTableID:           "request-parameters-table",
+				ResponseTableFound:       true,
+				ResponseTableID:          "response-parameters-table",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        1,
+			},
 		},
 		{
-			apiHeader: "Set greeks (PA/BS)",
-			expected:  "set-greeks-pa-bs",
+			name: "with response parameter table id typo",
+			htmlStr: `
+			<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<p>Retrieve available instruments info of current account.</p>
+			<aside class="notice">Interest-free quota and discount rates are public data and not displayed on the account interface.</aside>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-permission-read">Permission: Read</h4>
+			<h4 id="trading-account-rest-api-get-instruments-http-request">HTTP Request</h4>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-request-parameters">Request Parameters</h4>
+			<table id="request-parameters-table"></table>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-example">Response Example</h4>
+			<table id="response-parameters-table"></table>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         5,
+				RequestTableFound:        true,
+				RequestTableID:           "request-parameters-table",
+				ResponseTableFound:       true,
+				ResponseTableID:          "response-parameters-table",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        1,
+			},
+		},
+		{
+			name: "with duplicate http response element",
+			htmlStr: `
+			<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<p>Retrieve available instruments info of current account.</p>
+			<aside class="notice">Interest-free quota and discount rates are public data and not displayed on the account interface.</aside>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-permission-read">Permission: Read</h4>
+			<h4 id="trading-account-rest-api-get-instruments-http-request">HTTP Request</h4>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<table id="request-parameters-table"></table>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<table id="response-parameters-table"></table>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         5,
+				RequestTableFound:        true,
+				RequestTableID:           "request-parameters-table",
+				ResponseTableFound:       true,
+				ResponseTableID:          "response-parameters-table",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        1,
+			},
+		},
+		{
+			name: "with three table elements",
+			htmlStr: `
+			<h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+			<p>Retrieve available instruments info of current account.</p>
+			<aside class="notice">Interest-free quota and discount rates are public data and not displayed on the account interface.</aside>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-20-requests-per-2-seconds">Rate Limit: 20 requests per 2 seconds</h4>
+			<h4 id="trading-account-rest-api-get-instruments-rate-limit-rule-user-id-instrument-type">Rate limit rule: User ID + Instrument Type</h4>
+			<h4 id="trading-account-rest-api-get-instruments-permission-read">Permission: Read</h4>
+			<h4 id="trading-account-rest-api-get-instruments-http-request">HTTP Request</h4>
+			<p><code>GET /api/v5/account/instruments</code></p>
+			<div class="highlight">
+				<pre class="highlight shell tab-shell" style="display: none;">
+					<code id="request-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-request-parameters">Request Parameters</h4>
+			<table id="request-parameters-table"></table>
+			<div class="highlight">
+				<pre class="highlight json tab-json" style="display: none;">
+					<code id="response-example"></code>
+				</pre>
+			</div>
+			<h4 id="trading-account-rest-api-get-instruments-response-parameters">Response Parameters</h4>
+			<table id="response-parameters-table"></table>
+			<table id="extra-parameters-table"></table>
+			<aside class="notice">listTime and auctionEndTime</aside>
+			<h3 id="block-trading-rest-api-cancel-all-rfqs">Cancel all RFQs</h3>`,
+			expected: DocSectionResult{
+				DescElementsSize:         5,
+				RequestTableFound:        true,
+				RequestTableID:           "request-parameters-table",
+				ResponseTableFound:       true,
+				ResponseTableID:          "response-parameters-table",
+				ResponseExampleFound:     true,
+				ResponseExampleElementID: "response-example",
+				ExtraElementsSize:        1,
+			},
 		},
 	}
 
+	docParser := &DocumentParser{}
+
 	for _, tc := range tests {
-		t.Run(tc.apiHeader, func(t *testing.T) {
-			result := generateSubAPIGroupName(tc.apiHeader)
-			assert.Equal(t, tc.expected, result)
+		t.Run(tc.name, func(t *testing.T) {
+			doc, err := goquery.NewDocumentFromReader(strings.NewReader(tc.htmlStr))
+			assert.NoError(t, err)
+			endpointSelector := "h3[id*='trading-account-rest-api-get-instruments']"
+			endpointSection := doc.Find(endpointSelector)
+			result := docParser.extractEndpointDocumentSection(endpointSection)
+			actual := DocSectionResult{
+				DescElementsSize:         len(result.Description),
+				RequestTableFound:        result.RequestParametersTable != nil,
+				RequestTableID:           "",
+				ResponseTableFound:       result.ResponseParametersTable != nil,
+				ResponseTableID:          "",
+				ResponseExampleFound:     result.ResponseExample != nil,
+				ResponseExampleElementID: "",
+				ExtraElementsSize:        len(result.ExtraElements),
+			}
+			if result.RequestParametersTable != nil {
+				actual.RequestTableID = result.RequestParametersTable.AttrOr("id", "")
+			}
+			if result.ResponseParametersTable != nil {
+				actual.ResponseTableID = result.ResponseParametersTable.AttrOr("id", "")
+			}
+			if result.ResponseExample != nil {
+				actual.ResponseExampleElementID = result.ResponseExample.AttrOr("id", "")
+			}
+			assert.Equal(t, tc.expected.DescElementsSize, actual.DescElementsSize)
+			assert.Equal(t, tc.expected.RequestTableFound, actual.RequestTableFound)
+			assert.Equal(t, tc.expected.RequestTableID, actual.RequestTableID)
+			assert.Equal(t, tc.expected.ResponseTableFound, actual.ResponseTableFound)
+			assert.Equal(t, tc.expected.ResponseTableID, actual.ResponseTableID)
+			assert.Equal(t, tc.expected.ResponseExampleFound, actual.ResponseExampleFound)
+			assert.Equal(t, tc.expected.ResponseExampleElementID, actual.ResponseExampleElementID)
+			assert.Equal(t, tc.expected.ExtraElementsSize, actual.ExtraElementsSize)
 		})
 	}
 }

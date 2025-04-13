@@ -1,9 +1,10 @@
 package okx
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
-	URL "net/url"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -28,29 +29,36 @@ var ManualAPISchemaMap map[string]parser.Schema = map[string]parser.Schema{
 	},
 }
 
+// EndpointDocumentSection represents a section of the endpoint document
+type EndpointDocumentSection struct {
+	Title                   *goquery.Selection
+	Description             []*goquery.Selection
+	HttpRequest             *goquery.Selection
+	RequestMethodAndPath    *goquery.Selection
+	RequestParameters       *goquery.Selection
+	RequestParametersTable  *goquery.Selection
+	ResponseExample         *goquery.Selection
+	ResponseParameters      *goquery.Selection
+	ResponseParametersTable *goquery.Selection
+	ExtraElements           []*goquery.Selection
+}
+
 // DocumentParser is a parser for OKX documents
 type DocumentParser struct {
 	parser.HTTPDocumentParser
 	docType string
 }
 
-type OkxSubAPIGroup struct {
-	GroupName    string
-	SubGroupName string
-	SubGroupID   string
+type OkxAPISubCategory struct {
+	CategoryName    string
+	SubCategoryName string
+	SubCategoryID   string
 }
 
-func checkResponseIsArranged(table *goquery.Selection) bool {
-	ele := table.Next()
+func checkResponseIsArranged(elements []*goquery.Selection) bool {
 	content := ""
-	for ele.Length() > 0 {
-		if ele.Is("h3") {
-			break
-		}
-		if ele.Is("aside") || ele.Is("p") {
-			content += ele.Text()
-		}
-		ele = ele.Next()
+	for _, ele := range elements {
+		content += ele.Text()
 	}
 	return strings.Contains(strings.ToLower(content), "arranged in an array ")
 }
@@ -59,7 +67,7 @@ func isParameterDeprecated(paramDesc string) bool {
 	return strings.Contains(strings.ToLower(paramDesc), "deprecated")
 }
 
-func formatParameterDescription(paramEle *html.Node) string {
+func generateParamDesc(paramEle *html.Node) string {
 	nodes := paramEle.ChildNodes()
 	description := ""
 	for node := range nodes {
@@ -68,7 +76,7 @@ func formatParameterDescription(paramEle *html.Node) string {
 		} else if node.Type == html.ElementNode {
 			switch strings.ToLower(node.Data) {
 			case "del":
-				description += formatParameterDescription(node)
+				description += generateParamDesc(node)
 			case "code":
 				codeNodes := node.ChildNodes()
 				for codeNode := range codeNodes {
@@ -84,19 +92,25 @@ func formatParameterDescription(paramEle *html.Node) string {
 	return description
 }
 
-func checkEndpointIsProtected(rateLimitRule string) bool {
-	if !strings.Contains(strings.ToLower(rateLimitRule), "user id") {
-		return false
+func checkEndpointIsProtected(endpointDesc string) bool {
+	rateLimitRuleRegexp := regexp.MustCompile(`(?i)rate limit rule:\s+(.*)`)
+	matches := rateLimitRuleRegexp.FindStringSubmatch(endpointDesc)
+	requireAuth := true
+	if len(matches) == 2 {
+		rateLimitRule := matches[1]
+		if !strings.Contains(strings.ToLower(rateLimitRule), "user id") {
+			requireAuth = false
+		}
+		if strings.Contains(strings.ToLower(rateLimitRule), " or ") {
+			requireAuth = false
+		}
+	} else {
+		requireAuth = false
 	}
-
-	// Todo optional
-	if strings.Contains(strings.ToLower(rateLimitRule), " or ") {
-		return false
-	}
-	return true
+	return requireAuth
 }
 
-func operationID(docType, method, path string) string {
+func operationID(method, path string) string {
 	// GET /api/v5/account/instruments -> GetAccountInstrumentsV5
 	pathRegex := regexp.MustCompile(`^/(.*api)/v(\d+)/(.+)/(.+)$`)
 	matches := pathRegex.FindStringSubmatch(path)
@@ -108,7 +122,9 @@ func operationID(docType, method, path string) string {
 		}
 		path = fmt.Sprintf("%s%sV%s", strings.Title(matches[3]), action, matches[2])
 	}
-	path = strings.Join(strings.Split(strings.Title(strings.ReplaceAll(path, "/", " ")), " "), "")
+	path = strings.ReplaceAll(path, "/", " ")
+	path = strings.ReplaceAll(path, "-", " ")
+	path = strings.Join(strings.Split(strings.Title(path), " "), "")
 	return fmt.Sprintf("%s%s", methodToAction(method), path)
 }
 
@@ -126,44 +142,44 @@ func methodToAction(method string) string {
 	return ""
 }
 
-func generateObjectSchema(row *goquery.Selection, objName string, prefix string) *parser.Schema {
+func generateObjectSchema(paramEle *goquery.Selection, objName string, elePrefix string) *parser.Schema {
 	schema := &parser.Schema{
 		Type:       parser.ObjectType,
 		Properties: make(map[string]*parser.Schema),
 	}
-	row = row.Next()
-	for row.Length() > 0 {
-		children := row.Children()
-		rowVals := make([]string, children.Length())
+	subParamEle := paramEle.Next()
+	for subParamEle.Length() > 0 {
+		children := subParamEle.Children()
+		eleVals := make([]string, children.Length())
 		children.Each(func(i int, s *goquery.Selection) {
-			rowVals[i] = s.Text()
+			eleVals[i] = s.Text()
 		})
-		paramName, paramType := rowVals[0], rowVals[1]
-		if !strings.Contains(paramName, prefix) {
+		paramName, paramType := eleVals[0], eleVals[1]
+		if !strings.Contains(paramName, elePrefix) {
 			break
 		}
 
-		subSchema, _ := createSchema(objName, paramType, paramName, row)
-		subSchema.Description = formatParameterDescription(children.Last().Nodes[0])
+		subSchema, _ := createSchema(objName, paramType, paramName, subParamEle)
+		subSchema.Description = generateParamDesc(children.Last().Nodes[0])
 		subSchema.Deprecated = isParameterDeprecated(subSchema.Description)
 
 		paramName = strings.Split(paramName, " ")[1]
 		schema.Properties[paramName] = subSchema
-		row = row.Next()
+		subParamEle = subParamEle.Next()
 	}
 	return schema
 }
 
 // createSchema creates a schema based on the parameter type
-func createSchema(name, paramType, paramName string, row *goquery.Selection) (*parser.Schema, error) {
+func createSchema(name, paramType, paramName string, paramEle *goquery.Selection) (*parser.Schema, error) {
 	typ := normalizeType(paramType)
 	switch typ {
 	case parser.ObjectType:
-		prefix := "> "
-		if strings.Contains(paramName, prefix) {
-			prefix = ">" + strings.Split(paramName, " ")[0] + " "
+		elePrefix := "> "
+		if strings.Contains(paramName, elePrefix) {
+			elePrefix = ">" + strings.Split(paramName, " ")[0] + " "
 		}
-		schema := generateObjectSchema(row, paramName, prefix)
+		schema := generateObjectSchema(paramEle, paramName, elePrefix)
 		schema.Title = name
 		return schema, nil
 	case parser.ArrayOfStringType:
@@ -193,11 +209,11 @@ func createSchema(name, paramType, paramName string, row *goquery.Selection) (*p
 		schema := &parser.Schema{
 			Type: parser.ArrayType,
 		}
-		prefix := "> "
-		if strings.Contains(paramName, prefix) {
-			prefix = ">" + strings.Split(paramName, " ")[0] + " "
+		elePrefix := "> "
+		if strings.Contains(paramName, elePrefix) {
+			elePrefix = ">" + strings.Split(paramName, " ")[0] + " "
 		}
-		itemsSchema := generateObjectSchema(row, paramName, prefix)
+		itemsSchema := generateObjectSchema(paramEle, paramName, elePrefix)
 		schema.Items = itemsSchema
 		schema.Title = name
 		schema.Items.Title = fmt.Sprintf("%sItem", name)
@@ -249,79 +265,215 @@ func normalizeType(typ string) string {
 	}
 }
 
-func generateSubAPIGroupName(apiHeader string) string {
-	subAPIGroupName := strings.ToLower(apiHeader)
-	subAPIGroupName = strings.ReplaceAll(subAPIGroupName, "'", " 39 ")
-	subAPIGroupName = strings.ReplaceAll(subAPIGroupName, "&", " amp ")
-	subAPIGroupName = strings.ReplaceAll(subAPIGroupName, "/", " ")
-	subAPIGroupName = strings.ReplaceAll(subAPIGroupName, "  ", "")
-	subAPIGroupName = strings.ReplaceAll(subAPIGroupName, "(", "")
-	subAPIGroupName = strings.ReplaceAll(subAPIGroupName, " ", "-")
-	subAPIGroupName = strings.ReplaceAll(subAPIGroupName, ")", "")
-	return subAPIGroupName
+func fixInvalidJSON(invalidJSON string) string {
+	// remove comment and extra commas
+	commentRegexp := regexp.MustCompile(`(\s+|,)(//|#).*`)
+	extraCommasRegexp := regexp.MustCompile(`,(\s*?(]|}))`)
+	result := commentRegexp.ReplaceAllString(invalidJSON, "$1")
+	result = extraCommasRegexp.ReplaceAllString(result, "$1")
+	return result
 }
 
 // generateEndpointDesc generates the endpoint description using the CommonMark spec
-func (p *DocumentParser) generateEndpointDesc(line *goquery.Selection, subAPIGroupID, subAPIGroupName string) string {
+func (p *DocumentParser) generateEndpointDesc(endpointDescElements []*goquery.Selection) string {
 	endpointDesc := ""
-	for line.Length() > 0 {
-		if line.Length() == 0 {
+	for _, ele := range endpointDescElements {
+		if ele == nil {
 			continue
 		}
-		if line.Is(fmt.Sprintf("h4[id*='%s-%s-http']", subAPIGroupID, subAPIGroupName)) {
-			break
+		if ele.Is("p") {
+			endpointDesc += generateParamDesc(ele.Nodes[0]) + "\n\n"
 		}
-		if line.Is("p") {
-			endpointDesc += formatParameterDescription(line.Nodes[0]) + "\n\n"
+		if ele.Is("h4") {
+			endpointDesc += fmt.Sprintf("#### %s \n\n", ele.Text())
 		}
-		if line.Is("h4") {
-			endpointDesc += fmt.Sprintf("#### %s \n\n", line.Text())
+		if ele.Is("aside") {
+			endpointDesc += fmt.Sprintf("**_%s_**\n\n", strings.ReplaceAll(ele.Text(), "\n", ""))
 		}
-		if line.Is("aside") {
-			endpointDesc += fmt.Sprintf("**_%s_**\n\n", strings.ReplaceAll(line.Text(), "\n", ""))
-		}
-		line = line.Next()
-	}
-	return endpointDesc
-}
-
-func (p *DocumentParser) generateEndpointSummary(line *goquery.Selection, subAPIGroupID, subAPIGroupName string) string {
-	endpointDesc := ""
-	for line.Length() > 0 {
-		if line.Length() == 0 {
-			continue
-		}
-		if line.Is(fmt.Sprintf("h4[id*='%s-%s-http']", subAPIGroupID, subAPIGroupName)) {
-			break
-		}
-		if line.Is("p") {
-			endpointDesc += formatParameterDescription(line.Nodes[0]) + "\n\n"
-		}
-		line = line.Next()
 	}
 	return endpointDesc
 }
 
 func (p *DocumentParser) generateRespExample(respEle *goquery.Selection) string {
-	anchor := respEle
-	for anchor.Length() > 0 {
-		if anchor.Is("div[class='highlight']") {
-			code := anchor.Find("code").First()
-			if code.Length() == 0 {
-				return ""
-			}
-			return code.Text()
-		}
-		if anchor.Is("h4[id*='permission-read']") {
-			break
-		}
-		anchor = anchor.Prev()
+	respExampleText := respEle.Text()
+	if respExampleText == "" {
+		return respExampleText
 	}
-	return ""
+
+	if json.Valid([]byte(respExampleText)) {
+		return respExampleText
+	}
+	respExampleText = fixInvalidJSON(respExampleText)
+	if !json.Valid([]byte(respExampleText)) {
+		logrus.Debugf("Invalid JSON response example: %s", respExampleText)
+		return ""
+	}
+
+	return respExampleText
 }
 
-func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	u, err := URL.Parse(url)
+func (p *DocumentParser) extractRequestMethodAndPath(endpoint *parser.Endpoint, ele *goquery.Selection) error {
+	reqRegex := regexp.MustCompile(`(?i)(GET|POST|PUT|DELETE|PATCH)\s+(/api/v\d+/[^ ]+)`)
+	matches := reqRegex.FindStringSubmatch(ele.Text())
+	if len(matches) != 3 {
+		return fmt.Errorf("request method and path not found")
+	}
+	endpoint.Method = strings.ToUpper(matches[1])
+	endpoint.Path = matches[2]
+	return nil
+}
+
+func (p *DocumentParser) extractSubCategories(doc *goquery.Document, categoryID string) map[string]*OkxAPISubCategory {
+	subCategories := map[string]*OkxAPISubCategory{}
+	items := strings.Split(categoryID, "-")
+	for idx, item := range items {
+		items[idx] = strings.Title(strings.ToLower(item))
+	}
+	categoryName := strings.Join(items, " ")
+
+	// <h1 id="trading-account">Trading Account</h1>
+	// <h2 id="trading-account-rest-api">REST API</h2>
+	// categoryID is trading-account
+	// subCategoryID is trading-account-rest-api
+	subGroupAPIElements := doc.Find(fmt.Sprintf("h2[id*='%s']", categoryID))
+	subGroupAPIElements.Each(func(i int, subCategory *goquery.Selection) {
+		subCategoryID, exists := subCategory.Attr("id")
+		if exists {
+			items := strings.Split(subCategory.Text(), "-")
+			for idx, item := range items {
+				items[idx] = strings.Title(strings.ToLower(item))
+			}
+			subCategoryName := strings.Join(items, " ")
+			// skip websocket endpoints
+			if !strings.Contains(strings.ToLower(subCategoryID), "websocket") {
+				subCategories[subCategoryID] = &OkxAPISubCategory{
+					CategoryName:    categoryName,
+					SubCategoryName: subCategoryName,
+					SubCategoryID:   subCategoryID,
+				}
+			}
+		}
+	})
+	return subCategories
+}
+
+func (p *DocumentParser) extractEndpointDocumentSection(endpointStartElement *goquery.Selection) *EndpointDocumentSection {
+	endpointSection := &EndpointDocumentSection{
+		Title: endpointStartElement,
+	}
+	tables := []*goquery.Selection{}
+	respParamElements := []*goquery.Selection{}
+
+	ele := endpointStartElement.Next()
+	for ele.Length() > 0 {
+		// break if we reach the next endpoint section
+		if ele.Is("h1") || ele.Is("h2") || ele.Is("h3") {
+			break
+		}
+		// extract description, request parameters, and extra elements
+		if ele.Is("p") {
+			if strings.Contains(ele.Text(), "# HTTP Request") {
+				// compatible with http request element typo
+				logrus.Debug("Typo in http request element")
+				endpointSection.HttpRequest = ele
+			} else if endpointSection.HttpRequest == nil {
+				// all elements before the request element are considered description
+				endpointSection.Description = append(endpointSection.Description, ele)
+			} else if endpointSection.ResponseParameters != nil {
+				// all elements after the response parameters element are considered extra elements
+				endpointSection.ExtraElements = append(endpointSection.ExtraElements, ele)
+			} else {
+				// extract request method and path
+				codeEle := ele.Find("code").First()
+				if codeEle.Size() > 0 {
+					requestInfo := codeEle.Text()
+					reqRegex := regexp.MustCompile(`(?i)(GET|POST|PUT|DELETE|PATCH)\s+(/api/v\d+/[^ ]+)`)
+					if reqRegex.MatchString(requestInfo) {
+						endpointSection.RequestMethodAndPath = codeEle
+					}
+				}
+			}
+		}
+
+		if ele.Is("h4") {
+			eleID := ele.AttrOr("id", "")
+			if strings.Contains(eleID, "http") {
+				// extract http request element
+				// usually the element id is end with http-request
+				// but in some cases, it is end with http
+				if !strings.Contains(eleID, "http-request") {
+					logrus.Debug("Typo in http request element")
+				}
+				endpointSection.HttpRequest = ele
+			} else if strings.Contains(eleID, "request-parameters") {
+				// extract request parameters element
+				endpointSection.RequestParameters = ele
+			} else if strings.Contains(eleID, "response-") {
+				// extract response parameters element
+				// usually the element id is end with response-parameters
+				// but in some cases, it is end with response
+				if !strings.Contains(eleID, "response-parameters") {
+					logrus.Debug("Typo in response parameters element")
+				}
+				endpointSection.ResponseParameters = ele
+				respParamElements = append(respParamElements, ele)
+			} else {
+				if endpointSection.HttpRequest == nil {
+					// all elements before the request element are considered description
+					endpointSection.Description = append(endpointSection.Description, ele)
+				}
+			}
+		}
+		if ele.Is("aside") {
+			if endpointSection.HttpRequest == nil {
+				// all elements before the request element are considered description
+				endpointSection.Description = append(endpointSection.Description, ele)
+			}
+			if endpointSection.ResponseParameters != nil {
+				// all aside elements after the response parameters element are considered extra elements
+				endpointSection.ExtraElements = append(endpointSection.ExtraElements, ele)
+			}
+		}
+
+		// extract response example, if multiple examples are found, use the last one
+		if ele.Is("div[class='highlight']") {
+			preEle := ele.Find("pre[class='highlight json tab-json']").First()
+			if preEle != nil {
+				codeEle := preEle.Find("code").First()
+				if codeEle.Length() > 0 {
+					endpointSection.ResponseExample = codeEle
+				}
+			}
+		}
+
+		// extract request/response parameters table
+		if ele.Is("table") {
+			tables = append(tables, ele)
+			if endpointSection.ResponseExample != nil && endpointSection.ResponseParametersTable == nil {
+				// extract response parameters table
+				endpointSection.ResponseParametersTable = ele
+			} else {
+				if endpointSection.RequestParametersTable == nil {
+					endpointSection.RequestParametersTable = ele
+				}
+			}
+		}
+		ele = ele.Next()
+	}
+
+	// compatible with response parameters table typo
+	if len(tables) >= 2 {
+		endpointSection.RequestParametersTable = tables[0]
+		if len(respParamElements) >= 2 {
+			logrus.Debug("Multiple response parameters table found")
+			endpointSection.ResponseParametersTable = tables[1]
+		}
+	}
+	return endpointSection
+}
+
+func (p *DocumentParser) Parse(r io.Reader, docURL string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	u, err := url.Parse(docURL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL: %w", err)
 	}
@@ -334,117 +486,111 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 	}
 
 	// https://www.okx.com/docs-v5/en/#order-book-trading
-	apiGroupID := u.EscapedFragment()
-	subAPIGroups := map[string]*OkxSubAPIGroup{}
-	items := strings.Split(apiGroupID, "-")
-	for idx, item := range items {
-		items[idx] = strings.Title(strings.ToLower(item))
-	}
-	apiGroupName := strings.Join(items, " ")
-	// https://www.okx.com/docs-v5/en/#order-book-trading-trade
-	subGroupAPIElements := document.Find(fmt.Sprintf("h2[id*='%s']", apiGroupID))
-	subGroupAPIElements.Each(func(i int, subCategory *goquery.Selection) {
-		subAPIGroupID, exists := subCategory.Attr("id")
-		if exists {
-			items := strings.Split(subCategory.Text(), "-")
-			for idx, item := range items {
-				items[idx] = strings.Title(strings.ToLower(item))
-			}
-			subGroupName := strings.Join(items, " ")
-			// skip websocket endpoints
-			if !strings.Contains(strings.ToLower(subAPIGroupID), "websocket") {
-				subAPIGroups[subAPIGroupID] = &OkxSubAPIGroup{
-					GroupName:    apiGroupName,
-					SubGroupName: subGroupName,
-					SubGroupID:   subAPIGroupID,
-				}
-			}
-		}
-	})
+	// categoryID is order-book-trading
+	categoryID := u.EscapedFragment()
+	subCategories := p.extractSubCategories(document, categoryID)
 
 	var endpoints []parser.Endpoint
-
-	for subAPIGroupID, subAPIGroup := range subAPIGroups {
-		apiSections := document.Find("h3[id*=" + subAPIGroupID + "]")
-		apiSections.Each(func(i int, header *goquery.Selection) {
-			headerText := header.Text()
+	for subCategoryID, subCategory := range subCategories {
+		// <h3 id="trading-account-rest-api-get-instruments">Get instruments</h3>
+		endpointSections := document.Find("h3[id*=" + subCategoryID + "]")
+		endpointSections.Each(func(i int, endpointTitleEle *goquery.Selection) {
+			endpointTitle := endpointTitleEle.Text()
+			if strings.Contains(endpointTitle, "WS /") {
+				logrus.Debugf("Skipping WebSocket endpoint: %s", endpointTitle)
+				return
+			}
+			logrus.Infof("Parsing endpoint section: %s", endpointTitle)
+			u.Fragment = endpointTitleEle.AttrOr("id", "")
+			logrus.Debugf("Endpoint URL: %s", u.String())
 
 			var endpoint = &parser.Endpoint{}
 
-			endpoint.Tags = []string{subAPIGroup.GroupName}
-			if !strings.Contains(subAPIGroupID, "rest-api") {
-				endpoint.Tags = []string{subAPIGroup.SubGroupName}
+			endpoint.Tags = []string{subCategory.CategoryName}
+			if !strings.Contains(subCategoryID, "rest-api") {
+				endpoint.Tags = []string{subCategory.SubCategoryName}
 			} else {
-				endpoint.Tags = []string{subAPIGroup.GroupName}
+				endpoint.Tags = []string{subCategory.CategoryName}
 			}
 
 			endpoint.Extensions = make(map[string]interface{})
 			endpoint.Responses = make(map[string]*parser.Response)
-			subAPIGroupName := generateSubAPIGroupName(headerText)
-			endpoint.Description = p.generateEndpointDesc(header, subAPIGroupID, subAPIGroupName)
-			endpoint.Summary = p.generateEndpointSummary(header, subAPIGroupID, subAPIGroupName)
 
-			requestInfoEle := document.Find(fmt.Sprintf("h4[id*='%s-%s-http'] + p > code", subAPIGroupID, subAPIGroupName))
-			if requestInfoEle.Length() == 0 {
-				logrus.Debugf("Request info not found for %s", headerText)
+			endpointDocSection := p.extractEndpointDocumentSection(endpointTitleEle)
+
+			if endpointDocSection.RequestMethodAndPath == nil {
+				logrus.Warnf("Skip invalid endpoint section: %s", endpointTitle)
 				return
 			}
 
-			requestInfo := strings.Split(requestInfoEle.Text(), " ")
-			if len(requestInfo) < 2 {
-				logrus.Debugf("Request info not found for %s", headerText)
+			endpoint.Description = p.generateEndpointDesc(endpointDocSection.Description)
+
+			endpoint.Summary = endpointTitle
+
+			if endpointDocSection.RequestMethodAndPath == nil {
+				logrus.Errorf("Request method and path not found")
+				return
+			}
+			err := p.extractRequestMethodAndPath(endpoint, endpointDocSection.RequestMethodAndPath)
+			if err != nil {
+				logrus.Errorf("Extracting request method and path error: %s", err)
 				return
 			}
 
-			method, path := requestInfo[0], requestInfo[1]
-			endpoint.Method = method
-			endpoint.Path = path
-			endpoint.OperationID = operationID(p.docType, endpoint.Method, path)
+			endpoint.OperationID = operationID(endpoint.Method, endpoint.Path)
 
-			rateLimitRuleSelector := fmt.Sprintf("h4[id*='%s-%s-rate-limit-rule']", subAPIGroupID, subAPIGroupName)
-			rateLimitRuleEle := document.Find(rateLimitRuleSelector).First()
-			p.processEndpoint(endpoint, protectedEndpoints, rateLimitRuleEle)
+			p.processEndpoint(endpoint, protectedEndpoints)
 
-			requestParamSelector := fmt.Sprintf("h4[id='%s-%s-%s']", subAPIGroupID, subAPIGroupName, "request-parameters")
-			isRequestParamsEleExists := document.Find(requestParamSelector).Length() > 0
-			if isRequestParamsEleExists {
-				requestParamsTableEle := document.Find(fmt.Sprintf("h4[id='%s-%s-%s'] + table", subAPIGroupID, subAPIGroupName, "request-parameters"))
+			requestParamsTableEle := endpointDocSection.RequestParametersTable
+			if requestParamsTableEle != nil {
 				p.extractParameters(endpoint, requestParamsTableEle)
+			} else {
+				logrus.Warnf("Request parameters table element not found")
 			}
 
-			responseParamSelector := fmt.Sprintf("h4[id='%s-%s-%s'] + table", subAPIGroupID, subAPIGroupName, "response-parameters")
-			responseTableElement := document.Find(responseParamSelector)
+			responseTableElement := endpointDocSection.ResponseParametersTable
+			if responseTableElement != nil {
+				p.extractResponse(endpoint, endpointDocSection)
+			} else {
+				logrus.Warnf("Response parameters table element not found")
+			}
 
-			p.extractResponse(endpoint, responseTableElement)
 			endpoints = append(endpoints, *endpoint)
+			logrus.Infof("Parsing API section: %s Done", endpointTitle)
 		})
 	}
 
+	logrus.Debugf("Parsed %d endpoints", len(endpoints))
 	return endpoints, nil
 }
 
 // extractParameters extracts parameters from the endpoint description
 func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint, parametersTable *goquery.Selection) error {
-	row := parametersTable.Find("tbody > tr").First()
-	for row.Length() > 0 {
-		children := row.Children()
+	paramEle := parametersTable.Find("tbody > tr").First()
+	for paramEle.Length() > 0 {
+		children := paramEle.Children()
 		vals := make([]string, children.Length())
 
 		children.Each(func(i int, s *goquery.Selection) {
 			vals[i] = s.Text()
 		})
+
 		paramName, paramType, requiredText, description := vals[0], vals[1], vals[2], vals[3]
 		required := strings.Contains(strings.ToLower(requiredText), "yes")
+
+		// skip sub-parameters
 		if strings.Contains(paramName, "> ") {
-			row = row.Next()
+			paramEle = paramEle.Next()
 			continue
 		}
-		schema, err := createSchema(fmt.Sprintf("%sParam%s", endpoint.OperationID, strings.Title(paramName)), paramType, paramName, row)
+		schemaName := fmt.Sprintf("%sParam%s", endpoint.OperationID, strings.Title(paramName))
+		schema, err := createSchema(schemaName, paramType, paramName, paramEle)
 		if err != nil {
 			return fmt.Errorf("creating schema: %w", err)
 		}
 		schema.Deprecated = isParameterDeprecated(description)
-		schema.Description = formatParameterDescription(children.Last().Nodes[0])
+		schema.Description = generateParamDesc(children.Last().Nodes[0])
+
 		if endpoint.Method == parser.MethodGet || endpoint.Method == parser.MethodDelete {
 			paramIn := "query"
 			if strings.Contains(endpoint.Path, "{"+paramName+"}") {
@@ -480,16 +626,54 @@ func (p *DocumentParser) extractParameters(endpoint *parser.Endpoint, parameters
 				endpoint.RequestBody.Content[parser.ContentTypeJSON].Schema.Required = append(endpoint.RequestBody.Content[parser.ContentTypeJSON].Schema.Required, paramName)
 			}
 		}
-		row = row.Next()
+		paramEle = paramEle.Next()
 	}
 	return nil
 }
 
-func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, table *goquery.Selection) error {
+func (p *DocumentParser) generateRespSchema(endpoint *parser.Endpoint, respTableEle *goquery.Selection) (*parser.Schema, error) {
+	paramEle := respTableEle.Find("tbody > tr").First()
+	respSchema := &parser.Schema{
+		Type:       parser.ObjectType,
+		Properties: make(map[string]*parser.Schema),
+	}
+	for paramEle.Length() > 0 {
+		children := paramEle.Children()
+		vals := make([]string, children.Length())
+
+		children.Each(func(i int, s *goquery.Selection) {
+			vals[i] = s.Text()
+		})
+		paramName, paramType := vals[0], vals[1]
+		if strings.Contains(paramName, "> ") || strings.Contains(paramName, ">> ") {
+			paramEle = paramEle.Next()
+			continue
+		}
+		schemaName := fmt.Sprintf("%sResp%s", endpoint.OperationID, strings.Title(paramName))
+		schema, err := createSchema(schemaName, paramType, paramName, paramEle)
+		schema.Description = generateParamDesc(children.Last().Nodes[0])
+		schema.Deprecated = isParameterDeprecated(schema.Description)
+		if err != nil {
+			return nil, fmt.Errorf("creating schema: %w", err)
+		}
+		respSchema.Properties[paramName] = schema
+		paramEle = paramEle.Next()
+	}
+	return respSchema, nil
+}
+
+func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, endpointDocSection *EndpointDocumentSection) error {
 	// Create a default 200 OK response
 	response := &parser.Response{
 		Description: "Successful operation",
 	}
+
+	respExampleText := ""
+	respExampleEle := endpointDocSection.ResponseExample
+	if respExampleEle != nil {
+		respExampleText = p.generateRespExample(respExampleEle)
+	}
+
 	response.Content = map[string]*parser.MediaType{
 		"application/json": {
 			Schema: &parser.Schema{
@@ -509,19 +693,19 @@ func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, table *goque
 						Type:  parser.ArrayType,
 					},
 				},
-				Example: p.generateRespExample(table),
+				Example: respExampleText,
 			},
 		},
 	}
 
 	if respSchema, ok := ManualAPISchemaMap[endpoint.Path]; ok {
-		logrus.Debugf("Manual API schema found for %s", endpoint.Path)
+		logrus.Warnf("Manual API schema found for %s", endpoint.Path)
 		response.Content[parser.ContentTypeJSON].Schema.Properties["data"].Items = &respSchema
 		endpoint.Responses["200"] = response
 		return nil
 	}
-	if checkResponseIsArranged(table) {
-		logrus.Debug("Response is arranged in an array")
+	if checkResponseIsArranged(endpointDocSection.ExtraElements) {
+		logrus.Warn("Response is arranged in an array")
 		respSchema := &parser.Schema{
 			Type: parser.ArrayType,
 			Items: &parser.Schema{
@@ -532,37 +716,25 @@ func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, table *goque
 		endpoint.Responses["200"] = response
 		return nil
 	}
-	row := table.Find("tbody > tr").First()
-	respSchema := &parser.Schema{
-		Type:       parser.ObjectType,
-		Properties: make(map[string]*parser.Schema),
-	}
-	for row.Length() > 0 {
-		children := row.Children()
-		vals := make([]string, children.Length())
 
-		children.Each(func(i int, s *goquery.Selection) {
-			vals[i] = s.Text()
-		})
-		paramName, paramType := vals[0], vals[1]
-		if strings.Contains(paramName, "> ") || strings.Contains(paramName, ">> ") {
-			row = row.Next()
-			continue
+	if endpointDocSection.ResponseParametersTable == nil {
+		response.Content[parser.ContentTypeJSON].Schema.Properties["data"].Items = &parser.Schema{
+			Type: parser.StringType,
 		}
-		schema, err := createSchema(fmt.Sprintf("%sResp%s", endpoint.OperationID, strings.Title(paramName)), paramType, paramName, row)
-		schema.Description = formatParameterDescription(children.Last().Nodes[0])
-		schema.Deprecated = isParameterDeprecated(schema.Description)
-		if err != nil {
-			return fmt.Errorf("creating schema: %w", err)
-		}
-		respSchema.Properties[paramName] = schema
-		row = row.Next()
+		endpoint.Responses["200"] = response
+		return nil
 	}
+
+	respSchema, err := p.generateRespSchema(endpoint, endpointDocSection.ResponseParametersTable)
+	if err != nil {
+		return fmt.Errorf("generating response schema: %w", err)
+	}
+
 	_, codeExists := respSchema.Properties["code"]
 	_, msgExists := respSchema.Properties["msg"]
 	dataSchema, dataExists := respSchema.Properties["data"]
 	if codeExists && msgExists && dataExists {
-		logrus.Debugf("duplicate property found in %s", endpoint.Path)
+		logrus.Warnf("duplicate property found in %s", endpoint.Path)
 		response.Content[parser.ContentTypeJSON].Schema.Properties["data"].Items = dataSchema.Items
 	} else {
 		response.Content[parser.ContentTypeJSON].Schema.Properties["data"].Items = respSchema
@@ -572,13 +744,13 @@ func (p *DocumentParser) extractResponse(endpoint *parser.Endpoint, table *goque
 	return nil
 }
 
-func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEndpoints []string, rateLimitRuleEle *goquery.Selection) {
+func (p *DocumentParser) processEndpoint(endpoint *parser.Endpoint, protectedEndpoints []string) {
 	// Check if the endpoint is protected
 	if slices.Contains(protectedEndpoints, fmt.Sprintf("%s %s", strings.ToUpper(endpoint.Method), endpoint.Path)) {
 		endpoint.Protected = true
 	}
 	p.processResponses(endpoint)
-	p.processSecurities(endpoint, rateLimitRuleEle)
+	p.processSecurities(endpoint)
 }
 
 func (p *DocumentParser) processResponses(endpoint *parser.Endpoint) {
@@ -619,17 +791,14 @@ func (p *DocumentParser) processResponses(endpoint *parser.Endpoint) {
 	})
 }
 
-func (p *DocumentParser) processSecurities(endpoint *parser.Endpoint, rateLimitRuleEle *goquery.Selection) {
+func (p *DocumentParser) processSecurities(endpoint *parser.Endpoint) {
 	// okx use multiple api keys
 	// see https://swagger.io/docs/specification/v3_0/authentication/api-keys/#multiple-api-keys
 	if endpoint.SecuritySchemas == nil {
 		endpoint.SecuritySchemas = make(map[string]*parser.SecuritySchema)
 	}
 
-	requireAuth := false
-	if rateLimitRuleEle.Length() > 0 {
-		requireAuth = checkEndpointIsProtected(rateLimitRuleEle.Text())
-	}
+	requireAuth := checkEndpointIsProtected(endpoint.Description)
 
 	if requireAuth {
 		if endpoint.Security == nil {
