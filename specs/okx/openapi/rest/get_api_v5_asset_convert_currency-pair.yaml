@@ -9,9 +9,22 @@ components:
                     type: string
             type: object
         GetAssetConvertCurrencyPairV5Resp:
-            example: |+
-                GET /api/v5/asset/convert/currency-pair?fromCcy=USDT&toCcy=BTC
-
+            example: |
+                {
+                    "code": "0",
+                    "data": [
+                        {
+                            "baseCcy": "BTC",
+                            "baseCcyMax": "0.5",
+                            "baseCcyMin": "0.0001",
+                            "instId": "BTC-USDT",
+                            "quoteCcy": "USDT",
+                            "quoteCcyMax": "10000",
+                            "quoteCcyMin": "1"
+                        }
+                    ],
+                    "msg": ""
+                }
             properties:
                 code:
                     default: ""
@@ -19,13 +32,33 @@ components:
                 data:
                     items:
                         properties:
-                            fromCcy:
+                            baseCcy:
                                 default: ""
-                                description: Currency to convert from, e.g. `USDT`
+                                description: Base currency, e.g. `BTC` in `BTC-USDT`
                                 type: string
-                            toCcy:
+                            baseCcyMax:
                                 default: ""
-                                description: Currency to convert to, e.g. `BTC`
+                                description: Maximum amount of base currency
+                                type: string
+                            baseCcyMin:
+                                default: ""
+                                description: Minimum amount of base currency
+                                type: string
+                            instId:
+                                default: ""
+                                description: Currency pair, e.g. `BTC-USDT`
+                                type: string
+                            quoteCcy:
+                                default: ""
+                                description: Quote currency, e.g. `USDT` in `BTC-USDT`
+                                type: string
+                            quoteCcyMax:
+                                default: ""
+                                description: Maximum amount of quote currency
+                                type: string
+                            quoteCcyMin:
+                                default: ""
+                                description: Minimum amount of quote currency
                                 type: string
                         type: object
                     type: array
@@ -51,6 +84,23 @@ paths:
         get:
             description: "#### Rate Limit: 6 requests per second \n\n#### Rate limit rule: User ID \n\n#### Permission: Read \n\n"
             operationId: GetAssetConvertCurrencyPairV5
+            parameters:
+                - description: Currency to convert from, e.g. `USDT`
+                  in: query
+                  name: fromCcy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Currency to convert from, e.g. `USDT`
+                    type: string
+                - description: Currency to convert to, e.g. `BTC`
+                  in: query
+                  name: toCcy
+                  required: true
+                  schema:
+                    default: ""
+                    description: Currency to convert to, e.g. `BTC`
+                    type: string
             responses:
                 4XX:
                     content:
@@ -73,5 +123,6 @@ paths:
             security:
                 - APIKey: []
                   Passphrase: []
+            summary: Get convert currency pair
             tags:
                 - Funding Account
