@@ -1,6 +1,7 @@
 package okx
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 
@@ -606,6 +607,151 @@ func TestExtractEndpointDocumentSection(t *testing.T) {
 			assert.Equal(t, tc.expected.ResponseExampleFound, actual.ResponseExampleFound)
 			assert.Equal(t, tc.expected.ResponseExampleElementID, actual.ResponseExampleElementID)
 			assert.Equal(t, tc.expected.ExtraElementsSize, actual.ExtraElementsSize)
+		})
+	}
+}
+
+func TestFixInvalidJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name: "JSON with single-line comments",
+			input: `{
+                "key": "value", // This is a comment
+                "array": [1, 2, 3] // Another comment
+            }`,
+			expected: `{
+                "key": "value", 
+                "array": [1, 2, 3] 
+            }`,
+		},
+		{
+			name: "JSON with hash comments",
+			input: `{
+                "key": "value", # This is a comment
+                "array": [1, 2, 3] # Another comment
+            }`,
+			expected: `{
+                "key": "value", 
+                "array": [1, 2, 3] 
+            }`,
+		},
+		{
+			name: "JSON with trailing commas in objects",
+			input: `{
+                "key1": "value1",
+                "key2": "value2",
+            }`,
+			expected: `{
+                "key1": "value1",
+                "key2": "value2"
+            }`,
+		},
+		{
+			name: "JSON with trailing commas in arrays",
+			input: `[
+                "item1",
+                "item2",
+            ]`,
+			expected: `[
+                "item1",
+                "item2"
+            ]`,
+		},
+		{
+			name: "JSON with both comments and trailing commas",
+			input: `{
+                "key1": "value1", // Comment 1
+                "key2": {
+                    "nested1": "value2", // Nested comment
+                    "nested2": "value3", // Another comment
+                }, // Object comment
+                "array": [
+                    "item1", // Array item comment
+                    "item2", // Last item comment
+                ], // Array comment
+            }`,
+			expected: `{
+                "key1": "value1", 
+                "key2": {
+                    "nested1": "value2", 
+                    "nested2": "value3" 
+                }, 
+                "array": [
+                    "item1", 
+                    "item2" 
+                ] 
+            }`,
+		},
+		{
+			name: "JSON with multiple issues",
+			input: `{
+                "code": "0",
+                "msg": "", // Success message
+                "data": [
+                    {
+                        "instId": "BTC-USDT", // Bitcoin
+                        "last": "50000.5",
+                        "askPx": "50100.1", // Ask price
+                        "bidPx": "49900.9", // Bid price
+                    },
+                    {
+                        "instId": "ETH-USDT", // Ethereum
+                        "last": "3200.75",
+                        "askPx": "3210.3", // Ask price
+                        "bidPx": "3190.8", // Bid price
+                    },
+                ],
+            }`,
+			expected: `{
+                "code": "0",
+                "msg": "", 
+                "data": [
+                    {
+                        "instId": "BTC-USDT", 
+                        "last": "50000.5",
+                        "askPx": "50100.1", 
+                        "bidPx": "49900.9" 
+                    },
+                    {
+                        "instId": "ETH-USDT", 
+                        "last": "3200.75",
+                        "askPx": "3210.3", 
+                        "bidPx": "3190.8" 
+                    }
+                ]
+            }`,
+		},
+		{
+			name: "Comment with no space after comma",
+			input: `{"key": "value",// inline comment
+                "key2": "value2"}`,
+			expected: `{"key": "value",
+                "key2": "value2"}`,
+		},
+		{
+			name: "Comment at start of line",
+			input: `{
+                // Comment at start of line
+                "key": "value",
+                "key2": "value2"
+            }`,
+			expected: `{
+                
+                "key": "value",
+                "key2": "value2"
+            }`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := fixInvalidJSON(tt.input)
+			assert.Equal(t, tt.expected, result)
+			assert.True(t, json.Valid([]byte(result)), "Resulting JSON should be valid")
 		})
 	}
 }
