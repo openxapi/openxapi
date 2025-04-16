@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionSetRiskLimitV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                positionIdx:
+                    description: 'Used to identify positions in different position modes. For hedge mode, it is '
+                    type: integer
+                riskId:
+                    description: Risk limit ID
+                    type: integer
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+            type: object
+        CreatePositionSetRiskLimitV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "riskId": 4,        "riskLimitValue": "8000000",        "category": "linear"    },    "retExtInfo": {},    "time": 1672282270571}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        riskId:
+                            description: Risk limit ID
+                            type: integer
+                        riskLimitValue:
+                            default: ""
+                            description: The position limit value corresponding to this risk ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/set-risk-limit:
+        post:
+            description: |+
+                Since bybit has launched auto risk limit on 12 March 2024, please click here to learn more, so it will not take effect even you set it successfully.
+
+            operationId: CreatePositionSetRiskLimitV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionSetRiskLimitV5Req'
+                description: The request body for CreatePositionSetRiskLimitV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionSetRiskLimitV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Risk Limit
+            tags:
+                - Position

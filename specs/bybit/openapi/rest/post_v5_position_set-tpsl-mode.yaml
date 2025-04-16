@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionSetTpslModeV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                tpSlMode:
+                    default: ""
+                    description: TP/SL mode. `Full`,`Partial`
+                    type: string
+            type: object
+        CreatePositionSetTpslModeV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "tpSlMode": "Full"    },    "retExtInfo": {},    "time": 1672279322666}'
+            properties:
+                result:
+                    properties:
+                        tpSlMode:
+                            default: ""
+                            description: '`Full`,`Partial`'
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/set-tpsl-mode:
+        post:
+            description: |+
+                Set TP/SL mode to Full or Partial
+
+            operationId: CreatePositionSetTpslModeV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionSetTpslModeV5Req'
+                description: The request body for CreatePositionSetTpslModeV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionSetTpslModeV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set TP/SL Mode
+            tags:
+                - Position

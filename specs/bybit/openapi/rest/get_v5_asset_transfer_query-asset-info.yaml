@@ -1,0 +1,129 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetTransferQueryAssetInfoV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "spot": {            "status": "ACCOUNT_STATUS_NORMAL",            "assets": [                {                    "coin": "ETH",                    "frozen": "0",                    "free": "11.53485",                    "withdraw": ""                }            ]        }    },    "retExtInfo": {},    "time": 1672136539127}'
+            properties:
+                result:
+                    properties:
+                        spot:
+                            properties:
+                                assets:
+                                    description: Object
+                                    items:
+                                        properties:
+                                            coin:
+                                                default: ""
+                                                description: Coin
+                                                type: string
+                                            free:
+                                                default: ""
+                                                description: Free balance
+                                                type: string
+                                            frozen:
+                                                default: ""
+                                                description: Freeze amount
+                                                type: string
+                                            withdraw:
+                                                default: ""
+                                                description: Amount in withdrawing
+                                                type: string
+                                        type: object
+                                    type: array
+                                coin:
+                                    default: ""
+                                    description: Coin
+                                    type: string
+                                free:
+                                    default: ""
+                                    description: Free balance
+                                    type: string
+                                frozen:
+                                    default: ""
+                                    description: Freeze amount
+                                    type: string
+                                status:
+                                    default: ""
+                                    description: 'account status. `ACCOUNT_STATUS_NORMAL`: normal, `ACCOUNT_STATUS_UNSPECIFIED`: banned'
+                                    type: string
+                                withdraw:
+                                    default: ""
+                                    description: Amount in withdrawing
+                                    type: string
+                            type: object
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/transfer/query-asset-info:
+        get:
+            description: |+
+                Query Spot asset information
+
+                Apply to: classic account
+
+            operationId: GetAssetTransferQueryAssetInfoV5
+            parameters:
+                - description: Account type. `SPOT`
+                  in: query
+                  name: accountType
+                  schema:
+                    default: ""
+                    description: Account type. `SPOT`
+                    type: string
+                - description: Coin name, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin name, uppercase only
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetTransferQueryAssetInfoV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Asset Info
+            tags:
+                - Asset

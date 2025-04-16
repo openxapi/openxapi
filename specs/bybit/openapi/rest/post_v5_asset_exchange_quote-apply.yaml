@@ -1,0 +1,154 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAssetExchangeQuoteApplyV5Req:
+            properties:
+                accountType:
+                    default: ""
+                    description: Wallet type
+                    type: string
+                fromCoin:
+                    default: ""
+                    description: Convert from coin (coin to sell)
+                    type: string
+                fromCoinType:
+                    default: ""
+                    description: '`crypto`'
+                    type: string
+                paramType:
+                    default: ""
+                    description: '`opFrom`, mainly used for API broker user'
+                    type: string
+                paramValue:
+                    default: ""
+                    description: Broker ID, mainly used for API broker user
+                    type: string
+                requestAmount:
+                    default: ""
+                    description: request coin amount (the amount you want to sell)
+                    type: string
+                requestCoin:
+                    default: ""
+                    description: 'Request coin, same as fromCoin '
+                    type: string
+                requestId:
+                    default: ""
+                    description: 'Customised request ID '
+                    type: string
+                toCoin:
+                    default: ""
+                    description: Convert to coin (coin to buy)
+                    type: string
+                toCoinType:
+                    default: ""
+                    description: '`crypto`'
+                    type: string
+            type: object
+        CreateAssetExchangeQuoteApplyV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "ok",    "result": {        "quoteTxId": "10100108106409340067234418688",        "exchangeRate": "0.053517914861880000",        "fromCoin": "ETH",        "fromCoinType": "crypto",        "toCoin": "BTC",        "toCoinType": "crypto",        "fromAmount": "0.1",        "toAmount": "0.005351791486188000",        "expiredTime": "1720071092225",        "requestId": "test-00002"    },    "retExtInfo": {},    "time": 1720071077265}'
+            properties:
+                result:
+                    properties:
+                        exchangeRate:
+                            default: ""
+                            description: Exchange rate
+                            type: string
+                        expiredTime:
+                            default: ""
+                            description: The expiry time for this quote (15 seconds)
+                            type: string
+                        fromAmount:
+                            default: ""
+                            description: From coin amount (amount to sell)
+                            type: string
+                        fromCoin:
+                            default: ""
+                            description: From coin
+                            type: string
+                        fromCoinType:
+                            default: ""
+                            description: From coin type. `crypto`
+                            type: string
+                        quoteTxId:
+                            default: ""
+                            description: Quote transaction ID. It is system generated, and it is used to confirm quote and query the result of transaction
+                            type: string
+                        requestId:
+                            default: ""
+                            description: Customised request ID
+                            type: string
+                        toAmount:
+                            default: ""
+                            description: To coin amount (amount to buy according to exchange rate)
+                            type: string
+                        toCoin:
+                            default: ""
+                            description: To coin
+                            type: string
+                        toCoinType:
+                            default: ""
+                            description: To coin type. `crypto`
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/exchange/quote-apply:
+        post:
+            operationId: CreateAssetExchangeQuoteApplyV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetExchangeQuoteApplyV5Req'
+                description: The request body for CreateAssetExchangeQuoteApplyV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetExchangeQuoteApplyV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Request a Quote
+            tags:
+                - Asset

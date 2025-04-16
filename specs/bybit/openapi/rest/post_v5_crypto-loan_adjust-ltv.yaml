@@ -1,0 +1,95 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateCryptoLoanAdjustLtvV5Req:
+            properties:
+                amount:
+                    default: ""
+                    description: Adjustment amount
+                    type: string
+                direction:
+                    default: ""
+                    description: '`0`: add collateral; `1`: reduce collateral'
+                    type: string
+                orderId:
+                    default: ""
+                    description: Loan order ID
+                    type: string
+            type: object
+        CreateCryptoLoanAdjustLtvV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "adjustId": "1794318409405331968"    },    "retExtInfo": {},    "time": 1728635422833}'
+            properties:
+                result:
+                    properties:
+                        adjustId:
+                            default: ""
+                            description: Collateral adjustment transaction ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/adjust-ltv:
+        post:
+            description: |+
+                You can increase or reduce your collateral amount. When you reduce, please obey the max. allowed reduction amount.
+
+                Permission: "Spot trade"
+
+            operationId: CreateCryptoLoanAdjustLtvV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateCryptoLoanAdjustLtvV5Req'
+                description: The request body for CreateCryptoLoanAdjustLtvV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateCryptoLoanAdjustLtvV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Adjust Collateral Amount
+            tags:
+                - Crypto Loan

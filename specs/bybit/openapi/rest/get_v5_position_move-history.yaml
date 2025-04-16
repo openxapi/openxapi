@@ -1,0 +1,195 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetPositionMoveHistoryV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "blockTradeId": "1a82e5801af74b67b7ad71ba00a7391a",                "category": "option",                "orderId": "8e09c5b8-f651-4cec-968d-52764cac11ec",                "userId": 592324,                "symbol": "BTC-14OCT23-27000-C",                "side": "Buy",                "price": "6",                "qty": "0.99",                "execFee": "0",                "status": "Filled",                "execId": "677ad344-6bb4-4ace-baca-128fcffcaca7",                "resultCode": 0,                "resultMessage": "",                "createdAt": 1697186522865,                "updatedAt": 1697186523289,                "rejectParty": ""            }        ],        "nextPageCursor": "page_token%3D1241742%26"    },    "retExtInfo": {},    "time": 1697523024386}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    blockTradeId:
+                                        default: ""
+                                        description: Block trade ID
+                                        type: string
+                                    category:
+                                        default: ""
+                                        description: Product type. `linear`, `spot`, `option`
+                                        type: string
+                                    createdAt:
+                                        default: ""
+                                        description: The timestamp (ms) when the order is created
+                                        type: string
+                                    execFee:
+                                        default: ""
+                                        description: The fee for taker or maker in the base currency paid to the Exchange executing the block trade
+                                        type: string
+                                    execId:
+                                        default: ""
+                                        description: The unique trade ID from the exchange
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Bybit order ID
+                                        type: string
+                                    price:
+                                        default: ""
+                                        description: Order price
+                                        type: string
+                                    qty:
+                                        default: ""
+                                        description: Order quantity
+                                        type: string
+                                    rejectParty:
+                                        default: ""
+                                        type: string
+                                    resultCode:
+                                        description: The result code of the order. `0` means success
+                                        type: integer
+                                    resultMessage:
+                                        default: ""
+                                        description: The error message. `""` when resultCode=0
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: Order side from taker's perspective. `Buy`, `Sell`
+                                        type: string
+                                    status:
+                                        default: ""
+                                        description: Block trade status. `Processing`, `Filled`, `Rejected`
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                    updatedAt:
+                                        default: ""
+                                        description: The timestamp (ms) when the order is updated
+                                        type: string
+                                    userId:
+                                        description: User ID
+                                        type: integer
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Used to get the next page data
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/move-history:
+        get:
+            description: |+
+                You can query moved position data by master UID api key
+
+            operationId: GetPositionMoveHistoryV5
+            parameters:
+                - description: 'Product type '
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: The order creation start timestamp. The interval is 7 days
+                  in: query
+                  name: startTime
+                  schema:
+                    default: ""
+                    description: The order creation start timestamp. The interval is 7 days
+                    type: string
+                - description: The order creation end timestamp. The interval is 7 days
+                  in: query
+                  name: endTime
+                  schema:
+                    default: ""
+                    description: The order creation end timestamp. The interval is 7 days
+                    type: string
+                - description: Order status. `Processing`, `Filled`, `Rejected`
+                  in: query
+                  name: status
+                  schema:
+                    default: ""
+                    description: Order status. `Processing`, `Filled`, `Rejected`
+                    type: string
+                - description: Block trade ID
+                  in: query
+                  name: blockTradeId
+                  schema:
+                    default: ""
+                    description: Block trade ID
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `200`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: 'Limit for data size per page. [`1`, `200`]. Default: `20`'
+                    type: string
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPositionMoveHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Move Position History
+            tags:
+                - Position

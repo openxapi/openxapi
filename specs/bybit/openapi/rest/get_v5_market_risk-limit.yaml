@@ -1,0 +1,148 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketRiskLimitV5Resp:
+            example: |
+                {
+                    "retCode": 0,
+                    "retMsg": "OK",
+                    "result": {
+                        "category": "inverse",
+                        "list": [
+                            {
+                                "id": 1,
+                                "symbol": "BTCUSD",
+                                "riskLimitValue": "150",
+                                "maintenanceMargin": "0.5",
+                                "initialMargin": "1",
+                                "isLowestRisk": 1,
+                                "maxLeverage": "100.00",
+                                "mmDeduction": ""
+                            }]
+                    },
+                    "retExtInfo": {},
+                    "time": 1672054488010
+                }
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    id:
+                                        description: Risk ID
+                                        type: integer
+                                    initialMargin:
+                                        default: ""
+                                        description: Initial margin rate
+                                        type: string
+                                    isLowestRisk:
+                                        description: '`1`: true, `0`: false'
+                                        type: integer
+                                    maintenanceMargin:
+                                        default: ""
+                                        description: Maintain margin rate
+                                        type: string
+                                    maxLeverage:
+                                        default: ""
+                                        description: Allowed max leverage
+                                        type: string
+                                    mmDeduction:
+                                        default: ""
+                                        description: The maintenance margin deduction value when risk limit tier changed
+                                        type: string
+                                    riskLimitValue:
+                                        default: ""
+                                        description: Position limit
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/risk-limit:
+        get:
+            description: |+
+                Query for the risk limit.
+
+                Covers: USDT contract / USDC contract / Inverse contract
+
+            operationId: GetMarketRiskLimitV5
+            parameters:
+                - description: Product type. `linear`,`inverse`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `linear`,`inverse`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the data set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the data set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketRiskLimitV5Resp'
+                    description: Successful operation
+            summary: Get Risk Limit
+            tags:
+                - Market

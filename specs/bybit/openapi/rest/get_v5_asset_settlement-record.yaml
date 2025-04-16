@@ -1,0 +1,149 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetSettlementRecordV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "nextPageCursor": "116952%3A1%2C116952%3A1",        "category": "linear",        "list": [            {                "realisedPnl": "-71.28",                "symbol": "BTCPERP",                "side": "Buy",                "markPrice": "16620",                "size": "1.5",                "createdTime": "1672214400000",                "sessionAvgPrice": "16620"            }        ]    },    "retExtInfo": {},    "time": 1672284884285}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    createdTime:
+                                        default: ""
+                                        description: Created time (ms)
+                                        type: string
+                                    markPrice:
+                                        default: ""
+                                        description: Mark price
+                                        type: string
+                                    realisedPnl:
+                                        default: ""
+                                        description: Realised PnL
+                                        type: string
+                                    sessionAvgPrice:
+                                        default: ""
+                                        description: Settlement price
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: '`Buy`,`Sell`'
+                                        type: string
+                                    size:
+                                        default: ""
+                                        description: Position size
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/settlement-record:
+        get:
+            description: |+
+                Query session settlement records of USDC perpetual and futures
+
+            operationId: GetAssetSettlementRecordV5
+            parameters:
+                - description: 'Product type '
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                - description: Symbol name, like `BTCPERP`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCPERP`, uppercase only
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: The end time. timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end time. timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetSettlementRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get USDC Session Settlement
+            tags:
+                - Asset

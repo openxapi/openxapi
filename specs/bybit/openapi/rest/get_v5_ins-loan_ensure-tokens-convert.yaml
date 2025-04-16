@@ -1,0 +1,221 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetInsLoanEnsureTokensConvertV5Resp:
+            example: |
+                {
+                    "retCode": 0,
+                    "retMsg": "",
+                    "result": {
+                        "marginToken": [
+                            {
+                                "productId": "81",
+                                "tokenInfo": [
+                                    {
+                                        "token": "USDT",
+                                        "convertRatioList": [
+                                            {
+                                                "ladder": "0-500",
+                                                "convertRatio": "0.95"
+                                            },
+                                            {
+                                                "ladder": "500-1000",
+                                                "convertRatio": "0.9"
+                                            },
+                                            {
+                                                "ladder": "1000-2000",
+                                                "convertRatio": "0.8"
+                                            },
+                                            {
+                                                "ladder": "2000-4000",
+                                                "convertRatio": "0.7"
+                                            },
+                                            {
+                                                "ladder": "4000-99999999999",
+                                                "convertRatio": "0.6"
+                                            }
+                                        ]
+                                    }]
+                            },
+                            {
+                                "productId": "82",
+                                "tokenInfo": [{
+                                        "token": "USDT",
+                                        "convertRatioList": [
+                                            {
+                                                "ladder": "0-1000",
+                                                "convertRatio": "0.7"
+                                            },
+                                            {
+                                                "ladder": "1000-2000",
+                                                "convertRatio": "0.65"
+                                            },
+                                            {
+                                                "ladder": "2000-99999999999",
+                                                "convertRatio": "0.6"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            },
+                            {
+                                "productId": "84",
+                                "tokenInfo": [{
+                                        "token": "BTC",
+                                        "convertRatioList": [
+                                            {
+                                                "ladder": "0-1000",
+                                                "convertRatio": "1"
+                                            },
+                                            {
+                                                "ladder": "1000-5000",
+                                                "convertRatio": "0.9"
+                                            },
+                                            {
+                                                "ladder": "5000-99999999999",
+                                                "convertRatio": "0.55"
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "retExtInfo": {},
+                    "time": 1683276016497
+                }
+            properties:
+                result:
+                    properties:
+                        marginToken:
+                            description: Object
+                            items:
+                                properties:
+                                    convertRatio:
+                                        default: ""
+                                        description: Margin coin convert ratio
+                                        type: string
+                                    convertRatioList:
+                                        description: Margin coin convert ratio List
+                                        items:
+                                            properties:
+                                                convertRatio:
+                                                    default: ""
+                                                    description: Margin coin convert ratio
+                                                    type: string
+                                                ladder:
+                                                    default: ""
+                                                    description: ladder
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    ladder:
+                                        default: ""
+                                        description: ladder
+                                        type: string
+                                    productId:
+                                        default: ""
+                                        description: Product Id
+                                        type: string
+                                    token:
+                                        default: ""
+                                        description: Margin coin
+                                        type: string
+                                    tokenInfo:
+                                        description: Spot margin coin
+                                        items:
+                                            properties:
+                                                convertRatio:
+                                                    default: ""
+                                                    description: Margin coin convert ratio
+                                                    type: string
+                                                convertRatioList:
+                                                    description: Margin coin convert ratio List
+                                                    items:
+                                                        properties:
+                                                            convertRatio:
+                                                                default: ""
+                                                                description: Margin coin convert ratio
+                                                                type: string
+                                                            ladder:
+                                                                default: ""
+                                                                description: ladder
+                                                                type: string
+                                                        type: object
+                                                    type: array
+                                                ladder:
+                                                    default: ""
+                                                    description: ladder
+                                                    type: string
+                                                token:
+                                                    default: ""
+                                                    description: Margin coin
+                                                    type: string
+                                            type: object
+                                        type: array
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/ins-loan/ensure-tokens-convert:
+        get:
+            operationId: GetInsLoanEnsureTokensConvertV5
+            parameters:
+                - description: Product ID. If not passed, returns all margin products. For spot, it returns coins with a `convertRatio` greater than 0.
+                  in: query
+                  name: productId
+                  schema:
+                    default: ""
+                    description: Product ID. If not passed, returns all margin products. For spot, it returns coins with a `convertRatio` greater than 0.
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetInsLoanEnsureTokensConvertV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Margin Coin Info
+            tags:
+                - Institutional Loan

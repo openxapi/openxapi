@@ -1,0 +1,113 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateEarnPlaceOrderV5Req:
+            properties:
+                accountType:
+                    default: ""
+                    description: '`FUND`, `UNIFIED`. Onchain only supports FUND'
+                    type: string
+                amount:
+                    default: ""
+                    type: string
+                category:
+                    default: ""
+                    description: "`FlexibleSaving`,`OnChain` \n\n: currently, only flexible savings and on chain is supported"
+                    type: string
+                coin:
+                    default: ""
+                    description: Coin name
+                    type: string
+                orderLinkId:
+                    default: ""
+                    description: Customised order ID, used to prevent from replay
+                    type: string
+                orderType:
+                    default: ""
+                    description: '`Stake`, `Redeem`'
+                    type: string
+                productId:
+                    default: ""
+                    description: Product ID
+                    type: string
+                redeemPositionId:
+                    default: ""
+                    description: The position ID that the user needs to redeem. Only is required in Onchain non-LST mode
+                    type: string
+            type: object
+        CreateEarnPlaceOrderV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "orderId": "0572b030-6a0b-423f-88c4-b6ce31c0c82d",        "orderLinkId": "btc-earn-001"    },    "retExtInfo": {},    "time": 1739936607117}'
+            properties:
+                result:
+                    properties:
+                        orderId:
+                            default: ""
+                            description: Order ID
+                            type: string
+                        orderLinkId:
+                            default: ""
+                            description: Order link ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/earn/place-order:
+        post:
+            operationId: CreateEarnPlaceOrderV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateEarnPlaceOrderV5Req'
+                description: The request body for CreateEarnPlaceOrderV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateEarnPlaceOrderV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Stake / Redeem
+            tags:
+                - Earn

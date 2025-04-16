@@ -1,0 +1,182 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetBrokerAssetQuerySubMemberDepositRecordV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "rows": [],        "nextPageCursor": ""    },    "retExtInfo": {},    "time": 1672192441742}'
+            properties:
+                result:
+                    properties:
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                        rows:
+                            description: Object
+                            items:
+                                properties:
+                                    amount:
+                                        default: ""
+                                        description: Amount
+                                        type: string
+                                    batchReleaseLimit:
+                                        default: ""
+                                        description: The deposit limit for this coin in this chain. `"-1"` means no limit
+                                        type: string
+                                    blockHash:
+                                        default: ""
+                                        description: Hash number on the chain
+                                        type: string
+                                    chain:
+                                        default: ""
+                                        description: Chain
+                                        type: string
+                                    coin:
+                                        default: ""
+                                        description: Coin
+                                        type: string
+                                    confirmations:
+                                        default: ""
+                                        description: Number of confirmation blocks
+                                        type: string
+                                    depositFee:
+                                        default: ""
+                                        description: Deposit fee
+                                        type: string
+                                    depositType:
+                                        default: ""
+                                        description: 'The deposit type. `0`: normal deposit, `10`: the deposit reaches daily deposit limit, `20`: abnormal deposit'
+                                        type: string
+                                    fromAddress:
+                                        default: ""
+                                        description: From address of deposit, only shown when the deposit comes from on-chain and from address is unique, otherwise gives `""`
+                                        type: string
+                                    status:
+                                        description: Deposit status
+                                        type: integer
+                                    subMemberId:
+                                        default: ""
+                                        description: Sub account user ID
+                                        type: string
+                                    successAt:
+                                        default: ""
+                                        description: Last updated time
+                                        type: string
+                                    tag:
+                                        default: ""
+                                        description: Tag of deposit target address
+                                        type: string
+                                    toAddress:
+                                        default: ""
+                                        description: Deposit target address
+                                        type: string
+                                    txID:
+                                        default: ""
+                                        description: Transaction ID
+                                        type: string
+                                    txIndex:
+                                        default: ""
+                                        description: Transaction sequence number
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/broker/asset/query-sub-member-deposit-record:
+        get:
+            description: |+
+                Exchange broker can query subaccount's deposit records by main UID's API key without specifying uid.
+
+                API rate limit: 300 req / min
+
+            operationId: GetBrokerAssetQuerySubMemberDepositRecordV5
+            parameters:
+                - description: Sub UID
+                  in: query
+                  name: subMemberId
+                  schema:
+                    default: ""
+                    description: Sub UID
+                    type: string
+                - description: Coin, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: 'The end timestamp (ms) '
+                  in: query
+                  name: endTime
+                  schema:
+                    description: 'The end timestamp (ms) '
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `50`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `50`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBrokerAssetQuerySubMemberDepositRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Sub Account Deposit Records
+            tags:
+                - Exchange Broker

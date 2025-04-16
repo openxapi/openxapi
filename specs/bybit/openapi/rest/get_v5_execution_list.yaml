@@ -1,0 +1,260 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetExecutionListV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "nextPageCursor": "132766%3A2%2C132766%3A2",        "category": "linear",        "list": [            {                "symbol": "ETHPERP",                "orderType": "Market",                "underlyingPrice": "",                "orderLinkId": "",                "side": "Buy",                "indexPrice": "",                "orderId": "8c065341-7b52-4ca9-ac2c-37e31ac55c94",                "stopOrderType": "UNKNOWN",                "leavesQty": "0",                "execTime": "1672282722429",                "feeCurrency": "",                "isMaker": false,                "execFee": "0.071409",                "feeRate": "0.0006",                "execId": "e0cbe81d-0f18-5866-9415-cf319b5dab3b",                "tradeIv": "",                "blockTradeId": "",                "markPrice": "1183.54",                "execPrice": "1190.15",                "markIv": "",                "orderQty": "0.1",                "orderPrice": "1236.9",                "execValue": "119.015",                "execType": "Trade",                "execQty": "0.1",                "closedSize": "",                "seq": 4688002127            }        ]    },    "retExtInfo": {},    "time": 1672283754510}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    blockTradeId:
+                                        default: ""
+                                        description: Paradigm block trade ID
+                                        type: string
+                                    closedSize:
+                                        default: ""
+                                        description: Closed position size
+                                        type: string
+                                    createType:
+                                        default: ""
+                                        description: 'Order create type '
+                                        type: string
+                                    execFee:
+                                        default: ""
+                                        description: 'Executed trading fee. You can get spot fee currency instruction '
+                                        type: string
+                                    execId:
+                                        default: ""
+                                        description: Execution ID
+                                        type: string
+                                    execPrice:
+                                        default: ""
+                                        description: Execution price
+                                        type: string
+                                    execQty:
+                                        default: ""
+                                        description: Execution qty
+                                        type: string
+                                    execTime:
+                                        default: ""
+                                        description: Executed timestamp（ms）
+                                        type: string
+                                    execType:
+                                        default: ""
+                                        description: 'Executed type. '
+                                        type: string
+                                    execValue:
+                                        default: ""
+                                        description: 'Executed order value. '
+                                        type: string
+                                    feeCurrency:
+                                        default: ""
+                                        description: 'Spot trading fee currency '
+                                        type: string
+                                    feeRate:
+                                        default: ""
+                                        description: 'Trading fee rate. '
+                                        type: string
+                                    indexPrice:
+                                        default: ""
+                                        description: 'The index price of the symbol when executing. '
+                                        type: string
+                                    isMaker:
+                                        description: 'Is maker order. `true`: maker, `false`: taker'
+                                        type: boolean
+                                    leavesQty:
+                                        default: ""
+                                        description: 'The remaining qty not executed. '
+                                        type: string
+                                    markIv:
+                                        default: ""
+                                        description: Implied volatility of mark price. Valid for `option`
+                                        type: string
+                                    markPrice:
+                                        default: ""
+                                        description: 'The mark price of the symbol when executing. '
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Order ID
+                                        type: string
+                                    orderLinkId:
+                                        default: ""
+                                        description: 'User customized order ID. '
+                                        type: string
+                                    orderPrice:
+                                        default: ""
+                                        description: Order price
+                                        type: string
+                                    orderQty:
+                                        default: ""
+                                        description: Order qty
+                                        type: string
+                                    orderType:
+                                        default: ""
+                                        description: Order type. `Market`,`Limit`
+                                        type: string
+                                    seq:
+                                        description: Cross sequence, used to associate each fill and each position update
+                                        format: int64
+                                        type: integer
+                                    side:
+                                        default: ""
+                                        description: Side. `Buy`,`Sell`
+                                        type: string
+                                    stopOrderType:
+                                        default: ""
+                                        description: 'Stop order type. If the order is not stop order, it either returns `UNKNOWN` or `""`. '
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                    tradeIv:
+                                        default: ""
+                                        description: Implied volatility. Valid for `option`
+                                        type: string
+                                    underlyingPrice:
+                                        default: ""
+                                        description: 'The underlying price of the symbol when executing. '
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/execution/list:
+        get:
+            description: |+
+                Query users' execution records, sorted by execTime in descending order. However, for Classic spot, they are sorted by execId in descending order.
+
+            operationId: GetExecutionListV5
+            parameters:
+                - description: 'Product type '
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: Order ID
+                  in: query
+                  name: orderId
+                  schema:
+                    default: ""
+                    description: Order ID
+                    type: string
+                - description: 'User customised order ID. '
+                  in: query
+                  name: orderLinkId
+                  schema:
+                    default: ""
+                    description: 'User customised order ID. '
+                    type: string
+                - description: 'Base coin, uppercase only '
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: 'Base coin, uppercase only '
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Execution type. '
+                  in: query
+                  name: execType
+                  schema:
+                    default: ""
+                    description: 'Execution type. '
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `100`]. Default: `50`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `100`]. Default: `50`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetExecutionListV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Trade History
+            tags:
+                - Trade

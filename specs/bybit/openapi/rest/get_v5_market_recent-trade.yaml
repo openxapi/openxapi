@@ -1,0 +1,155 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketRecentTradeV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "category": "spot",        "list": [            {                "execId": "2100000000007764263",                "symbol": "BTCUSDT",                "price": "16618.49",                "size": "0.00012",                "side": "Buy",                "time": "1672052955758",                "isBlockTrade": false,                "isRPITrade": true            }        ]    },    "retExtInfo": {},    "time": 1672053054358}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Products category
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    execId:
+                                        default: ""
+                                        description: Execution ID
+                                        type: string
+                                    iP:
+                                        default: ""
+                                        description: Index price, unique field for `option`
+                                        type: string
+                                    isBlockTrade:
+                                        description: Whether the trade is block trade
+                                        type: boolean
+                                    isRPITrade:
+                                        description: Whether the trade is RPI trade
+                                        type: boolean
+                                    iv:
+                                        default: ""
+                                        description: iv, unique field for `option`
+                                        type: string
+                                    mIv:
+                                        default: ""
+                                        description: Mark iv, unique field for `option`
+                                        type: string
+                                    mP:
+                                        default: ""
+                                        description: Mark price, unique field for `option`
+                                        type: string
+                                    price:
+                                        default: ""
+                                        description: Trade price
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: Side of taker `Buy`, `Sell`
+                                        type: string
+                                    size:
+                                        default: ""
+                                        description: Trade size
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                    time:
+                                        default: ""
+                                        description: Trade time (ms)
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/recent-trade:
+        get:
+            description: |+
+                Query recent public trading data in Bybit.
+
+                Covers: Spot / USDT contract / USDC contract / Inverse contract / Option
+
+                You can download archived historical trades from the website
+
+            operationId: GetMarketRecentTradeV5
+            parameters:
+                - description: Product type. `spot`,`linear`,`inverse`,`option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `spot`,`linear`,`inverse`,`option`
+                    type: string
+                - description: 'Symbol name, like `BTCUSDT`, uppercase only '
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: 'Symbol name, like `BTCUSDT`, uppercase only '
+                    type: string
+                - description: 'Base coin, uppercase only '
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: 'Base coin, uppercase only '
+                    type: string
+                - description: 'Option type. `Call` or `Put`. Apply to `option` '
+                  in: query
+                  name: optionType
+                  schema:
+                    default: ""
+                    description: 'Option type. `Call` or `Put`. Apply to `option` '
+                    type: string
+                - description: 'Limit for data size per page '
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page '
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketRecentTradeV5Resp'
+                    description: Successful operation
+            summary: Get Public Recent Trading History
+            tags:
+                - Market

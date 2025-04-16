@@ -1,0 +1,77 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAccountUpgradeToUtaV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "unifiedUpdateStatus": "FAIL",        "unifiedUpdateMsg": {            "msg": [                "Update account failed. You have outstanding liabilities in your Spot account.",                "Update account failed. Please close the usdc perpetual positions in USDC Account.",                "unable to upgrade, please cancel the usdt perpetual open orders in USDT account.",                "unable to upgrade, please close the usdt perpetual positions in USDT account."            ]    }},    "retExtInfo": {},    "time": 1672125124195}'
+            properties:
+                result:
+                    properties:
+                        unifiedUpdateMsg:
+                            description: If `PROCESS`,`SUCCESS`, it returns `null`
+                            properties:
+                                msg:
+                                    description: Error message array. Only `FAIL` will have this field
+                                    items:
+                                        type: string
+                                    type: array
+                            type: object
+                        unifiedUpdateStatus:
+                            default: ""
+                            description: Upgrade status. `FAIL`,`PROCESS`,`SUCCESS`
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/upgrade-to-uta:
+        post:
+            operationId: CreateAccountUpgradeToUtaV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountUpgradeToUtaV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Upgrade to Unified Account
+            tags:
+                - Account

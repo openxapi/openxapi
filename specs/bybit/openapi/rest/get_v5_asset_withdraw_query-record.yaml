@@ -1,0 +1,177 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetWithdrawQueryRecordV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "rows": [            {                "coin": "USDT",                "chain": "ETH",                "amount": "77",                "txID": "",                "status": "SecurityCheck",                "toAddress": "0x99ced129603abc771c0dabe935c326ff6c86645d",                "tag": "",                "withdrawFee": "10",                "createTime": "1670922217000",                "updateTime": "1670922217000",                "withdrawId": "9976",                "withdrawType": 0            },            {                "coin": "USDT",                "chain": "internalAddressChain",                "amount": "20.1234",                "txID": "",                "status": "success",                "toAddress": "999805",                "tag": "",                "withdrawFee": "0",                "createTime": "1698889833000",                "updateTime": "1698889846000",                "withdrawId": "13310",                "withdrawType": 1            }        ],        "nextPageCursor": "eyJtaW5JRCI6OTgwMSwibWF4SUQiOjk5NzZ9"    },    "retExtInfo": {},    "time": 1672194949928}'
+            properties:
+                result:
+                    properties:
+                        nextPageCursor:
+                            default: ""
+                            description: Cursor. Used for pagination
+                            type: string
+                        rows:
+                            description: Object
+                            items:
+                                properties:
+                                    amount:
+                                        default: ""
+                                        description: Amount
+                                        type: string
+                                    chain:
+                                        default: ""
+                                        description: Chain
+                                        type: string
+                                    coin:
+                                        default: ""
+                                        description: Coin
+                                        type: string
+                                    createTime:
+                                        default: ""
+                                        description: Withdraw created timestamp (ms)
+                                        type: string
+                                    status:
+                                        default: ""
+                                        description: Withdraw status
+                                        type: string
+                                    tag:
+                                        default: ""
+                                        description: Tag
+                                        type: string
+                                    toAddress:
+                                        default: ""
+                                        description: To withdrawal address. Shows the Bybit UID for internal transfers
+                                        type: string
+                                    txID:
+                                        default: ""
+                                        description: Transaction ID. It returns `""` when withdrawal failed, withdrawal cancelled
+                                        type: string
+                                    updateTime:
+                                        default: ""
+                                        description: Withdraw updated timestamp (ms)
+                                        type: string
+                                    withdrawFee:
+                                        default: ""
+                                        description: Withdraw fee
+                                        type: string
+                                    withdrawId:
+                                        default: ""
+                                        description: Withdraw ID
+                                        type: string
+                                    withdrawType:
+                                        description: 'Withdraw type. `0`: on chain. `1`: off chain'
+                                        type: integer
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/withdraw/query-record:
+        get:
+            description: |+
+                Query withdrawal records.
+
+            operationId: GetAssetWithdrawQueryRecordV5
+            parameters:
+                - description: Withdraw ID
+                  in: query
+                  name: withdrawID
+                  schema:
+                    default: ""
+                    description: Withdraw ID
+                    type: string
+                - description: Transaction hash ID
+                  in: query
+                  name: txID
+                  schema:
+                    default: ""
+                    description: Transaction hash ID
+                    type: string
+                - description: Coin, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+                - description: 'Withdraw type. `0`(default): on chain. `1`: off chain. `2`: all'
+                  in: query
+                  name: withdrawType
+                  schema:
+                    description: 'Withdraw type. `0`(default): on chain. `1`: off chain. `2`: all'
+                    type: integer
+                - description: The start timestamp (ms)
+                  in: query
+                  name: startTime
+                  schema:
+                    description: The start timestamp (ms)
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `50`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `50`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetWithdrawQueryRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Withdrawal Records
+            tags:
+                - Asset

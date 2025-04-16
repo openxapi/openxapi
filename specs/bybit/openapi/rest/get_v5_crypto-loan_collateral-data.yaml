@@ -1,0 +1,129 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetCryptoLoanCollateralDataV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "vipCoinList": [            {                "list": [                    {                        "collateralAccuracy": 8,                        "currency": "ETH",                        "initialLTV": "0.8",                        "liquidationLTV": "0.95",                        "marginCallLTV": "0.87",                        "maxLimit": "32000"                    }                ],                "vipLevel": "PRO1"            }        ]    },    "retExtInfo": {},    "time": 1728618590498}'
+            properties:
+                result:
+                    properties:
+                        vipCoinList:
+                            description: Object
+                            items:
+                                properties:
+                                    collateralAccuracy:
+                                        description: Valid collateral coin precision
+                                        type: integer
+                                    initialLTV:
+                                        default: ""
+                                        description: The Initial LTV ratio determines the initial amount of coins that can be borrowed. The initial LTV ratio may vary for different collateral
+                                        type: string
+                                    liquidationLTV:
+                                        default: ""
+                                        description: If the LTV ratio (Loan Amount/Collateral Amount) reaches the threshold, Bybit will liquidate your collateral assets to repay your loan and interest in full
+                                        type: string
+                                    list:
+                                        description: Object
+                                        items:
+                                            properties:
+                                                collateralAccuracy:
+                                                    description: Valid collateral coin precision
+                                                    type: integer
+                                                initialLTV:
+                                                    default: ""
+                                                    description: The Initial LTV ratio determines the initial amount of coins that can be borrowed. The initial LTV ratio may vary for different collateral
+                                                    type: string
+                                                liquidationLTV:
+                                                    default: ""
+                                                    description: If the LTV ratio (Loan Amount/Collateral Amount) reaches the threshold, Bybit will liquidate your collateral assets to repay your loan and interest in full
+                                                    type: string
+                                                marginCallLTV:
+                                                    default: ""
+                                                    description: If the LTV ratio (Loan Amount/Collateral Amount) reaches the threshold, you will be required to add more collateral to your loan
+                                                    type: string
+                                                maxLimit:
+                                                    default: ""
+                                                    description: Collateral limit
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    marginCallLTV:
+                                        default: ""
+                                        description: If the LTV ratio (Loan Amount/Collateral Amount) reaches the threshold, you will be required to add more collateral to your loan
+                                        type: string
+                                    maxLimit:
+                                        default: ""
+                                        description: Collateral limit
+                                        type: string
+                                    vipLevel:
+                                        default: ""
+                                        description: Vip level
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/collateral-data:
+        get:
+            description: |+
+                Does not need authentication.
+
+            operationId: GetCryptoLoanCollateralDataV5
+            parameters:
+                - description: 'Vip level '
+                  in: query
+                  name: vipLevel
+                  schema:
+                    default: ""
+                    description: 'Vip level '
+                    type: string
+                - description: Coin name, uppercase only
+                  in: query
+                  name: currency
+                  schema:
+                    default: ""
+                    description: Coin name, uppercase only
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCryptoLoanCollateralDataV5Resp'
+                    description: Successful operation
+            summary: Get Collateral Coins
+            tags:
+                - Crypto Loan

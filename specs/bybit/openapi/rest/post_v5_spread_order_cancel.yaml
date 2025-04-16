@@ -1,0 +1,90 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateSpreadOrderCancelV5Req:
+            properties:
+                orderId:
+                    default: ""
+                    description: 'Spread combination order ID. Either `orderId` or `orderLinkId` is '
+                    type: string
+                orderLinkId:
+                    default: ""
+                    description: 'User customised order ID. Either `orderId` or `orderLinkId` is '
+                    type: string
+            type: object
+        CreateSpreadOrderCancelV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "orderId": "4496253b-b55b-4407-8c5c-29629d169caf",        "orderLinkId": "1744072052193428476"    },    "retExtInfo": {},    "time": 1744090702715}'
+            properties:
+                result:
+                    properties:
+                        orderId:
+                            default: ""
+                            description: Order ID
+                            type: string
+                        orderLinkId:
+                            default: ""
+                            description: User customised order ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/order/cancel:
+        post:
+            operationId: CreateSpreadOrderCancelV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSpreadOrderCancelV5Req'
+                description: The request body for CreateSpreadOrderCancelV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSpreadOrderCancelV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel Spread Order
+            tags:
+                - Spread Trading

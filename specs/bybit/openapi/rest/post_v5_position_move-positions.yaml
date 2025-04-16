@@ -1,0 +1,122 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionMovePositionsV5Req:
+            properties:
+                fromUid:
+                    default: ""
+                    description: 'From UID '
+                    type: string
+                list:
+                    description: Object. Up to 25 legs per request
+                    items:
+                        properties:
+                            category:
+                                default: ""
+                                description: Product type
+                                type: string
+                            price:
+                                default: ""
+                                description: 'Trade price '
+                                type: string
+                            qty:
+                                default: ""
+                                description: 'Executed qty '
+                                type: string
+                            side:
+                                default: ""
+                                description: 'Trading side of `fromUid` '
+                                type: string
+                            symbol:
+                                default: ""
+                                description: Symbol name, like `BTCUSDT`, uppercase only
+                                type: string
+                        type: object
+                    type: array
+                toUid:
+                    default: ""
+                    description: 'To UID '
+                    type: string
+            type: object
+        CreatePositionMovePositionsV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "blockTradeId": "e9bb926c95f54cf1ba3e315a58b8597b",        "status": "Processing",        "rejectParty": ""    }}'
+            properties:
+                result:
+                    properties:
+                        result:
+                            default: ""
+                            description: Object
+                            type: string
+                        retCode:
+                            description: Result code. `0` means request is successfully accepted
+                            type: integer
+                        retMsg:
+                            default: ""
+                            description: Result message
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/move-positions:
+        post:
+            description: |+
+                You can move positions between sub-master, master-sub, or sub-sub UIDs when necessary
+
+            operationId: CreatePositionMovePositionsV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionMovePositionsV5Req'
+                description: The request body for CreatePositionMovePositionsV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionMovePositionsV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Move Position
+            tags:
+                - Position

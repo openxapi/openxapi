@@ -1,0 +1,197 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetPreUpgradeAccountTransactionLogV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "nextPageCursor": "21%3A0%2C21%3A0",        "list": [            {                "symbol": "ETH-14JUN23-1750-C",                "side": "Buy",                "funding": "",                "orderLinkId": "",                "orderId": "",                "fee": "0",                "change": "0",                "cashFlow": "0",                "transactionTime": "1686729604507",                "type": "DELIVERY",                "feeRate": "0",                "bonusChange": "",                "size": "0",                "qty": "0.5",                "cashBalance": "1001.1438885",                "currency": "USDC",                "category": "option",                "tradePrice": "1740.25036667",                "tradeId": ""            }        ]    },    "retExtInfo": {},    "time": 1686809006792}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    bonusChange:
+                                        default: ""
+                                        description: The change of bonus
+                                        type: string
+                                    cashBalance:
+                                        default: ""
+                                        description: Cash balance
+                                        type: string
+                                    cashFlow:
+                                        default: ""
+                                        description: Cash flow
+                                        type: string
+                                    category:
+                                        default: ""
+                                        description: Product type
+                                        type: string
+                                    change:
+                                        default: ""
+                                        description: Change
+                                        type: string
+                                    currency:
+                                        default: ""
+                                        description: USDC、USDT、BTC、ETH
+                                        type: string
+                                    fee:
+                                        default: ""
+                                        description: 'Trading fee '
+                                        type: string
+                                    feeRate:
+                                        default: ""
+                                        type: string
+                                    funding:
+                                        default: ""
+                                        description: 'Funding fee '
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Order ID
+                                        type: string
+                                    orderLinkId:
+                                        default: ""
+                                        description: User customised order ID
+                                        type: string
+                                    qty:
+                                        default: ""
+                                        description: Quantity
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: Side. `Buy`,`Sell`,`None`
+                                        type: string
+                                    size:
+                                        default: ""
+                                        description: Size
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                    tradeId:
+                                        default: ""
+                                        description: Trade ID
+                                        type: string
+                                    tradePrice:
+                                        default: ""
+                                        description: Trade price
+                                        type: string
+                                    transactionTime:
+                                        default: ""
+                                        description: Transaction timestamp (ms)
+                                        type: string
+                                    type:
+                                        default: ""
+                                        description: Type
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Cursor. Used for pagination
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/pre-upgrade/account/transaction-log:
+        get:
+            description: "Query transaction logs which occurred in the USDC Derivatives wallet before the account was upgraded to a Unified account.\n\nUTA2.0: \nBy category=linear, you can query USDC Perps transaction logs occurred during classic account\nBy category=option, you can query Options transaction logs occurred during classic account\n\nUTA1.0: \nBy category=linear, you can query USDC Perps transaction logs occurred during classic account\nBy category=option, you can query Options transaction logs occurred during classic account\n\nYou can get USDC Perpetual, Option records.\n\n"
+            operationId: GetPreUpgradeAccountTransactionLogV5
+            parameters:
+                - description: Product type `linear`, `option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type `linear`, `option`
+                    type: string
+                - description: BaseCoin, uppercase only. e.g., BTC of BTCPERP
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: BaseCoin, uppercase only. e.g., BTC of BTCPERP
+                    type: string
+                - description: Types of transaction logs
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: Types of transaction logs
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Used for pagination
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Used for pagination
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPreUpgradeAccountTransactionLogV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Pre-upgrade Transaction Log
+            tags:
+                - Pre-upgrade

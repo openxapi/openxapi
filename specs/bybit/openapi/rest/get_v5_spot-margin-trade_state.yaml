@@ -1,0 +1,81 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpotMarginTradeStateV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "spotLeverage": "10",        "spotMarginMode": "1",        "effectiveLeverage": "1"    },    "retExtInfo": {},    "time": 1692696841231}'
+            properties:
+                result:
+                    properties:
+                        effectiveLeverage:
+                            default: ""
+                            description: actual leverage ratio. Precision retains 2 decimal places, truncate downwards
+                            type: string
+                        spotLeverage:
+                            default: ""
+                            description: Spot margin leverage. Returns `""` if the margin trade is turned off
+                            type: string
+                        spotMarginMode:
+                            default: ""
+                            description: 'Spot margin status. `1`: on, `0`: off'
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spot-margin-trade/state:
+        get:
+            description: |+
+                Query the Spot margin status and leverage of Unified account
+
+                Covers: Margin trade (Unified Account)
+
+            operationId: GetSpotMarginTradeStateV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpotMarginTradeStateV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Status And Leverage
+            tags:
+                - Spot Margin Trade (UTA)

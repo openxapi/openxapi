@@ -1,0 +1,152 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetTransferQueryInterTransferListV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {    "list": [        {            "transferId": "selfTransfer_a1091cc7-9364-4b74-8de1-18f02c6f2d5c",            "coin": "USDT",            "amount": "5000",            "fromAccountType": "SPOT",            "toAccountType": "UNIFIED",            "timestamp": "1667283263000",            "status": "SUCCESS"        }    ],    "nextPageCursor": "eyJtaW5JRCI6MTM1ODQ2OCwibWF4SUQiOjEzNTg0Njh9"},    "retExtInfo": {},    "time": 1670988271677}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    amount:
+                                        default: ""
+                                        description: Transferred amount
+                                        type: string
+                                    coin:
+                                        default: ""
+                                        description: Transferred coin
+                                        type: string
+                                    fromAccountType:
+                                        default: ""
+                                        description: From account type
+                                        type: string
+                                    status:
+                                        default: ""
+                                        description: Transfer status
+                                        type: string
+                                    timestamp:
+                                        default: ""
+                                        description: Transfer created timestamp (ms)
+                                        type: string
+                                    toAccountType:
+                                        default: ""
+                                        description: To account type
+                                        type: string
+                                    transferId:
+                                        default: ""
+                                        description: Transfer ID
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/transfer/query-inter-transfer-list:
+        get:
+            description: |+
+                Query the internal transfer records between different account types under the same UID.
+
+            operationId: GetAssetTransferQueryInterTransferListV5
+            parameters:
+                - description: 'UUID. Use the one you generated in '
+                  in: query
+                  name: transferId
+                  schema:
+                    default: ""
+                    description: 'UUID. Use the one you generated in '
+                    type: string
+                - description: Coin, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+                - description: Transfer status
+                  in: query
+                  name: status
+                  schema:
+                    default: ""
+                    description: Transfer status
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: 'The end timestamp (ms) '
+                  in: query
+                  name: endTime
+                  schema:
+                    description: 'The end timestamp (ms) '
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetTransferQueryInterTransferListV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Internal Transfer Records
+            tags:
+                - Asset

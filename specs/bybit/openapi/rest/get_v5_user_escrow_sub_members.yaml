@@ -1,0 +1,113 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetUserEscrow_sub_membersV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "subMembers": [            {                "uid": "104274894",                "username": "Private_Wealth_Management",                "memberType": 12,                "status": 1,                "remark": "earn fund",                "accountMode": 3            },            {                "uid": "104274884",                "username": "Private_Wealth_Management",                "memberType": 12,                "status": 1,                "remark": "earn fund",                "accountMode": 3            }        ],        "nextCursor": "344"    },    "retExtInfo": {},    "time": 1739763788699}'
+            properties:
+                result:
+                    properties:
+                        nextCursor:
+                            default: ""
+                            description: 下一頁數據的游標. 返回"0"表示沒有更多的數據了
+                            type: string
+                        subMembers:
+                            description: Object
+                            items:
+                                properties:
+                                    accountMode:
+                                        description: 帳戶模式.
+                                        type: integer
+                                    memberType:
+                                        description: '`12`: 基金託管子帳戶'
+                                        type: integer
+                                    remark:
+                                        default: ""
+                                        description: 備註
+                                        type: string
+                                    status:
+                                        description: 帳戶狀態.
+                                        type: integer
+                                    uid:
+                                        default: ""
+                                        description: 子帳戶userId
+                                        type: string
+                                    username:
+                                        default: ""
+                                        description: 用戶名
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/escrow_sub_members:
+        get:
+            description: |+
+                The institutional client can query the fund custodial sub accounts.
+
+            operationId: GetUserEscrow_sub_membersV5
+            parameters:
+                - description: Data size per page. Return up to 100 records per request
+                  in: query
+                  name: pageSize
+                  schema:
+                    default: ""
+                    description: Data size per page. Return up to 100 records per request
+                    type: string
+                - description: Cursor. Use the `nextCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: nextCursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetUserEscrow_sub_membersV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Fund Custodial Sub Acct
+            tags:
+                - User

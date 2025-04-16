@@ -1,0 +1,123 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketHistoricalVolatilityV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "SUCCESS",    "category": "option",    "result": [        {            "period": 30,            "value": "0.45024716",            "time": "1672052400000"        }    ]}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    period:
+                                        description: Period
+                                        type: integer
+                                    time:
+                                        default: ""
+                                        description: Timestamp (ms)
+                                        type: string
+                                    value:
+                                        default: ""
+                                        description: Volatility
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/historical-volatility:
+        get:
+            description: |+
+                Query option historical volatility
+
+                Covers: Option
+
+            operationId: GetMarketHistoricalVolatilityV5
+            parameters:
+                - description: Product type. `option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `option`
+                    type: string
+                - description: 'Base coin, uppercase only. Default: return BTC data'
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: 'Base coin, uppercase only. Default: return BTC data'
+                    type: string
+                - description: 'Quote coin, `USD` or `USDT`. Default: return quoteCoin=USD'
+                  in: query
+                  name: quoteCoin
+                  schema:
+                    default: ""
+                    description: 'Quote coin, `USD` or `USDT`. Default: return quoteCoin=USD'
+                    type: string
+                - description: Period. If not specified, it will return data with a 7-day average by default
+                  in: query
+                  name: period
+                  schema:
+                    description: Period. If not specified, it will return data with a 7-day average by default
+                    type: integer
+                - description: The start timestamp (ms)
+                  in: query
+                  name: startTime
+                  schema:
+                    description: The start timestamp (ms)
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketHistoricalVolatilityV5Resp'
+                    description: Successful operation
+            summary: Get Historical Volatility
+            tags:
+                - Market

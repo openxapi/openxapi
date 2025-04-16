@@ -1,0 +1,153 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpotLeverTokenInfoV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "fundFee": "299.70622821",                "fundFeeTime": "1672992000000",                "ltCoin": "BTC3L",                "ltName": "3X Long",                "ltStatus": "1",                "manageFeeRate": "0.00005",                "manageFeeTime": "1673053200000",                "maxPurchase": "10000",                "maxPurchaseDaily": "200000",                "maxRedeem": "14434",                "maxRedeemDaily": "2100000",                "minPurchase": "100",                "minRedeem": "144",                "netValue": "0.376482201140738147",                "purchaseFeeRate": "0.0005",                "redeemFeeRate": "0.0005",                "total": "5000000",                "value": "49464463114.022994974075443169"            }        ]    },    "retExtInfo": {},    "time": 1672991427073}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    fundFee:
+                                        default: ""
+                                        description: Funding fee charged daily for users holding leveraged token
+                                        type: string
+                                    fundFeeTime:
+                                        default: ""
+                                        description: The time to charge funding fee
+                                        type: string
+                                    ltCoin:
+                                        default: ""
+                                        description: Abbreviation
+                                        type: string
+                                    ltName:
+                                        default: ""
+                                        description: Full name of leveraged token
+                                        type: string
+                                    ltStatus:
+                                        default: ""
+                                        description: Whether the leverage token can be purchased or redeemed
+                                        type: string
+                                    manageFeeRate:
+                                        default: ""
+                                        description: Management fee rate
+                                        type: string
+                                    manageFeeTime:
+                                        default: ""
+                                        description: The time to charge management fee
+                                        type: string
+                                    maxPurchase:
+                                        default: ""
+                                        description: Single maximum purchase amount
+                                        type: string
+                                    maxPurchaseDaily:
+                                        default: ""
+                                        description: Maximum purchase amount in a single day
+                                        type: string
+                                    maxRedeem:
+                                        default: ""
+                                        description: Single Maximum redemption quantity
+                                        type: string
+                                    maxRedeemDaily:
+                                        default: ""
+                                        description: Maximum redemption quantity in a single day
+                                        type: string
+                                    minPurchase:
+                                        default: ""
+                                        description: Single minimum purchase amount
+                                        type: string
+                                    minRedeem:
+                                        default: ""
+                                        description: Single Minimum redemption quantity
+                                        type: string
+                                    netValue:
+                                        default: ""
+                                        description: Net value
+                                        type: string
+                                    purchaseFeeRate:
+                                        default: ""
+                                        description: Purchase fee rate
+                                        type: string
+                                    redeemFeeRate:
+                                        default: ""
+                                        description: Redeem fee rate
+                                        type: string
+                                    total:
+                                        default: ""
+                                        description: Total purchase upper limit
+                                        type: string
+                                    value:
+                                        default: ""
+                                        description: Nominal asset value
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spot-lever-token/info:
+        get:
+            description: |+
+                Query leverage token information
+
+            operationId: GetSpotLeverTokenInfoV5
+            parameters:
+                - description: Abbreviation of the LT, such as `BTC3L`
+                  in: query
+                  name: ltCoin
+                  schema:
+                    default: ""
+                    description: Abbreviation of the LT, such as `BTC3L`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpotLeverTokenInfoV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Leverage Token Info
+            tags:
+                - Spot Leverage Token

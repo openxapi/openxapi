@@ -1,0 +1,97 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAccountQuickRepaymentV5Req:
+            properties:
+                coin:
+                    default: ""
+                    description: 'The coin with liability, uppercase only '
+                    type: string
+            type: object
+        CreateAccountQuickRepaymentV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "SUCCESS",    "result": {        "list": [            {                "coin": "BTC",                "repaymentQty": "0.10549670"            },            {                "coin": "ETH",                "repaymentQty": "2.27768114"            }        ]    },    "retExtInfo": {},    "time": 1701848610941}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    coin:
+                                        default: ""
+                                        description: 'Coin used for repayment '
+                                        type: string
+                                    repaymentQty:
+                                        default: ""
+                                        description: Repayment qty
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/quick-repayment:
+        post:
+            description: |+
+                You can manually repay the liabilities of Unified account
+
+                Permission: USDC Contracts
+
+            operationId: CreateAccountQuickRepaymentV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountQuickRepaymentV5Req'
+                description: The request body for CreateAccountQuickRepaymentV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountQuickRepaymentV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Repay Liability
+            tags:
+                - Account

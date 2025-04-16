@@ -1,0 +1,154 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetCryptoLoanRepaymentHistoryV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "list": [            {                "collateralCurrency": "BTC",                "collateralReturn": "0",                "loanCurrency": "USDT",                "loanTerm": "",                "orderId": "1794267532472646144",                "repayAmount": "100",                "repayId": "1794271131730737664",                "repayStatus": 1,                "repayTime": "1728629786875",                "repayType": "1"            }        ],        "nextPageCursor": ""    },    "retExtInfo": {},    "time": 1728633717935}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    collateralCurrency:
+                                        default: ""
+                                        description: Collateral coin
+                                        type: string
+                                    collateralReturn:
+                                        default: ""
+                                        description: Amount of collateral returned as a result of this repayment. `"0"` if this isn't the final loan repayment
+                                        type: string
+                                    loanCurrency:
+                                        default: ""
+                                        description: Loan coin
+                                        type: string
+                                    loanTerm:
+                                        default: ""
+                                        description: Loan term, `7`, `14`, `30`, `90`, `180` days, keep `""` for flexible loan
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Loan order ID
+                                        type: string
+                                    repayAmount:
+                                        default: ""
+                                        description: Repayment amount
+                                        type: string
+                                    repayId:
+                                        default: ""
+                                        description: Repayment transaction ID
+                                        type: string
+                                    repayStatus:
+                                        description: 'Repayment status, `1`: success; `2`: processing'
+                                        type: integer
+                                    repayTime:
+                                        default: ""
+                                        description: Repay timestamp
+                                        type: string
+                                    repayType:
+                                        default: ""
+                                        description: 'Repayment type, `1`: repay by user; `2`: repay by liquidation'
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/repayment-history:
+        get:
+            description: |+
+                Query for loan repayment transactions. A loan may be repaid in multiple repayments.
+
+                Permission: "Spot trade"
+
+            operationId: GetCryptoLoanRepaymentHistoryV5
+            parameters:
+                - description: Loan order ID
+                  in: query
+                  name: orderId
+                  schema:
+                    default: ""
+                    description: Loan order ID
+                    type: string
+                - description: Repayment tranaction ID
+                  in: query
+                  name: repayId
+                  schema:
+                    default: ""
+                    description: Repayment tranaction ID
+                    type: string
+                - description: Loan coin name
+                  in: query
+                  name: loanCurrency
+                  schema:
+                    default: ""
+                    description: Loan coin name
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `100`]. Default: `10`'
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: 'Limit for data size per page. [`1`, `100`]. Default: `10`'
+                    type: string
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCryptoLoanRepaymentHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Loan Repayment History
+            tags:
+                - Crypto Loan

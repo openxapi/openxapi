@@ -1,0 +1,98 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateCryptoLoanBorrowV5Req:
+            properties:
+                collateralAmount:
+                    default: ""
+                    description: Amount to mortgage
+                    type: string
+                collateralCurrency:
+                    default: ""
+                    description: Currency used to mortgage
+                    type: string
+                loanAmount:
+                    default: ""
+                    description: Amount to borrow
+                    type: string
+                loanCurrency:
+                    default: ""
+                    description: Loan coin name
+                    type: string
+                loanTerm:
+                    default: ""
+                    description: 'Loan term '
+                    type: string
+            type: object
+        CreateCryptoLoanBorrowV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "orderId": "1794267532472646144"    },    "retExtInfo": {},    "time": 1728629357820}'
+            properties:
+                result:
+                    properties:
+                        orderId:
+                            default: ""
+                            description: Loan order ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/borrow:
+        post:
+            operationId: CreateCryptoLoanBorrowV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateCryptoLoanBorrowV5Req'
+                description: The request body for CreateCryptoLoanBorrowV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateCryptoLoanBorrowV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Borrow
+            tags:
+                - Crypto Loan

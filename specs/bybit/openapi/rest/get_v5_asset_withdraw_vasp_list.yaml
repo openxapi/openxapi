@@ -1,0 +1,81 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetWithdrawVaspListV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "vasp": [            {                "vaspEntityId": "basic-finance",                "vaspName": "Basic-finance"            },            {                "vaspEntityId": "beeblock",                "vaspName": "Beeblock"            },            {                "vaspEntityId": "bithumb",                "vaspName": "bithumb"            },            {                "vaspEntityId": "cardo",                "vaspName": "cardo"            },            {                "vaspEntityId": "codevasp",                "vaspName": "codevasp"            },            {                "vaspEntityId": "codexchange-kor",                "vaspName": "CODExchange-kor"            },            {                "vaspEntityId": "coinone",                "vaspName": "coinone"            },            {                "vaspEntityId": "dummy",                "vaspName": "Dummy"            },            {                "vaspEntityId": "flata-exchange",                "vaspName": "flataexchange"            },            {                "vaspEntityId": "fobl",                "vaspName": "Foblgate"            },            {                "vaspEntityId": "hanbitco",                "vaspName": "hanbitco"            },            {                "vaspEntityId": "hexlant",                "vaspName": "hexlant"            },            {                "vaspEntityId": "inex",                "vaspName": "INEX"            },            {                "vaspEntityId": "infiniteblock-corp",                "vaspName": "InfiniteBlock Corp"            },            {                "vaspEntityId": "kdac",                "vaspName": "kdac"            },            {                "vaspEntityId": "korbit",                "vaspName": "korbit"            },            {                "vaspEntityId": "paycoin",                "vaspName": "Paycoin"            },            {                "vaspEntityId": "qbit",                "vaspName": "Qbit"            },            {                "vaspEntityId": "tennten",                "vaspName": "TENNTEN"            },            {                "vaspEntityId": "others",                "vaspName": "Others (including Upbit)"            }        ]    },    "retExtInfo": {},    "time": 1715067106537}'
+            properties:
+                result:
+                    properties:
+                        vasp:
+                            description: Exchange entity info
+                            items:
+                                properties:
+                                    vaspEntityId:
+                                        default: ""
+                                        description: Receiver platform id. When transfer to Upbit or other exchanges that not in the list, please use vaspEntityId='others'
+                                        type: string
+                                    vaspName:
+                                        default: ""
+                                        description: Receiver platform name
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/withdraw/vasp/list:
+        get:
+            description: |+
+                This endpoint is particularly used for kyc=KOR users. When withdraw funds, you need to fill entity id.
+
+            operationId: GetAssetWithdrawVaspListV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetWithdrawVaspListV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Exchange Entity List
+            tags:
+                - Asset

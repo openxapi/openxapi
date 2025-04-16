@@ -1,0 +1,146 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetPreUpgradeAssetDeliveryRecordV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "nextPageCursor": "21%3A0%2C21%3A0",        "category": "option",        "list": [            {                "symbol": "ETH-14JUN23-1750-C",                "side": "Buy",                "deliveryTime": 1686729604507,                "strike": "1750",                "fee": "0",                "position": "0.5",                "deliveryPrice": "1740.25036667",                "deliveryRpl": "0.175"            }        ]    },    "retExtInfo": {},    "time": 1686796328492}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    deliveryPrice:
+                                        default: ""
+                                        description: Delivery price
+                                        type: string
+                                    deliveryRpl:
+                                        default: ""
+                                        description: Realized PnL of the delivery
+                                        type: string
+                                    deliveryTime:
+                                        default: ""
+                                        description: Delivery time (ms)
+                                        type: string
+                                    fee:
+                                        default: ""
+                                        description: Trading fee
+                                        type: string
+                                    position:
+                                        default: ""
+                                        description: Executed size
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: '`Buy`,`Sell`'
+                                        type: string
+                                    strike:
+                                        default: ""
+                                        description: Exercise price
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Cursor. Used for pagination
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/pre-upgrade/asset/delivery-record:
+        get:
+            description: "Query delivery records of Options before you upgraded the account to a Unified account, sorted by deliveryTime in descending order\n\nUTA2.0: \nBy category=option, you can query Options delivery data occurred during classic account\n\nUTA1.0: \nBy category=option, you can query Options delivery data occurred during classic account\n\n"
+            operationId: GetPreUpgradeAssetDeliveryRecordV5
+            parameters:
+                - description: Product type `option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type `option`
+                    type: string
+                - description: Symbol name, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, uppercase only
+                    type: string
+                - description: 'Expiry date. `25MAR22`. Default: return all'
+                  in: query
+                  name: expDate
+                  schema:
+                    default: ""
+                    description: 'Expiry date. `25MAR22`. Default: return all'
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Used for pagination
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Used for pagination
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPreUpgradeAssetDeliveryRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Pre-upgrade Delivery Record
+            tags:
+                - Pre-upgrade

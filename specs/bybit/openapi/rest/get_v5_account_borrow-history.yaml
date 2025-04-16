@@ -1,0 +1,145 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAccountBorrowHistoryV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "nextPageCursor": "2671153%3A1%2C2671153%3A1",        "list": [            {                "borrowAmount": "1.06333265702840778",                "costExemption": "0",                "freeBorrowedAmount": "0",                "createdTime": 1697439900204,                "InterestBearingBorrowSize": "1.06333265702840778",                "currency": "BTC",                "unrealisedLoss": "0",                "hourlyBorrowRate": "0.000001216904",                "borrowCost": "0.00000129"            }        ]    },    "retExtInfo": {},    "time": 1697442206478}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    InterestBearingBorrowSize:
+                                        default: ""
+                                        description: Interest Bearing Borrow Size
+                                        type: string
+                                    borrowAmount:
+                                        default: ""
+                                        description: Total borrow amount
+                                        type: string
+                                    borrowCost:
+                                        default: ""
+                                        description: Interest
+                                        type: string
+                                    costExemption:
+                                        default: ""
+                                        description: Cost exemption
+                                        type: string
+                                    createdTime:
+                                        description: Created timestamp (ms)
+                                        type: integer
+                                    currency:
+                                        default: ""
+                                        description: '`USDC`,`USDT`,`BTC`,`ETH`'
+                                        type: string
+                                    freeBorrowedAmount:
+                                        default: ""
+                                        description: The borrowed amount for interest free
+                                        type: string
+                                    hourlyBorrowRate:
+                                        default: ""
+                                        description: Hourly Borrow Rate
+                                        type: string
+                                    unrealisedLoss:
+                                        default: ""
+                                        description: Unrealised loss
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/borrow-history:
+        get:
+            description: |+
+                Get interest records, sorted in reverse order of creation time.
+
+            operationId: GetAccountBorrowHistoryV5
+            parameters:
+                - description: '`USDC`,`USDT`,`BTC`,`ETH` etc, uppercase only'
+                  in: query
+                  name: currency
+                  schema:
+                    default: ""
+                    description: '`USDC`,`USDT`,`BTC`,`ETH` etc, uppercase only'
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: The end time. timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end time. timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountBorrowHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Borrow History
+            tags:
+                - Account

@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateOrderCancelV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                orderFilter:
+                    default: ""
+                    description: Spot trading If not passed, `Order` by default
+                    type: string
+                orderId:
+                    default: ""
+                    description: 'Order ID. Either `orderId` or `orderLinkId` is '
+                    type: string
+                orderLinkId:
+                    default: ""
+                    description: 'User customised order ID. Either `orderId` or `orderLinkId` is '
+                    type: string
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+            type: object
+        CreateOrderCancelV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "orderId": "c6f055d9-7f21-4079-913d-e6523a9cfffa",        "orderLinkId": "linear-004"    },    "retExtInfo": {},    "time": 1672217377164}'
+            properties:
+                result:
+                    properties:
+                        orderId:
+                            default: ""
+                            description: Order ID
+                            type: string
+                        orderLinkId:
+                            default: ""
+                            description: User customised order ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/order/cancel:
+        post:
+            operationId: CreateOrderCancelV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateOrderCancelV5Req'
+                description: The request body for CreateOrderCancelV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateOrderCancelV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel Order
+            tags:
+                - Trade

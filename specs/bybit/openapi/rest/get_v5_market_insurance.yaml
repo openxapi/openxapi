@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketInsuranceV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "updatedTime": "1714003200000",        "list": [            {                "coin": "USDT",                "symbols": "MERLUSDT,10000000AIDOGEUSDT,ZEUSUSDT",                "balance": "902178.57602476",                "value": "901898.0963091522"            },            {                "coin": "USDT",                "symbols": "SOLUSDT,OMNIUSDT,ALGOUSDT",                "balance": "14454.51626125",                "value": "14449.515598975464"            },            {                "coin": "USDT",                "symbols": "XLMUSDT,WUSDT",                "balance": "23.45018235",                "value": "22.992864174376344"            },            {                "coin": "USDT",                "symbols": "AGIUSDT,WIFUSDT",                "balance": "10002",                "value": "9998.896846613574"            },            {                "coin": "USDT",                "symbols": "",                "balance": "10148045273.618073",                "value": "10144896808.587431"            }        ]    },    "retExtInfo": {},    "time": 1714028451228}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    balance:
+                                        default: ""
+                                        description: Balance
+                                        type: string
+                                    coin:
+                                        default: ""
+                                        description: Coin
+                                        type: string
+                                    symbols:
+                                        default: ""
+                                        type: string
+                                    value:
+                                        default: ""
+                                        description: USD value
+                                        type: string
+                                type: object
+                            type: array
+                        updatedTime:
+                            default: ""
+                            description: Data updated time (ms)
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/insurance:
+        get:
+            description: |+
+                Query for Bybit insurance pool data (BTC/USDT/USDC etc). The data is updated every 24 hours.
+
+            operationId: GetMarketInsuranceV5
+            parameters:
+                - description: 'coin, uppercase only. Default: return all insurance coins'
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: 'coin, uppercase only. Default: return all insurance coins'
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketInsuranceV5Resp'
+                    description: Successful operation
+            summary: Get Insurance
+            tags:
+                - Market

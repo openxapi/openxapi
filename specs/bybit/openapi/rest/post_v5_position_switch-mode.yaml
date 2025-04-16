@@ -1,0 +1,91 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionSwitchModeV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                coin:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+                mode:
+                    description: 'Position mode. `0`: Merged Single. `3`: Both Sides'
+                    type: integer
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only. Either `symbol` or `coin` is . `symbol` has a higher priority
+                    type: string
+            type: object
+        CreatePositionSwitchModeV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {},    "retExtInfo": {},    "time": 1675249072814}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/switch-mode:
+        post:
+            description: |+
+                It supports to switch the position mode for USDT perpetual and Inverse futures. If you are in one-way Mode, you can only open one position on Buy or Sell side. If you are in hedge mode, you can open both Buy and Sell side positions simultaneously.
+
+            operationId: CreatePositionSwitchModeV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionSwitchModeV5Req'
+                description: The request body for CreatePositionSwitchModeV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionSwitchModeV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Switch Position Mode
+            tags:
+                - Position

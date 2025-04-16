@@ -1,0 +1,103 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketInstrumentsInfoV5Resp:
+            example: ""
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/instruments-info:
+        get:
+            description: |+
+                Query for the instrument specification of online trading pairs.
+
+                Covers: Spot / USDT contract / USDC contract / Inverse contract / Option
+
+            operationId: GetMarketInstrumentsInfoV5
+            parameters:
+                - description: Product type. `spot`,`linear`,`inverse`,`option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `spot`,`linear`,`inverse`,`option`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: 'Symbol status filter '
+                  in: query
+                  name: status
+                  schema:
+                    default: ""
+                    description: 'Symbol status filter '
+                    type: string
+                - description: 'Base coin, uppercase only '
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: 'Base coin, uppercase only '
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `1000`]. Default: `500`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `1000`]. Default: `500`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketInstrumentsInfoV5Resp'
+                    description: Successful operation
+            summary: Get Instruments Info
+            tags:
+                - Market

@@ -1,0 +1,86 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAssetExchangeConvertExecuteV5Req:
+            properties:
+                quoteTxId:
+                    default: ""
+                    description: 'The quote tx ID from '
+                    type: string
+            type: object
+        CreateAssetExchangeConvertExecuteV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "ok",    "result": {        "exchangeStatus": "processing",        "quoteTxId": "10100108106409343501030232064"    },    "retExtInfo": {},    "time": 1720071900529}'
+            properties:
+                result:
+                    properties:
+                        exchangeStatus:
+                            default: ""
+                            description: 'Exchange status '
+                            type: string
+                        quoteTxId:
+                            default: ""
+                            description: Quote transaction ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/exchange/convert-execute:
+        post:
+            operationId: CreateAssetExchangeConvertExecuteV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetExchangeConvertExecuteV5Req'
+                description: The request body for CreateAssetExchangeConvertExecuteV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetExchangeConvertExecuteV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Confirm a Quote
+            tags:
+                - Asset

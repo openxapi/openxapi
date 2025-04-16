@@ -1,0 +1,186 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetCoinQueryInfoV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "rows": [            {                "name": "MNT",                "coin": "MNT",                "remainAmount": "10000000",                "chains": [                    {                        "chainType": "Ethereum",                        "confirmation": "6",                        "withdrawFee": "3",                        "depositMin": "0",                        "withdrawMin": "3",                        "chain": "ETH",                        "chainDeposit": "1",                        "chainWithdraw": "1",                        "minAccuracy": "8",                        "withdrawPercentageFee": "0",                        "contractAddress": "0x3c3a81e81dc49a522a592e7622a7e711c06bf354"                    },                    {                        "chainType": "Mantle Network",                        "confirmation": "100",                        "withdrawFee": "0",                        "depositMin": "0",                        "withdrawMin": "10",                        "chain": "MANTLE",                        "chainDeposit": "1",                        "chainWithdraw": "1",                        "minAccuracy": "8",                        "withdrawPercentageFee": "0",                        "contractAddress": ""                    }                ]            }        ]    },    "retExtInfo": {},    "time": 1736395486989}'
+            properties:
+                result:
+                    properties:
+                        rows:
+                            description: Object
+                            items:
+                                properties:
+                                    chain:
+                                        default: ""
+                                        description: Chain
+                                        type: string
+                                    chainDeposit:
+                                        default: ""
+                                        description: 'The chain status of deposit. `0`: suspend. `1`: normal'
+                                        type: string
+                                    chainType:
+                                        default: ""
+                                        description: Chain type
+                                        type: string
+                                    chainWithdraw:
+                                        default: ""
+                                        description: 'The chain status of withdraw. `0`: suspend. `1`: normal'
+                                        type: string
+                                    chains:
+                                        description: Object
+                                        items:
+                                            properties:
+                                                chain:
+                                                    default: ""
+                                                    description: Chain
+                                                    type: string
+                                                chainDeposit:
+                                                    default: ""
+                                                    description: 'The chain status of deposit. `0`: suspend. `1`: normal'
+                                                    type: string
+                                                chainType:
+                                                    default: ""
+                                                    description: Chain type
+                                                    type: string
+                                                chainWithdraw:
+                                                    default: ""
+                                                    description: 'The chain status of withdraw. `0`: suspend. `1`: normal'
+                                                    type: string
+                                                confirmation:
+                                                    default: ""
+                                                    description: The number of confirmation for deposit
+                                                    type: string
+                                                contractAddress:
+                                                    default: ""
+                                                    description: Contract address. `""` means no contract address
+                                                    type: string
+                                                depositMin:
+                                                    default: ""
+                                                    description: Min. deposit
+                                                    type: string
+                                                minAccuracy:
+                                                    default: ""
+                                                    description: The precision of withdraw or deposit
+                                                    type: string
+                                                withdrawFee:
+                                                    default: ""
+                                                    description: 'withdraw fee. '
+                                                    type: string
+                                                withdrawMin:
+                                                    default: ""
+                                                    description: Min. withdraw
+                                                    type: string
+                                                withdrawPercentageFee:
+                                                    default: ""
+                                                    description: The withdraw fee percentage. It is a real figure, e.g., 0.022 means 2.2%
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    coin:
+                                        default: ""
+                                        description: Coin
+                                        type: string
+                                    confirmation:
+                                        default: ""
+                                        description: The number of confirmation for deposit
+                                        type: string
+                                    contractAddress:
+                                        default: ""
+                                        description: Contract address. `""` means no contract address
+                                        type: string
+                                    depositMin:
+                                        default: ""
+                                        description: Min. deposit
+                                        type: string
+                                    minAccuracy:
+                                        default: ""
+                                        description: The precision of withdraw or deposit
+                                        type: string
+                                    name:
+                                        description: Coin name
+                                        type: integer
+                                    remainAmount:
+                                        default: ""
+                                        description: Maximum withdraw amount per transaction
+                                        type: string
+                                    withdrawFee:
+                                        default: ""
+                                        description: 'withdraw fee. '
+                                        type: string
+                                    withdrawMin:
+                                        default: ""
+                                        description: Min. withdraw
+                                        type: string
+                                    withdrawPercentageFee:
+                                        default: ""
+                                        description: The withdraw fee percentage. It is a real figure, e.g., 0.022 means 2.2%
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/coin/query-info:
+        get:
+            description: |+
+                Query coin information, including chain information, withdraw and deposit status.
+
+            operationId: GetAssetCoinQueryInfoV5
+            parameters:
+                - description: Coin, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetCoinQueryInfoV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Coin Info
+            tags:
+                - Asset

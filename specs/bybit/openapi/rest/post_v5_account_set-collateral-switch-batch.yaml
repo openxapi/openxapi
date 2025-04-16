@@ -1,0 +1,113 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAccountSetCollateralSwitchBatchV5Req:
+            properties:
+                request:
+                    description: Object
+                    items:
+                        properties:
+                            coin:
+                                default: ""
+                                description: 'Coin name, uppercase only '
+                                type: string
+                            collateralSwitch:
+                                default: ""
+                                description: '`ON`: switch on collateral, `OFF`: switch off collateral'
+                                type: string
+                        type: object
+                    type: array
+            type: object
+        CreateAccountSetCollateralSwitchBatchV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "SUCCESS",    "result": {        "list": [            {                "coin": "MATIC",                "collateralSwitch": "OFF"            },            {                "coin": "BTC",                "collateralSwitch": "OFF"            },            {                "coin": "ETH",                "collateralSwitch": "OFF"            },            {                "coin": "SOL",                "collateralSwitch": "OFF"            }        ]    },    "retExtInfo": {},    "time": 1704782042913}'
+            properties:
+                result:
+                    properties:
+                        result:
+                            properties:
+                                coin:
+                                    default: ""
+                                    description: Coin name
+                                    type: string
+                                collateralSwitch:
+                                    default: ""
+                                    description: '`ON`: switch on collateral, `OFF`: switch off collateral'
+                                    type: string
+                                list:
+                                    description: Object
+                                    items:
+                                        properties:
+                                            coin:
+                                                default: ""
+                                                description: Coin name
+                                                type: string
+                                            collateralSwitch:
+                                                default: ""
+                                                description: '`ON`: switch on collateral, `OFF`: switch off collateral'
+                                                type: string
+                                        type: object
+                                    type: array
+                            type: object
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/set-collateral-switch-batch:
+        post:
+            operationId: CreateAccountSetCollateralSwitchBatchV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSetCollateralSwitchBatchV5Req'
+                description: The request body for CreateAccountSetCollateralSwitchBatchV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSetCollateralSwitchBatchV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Batch Set Collateral Coin
+            tags:
+                - Account

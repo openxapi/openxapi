@@ -1,0 +1,81 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetCryptoLoanMaxCollateralAmountV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "maxCollateralAmount": "0.00210611"    },    "retExtInfo": {},    "time": 1728634291554}'
+            properties:
+                result:
+                    properties:
+                        maxCollateralAmount:
+                            default: ""
+                            description: Max. reduction collateral amount
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/max-collateral-amount:
+        get:
+            description: |+
+                Query for the maximum amount by which collateral may be reduced by.
+
+                Permission: "Spot trade"
+
+            operationId: GetCryptoLoanMaxCollateralAmountV5
+            parameters:
+                - description: Loan coin ID
+                  in: query
+                  name: orderId
+                  schema:
+                    default: ""
+                    description: Loan coin ID
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCryptoLoanMaxCollateralAmountV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Max. Allowed Collateral Reduction Amount
+            tags:
+                - Crypto Loan

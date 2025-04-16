@@ -1,0 +1,121 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateOrderCancelAllV5Req:
+            properties:
+                baseCoin:
+                    default: ""
+                    description: 'Base coin, uppercase only '
+                    type: string
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                orderFilter:
+                    default: ""
+                    type: string
+                settleCoin:
+                    default: ""
+                    description: 'Settle coin, uppercase only '
+                    type: string
+                stopOrderType:
+                    default: ""
+                    description: 'Stop order type `Stop` '
+                    type: string
+                symbol:
+                    default: ""
+                    description: |-
+                        Symbol name, like `BTCUSDT`, uppercase only
+
+                        `linear`&`inverse`:  if not passing baseCoin or settleCoin
+                    type: string
+            type: object
+        CreateOrderCancelAllV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "orderId": "1616024329462743808",                "orderLinkId": "1616024329462743809"            },            {                "orderId": "1616024287544869632",                "orderLinkId": "1616024287544869633"            }        ],        "success": "1"    },    "retExtInfo": {},    "time": 1707381118116}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    orderId:
+                                        default: ""
+                                        description: Order ID
+                                        type: string
+                                    orderLinkId:
+                                        default: ""
+                                        description: User customised order ID
+                                        type: string
+                                type: object
+                            type: array
+                        success:
+                            default: ""
+                            description: '"1": success, "0": fail'
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/order/cancel-all:
+        post:
+            description: |+
+                Cancel all open orders
+
+            operationId: CreateOrderCancelAllV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateOrderCancelAllV5Req'
+                description: The request body for CreateOrderCancelAllV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateOrderCancelAllV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel All Orders
+            tags:
+                - Trade

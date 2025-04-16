@@ -1,0 +1,144 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateBrokerAwardDistributionRecordV5Req:
+            properties:
+                accountId:
+                    default: ""
+                    description: User ID
+                    type: string
+                awardId:
+                    default: ""
+                    description: Voucher ID
+                    type: string
+                specCode:
+                    default: ""
+                    description: Customised unique spec code, up to 8 characters
+                    type: string
+                withUsedAmount:
+                    description: 'Whether to return the amount used by the user '
+                    type: boolean
+            type: object
+        CreateBrokerAwardDistributionRecordV5Resp:
+            example: |
+                {
+                    "retCode": 0,
+                    "retMsg": "",
+                    "result": {
+                        "accountId": "5714139",
+                        "awardId": "189528",
+                        "specCode": "demo000",
+                        "amount": "1",
+                        "isClaimed": true,
+                        "startAt": "1725926400",
+                        "endAt": "1733788800",
+                        "effectiveAt": "1726531200",
+                        "ineffectiveAt": "1733817600",
+                        "usedAmount": ""
+                    }
+                }
+            properties:
+                result:
+                    properties:
+                        accountId:
+                            default: ""
+                            description: User ID
+                            type: string
+                        amount:
+                            default: ""
+                            description: Amount of voucher
+                            type: string
+                        awardId:
+                            default: ""
+                            description: Voucher ID
+                            type: string
+                        effectiveAt:
+                            default: ""
+                            description: Voucher effective timestamp (sec) after claimed
+                            type: string
+                        endAt:
+                            default: ""
+                            description: Claim end timestamp (sec)
+                            type: string
+                        ineffectiveAt:
+                            default: ""
+                            description: Voucher inactive timestamp (sec) after claimed
+                            type: string
+                        isClaimed:
+                            description: '`true`, `false`'
+                            type: boolean
+                        specCode:
+                            default: ""
+                            description: Spec code
+                            type: string
+                        startAt:
+                            default: ""
+                            description: Claim start timestamp (sec)
+                            type: string
+                        usedAmount:
+                            default: ""
+                            description: Amount used by the user
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/broker/award/distribution-record:
+        post:
+            operationId: CreateBrokerAwardDistributionRecordV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateBrokerAwardDistributionRecordV5Req'
+                description: The request body for CreateBrokerAwardDistributionRecordV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateBrokerAwardDistributionRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Issued Voucher
+            tags:
+                - Exchange Broker

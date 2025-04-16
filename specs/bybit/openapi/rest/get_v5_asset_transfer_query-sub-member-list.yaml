@@ -1,0 +1,75 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetTransferQuerySubMemberListV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "subMemberIds": [            "554117",            "592324",            "592334",            "1055262",            "1072055",            "1119352"        ],        "transferableSubMemberIds": [            "554117",            "592324"        ]    },    "retExtInfo": {},    "time": 1672147241320}'
+            properties:
+                result:
+                    properties:
+                        subMemberIds:
+                            default: ""
+                            description: All sub UIDs under the main UID
+                            type: string
+                        transferableSubMemberIds:
+                            default: ""
+                            description: All sub UIDs that have universal transfer enabled
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/transfer/query-sub-member-list:
+        get:
+            description: |+
+                Query the sub UIDs under a main UID. It returns up to 2000 sub accounts, if you need more, please call this endpoint.
+
+            operationId: GetAssetTransferQuerySubMemberListV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetTransferQuerySubMemberListV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Sub UID
+            tags:
+                - Asset

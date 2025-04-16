@@ -1,0 +1,117 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetOrderSpotBorrowCheckV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "symbol": "BTCUSDT",        "maxTradeQty": "6.6065",        "side": "Buy",        "spotMaxTradeAmount": "9004.75628594",        "maxTradeAmount": "218014.01330797",        "borrowCoin": "USDT",        "spotMaxTradeQty": "0.2728"    },    "retExtInfo": {},    "time": 1698895841534}'
+            properties:
+                result:
+                    properties:
+                        borrowCoin:
+                            default: ""
+                            description: Borrow coin
+                            type: string
+                        maxTradeAmount:
+                            default: ""
+                            description: The maximum quote coin amount can be traded
+                            type: string
+                        maxTradeQty:
+                            default: ""
+                            description: The maximum base coin qty can be traded
+                            type: string
+                        side:
+                            default: ""
+                            description: Side
+                            type: string
+                        spotMaxTradeAmount:
+                            default: ""
+                            description: No matter your Spot margin switch on or not, it always returns actual amount of quote coin you can trade or you have (borrowable amount is not included), up to 8 decimals
+                            type: string
+                        spotMaxTradeQty:
+                            default: ""
+                            description: No matter your Spot margin switch on or not, it always returns actual qty of base coin you can trade or you have (borrowable qty is not included), up to 4 decimals
+                            type: string
+                        symbol:
+                            default: ""
+                            description: Symbol name, like `BTCUSDT`, uppercase only
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/order/spot-borrow-check:
+        get:
+            description: |+
+                Query the available balance for Spot trading and Margin trading
+
+            operationId: GetOrderSpotBorrowCheckV5
+            parameters:
+                - description: 'Product type '
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                - description: Symbol name
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name
+                    type: string
+                - description: Transaction side. `Buy`,`Sell`
+                  in: query
+                  name: side
+                  schema:
+                    default: ""
+                    description: Transaction side. `Buy`,`Sell`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetOrderSpotBorrowCheckV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Borrow Quota (Spot)
+            tags:
+                - Trade

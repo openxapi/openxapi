@@ -1,0 +1,82 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateSpotMarginTradeSetLeverageV5Req:
+            properties:
+                leverage:
+                    default: ""
+                    description: Leverage. [`2`, `10`].
+                    type: string
+            type: object
+        CreateSpotMarginTradeSetLeverageV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {},    "retExtInfo": {},    "time": 1672710944282}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spot-margin-trade/set-leverage:
+        post:
+            description: |+
+                Set the user's maximum leverage in spot cross margin
+
+                Covers: Margin trade (Unified Account)
+
+            operationId: CreateSpotMarginTradeSetLeverageV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSpotMarginTradeSetLeverageV5Req'
+                description: The request body for CreateSpotMarginTradeSetLeverageV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSpotMarginTradeSetLeverageV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Leverage
+            tags:
+                - Spot Margin Trade (UTA)

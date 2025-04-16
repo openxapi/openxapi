@@ -1,0 +1,187 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetPreUpgradePositionClosedPnlV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "symbol": "BTCUSDT",                "orderId": "67836246-460e-4c52-a009-af0c3e1d12bc",                "side": "Sell",                "qty": "0.200",                "orderPrice": "27203.40",                "orderType": "Market",                "execType": "Trade",                "closedSize": "0.200",                "cumEntryValue": "5588.88",                "avgEntryPrice": "27944.40",                "cumExitValue": "5726.4252",                "avgExitPrice": "28632.13",                "closedPnl": "204.25510011",                "fillCount": "22",                "leverage": "10",                "createdTime": "1682487465732",                "updatedTime": "1682487465732"            }        ],        "category": "linear",        "nextPageCursor": ""    },    "retExtInfo": {},    "time": 1682580912259}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    avgEntryPrice:
+                                        default: ""
+                                        description: Average entry price
+                                        type: string
+                                    avgExitPrice:
+                                        default: ""
+                                        description: Average exit price
+                                        type: string
+                                    closedPnl:
+                                        default: ""
+                                        description: Closed PnL
+                                        type: string
+                                    closedSize:
+                                        default: ""
+                                        description: Closed size
+                                        type: string
+                                    createdTime:
+                                        default: ""
+                                        description: The created time (ms)
+                                        type: string
+                                    cumEntryValue:
+                                        default: ""
+                                        description: Cumulated Position value
+                                        type: string
+                                    cumExitValue:
+                                        default: ""
+                                        description: Cumulated exit position value
+                                        type: string
+                                    execType:
+                                        default: ""
+                                        description: Exec type. `Trade`, `BustTrade`, `SessionSettlePnL`, `Settle`
+                                        type: string
+                                    fillCount:
+                                        default: ""
+                                        description: The number of fills in a single order
+                                        type: string
+                                    leverage:
+                                        default: ""
+                                        description: leverage
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Order ID
+                                        type: string
+                                    orderPrice:
+                                        default: ""
+                                        description: Order price
+                                        type: string
+                                    orderType:
+                                        default: ""
+                                        description: Order type. `Market`,`Limit`
+                                        type: string
+                                    qty:
+                                        default: ""
+                                        description: Order qty
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: '`Buy`, `Side`'
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                    updatedTime:
+                                        default: ""
+                                        description: The updated time (ms)
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/pre-upgrade/position/closed-pnl:
+        get:
+            description: "Query user's closed profit and loss records from before you upgraded the account to a Unified account. The results are sorted by updatedTime in descending order.\n\nit only supports to query USDT perpetual, Inverse perpetual and Inverse Futures.\n\nUTA2.0: \nBy category=linear, you can query USDT Perps data occurred during classic account\nBy category=inverse, you can query Inverse Contract data occurred during classic account or UTA1.0\n\nUTA1.0: \nBy category=linear, you can query USDT Perps data occurred during classic account\n\n"
+            operationId: GetPreUpgradePositionClosedPnlV5
+            parameters:
+                - description: Product type `linear`, `inverse`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type `linear`, `inverse`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `100`]. Default: `50`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `100`]. Default: `50`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPreUpgradePositionClosedPnlV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Pre-upgrade Closed PnL
+            tags:
+                - Pre-upgrade

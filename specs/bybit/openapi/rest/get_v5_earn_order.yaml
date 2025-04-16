@@ -1,0 +1,146 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetEarnOrderV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "list": [            {                "coin": "BTC",                "orderValue": "1",                "orderType": "Stake",                "orderId": "9640dc23-df1a-448a-ad24-e1a48028a51f",                "orderLinkId": "cjm2",                "status": "Success",                "createdAt": "1744166831000",                "productId": "8",                "updatedAt": "1744166832000",                "swapOrderValue": "",                "estimateRedeemTime": "",                "estimateStakeTime": ""            }        ]    },    "retExtInfo": {},    "time": 1739937045520}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    coin:
+                                        default: ""
+                                        description: Coin name
+                                        type: string
+                                    createdAt:
+                                        default: ""
+                                        description: Order created time, in milliseconds
+                                        type: string
+                                    estimateRedeemTime:
+                                        default: ""
+                                        description: Estimate redeem time, in milliseconds. Only for Onchain
+                                        type: string
+                                    estimateStakeTime:
+                                        default: ""
+                                        description: Estimate stake time, in milliseconds. Only for Onchain
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Order ID
+                                        type: string
+                                    orderLinkId:
+                                        default: ""
+                                        description: Order link ID
+                                        type: string
+                                    orderType:
+                                        default: ""
+                                        description: '`Redeem`, `Stake`'
+                                        type: string
+                                    orderValue:
+                                        default: ""
+                                        description: amount
+                                        type: string
+                                    productId:
+                                        default: ""
+                                        description: Product ID
+                                        type: string
+                                    status:
+                                        default: ""
+                                        description: Order status `Success`, `Fail`, `Pending`
+                                        type: string
+                                    swapOrderValue:
+                                        default: ""
+                                        description: Swap order value. Only for LST Onchain.
+                                        type: string
+                                    updatedAt:
+                                        default: ""
+                                        description: Order updated time, in milliseconds
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/earn/order:
+        get:
+            operationId: GetEarnOrderV5
+            parameters:
+                - description: "`FlexibleSaving`,`OnChain` \n\n: currently, only flexible savings and OnChain is supported"
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: "`FlexibleSaving`,`OnChain` \n\n: currently, only flexible savings and OnChain is supported"
+                    type: string
+                - description: 'Order ID '
+                  in: query
+                  name: orderId
+                  schema:
+                    default: ""
+                    description: 'Order ID '
+                    type: string
+                - description: |-
+                    Order link ID
+
+                    : Always return the latest one if order link id is ever reused when querying by orderLinkId only
+                  in: query
+                  name: orderLinkId
+                  schema:
+                    default: ""
+                    description: |-
+                        Order link ID
+
+                        : Always return the latest one if order link id is ever reused when querying by orderLinkId only
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetEarnOrderV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Stake/Redeem Order History
+            tags:
+                - Earn
