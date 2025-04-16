@@ -1,0 +1,151 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionTradingStopV5Req:
+            properties:
+                activePrice:
+                    default: ""
+                    description: 'Trailing stop trigger price. Trailing stop will be triggered when this price is reached '
+                    type: string
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                positionIdx:
+                    description: 'Used to identify positions in different position modes. '
+                    type: integer
+                slLimitPrice:
+                    default: ""
+                    description: The limit order price when stop loss price is triggered. Only works when tpslMode=Partial and slOrderType=Limit
+                    type: string
+                slOrderType:
+                    default: ""
+                    description: |-
+                        The order type when stop loss is triggered. `Market`(default), `Limit`
+
+                        For tpslMode=Full, it only supports slOrderType="Market"
+                    type: string
+                slSize:
+                    default: ""
+                    description: |-
+                        Stop loss size
+
+                        valid for TP/SL partial mode, note: the value of tpSize and slSize must equal
+                    type: string
+                slTriggerBy:
+                    default: ""
+                    description: Stop loss trigger price type
+                    type: string
+                stopLoss:
+                    default: ""
+                    description: Cannot be less than 0, 0 means cancel SL
+                    type: string
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                takeProfit:
+                    default: ""
+                    description: Cannot be less than 0, 0 means cancel TP
+                    type: string
+                tpLimitPrice:
+                    default: ""
+                    description: The limit order price when take profit price is triggered. Only works when tpslMode=Partial and tpOrderType=Limit
+                    type: string
+                tpOrderType:
+                    default: ""
+                    description: |-
+                        The order type when take profit is triggered. `Market`(default), `Limit`
+
+                        For tpslMode=Full, it only supports tpOrderType="Market"
+                    type: string
+                tpSize:
+                    default: ""
+                    description: |-
+                        Take profit size
+
+                        valid for TP/SL partial mode, note: the value of tpSize and slSize must equal
+                    type: string
+                tpTriggerBy:
+                    default: ""
+                    description: Take profit trigger price type
+                    type: string
+                tpslMode:
+                    default: ""
+                    description: TP/SL mode
+                    type: string
+                trailingStop:
+                    default: ""
+                    description: Trailing stop by price distance. Cannot be less than 0, 0 means cancel TS
+                    type: string
+            type: object
+        CreatePositionTradingStopV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {},    "retExtInfo": {},    "time": 1672283125359}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/trading-stop:
+        post:
+            description: |+
+                Set the take profit, stop loss or trailing stop for the position.
+
+            operationId: CreatePositionTradingStopV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionTradingStopV5Req'
+                description: The request body for CreatePositionTradingStopV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionTradingStopV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Trading Stop
+            tags:
+                - Position

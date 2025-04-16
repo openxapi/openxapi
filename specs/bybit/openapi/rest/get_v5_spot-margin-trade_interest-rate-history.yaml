@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpotMarginTradeInterestRateHistoryV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "timestamp": 1721469600000,                "currency": "USDC",                "hourlyBorrowRate": "0.000014621596",                "vipLevel": "No VIP"            },            {                "timestamp": 1721466000000,                "currency": "USDC",                "hourlyBorrowRate": "0.000014621596",                "vipLevel": "No VIP"            },            {                "timestamp": 1721462400000,                "currency": "USDC",                "hourlyBorrowRate": "0.000014621596",                "vipLevel": "No VIP"            },            {                "timestamp": 1721458800000,                "currency": "USDC",                "hourlyBorrowRate": "0.000014621596",                "vipLevel": "No VIP"            }        ]    },    "retExtInfo": "{}",    "time": 1721899048991}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            items:
+                                properties:
+                                    currency:
+                                        default: ""
+                                        description: coin name
+                                        type: string
+                                    hourlyBorrowRate:
+                                        default: ""
+                                        description: Hourly borrowing rate
+                                        type: string
+                                    timestamp:
+                                        description: timestamp
+                                        format: int64
+                                        type: integer
+                                    vipLevel:
+                                        default: ""
+                                        description: VIP/Pro level
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spot-margin-trade/interest-rate-history:
+        get:
+            description: |+
+                You can query up to six months borrowing interest rate of Margin trading.
+
+            operationId: GetSpotMarginTradeInterestRateHistoryV5
+            parameters:
+                - description: Coin name, uppercase only
+                  in: query
+                  name: currency
+                  schema:
+                    default: ""
+                    description: Coin name, uppercase only
+                    type: string
+                - description: 'Vip level '
+                  in: query
+                  name: vipLevel
+                  schema:
+                    default: ""
+                    description: 'Vip level '
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpotMarginTradeInterestRateHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Historical Interest Rate
+            tags:
+                - Spot Margin Trade (UTA)

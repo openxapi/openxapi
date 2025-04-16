@@ -1,0 +1,114 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketKlineV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "symbol": "BTCUSD",        "category": "inverse",        "list": [            [                "1670608800000",                "17071",                "17073",                "17027",                "17055.5",                "268611",                "15.74462667"            ],            [                "1670605200000",                "17071.5",                "17071.5",                "17061",                "17071",                "4177",                "0.24469757"            ],            [                "1670601600000",                "17086.5",                "17088",                "16978",                "17071.5",                "6356",                "0.37288112"            ]        ]    },    "retExtInfo": {},    "time": 1672025956592}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            items:
+                                type: string
+                            type: array
+                        symbol:
+                            default: ""
+                            description: Symbol name
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/kline:
+        get:
+            description: |+
+                Query for historical klines (also known as candles/candlesticks). Charts are returned in groups based on the requested interval.
+
+                Covers: Spot / USDT contract / USDC contract  / Inverse contract
+
+            operationId: GetMarketKlineV5
+            parameters:
+                - description: 'Product type. `spot`,`linear`,`inverse` '
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: 'Product type. `spot`,`linear`,`inverse` '
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: Kline interval. `1`,`3`,`5`,`15`,`30`,`60`,`120`,`240`,`360`,`720`,`D`,`W`,`M`
+                  in: query
+                  name: interval
+                  schema:
+                    default: ""
+                    description: Kline interval. `1`,`3`,`5`,`15`,`30`,`60`,`120`,`240`,`360`,`720`,`D`,`W`,`M`
+                    type: string
+                - description: The start timestamp (ms)
+                  in: query
+                  name: start
+                  schema:
+                    description: The start timestamp (ms)
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: end
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `1000`]. Default: `200`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `1000`]. Default: `200`'
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketKlineV5Resp'
+                    description: Successful operation
+            summary: Get Kline
+            tags:
+                - Market

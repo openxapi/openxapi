@@ -1,0 +1,108 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetCryptoLoanBorrowableCollateralisableNumberV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "collateralCurrency": "BTC",        "loanCurrency": "USDT",        "maxCollateralAmount": "164.957732055526752104",        "maxLoanAmount": "8000000",        "minCollateralAmount": "0.000412394330138818",        "minLoanAmount": "20"    },    "retExtInfo": {},    "time": 1728627084863}'
+            properties:
+                result:
+                    properties:
+                        collateralCurrency:
+                            default: ""
+                            description: Collateral coin name
+                            type: string
+                        loanCurrency:
+                            default: ""
+                            description: Loan coin name
+                            type: string
+                        maxCollateralAmount:
+                            default: ""
+                            description: Max. limit to mortgage
+                            type: string
+                        maxLoanAmount:
+                            default: ""
+                            description: Max. limit to borrow
+                            type: string
+                        minCollateralAmount:
+                            default: ""
+                            description: Min. limit to mortgage
+                            type: string
+                        minLoanAmount:
+                            default: ""
+                            description: Min. limit to borrow
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/borrowable-collateralisable-number:
+        get:
+            description: |+
+                Query for the minimum and maximum amounts your account can borrow and how much collateral you can put up.
+
+                Permission: "Spot trade"
+
+            operationId: GetCryptoLoanBorrowableCollateralisableNumberV5
+            parameters:
+                - description: Loan coin name
+                  in: query
+                  name: loanCurrency
+                  schema:
+                    default: ""
+                    description: Loan coin name
+                    type: string
+                - description: Collateral coin name
+                  in: query
+                  name: collateralCurrency
+                  schema:
+                    default: ""
+                    description: Collateral coin name
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCryptoLoanBorrowableCollateralisableNumberV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Account Borrowable/Collateralizable Limit
+            tags:
+                - Crypto Loan

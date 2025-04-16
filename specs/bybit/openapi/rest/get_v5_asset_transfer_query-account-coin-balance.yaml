@@ -1,0 +1,165 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetTransferQueryAccountCoinBalanceV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "accountType": "UNIFIED",        "bizType": 1,        "accountId": "1631385",        "memberId": "1631373",        "balance": {            "coin": "USDT",            "walletBalance": "11999",            "transferBalance": "11999",            "bonus": "0",            "transferSafeAmount": "",            "ltvTransferSafeAmount": "7602.4861"        }    },    "retExtInfo": {},    "time": 1690254521256}'
+            properties:
+                result:
+                    properties:
+                        accountId:
+                            default: ""
+                            description: Account ID
+                            type: string
+                        accountType:
+                            default: ""
+                            description: Account type
+                            type: string
+                        balance:
+                            properties:
+                                bonus:
+                                    default: ""
+                                    description: bonus
+                                    type: string
+                                coin:
+                                    default: ""
+                                    description: Coin
+                                    type: string
+                                ltvTransferSafeAmount:
+                                    default: ""
+                                    description: Transferable amount for ins loan account. Keep `""` if not query
+                                    type: string
+                                transferBalance:
+                                    default: ""
+                                    description: Transferable balance
+                                    type: string
+                                transferSafeAmount:
+                                    default: ""
+                                    description: Safe amount to transfer. Keep `""` if not query
+                                    type: string
+                                walletBalance:
+                                    default: ""
+                                    description: Wallet balance
+                                    type: string
+                            type: object
+                        bizType:
+                            description: Biz type
+                            type: integer
+                        memberId:
+                            default: ""
+                            description: Uid
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/transfer/query-account-coin-balance:
+        get:
+            description: |+
+                Query the balance of a specific coin in a specific account type. Supports querying sub UID's balance.
+                Also, you can check the transferable amount from master to sub account, sub to master account or sub to sub account, especially
+                for user who has an institutional loan.
+
+            operationId: GetAssetTransferQueryAccountCoinBalanceV5
+            parameters:
+                - description: UID.  when querying sub UID balance with master api key
+                  in: query
+                  name: memberId
+                  schema:
+                    default: ""
+                    description: UID.  when querying sub UID balance with master api key
+                    type: string
+                - description: UID.  when querying the transferable balance between different UIDs
+                  in: query
+                  name: toMemberId
+                  schema:
+                    default: ""
+                    description: UID.  when querying the transferable balance between different UIDs
+                    type: string
+                - description: Account type
+                  in: query
+                  name: accountType
+                  schema:
+                    default: ""
+                    description: Account type
+                    type: string
+                - description: To account type.  when querying the transferable balance between different account types
+                  in: query
+                  name: toAccountType
+                  schema:
+                    default: ""
+                    description: To account type.  when querying the transferable balance between different account types
+                    type: string
+                - description: Coin, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+                - description: '`0`(default): not query bonus. `1`: query bonus'
+                  in: query
+                  name: withBonus
+                  schema:
+                    description: '`0`(default): not query bonus. `1`: query bonus'
+                    type: integer
+                - description: 'Whether query delay withdraw/transfer safe amount '
+                  in: query
+                  name: withTransferSafeAmount
+                  schema:
+                    description: 'Whether query delay withdraw/transfer safe amount '
+                    type: integer
+                - description: For OTC loan users in particular, you can check the transferable amount under risk level
+                  in: query
+                  name: withLtvTransferSafeAmount
+                  schema:
+                    description: For OTC loan users in particular, you can check the transferable amount under risk level
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetTransferQueryAccountCoinBalanceV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Single Coin Balance
+            tags:
+                - Asset

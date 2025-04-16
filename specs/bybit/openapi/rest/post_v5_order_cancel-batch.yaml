@@ -1,0 +1,165 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateOrderCancelBatchV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                request:
+                    description: Object
+                    items:
+                        properties:
+                            orderId:
+                                default: ""
+                                description: Order ID. Either `orderId` or `orderLinkId` is required
+                                type: string
+                            orderLinkId:
+                                default: ""
+                                description: User customised order ID. Either `orderId` or `orderLinkId` is required
+                                type: string
+                            symbol:
+                                default: ""
+                                description: Symbol name, like `BTCUSDT`, uppercase only
+                                type: string
+                        type: object
+                    type: array
+            type: object
+        CreateOrderCancelBatchV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "category": "spot",                "symbol": "BTCUSDT",                "orderId": "1666800494330512128",                "orderLinkId": "spot-btc-03"            },            {                "category": "spot",                "symbol": "ATOMUSDT",                "orderId": "",                "orderLinkId": "1666800494330512129"            }        ]    },    "retExtInfo": {        "list": [            {                "code": 0,                "msg": "OK"            },            {                "code": 170213,                "msg": "Order does not exist."            }        ]    },    "time": 1713434299047}'
+            properties:
+                result:
+                    properties:
+                        result:
+                            properties:
+                                category:
+                                    default: ""
+                                    description: Product type
+                                    type: string
+                                list:
+                                    description: Object
+                                    items:
+                                        properties:
+                                            category:
+                                                default: ""
+                                                description: Product type
+                                                type: string
+                                            orderId:
+                                                default: ""
+                                                description: Order ID
+                                                type: string
+                                            orderLinkId:
+                                                default: ""
+                                                description: User customised order ID
+                                                type: string
+                                            symbol:
+                                                default: ""
+                                                description: Symbol name
+                                                type: string
+                                        type: object
+                                    type: array
+                                orderId:
+                                    default: ""
+                                    description: Order ID
+                                    type: string
+                                orderLinkId:
+                                    default: ""
+                                    description: User customised order ID
+                                    type: string
+                                symbol:
+                                    default: ""
+                                    description: Symbol name
+                                    type: string
+                            type: object
+                        retExtInfo:
+                            properties:
+                                code:
+                                    default: ""
+                                    description: Success/error code
+                                    type: string
+                                list:
+                                    description: Object
+                                    items:
+                                        properties:
+                                            code:
+                                                default: ""
+                                                description: Success/error code
+                                                type: string
+                                            msg:
+                                                default: ""
+                                                description: Success/error message
+                                                type: string
+                                        type: object
+                                    type: array
+                                msg:
+                                    default: ""
+                                    description: Success/error message
+                                    type: string
+                            type: object
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/order/cancel-batch:
+        post:
+            description: |+
+                This endpoint allows you to cancel more than one open order in a single request.
+
+            operationId: CreateOrderCancelBatchV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateOrderCancelBatchV5Req'
+                description: The request body for CreateOrderCancelBatchV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateOrderCancelBatchV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Batch Cancel Order
+            tags:
+                - Trade

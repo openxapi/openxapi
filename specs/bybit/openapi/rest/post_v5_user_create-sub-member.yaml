@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateUserCreateSubMemberV5Req:
+            properties:
+                isUta:
+                    description: deprecated param, always UTA account
+                    type: boolean
+                memberType:
+                    description: '`1`: normal sub account, `6`: custodial sub account'
+                    type: integer
+                note:
+                    default: ""
+                    description: Set a remark
+                    type: string
+                password:
+                    default: ""
+                    description: 'Set the password for the new sub user id. '
+                    type: string
+                switch:
+                    type: integer
+                username:
+                    default: ""
+                    description: 'Give a username of the new sub user id. '
+                    type: string
+            type: object
+        CreateUserCreateSubMemberV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "uid": "53888000",        "username": "xxxxx",        "memberType": 1,        "status": 1,        "remark": "test"    },    "retExtInfo": {},    "time": 1676429344734}'
+            properties:
+                result:
+                    properties:
+                        memberType:
+                            description: '`1`: normal sub account, `6`: custodial sub account'
+                            type: integer
+                        remark:
+                            default: ""
+                            description: The remark
+                            type: string
+                        status:
+                            description: The status of the user account
+                            type: integer
+                        uid:
+                            default: ""
+                            description: Sub user Id
+                            type: string
+                        username:
+                            default: ""
+                            description: 'Give a username of the new sub user id. '
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/create-sub-member:
+        post:
+            description: |+
+                Create a new sub user id. Use master account's api key.
+
+            operationId: CreateUserCreateSubMemberV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateUserCreateSubMemberV5Req'
+                description: The request body for CreateUserCreateSubMemberV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateUserCreateSubMemberV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Create Sub UID
+            tags:
+                - User

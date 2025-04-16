@@ -1,0 +1,181 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionAddMarginV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                margin:
+                    default: ""
+                    description: Add or reduce. To add, then `10`; To reduce, then `-10`. Support up to 4 decimal
+                    type: string
+                positionIdx:
+                    description: 'Used to identify positions in different position modes. For hedge mode position, this param is '
+                    type: integer
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+            type: object
+        CreatePositionAddMarginV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "category": "inverse",        "symbol": "ETHUSD",        "positionIdx": 0,        "riskId": 11,        "riskLimitValue": "500",        "size": "200",        "positionValue": "0.11033265",        "avgPrice": "1812.70004844",        "liqPrice": "1550.80",        "bustPrice": "1544.20",        "markPrice": "1812.90",        "leverage": "12",        "autoAddMargin": 0,        "positionStatus": "Normal",        "positionIM": "0.01926611",        "positionMM": "0",        "unrealisedPnl": "0.00001217",        "cumRealisedPnl": "-0.04618929",        "stopLoss": "0.00",        "takeProfit": "0.00",        "trailingStop": "0.00",        "createdTime": "1672737740039",        "updatedTime": "1684234363788"    },    "retExtInfo": {},    "time": 1684234363789}'
+            properties:
+                result:
+                    properties:
+                        autoAddMargin:
+                            description: 'Whether to add margin automatically. `0`: false, `1`: true'
+                            type: integer
+                        avgPrice:
+                            default: ""
+                            description: Average entry price
+                            type: string
+                        bustPrice:
+                            default: ""
+                            description: Bankruptcy price
+                            type: string
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        createdTime:
+                            default: ""
+                            description: Timestamp of the first time a position was created on this symbol (ms)
+                            type: string
+                        cumRealisedPnl:
+                            default: ""
+                            description: Cumulative realised pnl
+                            type: string
+                        leverage:
+                            default: ""
+                            description: Position leverage
+                            type: string
+                        liqPrice:
+                            default: ""
+                            description: Liquidation price
+                            type: string
+                        markPrice:
+                            default: ""
+                            description: Last mark price
+                            type: string
+                        positionIM:
+                            default: ""
+                            description: Initial margin
+                            type: string
+                        positionIdx:
+                            description: Position idx, used to identify positions in different position modes
+                            type: integer
+                        positionMM:
+                            default: ""
+                            description: Maintenance margin
+                            type: string
+                        positionStatus:
+                            default: ""
+                            description: Position status. `Normal`, `Liq`, `Adl`
+                            type: string
+                        positionValue:
+                            default: ""
+                            description: Position value
+                            type: string
+                        riskId:
+                            description: Risk limit ID
+                            type: integer
+                        riskLimitValue:
+                            default: ""
+                            description: Risk limit value
+                            type: string
+                        size:
+                            default: ""
+                            description: Position size
+                            type: string
+                        stopLoss:
+                            default: ""
+                            description: Stop loss price
+                            type: string
+                        symbol:
+                            default: ""
+                            description: Symbol name
+                            type: string
+                        takeProfit:
+                            default: ""
+                            description: Take profit price
+                            type: string
+                        trailingStop:
+                            default: ""
+                            description: Trailing stop (The distance from market price)
+                            type: string
+                        unrealisedPnl:
+                            default: ""
+                            description: Unrealised PnL
+                            type: string
+                        updatedTime:
+                            default: ""
+                            description: Position updated timestamp (ms)
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/add-margin:
+        post:
+            description: |+
+                Manually add or reduce margin for isolated margin position
+
+            operationId: CreatePositionAddMarginV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionAddMarginV5Req'
+                description: The request body for CreatePositionAddMarginV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionAddMarginV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Add Or Reduce Margin
+            tags:
+                - Position

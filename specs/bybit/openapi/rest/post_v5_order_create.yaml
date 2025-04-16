@@ -1,0 +1,209 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateOrderCreateV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                closeOnTrigger:
+                    description: |4-
+                         For a closing order. It can only reduce your position, not increase it. If the account has insufficient available balance when the closing order is triggered, then other active orders of similar contracts will be cancelled or reduced. It can be used to ensure your stop loss reduces your position regardless of current available margin.
+
+                        Valid for `linear` & `inverse`
+                    type: boolean
+                isLeverage:
+                    description: Whether to borrow.  only.
+                    type: integer
+                marketUnit:
+                    default: ""
+                    description: 'Select the unit for `qty` when create  orders for '
+                    type: string
+                mmp:
+                    description: 'Market maker protection. `option` . `true` means set the order as a market maker protection order. '
+                    type: boolean
+                orderFilter:
+                    default: ""
+                    description: 'If it is not passed, `Order` by default. Valid for `spot` '
+                    type: string
+                orderIv:
+                    default: ""
+                    description: Implied volatility. `option` . Pass the real value, e.g for 10%, 0.1 should be passed. `orderIv` has a higher priority when `price` is passed as well
+                    type: string
+                orderLinkId:
+                    default: ""
+                    description: |+
+                        User customised order ID. A max of 36 characters. Combinations of numbers, letters (upper and lower cases), dashes, and underscores are supported.
+
+                        :
+
+                    type: string
+                orderType:
+                    default: ""
+                    description: '`Market`, `Limit`'
+                    type: string
+                positionIdx:
+                    description: 'Used to identify positions in different position modes. Under hedge-mode, this param is '
+                    type: integer
+                price:
+                    default: ""
+                    description: 'Order price '
+                    type: string
+                qty:
+                    default: ""
+                    description: 'Order quantity '
+                    type: string
+                reduceOnly:
+                    description: ' `true` means your position can only reduce in size if this order is triggered. Valid for `linear`, `inverse` & `option`'
+                    type: boolean
+                side:
+                    default: ""
+                    description: '`Buy`, `Sell`'
+                    type: string
+                slLimitPrice:
+                    default: ""
+                    description: The limit order price when stop loss price is triggered
+                    type: string
+                slOrderType:
+                    default: ""
+                    description: 'The order type when stop loss is triggered '
+                    type: string
+                slTriggerBy:
+                    default: ""
+                    description: 'The price type to trigger stop loss. `MarkPrice`, `IndexPrice`, default: `LastPrice`. Valid for `linear` & `inverse`'
+                    type: string
+                slippageTolerance:
+                    default: ""
+                    description: 'Slippage tolerance value '
+                    type: string
+                slippageToleranceType:
+                    default: ""
+                    description: Slippage tolerance Type for , `TickSize`, `Percent`
+                    type: string
+                smpType:
+                    default: ""
+                    description: 'Smp execution type. '
+                    type: string
+                stopLoss:
+                    default: ""
+                    description: 'Stop loss price '
+                    type: string
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                takeProfit:
+                    default: ""
+                    description: Take profit price
+                    type: string
+                timeInForce:
+                    default: ""
+                    description: ' '
+                    type: string
+                tpLimitPrice:
+                    default: ""
+                    description: 'The limit order price when take profit price is triggered '
+                    type: string
+                tpOrderType:
+                    default: ""
+                    description: 'The order type when take profit is triggered '
+                    type: string
+                tpTriggerBy:
+                    default: ""
+                    description: 'The price type to trigger take profit. `MarkPrice`, `IndexPrice`, default: `LastPrice`. Valid for `linear` & `inverse`'
+                    type: string
+                tpslMode:
+                    default: ""
+                    description: TP/SL mode Valid for `linear` & `inverse`
+                    type: string
+                triggerBy:
+                    default: ""
+                    description: Trigger price type, Conditional order param for Perps & Futures. Valid for `linear` & `inverse`
+                    type: string
+                triggerDirection:
+                    description: Conditional order param. Used to identify the expected direction of the conditional order. Valid for `linear` & `inverse`
+                    type: integer
+                triggerPrice:
+                    default: ""
+                    type: string
+            type: object
+        CreateOrderCreateV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "orderId": "1321003749386327552",        "orderLinkId": "spot-test-postonly"    },    "retExtInfo": {},    "time": 1672211918471}'
+            properties:
+                result:
+                    properties:
+                        orderId:
+                            default: ""
+                            description: Order ID
+                            type: string
+                        orderLinkId:
+                            default: ""
+                            description: User customised order ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/order/create:
+        post:
+            description: |+
+                This endpoint supports to create the order for Spot, Margin trading, USDT perpetual, USDT futures, USDC perpetual, USDC futures, Inverse Futures and Options.
+
+            operationId: CreateOrderCreateV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateOrderCreateV5Req'
+                description: The request body for CreateOrderCreateV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateOrderCreateV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Place Order
+            tags:
+                - Trade

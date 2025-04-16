@@ -1,0 +1,111 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpreadRecentTradeV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "Success",    "result": {        "list": [            {                "execId": "c8512970-d6fb-5039-93a5-b4196dffbe88",                "symbol": "SOLUSDT_SOL/USDT",                "price": "20.2805",                "size": "3.3",                "side": "Sell",                "time": "1744078324035"            },            {                "execId": "92b0002e-c49d-5618-a195-4140d7e10a2b",                "symbol": "SOLUSDT_SOL/USDT",                "price": "20.843",                "size": "2.2",                "side": "Buy",                "time": "1744078322010"            }        ]    },    "retExtInfo": {},    "time": 1744078324682}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Public trade info
+                            items:
+                                properties:
+                                    execId:
+                                        default: ""
+                                        description: Execution ID
+                                        type: string
+                                    price:
+                                        default: ""
+                                        description: Trade price
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: Side of taker `Buy`, `Sell`
+                                        type: string
+                                    size:
+                                        default: ""
+                                        description: Trade size
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Spread combination symbol name
+                                        type: string
+                                    time:
+                                        default: ""
+                                        description: Trade time (ms)
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/recent-trade:
+        get:
+            description: |+
+                Query spread recent public trading data
+
+            operationId: GetSpreadRecentTradeV5
+            parameters:
+                - description: Spread combination symbol name
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Spread combination symbol name
+                    type: string
+                - description: 'Limit for data size per page [1,1000], default: `500`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page [1,1000], default: `500`'
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpreadRecentTradeV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Spread Public Recent Trades
+            tags:
+                - Spread Trading

@@ -1,0 +1,91 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateCryptoLoanRepayV5Req:
+            properties:
+                amount:
+                    default: ""
+                    description: Repay amount
+                    type: string
+                orderId:
+                    default: ""
+                    description: Loan order ID
+                    type: string
+            type: object
+        CreateCryptoLoanRepayV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "repayId": "1794271131730737664"    },    "retExtInfo": {},    "time": 1728629786884}'
+            properties:
+                result:
+                    properties:
+                        repayId:
+                            default: ""
+                            description: Repayment transaction ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/repay:
+        post:
+            description: |+
+                Fully or partially repay a loan. If interest is due, that is paid off first, with the loaned amount being paid off only after due interest.
+
+                Permission: "Spot trade"
+
+            operationId: CreateCryptoLoanRepayV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateCryptoLoanRepayV5Req'
+                description: The request body for CreateCryptoLoanRepayV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateCryptoLoanRepayV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Repay
+            tags:
+                - Crypto Loan

@@ -1,0 +1,123 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketDeliveryPriceV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "category": "option",        "nextPageCursor": "",        "list": [            {                "symbol": "ETH-26DEC22-1400-C",                "deliveryPrice": "1220.728594450",                "deliveryTime": "1672041600000"            }        ]    },    "retExtInfo": {},    "time": 1672055336993}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    deliveryPrice:
+                                        default: ""
+                                        description: Delivery price
+                                        type: string
+                                    deliveryTime:
+                                        default: ""
+                                        description: Delivery timestamp (ms)
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/delivery-price:
+        get:
+            description: |+
+                Get the delivery price.
+
+                Covers: USDT futures / USDC futures / Inverse futures / Option
+
+            operationId: GetMarketDeliveryPriceV5
+            parameters:
+                - description: Product type. `linear`, `inverse`, `option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `linear`, `inverse`, `option`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: 'Base coin, uppercase only. Default: `BTC`. '
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: 'Base coin, uppercase only. Default: `BTC`. '
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `200`]. Default: `50`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `200`]. Default: `50`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketDeliveryPriceV5Resp'
+                    description: Successful operation
+            summary: Get Delivery Price
+            tags:
+                - Market

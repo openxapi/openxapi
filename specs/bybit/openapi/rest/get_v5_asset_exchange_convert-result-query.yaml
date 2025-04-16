@@ -1,0 +1,136 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetExchangeConvertResultQueryV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "ok",    "result": {        "result": {            "accountType": "eb_convert_funding",            "exchangeTxId": "10100108106409343501030232064",            "userId": "XXXXX",            "fromCoin": "ETH",            "fromCoinType": "crypto",            "fromAmount": "0.1",            "toCoin": "BTC",            "toCoinType": "crypto",            "toAmount": "0.00534882723991",            "exchangeStatus": "success",            "extInfo": {},            "convertRate": "0.0534882723991",            "createdAt": "1720071899995"        }    },    "retExtInfo": {},    "time": 1720073660696}'
+            properties:
+                result:
+                    properties:
+                        result:
+                            properties:
+                                accountType:
+                                    default: ""
+                                    description: Wallet type
+                                    type: string
+                                convertRate:
+                                    default: ""
+                                    description: Exchange rate
+                                    type: string
+                                createdAt:
+                                    default: ""
+                                    description: Quote created time
+                                    type: string
+                                exchangeStatus:
+                                    default: ""
+                                    description: 'Exchange status '
+                                    type: string
+                                exchangeTxId:
+                                    default: ""
+                                    description: Exchange tx ID, same as quote tx ID
+                                    type: string
+                                extInfo:
+                                    description: Reserved field, ignored for now
+                                    type: object
+                                fromAmount:
+                                    default: ""
+                                    description: From coin amount (amount to sell)
+                                    type: string
+                                fromCoin:
+                                    default: ""
+                                    description: From coin
+                                    type: string
+                                fromCoinType:
+                                    default: ""
+                                    description: From coin type. `crypto`
+                                    type: string
+                                toAmount:
+                                    default: ""
+                                    description: To coin amount (amount to buy according to exchange rate)
+                                    type: string
+                                toCoin:
+                                    default: ""
+                                    description: To coin
+                                    type: string
+                                toCoinType:
+                                    default: ""
+                                    description: To coin type. `crypto`
+                                    type: string
+                                userId:
+                                    default: ""
+                                    description: User ID
+                                    type: string
+                            type: object
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/exchange/convert-result-query:
+        get:
+            description: |+
+                You can query the exchange result by sending quoteTxId.
+
+            operationId: GetAssetExchangeConvertResultQueryV5
+            parameters:
+                - description: Quote tx ID
+                  in: query
+                  name: quoteTxId
+                  schema:
+                    default: ""
+                    description: Quote tx ID
+                    type: string
+                - description: Wallet type
+                  in: query
+                  name: accountType
+                  schema:
+                    default: ""
+                    description: Wallet type
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetExchangeConvertResultQueryV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Convert Status
+            tags:
+                - Asset

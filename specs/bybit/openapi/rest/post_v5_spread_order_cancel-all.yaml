@@ -1,0 +1,101 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateSpreadOrderCancelAllV5Req:
+            properties:
+                cancelAll:
+                    description: '`true`, `false`'
+                    type: boolean
+                symbol:
+                    default: ""
+                    description: 'Spread combination symbol name '
+                    type: string
+            type: object
+        CreateSpreadOrderCancelAllV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "orderId": "11ec47f3-f0a2-4b2a-b302-236f2a2d53a2",                "orderLinkId": ""            }        ],        "success": "1"    },    "retExtInfo": {},    "time": 1744090940933}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            items:
+                                properties:
+                                    orderId:
+                                        default: ""
+                                        description: Order ID
+                                        type: string
+                                    orderLinkId:
+                                        default: ""
+                                        description: User customised order ID
+                                        type: string
+                                type: object
+                            type: array
+                        success:
+                            default: ""
+                            description: The field can be ignored
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/order/cancel-all:
+        post:
+            description: |+
+                Cancel all open orders
+
+            operationId: CreateSpreadOrderCancelAllV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSpreadOrderCancelAllV5Req'
+                description: The request body for CreateSpreadOrderCancelAllV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSpreadOrderCancelAllV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel All Spread Orders
+            tags:
+                - Spread Trading

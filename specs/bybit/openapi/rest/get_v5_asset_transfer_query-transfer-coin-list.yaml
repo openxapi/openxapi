@@ -1,0 +1,87 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetTransferQueryTransferCoinListV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "list": [            "BTC",            "ETH"        ]    },    "retExtInfo": {},    "time": 1672144322954}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: A list of coins (as strings)
+                            items:
+                                type: string
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/transfer/query-transfer-coin-list:
+        get:
+            description: |+
+                Query the transferable coin list between each account type
+
+            operationId: GetAssetTransferQueryTransferCoinListV5
+            parameters:
+                - description: From account type
+                  in: query
+                  name: fromAccountType
+                  schema:
+                    default: ""
+                    description: From account type
+                    type: string
+                - description: To account type
+                  in: query
+                  name: toAccountType
+                  schema:
+                    default: ""
+                    description: To account type
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetTransferQueryTransferCoinListV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Transferable Coin
+            tags:
+                - Asset

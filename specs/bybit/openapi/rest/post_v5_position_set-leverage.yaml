@@ -1,0 +1,89 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionSetLeverageV5Req:
+            properties:
+                buyLeverage:
+                    default: ""
+                    description: '[`1`, max leverage] '
+                    type: string
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                sellLeverage:
+                    default: ""
+                    description: '[`1`, max leverage]'
+                    type: string
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+            type: object
+        CreatePositionSetLeverageV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {},    "retExtInfo": {},    "time": 1672281607343}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/set-leverage:
+        post:
+            operationId: CreatePositionSetLeverageV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionSetLeverageV5Req'
+                description: The request body for CreatePositionSetLeverageV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionSetLeverageV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Leverage
+            tags:
+                - Position

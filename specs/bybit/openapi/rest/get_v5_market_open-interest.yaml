@@ -1,0 +1,135 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketOpenInterestV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "symbol": "BTCUSD",        "category": "inverse",        "list": [            {                "openInterest": "461134384.00000000",                "timestamp": "1669571400000"            },            {                "openInterest": "461134292.00000000",                "timestamp": "1669571100000"            }        ],        "nextPageCursor": ""    },    "retExtInfo": {},    "time": 1672053548579}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    openInterest:
+                                        default: ""
+                                        description: "Open interest. The value is the sum of both sides. \n\nThe unit of value, e.g., BTCUSD(inverse) is USD, BTCUSDT(linear) is BTC"
+                                        type: string
+                                    timestamp:
+                                        default: ""
+                                        description: The timestamp (ms)
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Used to paginate
+                            type: string
+                        symbol:
+                            default: ""
+                            description: Symbol name
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/open-interest:
+        get:
+            description: |+
+                Get the open interest of each symbol.
+
+                Covers: USDT contract / USDC contract / Inverse contract
+
+            operationId: GetMarketOpenInterestV5
+            parameters:
+                - description: Product type. `linear`,`inverse`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `linear`,`inverse`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: Interval time. `5min`,`15min`,`30min`,`1h`,`4h`,`1d`
+                  in: query
+                  name: intervalTime
+                  schema:
+                    default: ""
+                    description: Interval time. `5min`,`15min`,`30min`,`1h`,`4h`,`1d`
+                    type: string
+                - description: The start timestamp (ms)
+                  in: query
+                  name: startTime
+                  schema:
+                    description: The start timestamp (ms)
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `200`]. Default: `50`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `200`]. Default: `50`'
+                    type: integer
+                - description: Cursor. Used to paginate
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Used to paginate
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketOpenInterestV5Resp'
+                    description: Successful operation
+            summary: Get Open Interest
+            tags:
+                - Market

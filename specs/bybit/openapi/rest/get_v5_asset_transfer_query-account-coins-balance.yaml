@@ -1,0 +1,125 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetTransferQueryAccountCoinsBalanceV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "memberId": "XXXX",        "accountType": "FUND",        "balance": [            {                "coin": "USDC",                "transferBalance": "0",                "walletBalance": "0",                "bonus": ""            }        ]    },    "retExtInfo": {},    "time": 1675866354913}'
+            properties:
+                result:
+                    properties:
+                        accountType:
+                            default: ""
+                            description: Account type
+                            type: string
+                        balance:
+                            description: Object
+                            items:
+                                properties:
+                                    bonus:
+                                        default: ""
+                                        description: Bonus
+                                        type: string
+                                    coin:
+                                        default: ""
+                                        description: Currency
+                                        type: string
+                                    transferBalance:
+                                        default: ""
+                                        description: Transferable balance
+                                        type: string
+                                    walletBalance:
+                                        default: ""
+                                        description: Wallet balance
+                                        type: string
+                                type: object
+                            type: array
+                        memberId:
+                            default: ""
+                            description: UserID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/transfer/query-account-coins-balance:
+        get:
+            description: |+
+                You could get all coin balance of all account types under the master account, and sub account.
+
+            operationId: GetAssetTransferQueryAccountCoinsBalanceV5
+            parameters:
+                - description: User Id. It is  when you use master api key to check sub account coin balance
+                  in: query
+                  name: memberId
+                  schema:
+                    default: ""
+                    description: User Id. It is  when you use master api key to check sub account coin balance
+                    type: string
+                - description: Account type
+                  in: query
+                  name: accountType
+                  schema:
+                    default: ""
+                    description: Account type
+                    type: string
+                - description: Coin name, uppercase only  this field is  for accountType=`UNIFIED`, and supports up to 10 coins each request
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin name, uppercase only  this field is  for accountType=`UNIFIED`, and supports up to 10 coins each request
+                    type: string
+                - description: '`0`(default): not query bonus. `1`: query bonus'
+                  in: query
+                  name: withBonus
+                  schema:
+                    description: '`0`(default): not query bonus. `1`: query bonus'
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetTransferQueryAccountCoinsBalanceV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get All Coins Balance
+            tags:
+                - Asset

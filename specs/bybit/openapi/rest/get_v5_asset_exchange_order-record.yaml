@@ -1,0 +1,133 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetExchangeOrderRecordV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "orderBody": [            {                "fromCoin": "BTC",                "fromAmount": "0.100000000000000000",                "toCoin": "ETH",                "toAmount": "1.385866230000000000",                "exchangeRate": "13.858662380000000000",                "createdTime": "1672197760",                "exchangeTxId": "145102533285208544812654440448"            }        ],        "nextPageCursor": "173341:1672197760"    },    "retExtInfo": {},    "time": 1672990464021}'
+            properties:
+                result:
+                    properties:
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                        orderBody:
+                            description: Object
+                            items:
+                                properties:
+                                    createdTime:
+                                        default: ""
+                                        description: Exchange created timestamp (sec)
+                                        type: string
+                                    exchangeRate:
+                                        default: ""
+                                        description: Exchange rate
+                                        type: string
+                                    exchangeTxId:
+                                        default: ""
+                                        description: Exchange transaction ID
+                                        type: string
+                                    fromAmount:
+                                        default: ""
+                                        description: The amount to convert from
+                                        type: string
+                                    fromCoin:
+                                        default: ""
+                                        description: The currency to convert from
+                                        type: string
+                                    toAmount:
+                                        default: ""
+                                        description: The amount to convert to
+                                        type: string
+                                    toCoin:
+                                        default: ""
+                                        description: The currency to convert to
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/exchange/order-record:
+        get:
+            description: |+
+                Query the coin exchange records.
+
+            operationId: GetAssetExchangeOrderRecordV5
+            parameters:
+                - description: The currency to convert from, uppercase only. e.g,`BTC`
+                  in: query
+                  name: fromCoin
+                  schema:
+                    default: ""
+                    description: The currency to convert from, uppercase only. e.g,`BTC`
+                    type: string
+                - description: The currency to convert to, uppercase only. e.g,`USDT`
+                  in: query
+                  name: toCoin
+                  schema:
+                    default: ""
+                    description: The currency to convert to, uppercase only. e.g,`USDT`
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `10`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `10`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetExchangeOrderRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Coin Exchange Records
+            tags:
+                - Asset

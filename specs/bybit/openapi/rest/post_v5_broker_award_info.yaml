@@ -1,0 +1,104 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateBrokerAwardInfoV5Req:
+            properties:
+                id:
+                    default: ""
+                    description: Voucher ID
+                    type: string
+            type: object
+        CreateBrokerAwardInfoV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "id": "80209",        "coin": "USDT",        "amountUnit": "AWARD_AMOUNT_UNIT_USD",        "productLine": "PRODUCT_LINE_CONTRACT",        "subProductLine": "SUB_PRODUCT_LINE_CONTRACT_DEFAULT",        "totalAmount": "10000",        "usedAmount": "100"    },    "retExtInfo": {},    "time": 1726107086313}'
+            properties:
+                result:
+                    properties:
+                        amountUnit:
+                            default: ""
+                            type: string
+                        coin:
+                            default: ""
+                            description: Coin
+                            type: string
+                        id:
+                            default: ""
+                            description: Voucher ID
+                            type: string
+                        productLine:
+                            default: ""
+                            description: Product line
+                            type: string
+                        subProductLine:
+                            default: ""
+                            description: Sub product line
+                            type: string
+                        totalAmount:
+                            description: Total amount of voucher
+                            type: object
+                        usedAmount:
+                            default: ""
+                            description: Used amount of voucher
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/broker/award/info:
+        post:
+            operationId: CreateBrokerAwardInfoV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateBrokerAwardInfoV5Req'
+                description: The request body for CreateBrokerAwardInfoV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateBrokerAwardInfoV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Voucher Spec
+            tags:
+                - Exchange Broker

@@ -1,0 +1,132 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketAccountRatioV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "symbol": "BTCUSDT",                "buyRatio": "0.49",                "sellRatio": "0.51",                "timestamp": "1696262400000"            },            {                "symbol": "BTCUSDT",                "buyRatio": "0.4927",                "sellRatio": "0.5073",                "timestamp": "1696258800000"            }        ],        "nextPageCursor": "lastid%3D0%26lasttime%3D1696258800"    },    "retExtInfo": {},    "time": 1731567491688}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    buyRatio:
+                                        default: ""
+                                        description: The ratio of the number of long position
+                                        type: string
+                                    sellRatio:
+                                        default: ""
+                                        description: The ratio of the number of short position
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                    timestamp:
+                                        default: ""
+                                        description: Timestamp (ms)
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/account-ratio:
+        get:
+            operationId: GetMarketAccountRatioV5
+            parameters:
+                - description: Product type. `linear`(USDT Contract),`inverse`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `linear`(USDT Contract),`inverse`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: Data recording period. `5min`, `15min`, `30min`, `1h`, `4h`, `1d`
+                  in: query
+                  name: period
+                  schema:
+                    default: ""
+                    description: Data recording period. `5min`, `15min`, `30min`, `1h`, `4h`, `1d`
+                    type: string
+                - description: The start timestamp (ms)
+                  in: query
+                  name: startTime
+                  schema:
+                    default: ""
+                    description: The start timestamp (ms)
+                    type: string
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    default: ""
+                    description: The end timestamp (ms)
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `500`]. Default: `50`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `500`]. Default: `50`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketAccountRatioV5Resp'
+                    description: Successful operation
+            summary: Get Long Short Ratio
+            tags:
+                - Market

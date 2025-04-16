@@ -1,0 +1,162 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetInsLoanLtvConvertV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "ltvInfo": [            {                "ltv": "0.75",                "rst": "",                "parentUid": "xxxxx",                "subAccountUids": [                    "60568258"                ],                "unpaidAmount": "30",                "unpaidInfo": [                    {                        "token": "USDT",                        "unpaidQty": "30",                        "unpaidInterest": "0"                    }                ],                "balance": "40",                "balanceInfo": [                    {                        "token": "USDT",                        "price": "1",                        "qty": "40",                        "convertedAmount": "40"                    }                ]            }        ]    },    "retExtInfo": {},    "time": 1686638166323}'
+            properties:
+                result:
+                    properties:
+                        ltvInfo:
+                            description: Object
+                            items:
+                                properties:
+                                    balance:
+                                        default: ""
+                                        description: Total asset (margin coins converted to USDT). Please read  to understand the calculation
+                                        type: string
+                                    balanceInfo:
+                                        description: Asset details
+                                        items:
+                                            properties:
+                                                convertedAmount:
+                                                    default: ""
+                                                    description: Margin conversion amount
+                                                    type: string
+                                                price:
+                                                    default: ""
+                                                    description: Margin coin price
+                                                    type: string
+                                                qty:
+                                                    default: ""
+                                                    description: Margin coin quantity
+                                                    type: string
+                                                token:
+                                                    default: ""
+                                                    description: Margin coin
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    convertedAmount:
+                                        default: ""
+                                        description: Margin conversion amount
+                                        type: string
+                                    ltv:
+                                        default: ""
+                                        description: 'Risk rate '
+                                        type: string
+                                    parentUid:
+                                        default: ""
+                                        description: The designated Risk Unit ID that was used to bind with the INS loan
+                                        type: string
+                                    price:
+                                        default: ""
+                                        description: Margin coin price
+                                        type: string
+                                    qty:
+                                        default: ""
+                                        description: Margin coin quantity
+                                        type: string
+                                    rst:
+                                        default: ""
+                                        description: Remaining liquidation time (UTC time in seconds). When it is not triggered, it is displayed as an empty string.
+                                        type: string
+                                    subAccountUids:
+                                        description: Bound user ID
+                                        items:
+                                            type: string
+                                        type: array
+                                    token:
+                                        default: ""
+                                        description: Margin coin
+                                        type: string
+                                    unpaidAmount:
+                                        default: ""
+                                        description: Total debt(USDT)
+                                        type: string
+                                    unpaidInfo:
+                                        description: Debt details
+                                        items:
+                                            properties:
+                                                token:
+                                                    default: ""
+                                                    description: coin
+                                                    type: string
+                                                unpaidInterest:
+                                                    default: ""
+                                                    description: Useless field, please ignore this for now
+                                                    type: string
+                                                unpaidQty:
+                                                    default: ""
+                                                    description: Unpaid principle
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    unpaidInterest:
+                                        default: ""
+                                        description: Useless field, please ignore this for now
+                                        type: string
+                                    unpaidQty:
+                                        default: ""
+                                        description: Unpaid principle
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/ins-loan/ltv-convert:
+        get:
+            description: |+
+                Get your loan-to-value (LTV) ratio.
+
+            operationId: GetInsLoanLtvConvertV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetInsLoanLtvConvertV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get LTV
+            tags:
+                - Institutional Loan

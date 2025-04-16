@@ -1,0 +1,160 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetDeliveryRecordV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "nextPageCursor": "132791%3A0%2C132791%3A0",        "category": "option",        "list": [            {                "symbol": "BTC-29DEC22-16000-P",                "side": "Buy",                "deliveryTime": 1672300800860,                "strike": "16000",                "fee": "0.00000000",                "position": "0.01",                "deliveryPrice": "16541.86369547",                "deliveryRpl": "3.5"            }        ]    },    "retExtInfo": {},    "time": 1672362116184}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    deliveryPrice:
+                                        default: ""
+                                        description: Delivery price
+                                        type: string
+                                    deliveryRpl:
+                                        default: ""
+                                        description: Realized PnL of the delivery
+                                        type: string
+                                    deliveryTime:
+                                        default: ""
+                                        description: Delivery time (ms)
+                                        type: string
+                                    fee:
+                                        default: ""
+                                        description: Trading fee
+                                        type: string
+                                    position:
+                                        default: ""
+                                        description: Executed size
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: '`Buy`,`Sell`'
+                                        type: string
+                                    strike:
+                                        default: ""
+                                        description: Exercise price
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/delivery-record:
+        get:
+            description: |+
+                Query delivery records of Invese Futures, USDC Futures, USDT Futures and Options, sorted by deliveryTime in descending order
+
+            operationId: GetAssetDeliveryRecordV5
+            parameters:
+                - description: 'Product type '
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Expiry date. `25MAR22`. Default: return all'
+                  in: query
+                  name: expDate
+                  schema:
+                    default: ""
+                    description: 'Expiry date. `25MAR22`. Default: return all'
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetDeliveryRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Delivery Record
+            tags:
+                - Asset

@@ -1,0 +1,123 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetDepositQuerySubMemberAddressV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "coin": "USDT",        "chains": {            "chainType": "TRC20",            "addressDeposit": "XXXXXX",            "tagDeposit": "",            "chain": "TRX",            "batchReleaseLimit": "-1",            "contractAddress": "gjLj6t"        }    },    "retExtInfo": {},    "time": 1736394845821}'
+            properties:
+                result:
+                    properties:
+                        chains:
+                            description: Object
+                            items:
+                                properties:
+                                    addressDeposit:
+                                        default: ""
+                                        description: The address for deposit
+                                        type: string
+                                    batchReleaseLimit:
+                                        default: ""
+                                        description: The deposit limit for this coin in this chain. `"-1"` means no limit
+                                        type: string
+                                    chain:
+                                        default: ""
+                                        description: Chain
+                                        type: string
+                                    chainType:
+                                        default: ""
+                                        description: Chain type
+                                        type: string
+                                    contractAddress:
+                                        default: ""
+                                        description: The contract address of the coin. Only display last 6 characters, if there is no contract address, it shows `""`
+                                        type: string
+                                    tagDeposit:
+                                        default: ""
+                                        description: Tag of deposit
+                                        type: string
+                                type: object
+                            type: array
+                        coin:
+                            default: ""
+                            description: Coin
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/deposit/query-sub-member-address:
+        get:
+            description: |+
+                Query the deposit address information of SUB account.
+
+            operationId: GetAssetDepositQuerySubMemberAddressV5
+            parameters:
+                - description: Coin, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+                - description: Please use the value of `chain` from  endpoint
+                  in: query
+                  name: chainType
+                  schema:
+                    default: ""
+                    description: Please use the value of `chain` from  endpoint
+                    type: string
+                - description: Sub user ID
+                  in: query
+                  name: subMemberId
+                  schema:
+                    default: ""
+                    description: Sub user ID
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetDepositQuerySubMemberAddressV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Sub Deposit Address
+            tags:
+                - Asset

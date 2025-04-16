@@ -1,0 +1,110 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpotMarginTradeCollateralV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "currency": "BTC",                "collateralRatioList": [                    {                        "minQty": "0",                        "maxQty": "1000000",                        "collateralRatio": "0.85"                    },                    {                        "minQty": "1000000",                        "maxQty": "",                        "collateralRatio": "0"                    }                ]            }        ]    },    "retExtInfo": "{}",    "time": 1739848984945}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    collateralRatio:
+                                        default: ""
+                                        description: Collateral ratio
+                                        type: string
+                                    collateralRatioList:
+                                        description: Object
+                                        items:
+                                            properties:
+                                                collateralRatio:
+                                                    default: ""
+                                                    description: Collateral ratio
+                                                    type: string
+                                                maxQty:
+                                                    default: ""
+                                                    description: Upper limit(in coin) of the tiered range, `""` means positive infinity
+                                                    type: string
+                                                minQty:
+                                                    default: ""
+                                                    description: lower limit(in coin) of the tiered range
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    currency:
+                                        default: ""
+                                        description: Coin name
+                                        type: string
+                                    maxQty:
+                                        default: ""
+                                        description: Upper limit(in coin) of the tiered range, `""` means positive infinity
+                                        type: string
+                                    minQty:
+                                        default: ""
+                                        description: lower limit(in coin) of the tiered range
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spot-margin-trade/collateral:
+        get:
+            description: |+
+                UTA loan tiered collateral ratio
+
+                Does not need authentication.
+
+            operationId: GetSpotMarginTradeCollateralV5
+            parameters:
+                - description: Coin name, uppercase only
+                  in: query
+                  name: currency
+                  schema:
+                    default: ""
+                    description: Coin name, uppercase only
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpotMarginTradeCollateralV5Resp'
+                    description: Successful operation
+            summary: Get Tiered Collateral Ratio
+            tags:
+                - Spot Margin Trade (UTA)

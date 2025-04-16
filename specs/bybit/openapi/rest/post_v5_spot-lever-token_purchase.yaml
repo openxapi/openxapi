@@ -1,0 +1,121 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateSpotLeverTokenPurchaseV5Req:
+            properties:
+                ltAmount:
+                    default: ""
+                    description: Purchase amount
+                    type: string
+                ltCoin:
+                    default: ""
+                    description: Abbreviation of the LT, such as BTC3L
+                    type: string
+                serialNo:
+                    default: ""
+                    description: Serial number
+                    type: string
+            type: object
+        CreateSpotLeverTokenPurchaseV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "amount": "200",        "execAmt": "",        "execQty": "",        "ltCoin": "EOS3L",        "ltOrderStatus": "2",        "purchaseId": "2611",        "serialNo": "purchase-001",        "valueCoin": "USDT"    },    "retExtInfo": {},    "time": 1672293867729}'
+            properties:
+                result:
+                    properties:
+                        amount:
+                            default: ""
+                            description: Purchase amount
+                            type: string
+                        execAmt:
+                            default: ""
+                            description: Executed amount of LT
+                            type: string
+                        execQty:
+                            default: ""
+                            description: Executed qty of LT
+                            type: string
+                        ltCoin:
+                            default: ""
+                            description: Abbreviation of the LT, such as BTC3L
+                            type: string
+                        ltOrderStatus:
+                            default: ""
+                            description: 'Order status. `1`: completed, `2`: in progress, `3`: failed'
+                            type: string
+                        purchaseId:
+                            default: ""
+                            description: Order ID
+                            type: string
+                        serialNo:
+                            default: ""
+                            description: Serial number, customised order ID
+                            type: string
+                        valueCoin:
+                            default: ""
+                            description: Quote coin
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spot-lever-token/purchase:
+        post:
+            description: |+
+                Purchase levearge token
+
+            operationId: CreateSpotLeverTokenPurchaseV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSpotLeverTokenPurchaseV5Req'
+                description: The request body for CreateSpotLeverTokenPurchaseV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSpotLeverTokenPurchaseV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Purchase
+            tags:
+                - Spot Leverage Token

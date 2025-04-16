@@ -1,0 +1,87 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionConfirmPendingMmrV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                symbol:
+                    default: ""
+                    description: Symbol name
+                    type: string
+            type: object
+        CreatePositionConfirmPendingMmrV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {},    "retExtInfo": {},    "time": 1698051124588}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/confirm-pending-mmr:
+        post:
+            description: |+
+                It is only applicable when the user is marked as only reducing positions (please see the isReduceOnly field in
+                the Get Position Info interface). After the user actively adjusts the risk level, this interface
+                is called to try to calculate the adjusted risk level, and if it passes (retCode=0), the system will remove the position reduceOnly mark.
+                You are recommended to call Get Position Info to check isReduceOnly field.
+
+            operationId: CreatePositionConfirmPendingMmrV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionConfirmPendingMmrV5Req'
+                description: The request body for CreatePositionConfirmPendingMmrV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionConfirmPendingMmrV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Confirm New Risk Limit
+            tags:
+                - Position

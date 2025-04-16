@@ -1,0 +1,88 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetUserGetMemberTypeV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "accounts": [            {                "uid": "533285",                "accountType": [                    "SPOT",                    "UNIFIED",                    "FUND",                    "CONTRACT"                ]            }        ]    },    "retExtInfo": {},    "time": 1686884974151}'
+            properties:
+                result:
+                    properties:
+                        accounts:
+                            description: Object
+                            items:
+                                properties:
+                                    accountType:
+                                        description: Wallets array. `SPOT`, `CONTRACT`, `FUND`, `OPTION`, `UNIFIED`. Please check above practice to understand the value
+                                        items:
+                                            type: string
+                                        type: array
+                                    uid:
+                                        default: ""
+                                        description: Master/Sub user Id
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/get-member-type:
+        get:
+            description: |+
+                Get available wallet types for the master account or sub account
+
+            operationId: GetUserGetMemberTypeV5
+            parameters:
+                - in: query
+                  name: memberIds
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetUserGetMemberTypeV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get UID Wallet Type
+            tags:
+                - User

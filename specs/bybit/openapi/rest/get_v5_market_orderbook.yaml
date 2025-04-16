@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketOrderbookV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "s": "BTCUSDT",        "a": [            [                "65557.7",                "16.606555"            ]        ],        "b": [            [                "65485.47",                "47.081829"            ]        ],        "ts": 1716863719031,        "u": 230704,        "seq": 1432604333,        "cts": 1716863718905    },    "retExtInfo": {},    "time": 1716863719382}'
+            properties:
+                result:
+                    properties:
+                        a:
+                            description: Ask, seller. Order by price asc
+                            items:
+                                type: string
+                            type: array
+                        b:
+                            description: Bid, buyer. Sort by price desc
+                            items:
+                                type: string
+                            type: array
+                        cts:
+                            description: 'The timestamp from the match engine when this orderbook data is produced. It can be correlated with `T` from '
+                            type: integer
+                        s:
+                            default: ""
+                            description: Symbol name
+                            type: string
+                        seq:
+                            description: 'Cross sequence '
+                            type: integer
+                        ts:
+                            description: The timestamp (ms) that the system generates the data
+                            type: integer
+                        u:
+                            description: Update ID, is always in sequence
+                            type: integer
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/orderbook:
+        get:
+            description: |+
+                Query for orderbook depth data.
+
+                Covers: Spot / USDT contract / USDC contract / Inverse contract / Option
+
+                Contract: 500-level of orderbook data
+
+                Spot: 200-level of orderbook data
+
+                Option: 25-level of orderbook data
+
+            operationId: GetMarketOrderbookV5
+            parameters:
+                - description: Product type. `spot`, `linear`, `inverse`, `option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `spot`, `linear`, `inverse`, `option`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: Limit size for each bid and ask
+                  in: query
+                  name: limit
+                  schema:
+                    description: Limit size for each bid and ask
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketOrderbookV5Resp'
+                    description: Successful operation
+            summary: Get Orderbook
+            tags:
+                - Market
