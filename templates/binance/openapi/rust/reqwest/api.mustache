@@ -145,28 +145,41 @@ pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(configuration: 
     let uri_str = format!("{}{{{path}}}", configuration.base_path{{#pathParams}}, {{{baseName}}}={{#isString}}crate::apis::urlencode({{/isString}}{{{vendorExtensions.x-rust-param-identifier}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{^isString}}{{^isUuid}}{{^isPrimitiveType}}{{^isContainer}}.to_string(){{/isContainer}}{{/isPrimitiveType}}{{/isUuid}}{{/isString}}{{#isString}}){{/isString}}{{/pathParams}});
     let mut req_builder = configuration.client.request(reqwest::Method::{{{httpMethod}}}, &uri_str);
 
+    // Create a mutable vector for query parameters
+    let mut query_params: Vec<(String, String)> = Vec::new();
+
     {{#queryParams}}
     {{#required}}
     {{#isArray}}
-    req_builder = match "{{collectionFormat}}" {
-        "multi" => req_builder.query(&{{{vendorExtensions.x-rust-param-identifier}}}.into_iter().map(|p| ("{{{baseName}}}".to_owned(), p.to_string())).collect::<Vec<(std::string::String, std::string::String)>>()),
-        _ => req_builder.query(&[("{{{baseName}}}", &{{{vendorExtensions.x-rust-param-identifier}}}.into_iter().map(|p| p.to_string()).collect::<Vec<String>>().join(",").to_string())]),
+    match "{{collectionFormat}}" {
+        "multi" => {
+            for p in &{{{vendorExtensions.x-rust-param-identifier}}} {
+                query_params.push(("{{{baseName}}}".to_string(), p.to_string()));
+            }
+        },
+        _ => {
+            let joined = {{{vendorExtensions.x-rust-param-identifier}}}.iter()
+                .map(|p| p.to_string())
+                .collect::<Vec<String>>()
+                .join(",");
+            query_params.push(("{{{baseName}}}".to_string(), joined));
+        }
     };
     {{/isArray}}
     {{^isArray}}
     {{^isNullable}}
-    req_builder = req_builder.query(&[("{{{baseName}}}", &{{{vendorExtensions.x-rust-param-identifier}}}.to_string())]);
+    query_params.push(("{{{baseName}}}".to_string(), {{{vendorExtensions.x-rust-param-identifier}}}.to_string()));
     {{/isNullable}}
     {{#isNullable}}
     {{#isDeepObject}}
     if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
         let params = crate::apis::parse_deep_object("{{{baseName}}}", param_value);
-        req_builder = req_builder.query(&params);
+        query_params.extend(params.into_iter().map(|(k, v)| (k, v.to_string())));
     };
     {{/isDeepObject}}
     {{^isDeepObject}}
     if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
-        req_builder = req_builder.query(&[("{{{baseName}}}", &param_value.to_string())]);
+        query_params.push(("{{{baseName}}}".to_string(), param_value.to_string()));
     };
     {{/isDeepObject}}
     {{/isNullable}}
@@ -175,39 +188,106 @@ pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(configuration: 
     {{^required}}
     if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
         {{#isArray}}
-        req_builder = match "{{collectionFormat}}" {
-            "multi" => req_builder.query(&param_value.into_iter().map(|p| ("{{{baseName}}}".to_owned(), p.to_string())).collect::<Vec<(std::string::String, std::string::String)>>()),
-            _ => req_builder.query(&[("{{{baseName}}}", &param_value.into_iter().map(|p| p.to_string()).collect::<Vec<String>>().join(",").to_string())]),
+        match "{{collectionFormat}}" {
+            "multi" => {
+                for p in param_value {
+                    query_params.push(("{{{baseName}}}".to_string(), p.to_string()));
+                }
+            },
+            _ => {
+                let joined = param_value.iter()
+                    .map(|p| p.to_string())
+                    .collect::<Vec<String>>()
+                    .join(",");
+                query_params.push(("{{{baseName}}}".to_string(), joined));
+            }
         };
         {{/isArray}}
         {{^isArray}}
         {{#isDeepObject}}
         let params = crate::apis::parse_deep_object("{{{baseName}}}", param_value);
-        req_builder = req_builder.query(&params);
+        query_params.extend(params.into_iter().map(|(k, v)| (k, v.to_string())));
         {{/isDeepObject}}
         {{^isDeepObject}}
-        req_builder = req_builder.query(&[("{{{baseName}}}", &param_value.to_string())]);
+        query_params.push(("{{{baseName}}}".to_string(), param_value.to_string()));
         {{/isDeepObject}}
         {{/isArray}}
     }
     {{/required}}
     {{/queryParams}}
+
+    // Create header parameters collection
+    let mut header_params = std::collections::HashMap::new();
+    {{#hasHeaderParams}}
+    {{#headerParams}}
+    {{#required}}
+    {{^isNullable}}
+    header_params.insert("{{{baseName}}}".to_string(), {{{vendorExtensions.x-rust-param-identifier}}}{{#isArray}}.join(","){{/isArray}}.to_string());
+    {{/isNullable}}
+    {{#isNullable}}
+    match {{{vendorExtensions.x-rust-param-identifier}}} {
+        Some(param_value) => { header_params.insert("{{{baseName}}}".to_string(), param_value{{#isArray}}.join(","){{/isArray}}.to_string()); },
+        None => { header_params.insert("{{{baseName}}}".to_string(), "".to_string()); },
+    }
+    {{/isNullable}}
+    {{/required}}
+    {{^required}}
+    if let Some(param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+        header_params.insert("{{{baseName}}}".to_string(), param_value{{#isArray}}.join(","){{/isArray}}.to_string());
+    }
+    {{/required}}
+    {{/headerParams}}
+    {{/hasHeaderParams}}
+
+    // Handle Binance Auth first if configured
+    if let Some(ref binance_auth) = configuration.binance_auth {
+        // Add API key to headers
+        header_params.insert("X-MBX-APIKEY".to_string(), binance_auth.api_key().to_string());
+        
+        // Generate request body for signing (if any)
+        {{#hasBodyParam}}
+        {{#bodyParams}}
+        let body_string = match serde_json::to_string(&{{{vendorExtensions.x-rust-param-identifier}}}) {
+            Ok(json) => Some(json.into_bytes()),
+            Err(e) => return Err(Error::Serde(e)),
+        };
+        {{/bodyParams}}
+        {{/hasBodyParam}}
+        {{^hasBodyParam}}
+        let body_string: Option<Vec<u8>> = None;
+        {{/hasBodyParam}}
+        
+        // Sign the request
+        let signature = match binance_auth.sign(Some(&query_params), body_string.as_deref()) {
+            Ok(sig) => sig,
+            Err(e) => return Err(Error::Generic(format!("Failed to sign request: {}", e))),
+        };
+        
+        // Add signature to query params
+        query_params.push(("signature".to_string(), signature));
+    }
     {{#hasAuthMethods}}
     {{#authMethods}}
     {{#isApiKey}}
     {{#isKeyInQuery}}
-    if let Some(ref apikey) = configuration.api_key {
+    else if let Some(ref apikey) = configuration.api_key {
         let key = apikey.key.clone();
         let value = match apikey.prefix {
             Some(ref prefix) => format!("{} {}", prefix, key),
             None => key,
         };
-        req_builder = req_builder.query(&[("{{{keyParamName}}}", value)]);
+        query_params.push(("{{{keyParamName}}}".to_string(), value));
     }
     {{/isKeyInQuery}}
     {{/isApiKey}}
     {{/authMethods}}
     {{/hasAuthMethods}}
+
+    // Apply all query parameters
+    if !query_params.is_empty() {
+        req_builder = req_builder.query(&query_params);
+    }
+
     {{#hasAuthMethods}}
     {{#withAWSV4Signature}}
     if let Some(ref aws_v4_key) = configuration.aws_v4_key {
@@ -232,29 +312,17 @@ pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(configuration: 
     }
     {{/withAWSV4Signature}}
     {{/hasAuthMethods}}
+
+    // Add user agent if configured
     if let Some(ref user_agent) = configuration.user_agent {
         req_builder = req_builder.header(reqwest::header::USER_AGENT, user_agent.clone());
     }
-    {{#hasHeaderParams}}
-    {{#headerParams}}
-    {{#required}}
-    {{^isNullable}}
-    req_builder = req_builder.header("{{{baseName}}}", {{{vendorExtensions.x-rust-param-identifier}}}{{#isArray}}.join(","){{/isArray}}.to_string());
-    {{/isNullable}}
-    {{#isNullable}}
-    match {{{vendorExtensions.x-rust-param-identifier}}} {
-        Some(param_value) => { req_builder = req_builder.header("{{{baseName}}}", param_value{{#isArray}}.join(","){{/isArray}}.to_string()); },
-        None => { req_builder = req_builder.header("{{{baseName}}}", ""); },
+
+    // Apply all header parameters
+    for (header_name, header_value) in header_params {
+        req_builder = req_builder.header(&header_name, &header_value);
     }
-    {{/isNullable}}
-    {{/required}}
-    {{^required}}
-    if let Some(param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
-        req_builder = req_builder.header("{{{baseName}}}", param_value{{#isArray}}.join(","){{/isArray}}.to_string());
-    }
-    {{/required}}
-    {{/headerParams}}
-    {{/hasHeaderParams}}
+
     {{#hasAuthMethods}}
     {{#authMethods}}
     {{#supportTokenSource}}

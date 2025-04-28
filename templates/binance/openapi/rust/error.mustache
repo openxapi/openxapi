@@ -1,0 +1,215 @@
+{{>partial_header}}
+
+{{#defaultImports}}
+use std::error;
+use std::fmt;
+use std::io;
+use serde_json;
+{{/defaultImports}}
+{{#withAwsV4Signature}}
+use aws_sigv4::http_request;
+{{/withAwsV4Signature}}
+{{#supportAsync}}
+{{#supportTokenSource}}
+use std::error::Error as StdError;
+{{/supportTokenSource}}
+{{/supportAsync}}
+use std::error::Error as StdError;
+use crate::signing::BinanceAuthError;
+
+#[derive(Debug)]
+pub enum Error<T> {
+    Reqwest(reqwest::Error),
+    Serde(serde_json::Error),
+    Io(io::Error),
+    {{#withAwsV4Signature}}
+    AWSV4SignatureError(http_request::Error),
+    {{/withAwsV4Signature}}
+    {{#supportAsync}}
+    {{#supportTokenSource}}
+    /// Error type returned by the `TokenSource` trait implementation.
+    TokenSource(Box<dyn StdError + Send + Sync>),
+    {{/supportTokenSource}}
+    {{/supportAsync}}
+    ResponseError(ResponseContent<T>),
+    BinanceAuth(BinanceAuthError),
+    Generic(String),
+}
+
+#[derive(Debug)]
+pub struct ResponseContent<T> {
+    pub status: reqwest::StatusCode,
+    pub content: String,
+    pub entity: Option<T>,
+}
+
+impl<T> fmt::Display for Error<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (module, e) = match self {
+            Error::Reqwest(e) => ("reqwest", e.to_string()),
+            Error::Serde(e) => ("serde", e.to_string()),
+            Error::Io(e) => ("IO", e.to_string()),
+            {{#withAwsV4Signature}}
+            Error::AWSV4SignatureError(e) => ("AWS Sigv4", e.to_string()),
+            {{/withAwsV4Signature}}
+            {{#supportAsync}}
+            {{#supportTokenSource}}
+            Error::TokenSource(e) => ("token source", e.to_string()),
+            {{/supportTokenSource}}
+            {{/supportAsync}}
+            Error::BinanceAuth(e) => ("binance auth", e.to_string()),
+            Error::Generic(e) => ("generic", e.to_string()),
+            Error::ResponseError(e) => ("response", format!("status code {}", e.status)),
+        };
+        write!(f, "error in {}: {}", module, e)
+    }
+}
+
+impl<T: fmt::Debug> error::Error for Error<T> {
+    fn source(&self) -> Option<&(dyn error::Error + 'static)> {
+        Some(match self {
+            Error::Reqwest(e) => e,
+            Error::Serde(e) => e,
+            Error::Io(e) => e,
+            {{#withAwsV4Signature}}
+            Error::AWSV4SignatureError(e) => e,
+            {{/withAwsV4Signature}}
+            {{#supportAsync}}
+            {{#supportTokenSource}}
+            Error::TokenSource(_) => return None,
+            {{/supportTokenSource}}
+            {{/supportAsync}}
+            Error::BinanceAuth(e) => e,
+            Error::Generic(_) => return None,
+            Error::ResponseError(_) => return None,
+        })
+    }
+}
+
+impl<T> From<reqwest::Error> for Error<T> {
+    fn from(e: reqwest::Error) -> Self {
+        Error::Reqwest(e)
+    }
+}
+
+impl<T> From<serde_json::Error> for Error<T> {
+    fn from(e: serde_json::Error) -> Self {
+        Error::Serde(e)
+    }
+}
+
+impl<T> From<io::Error> for Error<T> {
+    fn from(e: io::Error) -> Self {
+        Error::Io(e)
+    }
+}
+
+{{#withAwsV4Signature}}
+impl<T> From<http_request::Error> for Error<T> {
+    fn from(e: http_request::Error) -> Self {
+        Error::AWSV4SignatureError(e)
+    }
+}
+{{/withAwsV4Signature}}
+
+impl<T> From<BinanceAuthError> for Error<T> {
+    fn from(e: BinanceAuthError) -> Self {
+        Error::BinanceAuth(e)
+    }
+}
+
+pub fn urlencode<T: AsRef<str>>(s: T) -> String {
+    ::url::form_urlencoded::byte_serialize(s.as_ref().as_bytes()).collect()
+}
+
+{{#apiInfo}}
+{{#apis}}
+{{#operations}}
+{{#operation}}
+{{#vendorExtensions.x-streaming}}
+{{#supportAsync}}
+use futures::{Stream, TryStreamExt};
+use {{packageName}}::apis::{ApiError, ResponseContent};
+use crate::apis::{ResponseError, EmptyContext};
+
+#[derive(Debug)]
+enum InnerStream {
+    Plain(reqwest::Response),
+    Line(Box<dyn Stream<Item = Result<String, reqwest::Error>> + Unpin + Send>),
+}
+
+type InflightStream = std::pin::Pin<Box<dyn Stream<Item = Result<String, Error<String>>> + Send>>;
+
+/// Stream of {{#vendorExtensions.x-item-type}}{{vendorExtensions.x-item-type}}{{/vendorExtensions.x-item-type}}{{^vendorExtensions.x-item-type}}unknown{{/vendorExtensions.x-item-type}} values
+#[derive(Debug)]
+pub struct {{operationIdCamelCase}}Stream {
+    inner: Option<InnerStream>
+}
+
+impl {{operationIdCamelCase}}Stream {
+    fn new(inner: InnerStream) -> Self {
+        Self {
+            inner: Some(inner),
+        }
+    }
+
+    pub fn into_json_stream<T: serde::de::DeserializeOwned>(self) -> impl Stream<Item = Result<T, Error<T>>> {
+        self.into_stream().map_ok(|body| {
+            serde_json::from_str(&body).map_err(Error::from)
+        }).try_flatten()
+    }
+
+    pub fn into_stream(mut self) -> InflightStream {
+        let stream = match self.inner.take() {
+            Some(InnerStream::Plain(response)) => {
+                let stream = response.bytes_stream();
+                let stream = stream.map_err(Error::from);
+                // TODO: handle partial lines
+                let stream = stream.map_ok(|bytes| String::from_utf8_lossy(&bytes).to_string());
+                Box::pin(stream) as InflightStream
+            },
+            Some(InnerStream::Line(lines)) => {
+                let stream = lines.map_err(Error::from);
+                Box::pin(stream) as InflightStream
+            },
+            None => panic!("into_stream called multiple times"),
+        };
+        stream
+    }
+}
+
+impl Stream for {{operationIdCamelCase}}Stream {
+    type Item = Result<String, Error<String>>;
+
+    fn poll_next(mut self: std::pin::Pin<&mut Self>, cx: &mut std::task::Context<'_>) -> std::task::Poll<Option<Self::Item>> {
+        let stream = match &mut self.inner {
+            Some(InnerStream::Plain(ref mut response)) => {
+                // Convert to streaming lines iterator on first poll
+                let lines = Box::new(response.copy().bytes_stream()
+                    .map_err(|e| e)
+                    .map_ok(|bytes| String::from_utf8_lossy(&bytes).to_string()));
+                self.inner = Some(InnerStream::Line(lines));
+                match &mut self.inner {
+                    Some(InnerStream::Line(stream)) => stream,
+                    _ => unreachable!()
+                }
+            },
+            Some(InnerStream::Line(stream)) => stream,
+            None => return std::task::Poll::Ready(None),
+        };
+
+        let result = std::pin::Pin::new(stream).poll_next(cx);
+
+        if let std::task::Poll::Ready(None) = &result {
+            self.inner = None;
+        }
+
+        result
+    }
+}
+{{/supportAsync}}
+{{/vendorExtensions.x-streaming}}
+{{/operation}}
+{{/operations}}
+{{/apis}}
+{{/apiInfo}} 

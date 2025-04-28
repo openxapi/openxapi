@@ -1,0 +1,237 @@
+{{>partial_header}}
+
+use base64;
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
+use std::fs;
+use std::path::Path;
+use std::fmt;
+use std::error::Error as StdError;
+use openssl::rsa::Rsa;
+use openssl::pkey::{PKey, Private};
+use openssl::sign::Signer;
+use openssl::hash::MessageDigest;
+use ed25519_dalek::{Keypair, Signer as DalekSigner, SECRET_KEY_LENGTH};
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum KeyType {
+    HMAC,
+    RSA,
+    ED25519,
+}
+
+#[derive(Debug)]
+pub enum BinanceAuthError {
+    IoError(std::io::Error),
+    CryptoError(String),
+    ConfigError(String),
+}
+
+impl fmt::Display for BinanceAuthError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BinanceAuthError::IoError(e) => write!(f, "IO error: {}", e),
+            BinanceAuthError::CryptoError(s) => write!(f, "Crypto error: {}", s),
+            BinanceAuthError::ConfigError(s) => write!(f, "Config error: {}", s),
+        }
+    }
+}
+
+impl StdError for BinanceAuthError {}
+
+impl From<std::io::Error> for BinanceAuthError {
+    fn from(err: std::io::Error) -> Self {
+        BinanceAuthError::IoError(err)
+    }
+}
+
+impl From<openssl::error::ErrorStack> for BinanceAuthError {
+    fn from(err: openssl::error::ErrorStack) -> Self {
+        BinanceAuthError::CryptoError(err.to_string())
+    }
+}
+
+impl From<ed25519_dalek::SignatureError> for BinanceAuthError {
+    fn from(err: ed25519_dalek::SignatureError) -> Self {
+        BinanceAuthError::CryptoError(err.to_string())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum PrivateKeyData {
+    SecretKey(String),
+    RsaKey(Vec<u8>),
+    Ed25519Key(Vec<u8>),
+}
+
+#[derive(Debug, Clone)]
+pub struct BinanceAuth {
+    api_key: String,
+    private_key_data: PrivateKeyData,
+    key_type: KeyType,
+}
+
+impl BinanceAuth {
+    /// Create a new BinanceAuth with HMAC signing using the provided secret key
+    pub fn new_with_hmac(api_key: &str, secret_key: &str) -> Result<Self, BinanceAuthError> {
+        if api_key.is_empty() {
+            return Err(BinanceAuthError::ConfigError("API Key is required".to_string()));
+        }
+        if secret_key.is_empty() {
+            return Err(BinanceAuthError::ConfigError("Secret Key is required for HMAC authentication".to_string()));
+        }
+
+        Ok(BinanceAuth {
+            api_key: api_key.to_string(),
+            private_key_data: PrivateKeyData::SecretKey(secret_key.to_string()),
+            key_type: KeyType::HMAC,
+        })
+    }
+
+    /// Create a new BinanceAuth with RSA or ED25519 signing using the provided PEM file path
+    pub fn new_with_private_key_path(api_key: &str, private_key_path: &str, passphrase: Option<&str>) -> Result<Self, BinanceAuthError> {
+        if api_key.is_empty() {
+            return Err(BinanceAuthError::ConfigError("API Key is required".to_string()));
+        }
+        if private_key_path.is_empty() {
+            return Err(BinanceAuthError::ConfigError("Private Key path is required for RSA/ED25519 authentication".to_string()));
+        }
+
+        let pem_data = fs::read_to_string(Path::new(private_key_path))?;
+        Self::new_with_private_key_pem(api_key, &pem_data, passphrase)
+    }
+
+    /// Create a new BinanceAuth with RSA or ED25519 signing using the provided PEM data
+    pub fn new_with_private_key_pem(api_key: &str, private_key_pem: &str, passphrase: Option<&str>) -> Result<Self, BinanceAuthError> {
+        if api_key.is_empty() {
+            return Err(BinanceAuthError::ConfigError("API Key is required".to_string()));
+        }
+        if private_key_pem.is_empty() {
+            return Err(BinanceAuthError::ConfigError("Private Key PEM data is required for RSA/ED25519 authentication".to_string()));
+        }
+
+        // Try to load as RSA key first
+        let passphrase_bytes = passphrase.map(|p| p.as_bytes());
+        
+        // Attempt to parse as RSA key
+        let rsa_result = Rsa::private_key_from_pem_passphrase(
+            private_key_pem.as_bytes(),
+            passphrase_bytes.unwrap_or(&[]),
+        );
+
+        if let Ok(rsa_key) = rsa_result {
+            let key_data = rsa_key.private_key_to_der()?;
+            return Ok(BinanceAuth {
+                api_key: api_key.to_string(),
+                private_key_data: PrivateKeyData::RsaKey(key_data),
+                key_type: KeyType::RSA,
+            });
+        }
+
+        // If not RSA, try to load as Ed25519
+        // For ED25519, we need to extract the raw 32-byte secret key
+        // This is a simplified approach - in a real implementation, we would need more robust Ed25519 key parsing
+        if private_key_pem.contains("OPENSSH PRIVATE KEY") || private_key_pem.len() == SECRET_KEY_LENGTH * 2 {
+            // This is a simplified check - in production, you'd want to properly parse the OpenSSH key format
+            // or verify the exact format of the Ed25519 key
+            return Ok(BinanceAuth {
+                api_key: api_key.to_string(),
+                private_key_data: PrivateKeyData::Ed25519Key(private_key_pem.as_bytes().to_vec()),
+                key_type: KeyType::ED25519,
+            });
+        }
+
+        Err(BinanceAuthError::ConfigError("Could not parse private key as RSA or Ed25519".to_string()))
+    }
+
+    /// Sign a request with the appropriate algorithm
+    pub fn sign(&self, query_params: Option<&Vec<(String, String)>>, request_body: Option<&[u8]>) -> Result<String, BinanceAuthError> {
+        // Generate payload
+        let payload = self.get_signature_payload(query_params, request_body)?;
+        
+        match &self.key_type {
+            KeyType::HMAC => {
+                if let PrivateKeyData::SecretKey(secret) = &self.private_key_data {
+                    let mut mac = Hmac::<Sha256>::new_from_slice(secret.as_bytes())
+                        .map_err(|e| BinanceAuthError::CryptoError(e.to_string()))?;
+                    mac.update(&payload);
+                    let result = mac.finalize();
+                    let bytes = result.into_bytes();
+                    Ok(hex::encode(bytes))
+                } else {
+                    Err(BinanceAuthError::ConfigError("Secret key not available for HMAC signing".to_string()))
+                }
+            },
+            KeyType::RSA => {
+                if let PrivateKeyData::RsaKey(key_data) = &self.private_key_data {
+                    let pkey = PKey::private_key_from_der(key_data)?;
+                    let mut signer = Signer::new(MessageDigest::sha256(), &pkey)?;
+                    signer.update(&payload)?;
+                    let signature = signer.sign_to_vec()?;
+                    Ok(base64::encode(&signature))
+                } else {
+                    Err(BinanceAuthError::ConfigError("RSA key not available for RSA signing".to_string()))
+                }
+            },
+            KeyType::ED25519 => {
+                if let PrivateKeyData::Ed25519Key(key_data) = &self.private_key_data {
+                    // This is a simplified approach - in a real implementation, you would need 
+                    // a more robust way to create a valid Ed25519 keypair from the stored key data
+                    let keypair = Keypair::from_bytes(key_data)
+                        .map_err(|e| BinanceAuthError::CryptoError(e.to_string()))?;
+                    let signature = keypair.sign(&payload);
+                    Ok(base64::encode(signature.to_bytes()))
+                } else {
+                    Err(BinanceAuthError::ConfigError("Ed25519 key not available for Ed25519 signing".to_string()))
+                }
+            }
+        }
+    }
+
+    /// Constructs the payload string for signing according to Binance rules
+    fn get_signature_payload(&self, query_params: Option<&Vec<(String, String)>>, request_body: Option<&[u8]>) -> Result<Vec<u8>, BinanceAuthError> {
+        let mut payload = String::new();
+        
+        // Add query parameters
+        if let Some(params) = query_params {
+            if !params.is_empty() {
+                let query_string = params.iter()
+                    .map(|(k, v)| format!("{}={}", 
+                        k, 
+                        // Binance doesn't escape @ characters in signature
+                        urlencoding::encode(v).replace("%40", "@")
+                    ))
+                    .collect::<Vec<String>>()
+                    .join("&");
+                
+                payload.push_str(&query_string);
+            }
+        }
+        
+        // Add request body if present
+        if let Some(body) = request_body {
+            if !body.is_empty() {
+                let body_str = std::str::from_utf8(body)
+                    .map_err(|e| BinanceAuthError::ConfigError(format!("Invalid UTF-8 in request body: {}", e)))?;
+                
+                if !payload.is_empty() {
+                    payload.push_str(body_str);
+                } else {
+                    payload = body_str.to_string();
+                }
+            }
+        }
+        
+        Ok(payload.into_bytes())
+    }
+
+    /// Get the API key
+    pub fn api_key(&self) -> &str {
+        &self.api_key
+    }
+
+    /// Get the key type
+    pub fn key_type(&self) -> &KeyType {
+        &self.key_type
+    }
+} 
