@@ -176,10 +176,19 @@ impl BinanceAuth {
             },
             KeyType::ED25519 => {
                 if let PrivateKeyData::Ed25519Key(key_data) = &self.private_key_data {
-                    // This is a simplified approach - in a real implementation, you would need 
-                    // a more robust way to create a valid Ed25519 keypair from the stored key data
-                    let signing_key = SigningKey::from_bytes(key_data)
-                        .map_err(|e| BinanceAuthError::CryptoError(e.to_string()))?;
+                    // Ensure we have exactly 32 bytes for Ed25519 key
+                    if key_data.len() != SECRET_KEY_LENGTH {
+                        return Err(BinanceAuthError::CryptoError(
+                            format!("Ed25519 key must be exactly {} bytes, found {} bytes", 
+                                SECRET_KEY_LENGTH, key_data.len())
+                        ));
+                    }
+
+                    // Convert Vec<u8> to [u8; 32]
+                    let mut fixed_key = [0u8; SECRET_KEY_LENGTH];
+                    fixed_key.copy_from_slice(&key_data[..SECRET_KEY_LENGTH]);
+
+                    let signing_key = SigningKey::from_bytes(&fixed_key);
                     let signature = signing_key.sign(&payload);
                     Ok(STANDARD.encode(signature.to_bytes()))
                 } else {
