@@ -56,7 +56,7 @@ generate-sdk:
 				echo "Generating ${EXCHANGE} rust SDK for $$subdir"; \
 				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
 				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g rust -o ${REAL_OUTPUT_DIR}/src/$${subdir}.tmp; \
-				rm -rf $${REAL_OUTPUT_DIR}/src/$${subdir}; \
+				rm -rf $${REAL_OUTPUT_DIR}/src/$${subdir} $${REAL_OUTPUT_DIR}/docs/$${subdir}; \
 				mv $${REAL_OUTPUT_DIR}/src/$${subdir}.tmp/src $${REAL_OUTPUT_DIR}/src/$$subdir; \
 				mv $${REAL_OUTPUT_DIR}/src/$$subdir/lib.rs $${REAL_OUTPUT_DIR}/src/$$subdir/mod.rs; \
 				mkdir -p $${REAL_OUTPUT_DIR}/docs/$${subdir}; \
@@ -64,8 +64,7 @@ generate-sdk:
 				mv $${REAL_OUTPUT_DIR}/src/$${subdir}.tmp/README.md $${REAL_OUTPUT_DIR}/docs/$${subdir}/README.md; \
 				rm -rf $${REAL_OUTPUT_DIR}/src/$${subdir}.tmp; \
 			done \
-		fi
-	elif [ "${EXCHANGE}" == "okx" ]; then \
+		fi \
 	fi
 
 clean:

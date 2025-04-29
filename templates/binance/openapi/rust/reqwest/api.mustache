@@ -2,7 +2,7 @@
 
 use reqwest;
 use serde::{Deserialize, Serialize, de::Error as _};
-use crate::{apis::ResponseContent, models};
+use crate::{{moduleName}}::{apis::ResponseContent, models};
 use super::{Error, configuration, ContentType};
 
 {{#operations}}
@@ -142,7 +142,7 @@ pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(configuration: 
     {{/allParams}}
 {{/vendorExtensions.x-group-parameters}}
 
-    let uri_str = format!("{}{{{path}}}", configuration.base_path{{#pathParams}}, {{{baseName}}}={{#isString}}crate::apis::urlencode({{/isString}}{{{vendorExtensions.x-rust-param-identifier}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{^isString}}{{^isUuid}}{{^isPrimitiveType}}{{^isContainer}}.to_string(){{/isContainer}}{{/isPrimitiveType}}{{/isUuid}}{{/isString}}{{#isString}}){{/isString}}{{/pathParams}});
+    let uri_str = format!("{}{{{path}}}", configuration.base_path{{#pathParams}}, {{{baseName}}}={{#isString}}crate::{{moduleName}}::apis::urlencode({{/isString}}{{{vendorExtensions.x-rust-param-identifier}}}{{^required}}.unwrap(){{/required}}{{#required}}{{#isNullable}}.unwrap(){{/isNullable}}{{/required}}{{#isArray}}.join(",").as_ref(){{/isArray}}{{^isString}}{{^isUuid}}{{^isPrimitiveType}}{{^isContainer}}.to_string(){{/isContainer}}{{/isPrimitiveType}}{{/isUuid}}{{/isString}}{{#isString}}){{/isString}}{{/pathParams}});
     let mut req_builder = configuration.client.request(reqwest::Method::{{{httpMethod}}}, &uri_str);
 
     // Create a mutable vector for query parameters
@@ -173,7 +173,7 @@ pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(configuration: 
     {{#isNullable}}
     {{#isDeepObject}}
     if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
-        let params = crate::apis::parse_deep_object("{{{baseName}}}", param_value);
+        let params = crate::{{moduleName}}::apis::parse_deep_object("{{{baseName}}}", param_value);
         query_params.extend(params.into_iter().map(|(k, v)| (k, v.to_string())));
     };
     {{/isDeepObject}}
@@ -205,7 +205,7 @@ pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(configuration: 
         {{/isArray}}
         {{^isArray}}
         {{#isDeepObject}}
-        let params = crate::apis::parse_deep_object("{{{baseName}}}", param_value);
+        let params = crate::{{moduleName}}::apis::parse_deep_object("{{{baseName}}}", param_value);
         query_params.extend(params.into_iter().map(|(k, v)| (k, v.to_string())));
         {{/isDeepObject}}
         {{^isDeepObject}}

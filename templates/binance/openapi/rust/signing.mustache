@@ -1,6 +1,6 @@
 {{>partial_header}}
 
-use base64;
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
 use std::fs;
@@ -11,7 +11,8 @@ use openssl::rsa::Rsa;
 use openssl::pkey::{PKey, Private};
 use openssl::sign::Signer;
 use openssl::hash::MessageDigest;
-use ed25519_dalek::{Keypair, Signer as DalekSigner, SECRET_KEY_LENGTH};
+use ed25519_dalek::{SigningKey, Signer as DalekSigner, SECRET_KEY_LENGTH};
+use hex;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum KeyType {
@@ -168,7 +169,7 @@ impl BinanceAuth {
                     let mut signer = Signer::new(MessageDigest::sha256(), &pkey)?;
                     signer.update(&payload)?;
                     let signature = signer.sign_to_vec()?;
-                    Ok(base64::encode(&signature))
+                    Ok(STANDARD.encode(&signature))
                 } else {
                     Err(BinanceAuthError::ConfigError("RSA key not available for RSA signing".to_string()))
                 }
@@ -177,10 +178,10 @@ impl BinanceAuth {
                 if let PrivateKeyData::Ed25519Key(key_data) = &self.private_key_data {
                     // This is a simplified approach - in a real implementation, you would need 
                     // a more robust way to create a valid Ed25519 keypair from the stored key data
-                    let keypair = Keypair::from_bytes(key_data)
+                    let signing_key = SigningKey::from_bytes(key_data)
                         .map_err(|e| BinanceAuthError::CryptoError(e.to_string()))?;
-                    let signature = keypair.sign(&payload);
-                    Ok(base64::encode(signature.to_bytes()))
+                    let signature = signing_key.sign(&payload);
+                    Ok(STANDARD.encode(signature.to_bytes()))
                 } else {
                     Err(BinanceAuthError::ConfigError("Ed25519 key not available for Ed25519 signing".to_string()))
                 }
