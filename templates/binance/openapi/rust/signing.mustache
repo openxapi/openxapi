@@ -111,17 +111,46 @@ impl BinanceAuth {
             return Err(BinanceAuthError::ConfigError("Private Key PEM data is required for RSA/ED25519 authentication".to_string()));
         }
 
-        // Try to load as RSA key first
-        let passphrase_bytes = passphrase.map(|p| p.as_bytes());
+        let passphrase_bytes = passphrase.map(|p| p.as_bytes()).unwrap_or(&[]);
         
-        // Attempt to parse as RSA key
-        let rsa_result = Rsa::private_key_from_pem_passphrase(
-            private_key_pem.as_bytes(),
-            passphrase_bytes.unwrap_or(&[]),
-        );
+        // Try parsing as different key types
+        Self::try_parse_rsa_key(api_key, private_key_pem, passphrase_bytes)
+            .or_else(|_| Self::try_parse_pkcs8_key(api_key, private_key_pem, passphrase_bytes))
+            .or_else(|_| Self::try_parse_openssh_key(api_key, private_key_pem))
+            .or_else(|_| Self::try_parse_base64_ed25519(api_key, private_key_pem))
+            .or_else(|_| Self::try_parse_hex_ed25519(api_key, private_key_pem))
+            .or_else(|_| Err(BinanceAuthError::ConfigError(
+                "Could not parse private key as RSA or Ed25519. Ensure the key is in a supported format.".to_string()
+            )))
+    }
 
-        if let Ok(rsa_key) = rsa_result {
-            let key_data = rsa_key.private_key_to_der()?;
+    // Helper functions for key parsing
+
+    fn try_parse_rsa_key(api_key: &str, private_key_pem: &str, passphrase_bytes: &[u8]) -> Result<Self, BinanceAuthError> {
+        let rsa_key = Rsa::private_key_from_pem_passphrase(private_key_pem.as_bytes(), passphrase_bytes)?;
+        let key_data = rsa_key.private_key_to_der()
+            .map_err(|e| BinanceAuthError::CryptoError(format!("Failed to convert RSA key to DER: {}", e)))?;
+
+        Ok(BinanceAuth {
+            api_key: api_key.to_string(),
+            private_key_data: PrivateKeyData::RsaKey(key_data),
+            key_type: KeyType::RSA,
+        })
+    }
+
+    fn try_parse_pkcs8_key(api_key: &str, private_key_pem: &str, passphrase_bytes: &[u8]) -> Result<Self, BinanceAuthError> {
+        if !private_key_pem.contains("-----BEGIN PRIVATE KEY-----") {
+            return Err(BinanceAuthError::ConfigError("Not a PKCS#8 key".to_string()));
+        }
+
+        // Try to parse as RSA PKCS#8
+        let pkey = PKey::private_key_from_pem_passphrase(private_key_pem.as_bytes(), passphrase_bytes)?;
+
+        // Check if it's an RSA key
+        if let Ok(rsa) = pkey.rsa() {
+            let key_data = rsa.private_key_to_der()
+                .map_err(|e| BinanceAuthError::CryptoError(format!("Failed to convert RSA key to DER: {}", e)))?;
+
             return Ok(BinanceAuth {
                 api_key: api_key.to_string(),
                 private_key_data: PrivateKeyData::RsaKey(key_data),
@@ -129,20 +158,109 @@ impl BinanceAuth {
             });
         }
 
-        // If not RSA, try to load as Ed25519
-        // For ED25519, we need to extract the raw 32-byte secret key
-        // This is a simplified approach - in a real implementation, we would need more robust Ed25519 key parsing
-        if private_key_pem.contains("OPENSSH PRIVATE KEY") || private_key_pem.len() == SECRET_KEY_LENGTH * 2 {
-            // This is a simplified check - in production, you'd want to properly parse the OpenSSH key format
-            // or verify the exact format of the Ed25519 key
-            return Ok(BinanceAuth {
-                api_key: api_key.to_string(),
-                private_key_data: PrivateKeyData::Ed25519Key(private_key_pem.as_bytes().to_vec()),
-                key_type: KeyType::ED25519,
-            });
+        // If it's not RSA, try as Ed25519 in PKCS#8 format
+        let clean_pem = private_key_pem
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replace("\n", "");
+
+        let decoded = STANDARD.decode(clean_pem)
+            .map_err(|_| BinanceAuthError::CryptoError("Failed to decode PEM data".to_string()))?;
+
+        // Look for Ed25519 OID pattern
+        let ed25519_oid = [0x06, 0x03, 0x2B, 0x65, 0x70]; // OID 1.3.101.112
+        let pos = decoded.windows(ed25519_oid.len())
+            .position(|window| window == ed25519_oid)
+            .ok_or_else(|| BinanceAuthError::CryptoError("Ed25519 OID not found".to_string()))?;
+
+        // Look for the octet string that contains the key
+        for i in pos + ed25519_oid.len()..decoded.len().saturating_sub(SECRET_KEY_LENGTH) {
+            if decoded[i] == 0x04 && decoded[i+1] == SECRET_KEY_LENGTH as u8 {
+                // Found the octet string with key data
+                let key_data = decoded[i+2..i+2+SECRET_KEY_LENGTH].to_vec();
+                if key_data.len() == SECRET_KEY_LENGTH {
+                    return Ok(BinanceAuth {
+                        api_key: api_key.to_string(),
+                        private_key_data: PrivateKeyData::Ed25519Key(key_data),
+                        key_type: KeyType::ED25519,
+                    });
+                }
+            }
         }
 
-        Err(BinanceAuthError::ConfigError("Could not parse private key as RSA or Ed25519".to_string()))
+        Err(BinanceAuthError::CryptoError("Could not extract Ed25519 key from PKCS#8".to_string()))
+    }
+
+    fn try_parse_openssh_key(api_key: &str, private_key_pem: &str) -> Result<Self, BinanceAuthError> {
+        if !private_key_pem.contains("-----BEGIN OPENSSH PRIVATE KEY-----") {
+            return Err(BinanceAuthError::ConfigError("Not an OpenSSH key".to_string()));
+        }
+
+        let clean_pem = private_key_pem
+            .replace("-----BEGIN OPENSSH PRIVATE KEY-----", "")
+            .replace("-----END OPENSSH PRIVATE KEY-----", "")
+            .replace("\n", "");
+
+        let decoded = STANDARD.decode(clean_pem)
+            .map_err(|_| BinanceAuthError::CryptoError("Failed to decode OpenSSH key".to_string()))?;
+
+        // Extract what might be the secret key portion
+        // Note: This is simplified and needs proper OpenSSH key parsing in production
+        if decoded.len() >= SECRET_KEY_LENGTH {
+            let key_data = decoded.get(decoded.len().saturating_sub(SECRET_KEY_LENGTH)..)
+                .unwrap_or(&[])
+                .to_vec();
+
+            if key_data.len() == SECRET_KEY_LENGTH {
+                return Ok(BinanceAuth {
+                    api_key: api_key.to_string(),
+                    private_key_data: PrivateKeyData::Ed25519Key(key_data),
+                    key_type: KeyType::ED25519,
+                });
+            }
+        }
+
+        Err(BinanceAuthError::CryptoError("Could not extract Ed25519 key from OpenSSH format".to_string()))
+    }
+
+    fn try_parse_base64_ed25519(api_key: &str, private_key_pem: &str) -> Result<Self, BinanceAuthError> {
+        let decoded = STANDARD.decode(private_key_pem.trim())
+            .map_err(|_| BinanceAuthError::CryptoError("Not a valid base64-encoded key".to_string()))?;
+
+        if decoded.len() != SECRET_KEY_LENGTH {
+            return Err(BinanceAuthError::CryptoError(
+                format!("Invalid key length for Ed25519: expected {}, got {}", SECRET_KEY_LENGTH, decoded.len())
+            ));
+        }
+
+        Ok(BinanceAuth {
+            api_key: api_key.to_string(),
+            private_key_data: PrivateKeyData::Ed25519Key(decoded),
+            key_type: KeyType::ED25519,
+        })
+    }
+
+    fn try_parse_hex_ed25519(api_key: &str, private_key_pem: &str) -> Result<Self, BinanceAuthError> {
+        if private_key_pem.len() != SECRET_KEY_LENGTH * 2 {
+            return Err(BinanceAuthError::CryptoError(
+                format!("Invalid hex length for Ed25519: expected {}, got {}", SECRET_KEY_LENGTH * 2, private_key_pem.len())
+            ));
+        }
+
+        let decoded = hex::decode(private_key_pem)
+            .map_err(|_| BinanceAuthError::CryptoError("Not a valid hex-encoded key".to_string()))?;
+
+        if decoded.len() != SECRET_KEY_LENGTH {
+            return Err(BinanceAuthError::CryptoError(
+                format!("Invalid key length after hex decode: expected {}, got {}", SECRET_KEY_LENGTH, decoded.len())
+            ));
+        }
+
+        Ok(BinanceAuth {
+            api_key: api_key.to_string(),
+            private_key_data: PrivateKeyData::Ed25519Key(decoded),
+            key_type: KeyType::ED25519,
+        })
     }
 
     /// Sign a request with the appropriate algorithm
