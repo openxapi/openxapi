@@ -57,7 +57,7 @@ So that you can use the same specification to generate websocket client SDKs for
 
 | Exchange | Go | Python | JavaScript | Rust |
 |:--------:|:----:|:------:|:----------:|:----:|
-| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py), [PyPi](https://pypi.org/project/openxapi-binance) | [Github](https://github.com/openxapi/binance-js), [npm](https://www.npmjs.com/package/@openxapi/binance) | |
+| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py), [PyPi](https://pypi.org/project/openxapi-binance) | [Github](https://github.com/openxapi/binance-js), [npm](https://www.npmjs.com/package/@openxapi/binance) | [Github](https://github.com/openxapi/binance-rs), [Cargo](https://crates.io/crates/openxapi-binance) |
 
 ## Project Structure
 
