@@ -258,7 +258,10 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 	p.tableContent = ""
 
 	// Regular expressions to identify different sections
-	endpointRegex := regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH) (.+)$`)
+	// endpoont example:
+	// GET /sapi/v1/broker/subAccount
+	// POST\u00a0/sapi/v1/broker/subAccount/futures
+	endpointRegex := regexp.MustCompile(`^(GET|Get|POST|Post|PUT|Put|DELETE|Delete|PATCH|Patch)[\s\x{00A0}]*(/.+)$`)
 	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)?$`)
 	parametersRegex := regexp.MustCompile(`^Request Parameters\s*$`)
 	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
@@ -279,7 +282,9 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 
 		// Check for endpoint definition (e.g., "GET /api/v3/ping")
 		if !foundEndpoint {
+			logrus.Debugf("line: %s", line)
 			matches := endpointRegex.FindStringSubmatch(line)
+			logrus.Debugf("len matches: %d", len(matches))
 			if len(matches) == 3 {
 				endpoint.Method = matches[1]
 				endpointPath := strings.TrimSpace(matches[2])

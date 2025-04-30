@@ -1,0 +1,72 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkDeleteBrokerSubAccountApiV1Resp:
+            example: '{}'
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccountApi:
+        delete:
+            description: |-
+                Caution:
+                - This request will delete a api key for a sub account
+                - You need to enable "trade" option for the api key which requests this endpoint
+                - You can only delete 1 api key for each sub account per second
+            operationId: ExchangelinkDeleteBrokerSubAccountApiV1
+            parameters:
+                - in: query
+                  name: subAccountId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: subAccountApiKey
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkDeleteBrokerSubAccountApiV1Resp'
+                    description: Successful operation
+            summary: Delete Sub Account Api Key
+            tags:
+                - Exchange Link

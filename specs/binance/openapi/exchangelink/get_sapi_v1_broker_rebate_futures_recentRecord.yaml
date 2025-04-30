@@ -1,0 +1,116 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetBrokerRebateFuturesRecentRecordV1Resp:
+            example: '[ { "subaccountId": "1", "income": "0.02063898", "asset": "USDT", "symbol": "ETHUSDT", "tradeId": 123456, "time": 1544433328000, "status": 1 }, { "subaccountId": "2", "income": "0.02060008", "asset": "USDT", "symbol": "BTCUSDT", "tradeId": 223456, "time": 1544433328000, "status": 1 } ]'
+            items:
+                $ref: '#/components/schemas/ExchangelinkGetBrokerRebateFuturesRecentRecordV1RespItem'
+            type: array
+        ExchangelinkGetBrokerRebateFuturesRecentRecordV1RespItem:
+            properties:
+                asset:
+                    type: string
+                income:
+                    type: string
+                status:
+                    type: integer
+                subaccountId:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                tradeId:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/rebate/futures/recentRecord:
+        get:
+            description: '- If filterResult = TRUE, rebates not from its own sub accounts will be filtered out in response.'
+            operationId: ExchangelinkGetBrokerRebateFuturesRecentRecordV1
+            parameters:
+                - description: '1:USDT Futures, 2: Coin Futures'
+                  in: query
+                  name: futuresType
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: startTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: default 10, max 100
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - description: 'TRUE or FALSE. Default: FALSE'
+                  in: query
+                  name: filterResult
+                  schema:
+                    type: boolean
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetBrokerRebateFuturesRecentRecordV1Resp'
+                    description: Successful operation
+            summary: Query Broker Futures Commission Rebate Record
+            tags:
+                - Exchange Link

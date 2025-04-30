@@ -1,0 +1,72 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v3/broker/subAccount/futuresSummary:
+        get:
+            operationId: ExchangelinkGetBrokerSubAccountFuturesSummaryV3
+            parameters:
+                - in: query
+                  name: subAccountId
+                  schema:
+                    default: ""
+                    type: string
+                - description: 1:USD Margined Futures, 2:COIN Margined Futures
+                  in: query
+                  name: futuresType
+                  required: true
+                  schema:
+                    type: integer
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: default 10, max 20
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 20
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+            summary: Query Sub Account Futures Asset info (V3)
+            tags:
+                - Exchange Link
