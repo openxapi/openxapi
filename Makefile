@@ -29,25 +29,42 @@ generate-sdk:
 		exit 1; \
 	fi
 	@if [ -z "${OPENAPI_GENERATOR_CLI}" ]; then \
-		OPENAPI_GENERATOR_CLI=openapi-generator-cli; \
+		echo "OPENAPI_GENERATOR_CLI is not set. Please set it to the path of the openapi-generator-cli executable."; \
+		exit 1; \
 	fi
-	@if [ "${LANGUAGE}" == "js" ]; then \
-		for file in $(shell find generator-configs/${EXCHANGE}/openapi/js -name "*.yaml"); do \
-			echo "Generating ${EXCHANGE} js SDK for $$file"; \
-			subdir=$$(echo "$$file" | sed -n 's|.*js/\(.*\)\.yaml|\1|p'); \
-			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g typescript-axios -o ${OUTPUT_DIR}/src/$$subdir; \
-		done \
-	elif [ "${LANGUAGE}" == "go" ]; then \
-		for file in $(shell find generator-configs/${EXCHANGE}/openapi/go -name "*.yaml"); do \
-			echo "Generating ${EXCHANGE} go SDK for $$subdir"; \
-			subdir=$$(echo "$$file" | sed -n 's|.*go/\(.*\)\.yaml|\1|p'); \
-			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g go -o ${OUTPUT_DIR}/$$subdir; \
-		done \
-	elif [ "${LANGUAGE}" == "python" ]; then \
-		for file in $(shell find generator-configs/${EXCHANGE}/openapi/python -name "*.yaml"); do \
-			echo "Generating ${EXCHANGE} python SDK for $$file"; \
-			$(OPENAPI_GENERATOR_CLI) generate -c $$file -g python -o ${OUTPUT_DIR}; \
-		done \
+	@if [ "${EXCHANGE}" == "binance" ]; then \
+		if [ "${LANGUAGE}" == "js" ]; then \
+			for file in $(shell find generator-configs/${EXCHANGE}/openapi/js -name "*.yaml"); do \
+				echo "Generating ${EXCHANGE} js SDK for $$file"; \
+				subdir=$$(echo "$$file" | sed -n 's|.*js/\(.*\)\.yaml|\1|p'); \
+				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g typescript-axios -o ${OUTPUT_DIR}/src/$$subdir; \
+			done \
+		elif [ "${LANGUAGE}" == "go" ]; then \
+			for file in $(shell find generator-configs/${EXCHANGE}/openapi/go -name "*.yaml"); do \
+				subdir=$$(echo "$$file" | sed -n 's|.*go/\(.*\)\.yaml|\1|p'); \
+				echo "Generating ${EXCHANGE} go SDK for $$subdir"; \
+				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g go -o ${OUTPUT_DIR}/$$subdir; \
+			done \
+		elif [ "${LANGUAGE}" == "python" ]; then \
+			for file in $(shell find generator-configs/${EXCHANGE}/openapi/python -name "*.yaml"); do \
+				echo "Generating ${EXCHANGE} python SDK for $$file"; \
+				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g python -o ${OUTPUT_DIR}; \
+			done \
+		elif [ "${LANGUAGE}" == "rust" ]; then \
+			for file in $(shell find generator-configs/${EXCHANGE}/openapi/rust -name "*.yaml"); do \
+				subdir=$$(echo "$$file" | sed -n 's|.*rust/\(.*\)\.yaml|\1|p'); \
+				echo "Generating ${EXCHANGE} rust SDK for $$subdir"; \
+				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
+				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g rust -o ${REAL_OUTPUT_DIR}/src/$${subdir}.tmp; \
+				rm -rf $${REAL_OUTPUT_DIR}/src/$${subdir} $${REAL_OUTPUT_DIR}/docs/$${subdir}; \
+				mv $${REAL_OUTPUT_DIR}/src/$${subdir}.tmp/src $${REAL_OUTPUT_DIR}/src/$$subdir; \
+				mv $${REAL_OUTPUT_DIR}/src/$$subdir/lib.rs $${REAL_OUTPUT_DIR}/src/$$subdir/mod.rs; \
+				mkdir -p $${REAL_OUTPUT_DIR}/docs/$${subdir}; \
+				mv $${REAL_OUTPUT_DIR}/src/$${subdir}.tmp/docs $${REAL_OUTPUT_DIR}/docs/$${subdir}/docs; \
+				mv $${REAL_OUTPUT_DIR}/src/$${subdir}.tmp/README.md $${REAL_OUTPUT_DIR}/docs/$${subdir}/README.md; \
+				rm -rf $${REAL_OUTPUT_DIR}/src/$${subdir}.tmp; \
+			done \
+		fi \
 	fi
 
 clean:

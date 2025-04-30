@@ -788,7 +788,7 @@ func normalizeType(typ, content string) (string, string) {
 		return parser.IntegerType, content
 	case "FLOAT", "DOUBLE":
 		return parser.NumberType, content
-	case "STRING", "ENUM", "DECIMAL":
+	case "STRING", "ENUM", "DECIMAL", "BIGDECIMAL":
 		return parser.StringType, content
 	case "BOOLEAN", "BOOL":
 		return parser.BooleanType, content

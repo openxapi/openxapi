@@ -1,0 +1,32 @@
+{{>partial_header}}
+
+pub use super::signing::*;
+
+#[derive(Debug, Clone)]
+pub struct Configuration {
+    pub base_path: String,
+    pub user_agent: Option<String>,
+    pub client: {{#supportMiddleware}}reqwest_middleware::ClientWithMiddleware{{/supportMiddleware}}{{^supportMiddleware}}reqwest{{^supportAsync}}::blocking{{/supportAsync}}::Client{{/supportMiddleware}},
+    {{^supportTokenSource}}
+    pub binance_auth: Option<BinanceAuth>,
+    {{/supportTokenSource}}
+}
+
+impl Configuration {
+    pub fn new() -> Configuration {
+        Configuration::default()
+    }
+}
+
+impl Default for Configuration {
+    fn default() -> Self {
+        Configuration {
+            base_path: "{{{basePath}}}".to_owned(),
+            user_agent: {{#httpUserAgent}}Some("{{{.}}}".to_owned()){{/httpUserAgent}}{{^httpUserAgent}}Some("OpenAPI-Generator/{{{version}}}/rust".to_owned()){{/httpUserAgent}},
+            client: {{#supportMiddleware}}reqwest_middleware::ClientBuilder::new(reqwest{{^supportAsync}}::blocking{{/supportAsync}}::Client::new()).build(){{/supportMiddleware}}{{^supportMiddleware}}reqwest{{^supportAsync}}::blocking{{/supportAsync}}::Client::new(){{/supportMiddleware}},
+            {{^supportTokenSource}}
+            binance_auth: None,
+            {{/supportTokenSource}}
+        }
+    }
+}
