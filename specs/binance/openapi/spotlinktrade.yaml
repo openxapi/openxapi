@@ -1,0 +1,482 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SpotlinktradeCreateApiReferralCustomizationV1Req:
+            properties:
+                customerId:
+                    default: ""
+                    type: string
+                email:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - customerId
+                - email
+                - timestamp
+            type: object
+        SpotlinktradeCreateApiReferralCustomizationV1Resp:
+            example: '{ "customerId": "abc123", "email": "test12345@126.com" }'
+            properties:
+                customerId:
+                    type: string
+                email:
+                    type: string
+            type: object
+        SpotlinktradeCreateApiReferralUserCustomizationV1Req:
+            properties:
+                apiAgentCode:
+                    default: ""
+                    type: string
+                customerId:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - customerId
+                - apiAgentCode
+                - timestamp
+            type: object
+        SpotlinktradeCreateApiReferralUserCustomizationV1Resp:
+            example: '{ "customerId": "abc123" }'
+            properties:
+                customerId:
+                    type: string
+            type: object
+        SpotlinktradeGetApiReferralCustomizationV1Resp:
+            example: '[ { "customerId":"abc123", "email":"testABCD@gmail.com" }, { "customerId":"abc345", "email":"testABCD@gmail.com" } ]'
+            items:
+                $ref: '#/components/schemas/SpotlinktradeGetApiReferralCustomizationV1RespItem'
+            type: array
+        SpotlinktradeGetApiReferralCustomizationV1RespItem:
+            properties:
+                customerId:
+                    type: string
+                email:
+                    type: string
+            type: object
+        SpotlinktradeGetApiReferralIfNewUserV1Resp:
+            example: '{ "apiAgentCode": "ABCD1234", "rebateWorking": false,  "ifNewUser":true,  "referrerId": 39472261 }'
+            properties:
+                apiAgentCode:
+                    type: string
+                ifNewUser:
+                    type: boolean
+                rebateWorking:
+                    type: boolean
+                referrerId:
+                    format: int64
+                    type: integer
+            type: object
+        SpotlinktradeGetApiReferralKickbackRecentRecordV1Resp:
+            example: '[ { "income": "0.02063898", "asset":"BTC", "symbol": "ETHBTC", "time":1544433328000 }, { "income": "1.2063898", "asset":"USDT", "symbol": "BTCUSDT", "time":1581580800000 } ]'
+            items:
+                $ref: '#/components/schemas/SpotlinktradeGetApiReferralKickbackRecentRecordV1RespItem'
+            type: array
+        SpotlinktradeGetApiReferralKickbackRecentRecordV1RespItem:
+            properties:
+                asset:
+                    type: string
+                income:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+        SpotlinktradeGetApiReferralRebateRecentRecordV1Resp:
+            example: '[ { "customerId": "", "email": "test*****@126.com", "income": "0.02063898", "asset":"BTC", "symbol": "ETHBTC", "time":1544433328000, "orderId": 10491232, "tradeId": 611123 }, { "customerId": "abd433", "email": "abcd*****@gmail.com", "income": "1.2063898", "asset":"USDT", "symbol": "BTCUSDT", "time":1581580800000, "orderId": 10500242, "tradeId": 612323 } ]'
+            items:
+                $ref: '#/components/schemas/SpotlinktradeGetApiReferralRebateRecentRecordV1RespItem'
+            type: array
+        SpotlinktradeGetApiReferralRebateRecentRecordV1RespItem:
+            properties:
+                asset:
+                    type: string
+                customerId:
+                    type: string
+                email:
+                    type: string
+                income:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                tradeId:
+                    format: int64
+                    type: integer
+            type: object
+        SpotlinktradeGetApiReferralUserCustomizationV1Resp:
+            example: '{ "customerId": "abc123" }'
+            properties:
+                customerId:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    description: OpenAPI specification for Binance exchange - Spotlinktrade API
+    title: Binance Spot Link Trade API
+    version: 0.1.0
+openapi: 3.0.3
+paths:
+    /sapi/v1/apiReferral/customization:
+        get:
+            description: '- CustomerId and email can not be sent at the same time'
+            operationId: SpotlinktradeGetApiReferralCustomizationV1
+            parameters:
+                - in: query
+                  name: customerId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: email
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotlinktradeGetApiReferralCustomizationV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Client Email Customized Id (USER DATA) （For Partner）
+            tags:
+                - Link And Trade
+        post:
+            description: |-
+                - CustomerId must be unique
+                - For the same email, the customerId will be modified in real time
+            operationId: SpotlinktradeCreateApiReferralCustomizationV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/SpotlinktradeCreateApiReferralCustomizationV1Req'
+                description: The request body for SpotlinktradeCreateApiReferralCustomizationV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotlinktradeCreateApiReferralCustomizationV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Customize Id For Client (USER DATA) （For Partner）
+            tags:
+                - Link And Trade
+    /sapi/v1/apiReferral/ifNewUser:
+        get:
+            operationId: SpotlinktradeGetApiReferralIfNewUserV1
+            parameters:
+                - description: brokerId
+                  in: query
+                  name: apiAgentCode
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotlinktradeGetApiReferralIfNewUserV1Resp'
+                    description: Successful operation
+            summary: Query Client If The New User (USER  DATA)
+            tags:
+                - Link And Trade
+    /sapi/v1/apiReferral/kickback/recentRecord:
+        get:
+            description: '- Only get the latest history of past 7 days.'
+            operationId: SpotlinktradeGetApiReferralKickbackRecentRecordV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500, max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotlinktradeGetApiReferralKickbackRecentRecordV1Resp'
+                    description: Successful operation
+            summary: Query Rebate Recent Record(For Client)
+            tags:
+                - Link And Trade
+    /sapi/v1/apiReferral/rebate/recentRecord:
+        get:
+            description: |-
+                - startTime and endTime must be both specified or both omitted.
+                - When both omitted it returns last 7 days.
+                - When both specified the span has to be within 7 days.
+            operationId: SpotlinktradeGetApiReferralRebateRecentRecordV1
+            parameters:
+                - in: query
+                  name: customerId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: max 500
+                  in: query
+                  name: limit
+                  required: true
+                  schema:
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotlinktradeGetApiReferralRebateRecentRecordV1Resp'
+                    description: Successful operation
+            summary: Query Rebate Recent Record （USER DATA）(For Partner)
+            tags:
+                - Link And Trade
+    /sapi/v1/apiReferral/userCustomization:
+        get:
+            description: '- CustomerId must be unique'
+            operationId: SpotlinktradeGetApiReferralUserCustomizationV1
+            parameters:
+                - description: brokerId
+                  in: query
+                  name: apiAgentCode
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotlinktradeGetApiReferralUserCustomizationV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get User’s Customize Id (USER DATA)
+            tags:
+                - Link And Trade
+        post:
+            description: '- CustomerId must be unique for each apiAgent'
+            operationId: SpotlinktradeCreateApiReferralUserCustomizationV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/SpotlinktradeCreateApiReferralUserCustomizationV1Req'
+                description: The request body for SpotlinktradeCreateApiReferralUserCustomizationV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SpotlinktradeCreateApiReferralUserCustomizationV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Customize Id For Client  (USER DATA)(For client)
+            tags:
+                - Link And Trade
+servers:
+    - description: Binance Spotlinktrade API Server
+      url: https://api.binance.com

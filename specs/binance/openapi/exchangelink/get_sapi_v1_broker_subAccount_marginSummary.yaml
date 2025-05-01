@@ -1,0 +1,97 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetBrokerSubAccountMarginSummaryV1Resp:
+            example: '{ "data":[ { "marginEnable": true,  "subAccountId": "367537027503425913", "totalAssetOfBtc": "0.03558520",   "totalLiabilityOfBtc": "0.34585210",  "totalNetAssetOfBtc" :"0.23334213",  "marginLevel": "0.009"  }, { "marginEnable": false, "subAccountId": "367537027503435242" } ], "timestamp": 1583127900000 }'
+            properties:
+                data:
+                    items:
+                        properties:
+                            marginEnable:
+                                type: boolean
+                            marginLevel:
+                                type: string
+                            subAccountId:
+                                type: string
+                            totalAssetOfBtc:
+                                type: string
+                            totalLiabilityOfBtc:
+                                type: string
+                            totalNetAssetOfBtc:
+                                type: string
+                        type: object
+                    type: array
+                timestamp:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccount/marginSummary:
+        get:
+            description: '- If subaccountId is not sent, the size must be sent'
+            operationId: ExchangelinkGetBrokerSubAccountMarginSummaryV1
+            parameters:
+                - in: query
+                  name: subAccountId
+                  schema:
+                    default: ""
+                    type: string
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: default 10, max 20
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 20
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountMarginSummaryV1Resp'
+                    description: Successful operation
+            summary: Query Sub Account Margin Asset info
+            tags:
+                - Exchange Link

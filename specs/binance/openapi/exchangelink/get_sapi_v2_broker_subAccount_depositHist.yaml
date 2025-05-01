@@ -1,0 +1,112 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetBrokerSubAccountDepositHistV2Resp:
+            example: '[ { "depositId": 1234567890123, "subAccountId": "1", "address": "0xddc66e4313fd6c737b6cae67cad90bb4e0ac7092", "addressTag": "", "amount": "139.04370000", "coin": "USDT", "insertTime": 1566791463000, "transferType": 0, "network": "ETH", "status": 3, "txId": "0x5759dfe9983a4c7619bce9bc736bb6c26f804091753bf66fa91e7cd5cfeebafd", "confirmTimes": "12/12", "selfReturnStatus": 0 , "travelRuleStatus": 0  } ]'
+            items:
+                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountDepositHistV2RespItem'
+            type: array
+        ExchangelinkGetBrokerSubAccountDepositHistV2RespItem:
+            properties:
+                address:
+                    type: string
+                addressTag:
+                    type: string
+                amount:
+                    type: string
+                coin:
+                    type: string
+                confirmTimes:
+                    type: string
+                depositId:
+                    format: int64
+                    type: integer
+                insertTime:
+                    format: int64
+                    type: integer
+                network:
+                    type: string
+                selfReturnStatus:
+                    type: integer
+                status:
+                    type: integer
+                subAccountId:
+                    type: string
+                transferType:
+                    type: integer
+                travelRuleStatus:
+                    type: integer
+                txId:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/broker/subAccount/depositHist:
+        get:
+            operationId: ExchangelinkGetBrokerSubAccountDepositHistV2
+            parameters:
+                - in: query
+                  name: depositId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: subAccountId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Default：500
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                - description: Default：0
+                  in: query
+                  name: offset
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountDepositHistV2Resp'
+                    description: Successful operation
+            summary: Get Sub Account Deposit History V2
+            tags:
+                - Exchange Link

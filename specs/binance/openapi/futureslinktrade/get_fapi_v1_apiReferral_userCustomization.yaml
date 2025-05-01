@@ -1,0 +1,76 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        FutureslinktradeGetApiReferralUserCustomizationV1Resp:
+            example: '{ "brokerId": "ABCD1234", "customerId": "abc123" }'
+            properties:
+                brokerId:
+                    type: string
+                customerId:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/apiReferral/userCustomization:
+        get:
+            description: |-
+                - CustomerId must be unique
+                - If the user enabled Portfolio Margin, please user relevant /papi endpoint
+            operationId: FutureslinktradeGetApiReferralUserCustomizationV1
+            parameters:
+                - in: query
+                  name: brokerId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/FutureslinktradeGetApiReferralUserCustomizationV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get User’s Customize Id (USER DATA)
+            tags:
+                - Link And Trade

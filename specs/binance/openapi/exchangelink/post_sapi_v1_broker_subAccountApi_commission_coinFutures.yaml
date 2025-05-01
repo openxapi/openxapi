@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkCreateBrokerSubAccountApiCommissionCoinFuturesV1Req:
+            properties:
+                makerAdjustment:
+                    type: integer
+                pair:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                subAccountId:
+                    default: ""
+                    type: string
+                takerAdjustment:
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - subAccountId
+                - pair
+                - makerAdjustment
+                - takerAdjustment
+                - timestamp
+            type: object
+        ExchangelinkCreateBrokerSubAccountApiCommissionCoinFuturesV1Resp:
+            example: '{ "subAccountId": 1, "pair": "BTCUSD", "makerAdjustment": 150,  "takerAdjustment": 150,  "makerCommission": 450,  "takerCommission": 550  }'
+            properties:
+                makerAdjustment:
+                    type: integer
+                makerCommission:
+                    type: integer
+                pair:
+                    type: string
+                subAccountId:
+                    format: int64
+                    type: integer
+                takerAdjustment:
+                    type: integer
+                takerCommission:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccountApi/commission/coinFutures:
+        post:
+            description: |-
+                This request will change the COIN-Ⓜ futures commission for a sub account.
+                You need to enable "trade" option for the api key which requests this endpoint.
+                The sub-account's COIN-Ⓜ futures commission of a symbol equals to the base commission of the symbol on the sub-account's fee tier plus the commission adjustment.
+            operationId: ExchangelinkCreateBrokerSubAccountApiCommissionCoinFuturesV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/ExchangelinkCreateBrokerSubAccountApiCommissionCoinFuturesV1Req'
+                description: The request body for ExchangelinkCreateBrokerSubAccountApiCommissionCoinFuturesV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkCreateBrokerSubAccountApiCommissionCoinFuturesV1Resp'
+                    description: Successful operation
+            summary: Change Sub Account COIN-Ⓜ Futures Commission Adjustment
+            tags:
+                - Exchange Link

@@ -1,0 +1,124 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetBrokerTransferFuturesV1Resp:
+            example: '{ "success": true, "futuresType": 2, "transfers":[ { "from":"",   "to":"2", "asset":"BTC", "qty":"1", "tranId": "12137888538", "clientTranId":"a123", "time":1544433328000 }, { "fromId":"1", "toId":"2", "asset":"ETH", "qty":"2", "tranId": "12137888538", "clientTranId":"", "time":1544433328000 } ] }'
+            properties:
+                futuresType:
+                    type: integer
+                success:
+                    type: boolean
+                transfers:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            clientTranId:
+                                type: string
+                            from:
+                                type: string
+                            qty:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                            to:
+                                type: string
+                            tranId:
+                                type: string
+                        type: object
+                    type: array
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/transfer/futures:
+        get:
+            description: '- Only get the latest history of past 30 days.'
+            operationId: ExchangelinkGetBrokerTransferFuturesV1
+            parameters:
+                - in: query
+                  name: subAccountId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '1:USDT Futures,2: COIN Futures'
+                  in: query
+                  name: futuresType
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: clientTranId
+                  schema:
+                    default: ""
+                    type: string
+                - description: default 30 days records
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 30 days records
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - description: default 50, max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetBrokerTransferFuturesV1Resp'
+                    description: Successful operation
+            summary: Query Sub Account Transfer History（FUTURES）
+            tags:
+                - Exchange Link

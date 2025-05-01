@@ -1,0 +1,66 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetApiReferralUserCustomizationV1Resp:
+            example: '{ "customerId": "abc123" }'
+            properties:
+                customerId:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/apiReferral/userCustomization:
+        get:
+            description: '- CustomerId must be unique'
+            operationId: ExchangelinkGetApiReferralUserCustomizationV1
+            parameters:
+                - description: brokerId
+                  in: query
+                  name: apiAgentCode
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetApiReferralUserCustomizationV1Resp'
+                    description: Successful operation
+            summary: Get User’s Customize Id (USER DATA)
+            tags:
+                - Link And Trade

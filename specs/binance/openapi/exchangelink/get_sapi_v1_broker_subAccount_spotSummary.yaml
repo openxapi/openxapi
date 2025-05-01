@@ -1,0 +1,91 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetBrokerSubAccountSpotSummaryV1Resp:
+            example: '{ "data":[ { "subAccountId": "367537027503425913", "totalBalanceOfBtc": "0.0355852154360000"  }, { "subAccountId": "367537027503421232", "totalBalanceOfBtc": "0.0233852154360000" } ], "timestamp": 1583432900000 }'
+            properties:
+                data:
+                    items:
+                        properties:
+                            subAccountId:
+                                type: string
+                            totalBalanceOfBtc:
+                                type: string
+                        type: object
+                    type: array
+                timestamp:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccount/spotSummary:
+        get:
+            description: |-
+                - If subaccountId is not sent, the size must be sent
+                - Requests per UID are limited to 60 requests per minute
+            operationId: ExchangelinkGetBrokerSubAccountSpotSummaryV1
+            parameters:
+                - in: query
+                  name: subAccountId
+                  schema:
+                    default: ""
+                    type: string
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: default 10, max 20
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 20
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountSpotSummaryV1Resp'
+                    description: Successful operation
+            summary: Query Sub Account Spot Asset info
+            tags:
+                - Exchange Link

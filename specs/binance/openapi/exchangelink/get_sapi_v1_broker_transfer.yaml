@@ -1,0 +1,130 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetBrokerTransferV1Resp:
+            example: '[ { "fromId":"1", "toId":"2", "asset":"BTC", "qty":"1", "time":1544433328000, "txnId":"2966662589", "clientTranId":"abc", "status": "SUCCESS"   }, { "fromId":"1", "toId":"2", "asset":"ETH", "qty":"2", "time":1544433328000, "txnId":"296666999", "clientTranId":"", "status": "SUCCESS" } ]'
+            items:
+                $ref: '#/components/schemas/ExchangelinkGetBrokerTransferV1RespItem'
+            type: array
+        ExchangelinkGetBrokerTransferV1RespItem:
+            properties:
+                asset:
+                    type: string
+                clientTranId:
+                    type: string
+                fromId:
+                    type: string
+                qty:
+                    type: string
+                status:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                toId:
+                    type: string
+                txnId:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/transfer:
+        get:
+            description: |-
+                Caution:
+                - If showAllStatus is true, the status in response will show four types: INIT,PROCESS,SUCCESS,FAILURE.
+                - If showAllStatus is false, the status in response will show three types: INIT,PROCESS,SUCCESS.
+                - Either fromId or toId must be sent. Return fromId equal master account by default.
+                Query scope is limited to 100 days:
+                - Both startTime and endTime are provided: If it exceeds, the endTime will be re-calculated 100 days after the startTime.
+                - Neither startTime nor endTime are provided: Calculate 100 days before today.
+                - endTime is not provided: Calculate 100 days after startTime.
+                - startTime is not provided: Calculate 100 days before endTime.
+            operationId: ExchangelinkGetBrokerTransferV1
+            parameters:
+                - in: query
+                  name: fromId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: toId
+                  schema:
+                    default: ""
+                    type: string
+                - description: client transfer id
+                  in: query
+                  name: clientTranId
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'true or false, default: false'
+                  in: query
+                  name: showAllStatus
+                  schema:
+                    default: "false"
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: page
+                  schema:
+                    type: integer
+                - description: default 500, max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetBrokerTransferV1Resp'
+                    description: Successful operation
+            summary: Query Sub Account Transfer History（SPOT）
+            tags:
+                - Exchange Link

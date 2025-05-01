@@ -1,0 +1,86 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetBrokerSubAccountApiCommissionCoinFuturesV1Resp:
+            example: '[ { "subAccountId": 1, "pair": "BTCUSD", "makerCommission": 450,  "takerCommission": 550  }, { "subAccountId": 1, "pair": "ETHUSD", "makerCommission": 400, "takerCommission": 500 } ]'
+            items:
+                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionCoinFuturesV1RespItem'
+            type: array
+        ExchangelinkGetBrokerSubAccountApiCommissionCoinFuturesV1RespItem:
+            properties:
+                makerCommission:
+                    type: integer
+                pair:
+                    type: string
+                subAccountId:
+                    format: int64
+                    type: integer
+                takerCommission:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccountApi/commission/coinFutures:
+        get:
+            description: |-
+                - The sub-account's COIN-Ⓜ futures commission of a symbol equals to the base commission of the symbol on the sub-account's fee tier plus the commission adjustment.
+                - If symbol not sent, commission adjustment of all symbols will be returned.
+                - If futures disabled, it is not allowed to set subaccount's COIN-Ⓜ futures commission adjustment on any symbol.
+                - Different symbols have the same commission for the same pair
+            operationId: ExchangelinkGetBrokerSubAccountApiCommissionCoinFuturesV1
+            parameters:
+                - in: query
+                  name: subAccountId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: BTCUSD
+                  in: query
+                  name: pair
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionCoinFuturesV1Resp'
+                    description: Successful operation
+            summary: Query Sub Account COIN-Ⓜ Futures Commission Adjustment
+            tags:
+                - Exchange Link

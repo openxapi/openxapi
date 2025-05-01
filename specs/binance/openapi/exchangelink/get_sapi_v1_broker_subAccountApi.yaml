@@ -1,0 +1,99 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        ExchangelinkGetBrokerSubAccountApiV1Resp:
+            example: '[ { "apikey":"vmP*************", "subaccountId": "1", "canTrade": true, "marginTrade": true, "futuresTrade": false }, { "apikey":"5VN*************", "subaccountId": "1", "canTrade": true, "marginTrade": false, "futuresTrade": false } ]'
+            items:
+                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiV1RespItem'
+            type: array
+        ExchangelinkGetBrokerSubAccountApiV1RespItem:
+            properties:
+                apikey:
+                    type: string
+                canTrade:
+                    type: boolean
+                futuresTrade:
+                    type: boolean
+                marginTrade:
+                    type: boolean
+                subaccountId:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccountApi:
+        get:
+            description: |-
+                Caution:
+                - You need to enable "trade" option for the api key which requests this endpoint
+            operationId: ExchangelinkGetBrokerSubAccountApiV1
+            parameters:
+                - in: query
+                  name: subAccountId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: subAccountApiKey
+                  schema:
+                    default: ""
+                    type: string
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: default 500, max 500
+                  in: query
+                  name: size
+                  schema:
+                    default: 500
+                    format: int64
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiV1Resp'
+                    description: Successful operation
+            summary: Query Sub Account Api Key
+            tags:
+                - Exchange Link
