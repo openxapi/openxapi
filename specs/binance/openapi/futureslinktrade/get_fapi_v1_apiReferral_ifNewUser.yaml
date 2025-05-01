@@ -8,44 +8,42 @@ components:
                 msg:
                     type: string
             type: object
-        ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1Resp:
-            example: '[ { "subAccountId": 1, "symbol": "BTCUSDT", "makerCommission": 450,  "takerCommission": 550  }, { "subAccountId": 1, "symbol": "ETHUSDT", "makerCommission": 400, "takerCommission": 500 } ]'
-            items:
-                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1RespItem'
-            type: array
-        ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1RespItem:
+        FutureslinktradeGetApiReferralIfNewUserV1Resp:
+            example: '{ "brokerId": "ABCD1234", "rebateWorking":false, "ifNewUser": true }'
             properties:
-                makerCommission:
-                    type: integer
-                subAccountId:
-                    format: int64
-                    type: integer
-                symbol:
+                brokerId:
                     type: string
-                takerCommission:
-                    type: integer
+                ifNewUser:
+                    type: boolean
+                rebateWorking:
+                    type: boolean
             type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
 info:
     title: ""
     version: ""
 openapi: ""
 paths:
-    /sapi/v1/broker/subAccountApi/commission/futures:
+    /fapi/v1/apiReferral/ifNewUser:
         get:
-            description: The sub-account's USDT-Ⓜ futures commission of a symbol equals to the base commission of the symbol on the sub-account's fee tier plus the commission adjustment.
-            operationId: ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1
+            description: '- If the user enabled Portfolio Margin, please user relevant /papi endpoint'
+            operationId: FutureslinktradeGetApiReferralIfNewUserV1
             parameters:
                 - in: query
-                  name: subAccountId
+                  name: brokerId
                   required: true
                   schema:
                     default: ""
                     type: string
-                - in: query
-                  name: symbol
+                - description: '1:USDT-margined Futures，2: Coin-margined Futures; Default：1:USDT-margined Futures'
+                  in: query
+                  name: type
                   schema:
-                    default: ""
-                    type: string
+                    type: integer
                 - in: query
                   name: recvWindow
                   schema:
@@ -74,8 +72,10 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1Resp'
+                                $ref: '#/components/schemas/FutureslinktradeGetApiReferralIfNewUserV1Resp'
                     description: Successful operation
-            summary: Query Sub Account USDT-Ⓜ Futures Commission Adjustment
+            security:
+                - ApiKey: []
+            summary: Query Client If The New User (USER DATA)
             tags:
-                - Exchange Link
+                - Link And Trade

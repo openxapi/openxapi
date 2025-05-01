@@ -31,7 +31,7 @@ func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protecte
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
 		return uf.Parse(r, url, docType, protectedEndpoints)
-	case "margin", "algo", "wallet", "copytrading", "convert", "subaccount", "exchangelink":
+	case "margin", "algo", "wallet", "copytrading", "convert", "subaccount", "exchangelink", "spotlinktrade", "futureslinktrade":
 		uf := &MarginDocumentParser{
 			DerivativesDocumentParser: &DerivativesDocumentParser{
 				SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
@@ -990,7 +990,7 @@ func (p *SpotDocumentParser) processSecurities(endpoint *parser.Endpoint) {
 	// Extract the security type from the endpoint summary
 	summary := strings.TrimSpace(endpoint.Summary)
 	// TODO: no need to sign for USER_STREAM endpoints
-	if strings.HasSuffix(summary, "(USER_DATA)") || strings.HasSuffix(summary, "(USER_STREAM)") || strings.HasSuffix(summary, "(TRADE)") {
+	if strings.HasSuffix(summary, "(USER_DATA)") || strings.Contains(summary, "(USER DATA)") || strings.HasSuffix(summary, "(USER_STREAM)") || strings.Contains(summary, "USER_STREAM") || strings.HasSuffix(summary, "(TRADE)") || strings.Contains(summary, "TRADE") {
 		endpoint.SecuritySchemas["ApiKey"] = &parser.SecuritySchema{
 			Type: parser.SecurityTypeApiKey,
 			In:   parser.SecurityLocationHeader,

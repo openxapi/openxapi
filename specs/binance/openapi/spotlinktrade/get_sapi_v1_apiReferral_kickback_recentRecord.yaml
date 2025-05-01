@@ -8,21 +8,21 @@ components:
                 msg:
                     type: string
             type: object
-        ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1Resp:
-            example: '[ { "subAccountId": 1, "symbol": "BTCUSDT", "makerCommission": 450,  "takerCommission": 550  }, { "subAccountId": 1, "symbol": "ETHUSDT", "makerCommission": 400, "takerCommission": 500 } ]'
+        SpotlinktradeGetApiReferralKickbackRecentRecordV1Resp:
+            example: '[ { "income": "0.02063898", "asset":"BTC", "symbol": "ETHBTC", "time":1544433328000 }, { "income": "1.2063898", "asset":"USDT", "symbol": "BTCUSDT", "time":1581580800000 } ]'
             items:
-                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1RespItem'
+                $ref: '#/components/schemas/SpotlinktradeGetApiReferralKickbackRecentRecordV1RespItem'
             type: array
-        ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1RespItem:
+        SpotlinktradeGetApiReferralKickbackRecentRecordV1RespItem:
             properties:
-                makerCommission:
-                    type: integer
-                subAccountId:
-                    format: int64
-                    type: integer
+                asset:
+                    type: string
+                income:
+                    type: string
                 symbol:
                     type: string
-                takerCommission:
+                time:
+                    format: int64
                     type: integer
             type: object
 info:
@@ -30,22 +30,28 @@ info:
     version: ""
 openapi: ""
 paths:
-    /sapi/v1/broker/subAccountApi/commission/futures:
+    /sapi/v1/apiReferral/kickback/recentRecord:
         get:
-            description: The sub-account's USDT-Ⓜ futures commission of a symbol equals to the base commission of the symbol on the sub-account's fee tier plus the commission adjustment.
-            operationId: ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1
+            description: '- Only get the latest history of past 7 days.'
+            operationId: SpotlinktradeGetApiReferralKickbackRecentRecordV1
             parameters:
                 - in: query
-                  name: subAccountId
-                  required: true
+                  name: startTime
                   schema:
-                    default: ""
-                    type: string
+                    format: int64
+                    type: integer
                 - in: query
-                  name: symbol
+                  name: endTime
                   schema:
-                    default: ""
-                    type: string
+                    format: int64
+                    type: integer
+                - description: Default 500, max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
                 - in: query
                   name: recvWindow
                   schema:
@@ -74,8 +80,8 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1Resp'
+                                $ref: '#/components/schemas/SpotlinktradeGetApiReferralKickbackRecentRecordV1Resp'
                     description: Successful operation
-            summary: Query Sub Account USDT-Ⓜ Futures Commission Adjustment
+            summary: Query Rebate Recent Record(For Client)
             tags:
-                - Exchange Link
+                - Link And Trade

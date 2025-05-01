@@ -316,6 +316,14 @@ func TestProcessSecurities(t *testing.T) {
 	assert.Equal(t, "X-MBX-APIKEY", endpoint.SecuritySchemas["ApiKey"].Name)
 
 	endpoint = &parser.Endpoint{
+		Summary: "Get account information (USER DATA)",
+	}
+	docParser.processSecurities(endpoint)
+	assert.Equal(t, parser.SecurityTypeApiKey, endpoint.SecuritySchemas["ApiKey"].Type)
+	assert.Equal(t, parser.SecurityLocationHeader, endpoint.SecuritySchemas["ApiKey"].In)
+	assert.Equal(t, "X-MBX-APIKEY", endpoint.SecuritySchemas["ApiKey"].Name)
+
+	endpoint = &parser.Endpoint{
 		Summary: "Get account information (USER_STREAM)",
 	}
 	docParser.processSecurities(endpoint)

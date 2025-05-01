@@ -8,44 +8,46 @@ components:
                 msg:
                     type: string
             type: object
-        ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1Resp:
-            example: '[ { "subAccountId": 1, "symbol": "BTCUSDT", "makerCommission": 450,  "takerCommission": 550  }, { "subAccountId": 1, "symbol": "ETHUSDT", "makerCommission": 400, "takerCommission": 500 } ]'
-            items:
-                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1RespItem'
-            type: array
-        ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1RespItem:
+        FutureslinktradeGetApiReferralOverviewV1Resp:
+            example: '{ "brokerId": "ABCD1234", "newTraderRebateCommission":"0.30000000", "oldTraderRebateCommission":"0.20000000", "totalTradeUser":13, "unit": "USDT", "totalTradeVol": "405.54379000", "totalRebateVol": "0.01833800", "time": 1597708800000 }'
             properties:
-                makerCommission:
-                    type: integer
-                subAccountId:
+                brokerId:
+                    type: string
+                newTraderRebateCommission:
+                    type: string
+                oldTraderRebateCommission:
+                    type: string
+                time:
                     format: int64
                     type: integer
-                symbol:
+                totalRebateVol:
                     type: string
-                takerCommission:
+                totalTradeUser:
                     type: integer
+                totalTradeVol:
+                    type: string
+                unit:
+                    type: string
             type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
 info:
     title: ""
     version: ""
 openapi: ""
 paths:
-    /sapi/v1/broker/subAccountApi/commission/futures:
+    /fapi/v1/apiReferral/overview:
         get:
-            description: The sub-account's USDT-Ⓜ futures commission of a symbol equals to the base commission of the symbol on the sub-account's fee tier plus the commission adjustment.
-            operationId: ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1
+            operationId: FutureslinktradeGetApiReferralOverviewV1
             parameters:
-                - in: query
-                  name: subAccountId
-                  required: true
+                - description: 1:USDT Margined Futures, 2:COIN Margined Futures Default： USDT Margined Futures
+                  in: query
+                  name: type
                   schema:
-                    default: ""
-                    type: string
-                - in: query
-                  name: symbol
-                  schema:
-                    default: ""
-                    type: string
+                    type: integer
                 - in: query
                   name: recvWindow
                   schema:
@@ -74,8 +76,10 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1Resp'
+                                $ref: '#/components/schemas/FutureslinktradeGetApiReferralOverviewV1Resp'
                     description: Successful operation
-            summary: Query Sub Account USDT-Ⓜ Futures Commission Adjustment
+            security:
+                - ApiKey: []
+            summary: Get Rebate Data Overview (USER DATA)
             tags:
-                - Exchange Link
+                - Link And Trade

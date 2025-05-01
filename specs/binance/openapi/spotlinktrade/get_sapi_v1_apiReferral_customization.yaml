@@ -8,41 +8,40 @@ components:
                 msg:
                     type: string
             type: object
-        ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1Resp:
-            example: '[ { "subAccountId": 1, "symbol": "BTCUSDT", "makerCommission": 450,  "takerCommission": 550  }, { "subAccountId": 1, "symbol": "ETHUSDT", "makerCommission": 400, "takerCommission": 500 } ]'
+        SpotlinktradeGetApiReferralCustomizationV1Resp:
+            example: '[ { "customerId":"abc123", "email":"testABCD@gmail.com" }, { "customerId":"abc345", "email":"testABCD@gmail.com" } ]'
             items:
-                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1RespItem'
+                $ref: '#/components/schemas/SpotlinktradeGetApiReferralCustomizationV1RespItem'
             type: array
-        ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1RespItem:
+        SpotlinktradeGetApiReferralCustomizationV1RespItem:
             properties:
-                makerCommission:
-                    type: integer
-                subAccountId:
-                    format: int64
-                    type: integer
-                symbol:
+                customerId:
                     type: string
-                takerCommission:
-                    type: integer
+                email:
+                    type: string
             type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
 info:
     title: ""
     version: ""
 openapi: ""
 paths:
-    /sapi/v1/broker/subAccountApi/commission/futures:
+    /sapi/v1/apiReferral/customization:
         get:
-            description: The sub-account's USDT-Ⓜ futures commission of a symbol equals to the base commission of the symbol on the sub-account's fee tier plus the commission adjustment.
-            operationId: ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1
+            description: '- CustomerId and email can not be sent at the same time'
+            operationId: SpotlinktradeGetApiReferralCustomizationV1
             parameters:
                 - in: query
-                  name: subAccountId
-                  required: true
+                  name: customerId
                   schema:
                     default: ""
                     type: string
                 - in: query
-                  name: symbol
+                  name: email
                   schema:
                     default: ""
                     type: string
@@ -74,8 +73,10 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/ExchangelinkGetBrokerSubAccountApiCommissionFuturesV1Resp'
+                                $ref: '#/components/schemas/SpotlinktradeGetApiReferralCustomizationV1Resp'
                     description: Successful operation
-            summary: Query Sub Account USDT-Ⓜ Futures Commission Adjustment
+            security:
+                - ApiKey: []
+            summary: Get Client Email Customized Id (USER DATA) （For Partner）
             tags:
-                - Exchange Link
+                - Link And Trade
