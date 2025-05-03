@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -106,9 +107,18 @@ func TestParseWithSamples(t *testing.T) {
 
 	// Create a test documentation
 	doc := Documentation{
-		Type: "spot",
-		URLs: []string{
-			"https://binance-docs.github.io/apidocs/spot/en/",
+		Documentation: config.Documentation{
+			Type: "spot",
+			URLGroups: []config.URLGroup{
+				{
+					Name: "spot",
+					URLs: []config.URLItem{
+						{
+							StringURL: "https://binance-docs.github.io/apidocs/spot/en/",
+						},
+					},
+				},
+			},
 		},
 	}
 
@@ -122,6 +132,6 @@ func TestParseWithSamples(t *testing.T) {
 // MockHTTPDocumentParser is a mock implementation of HTTPDocumentParser for testing
 type MockHTTPDocumentParser struct{}
 
-func (m *MockHTTPDocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]Endpoint, error) {
+func (m *MockHTTPDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]Endpoint, error) {
 	return []Endpoint{}, nil
 }

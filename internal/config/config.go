@@ -23,11 +23,122 @@ type RestConfig struct {
 }
 
 type Documentation struct {
-	Type               string   `yaml:"type"`
-	Description        string   `yaml:"description"`
-	Servers            []string `yaml:"servers"`
-	URLs               []string `yaml:"urls"`
-	ProtectedEndpoints []string `yaml:"protected_endpoints"`
+	Type               string     `yaml:"type"`
+	Description        string     `yaml:"description"`
+	Servers            []string   `yaml:"servers"`
+	URLGroups          []URLGroup `yaml:"url_groups"`
+	ProtectedEndpoints []string   `yaml:"protected_endpoints"`
+}
+
+// URLGroup is a group of URLs that are parsed by the same parser
+type URLGroup struct {
+	Name         string    `yaml:"name"`
+	Description  string    `yaml:"description"`
+	URLs         []URLItem `yaml:"-"` // Custom unmarshaling
+	DocType      string    `yaml:"doc_type"`
+	SecurityType string    `yaml:"security_type"`
+}
+
+// URLItem represents either a string URL or a URLEntity
+type URLItem struct {
+	StringURL string
+	Entity    *URLEntity
+}
+
+// URL returns the URL of the URLItem
+func (u URLItem) URL() string {
+	if u.Entity != nil {
+		return u.Entity.URL
+	}
+	return u.StringURL
+}
+
+// UnmarshalYAML implements custom unmarshaling for URLGroup
+func (g *URLGroup) UnmarshalYAML(value *yaml.Node) error {
+	// Create a temporary struct to unmarshal the main fields
+	type URLGroupTemp struct {
+		Name         string    `yaml:"name"`
+		Description  string    `yaml:"description"`
+		URLs         yaml.Node `yaml:"urls"`
+		DocType      string    `yaml:"doc_type"`
+		SecurityType string    `yaml:"security_type"`
+	}
+
+	var temp URLGroupTemp
+	if err := value.Decode(&temp); err != nil {
+		return err
+	}
+
+	// Copy the simple fields
+	g.Name = temp.Name
+	g.Description = temp.Description
+	g.DocType = temp.DocType
+	g.SecurityType = temp.SecurityType
+
+	// Handle the URLs field based on its type
+	if temp.URLs.Kind == yaml.SequenceNode {
+		for _, item := range temp.URLs.Content {
+			switch item.Kind {
+			case yaml.ScalarNode:
+				// It's a simple string URL
+				var url string
+				if err := item.Decode(&url); err != nil {
+					return err
+				}
+				g.URLs = append(g.URLs, URLItem{StringURL: url})
+			case yaml.MappingNode:
+				// It's a URLEntity
+				var entity URLEntity
+				if err := item.Decode(&entity); err != nil {
+					return err
+				}
+				g.URLs = append(g.URLs, URLItem{Entity: &entity})
+			default:
+				return fmt.Errorf("unexpected node kind in URLs: %v", item.Kind)
+			}
+		}
+	}
+
+	return nil
+}
+
+// MarshalYAML implements custom marshaling for URLGroup
+func (g URLGroup) MarshalYAML() (interface{}, error) {
+	// Create a temporary struct that includes all fields except URLs
+	type URLGroupTemp struct {
+		Name         string      `yaml:"name"`
+		Description  string      `yaml:"description"`
+		URLs         interface{} `yaml:"urls"`
+		DocType      string      `yaml:"doc_type"`
+		SecurityType string      `yaml:"security_type"`
+	}
+
+	temp := URLGroupTemp{
+		Name:         g.Name,
+		Description:  g.Description,
+		DocType:      g.DocType,
+		SecurityType: g.SecurityType,
+	}
+
+	// Convert URLs to a slice of interfaces
+	urls := make([]interface{}, len(g.URLs))
+	for i, item := range g.URLs {
+		if item.Entity != nil {
+			urls[i] = item.Entity
+		} else {
+			urls[i] = item.StringURL
+		}
+	}
+	temp.URLs = urls
+
+	return temp, nil
+}
+
+type URLEntity struct {
+	GroupName    string `yaml:"group_name"`
+	URL          string `yaml:"url"`
+	DocType      string `yaml:"doc_type"`
+	SecurityType string `yaml:"security_type"`
 }
 
 type Settings struct {

@@ -6,7 +6,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/parser"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,7 +30,10 @@ func TestParser_Parse(t *testing.T) {
 
 	// Parse the document directly using DocumentParser
 	docParser := &DocumentParser{}
-	endpoints, err := docParser.Parse(file, "", "spot", []string{})
+	endpoints, err := docParser.Parse(file, &config.URLEntity{
+		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/rest-api/general-endpoints",
+		DocType: "spot",
+	}, []string{})
 	require.NoError(t, err, "Should parse document without error")
 	require.NotEmpty(t, endpoints, "Should have extracted at least one endpoint")
 
@@ -117,9 +122,18 @@ func TestCheckVersion(t *testing.T) {
 	p := NewParser()
 	ctx := context.Background()
 	doc := parser.Documentation{
-		Type: "spot",
-		URLs: []string{
-			"https://developers.binance.com/docs/binance-spot-api-docs/rest-api/general-endpoints",
+		Documentation: config.Documentation{
+			Type: "spot",
+			URLGroups: []config.URLGroup{
+				{
+					Name: "spot",
+					URLs: []config.URLItem{
+						{
+							StringURL: "https://developers.binance.com/docs/binance-spot-api-docs/rest-api/general-endpoints",
+						},
+					},
+				},
+			},
 		},
 	}
 

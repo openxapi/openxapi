@@ -9,8 +9,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/parser"
+
+	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
 )
@@ -472,13 +474,13 @@ func (p *DocumentParser) extractEndpointDocumentSection(endpointStartElement *go
 	return endpointSection
 }
 
-func (p *DocumentParser) Parse(r io.Reader, docURL string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	u, err := url.Parse(docURL)
+func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	u, err := url.Parse(urlEntity.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL: %w", err)
 	}
 
-	p.docType = docType
+	p.docType = urlEntity.DocType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
 	if err != nil {

@@ -10,8 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/parser"
+
+	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,26 +23,26 @@ type DocumentParser struct {
 	docType string
 }
 
-func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	switch docType {
+func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	switch urlEntity.DocType {
 	case "spot":
 		sp := &SpotDocumentParser{DocumentParser: p}
-		return sp.Parse(r, url, docType, protectedEndpoints)
-	case "umfutures", "cmfutures", "options", "pmargin", "pmarginpro", "futuresdata":
+		return sp.Parse(r, urlEntity, protectedEndpoints)
+	case "derivatives", "cmfutures", "options", "pmargin", "pmarginpro", "futuresdata":
 		uf := &DerivativesDocumentParser{
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
-		return uf.Parse(r, url, docType, protectedEndpoints)
+		return uf.Parse(r, urlEntity, protectedEndpoints)
 	case "margin", "algo", "wallet", "copytrading", "convert", "subaccount", "exchangelink", "spotlinktrade", "futureslinktrade":
 		uf := &MarginDocumentParser{
 			DerivativesDocumentParser: &DerivativesDocumentParser{
 				SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 			},
 		}
-		return uf.Parse(r, url, docType, protectedEndpoints)
+		return uf.Parse(r, urlEntity, protectedEndpoints)
 	default:
 		sp := &SpotDocumentParser{DocumentParser: p}
-		return sp.Parse(r, url, docType, protectedEndpoints)
+		return sp.Parse(r, urlEntity, protectedEndpoints)
 	}
 }
 
@@ -51,8 +53,8 @@ type SpotDocumentParser struct {
 }
 
 // Parse parses an HTML document and extracts API endpoints
-func (p *SpotDocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	p.docType = docType
+func (p *SpotDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	p.docType = urlEntity.DocType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
