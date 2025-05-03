@@ -18,9 +18,9 @@ build:
 generate-spec:
 	@make build
 	@if [ -n "${EXCHANGE}" ]; then \
-		$(BINARY_NAME) -exchange ${EXCHANGE} -use-samples; \
+		$(BINARY_NAME) -exchange ${EXCHANGE}; \
 	else \
-		$(BINARY_NAME) -use-samples; \
+		$(BINARY_NAME); \
 	fi
 
 generate-sdk:

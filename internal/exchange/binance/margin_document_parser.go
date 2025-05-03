@@ -22,10 +22,7 @@ func (p *MarginDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, p
 	if err != nil {
 		return nil, fmt.Errorf("parsing HTML: %w", err)
 	}
-
-	// Extract the URL to determine the API category
-	category := p.extractCategory(urlEntity.URL)
-
+	category := toCategory(urlEntity)
 	var endpoints []parser.Endpoint
 
 	parseEndpoint := func(headerElement string) func(i int, header *goquery.Selection) {

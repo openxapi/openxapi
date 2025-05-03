@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/parser"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -202,26 +204,23 @@ func TestExtractResponse(t *testing.T) {
 
 func TestOperationID(t *testing.T) {
 	tests := []struct {
-		docType string
-		method  string
-		path    string
-		want    string
+		method string
+		path   string
+		want   string
 	}{
-		{"Spot", "GET", "/api/v3/exchangeInfo", "SpotGetExchangeInfoV3"},
-		{"Spot", "POST", "/api/v3/account", "SpotCreateAccountV3"},
-		{"Spot", "PUT", "/api/v3/order", "SpotUpdateOrderV3"},
-		{"Spot", "DELETE", "/api/v3/order/oco", "SpotDeleteOrderOcoV3"},
-		{"Spot", "GET", "/api/v3/order/oco", "SpotGetOrderOcoV3"},
-		{"Future", "GET", "/fapi/v1/exchangeInfo", "FutureGetExchangeInfoV1"},
-		{"Future", "POST", "/fapi/v1/order", "FutureCreateOrderV1"},
-		{"Umfutures", "GET", "/futures/data/basis", "UmfuturesGetFuturesDataBasis"},
+		{"GET", "/api/v3/exchangeInfo", "GetExchangeInfoV3"},
+		{"POST", "/api/v3/account", "CreateAccountV3"},
+		{"PUT", "/api/v3/order", "UpdateOrderV3"},
+		{"DELETE", "/api/v3/order/oco", "DeleteOrderOcoV3"},
+		{"GET", "/api/v3/order/oco", "GetOrderOcoV3"},
+		{"GET", "/fapi/v1/exchangeInfo", "GetExchangeInfoV1"},
+		{"POST", "/fapi/v1/order", "CreateOrderV1"},
+		{"GET", "/futures/data/basis", "GetFuturesDataBasis"},
 	}
 
 	for _, test := range tests {
-		got := operationID(test.docType, test.method, test.path)
-		if got != test.want {
-			t.Errorf("operationID(%q, %q, %q) = %q; want %q", test.docType, test.method, test.path, got, test.want)
-		}
+		got := operationID(test.method, test.path)
+		assert.Equal(t, test.want, got)
 	}
 }
 
@@ -254,7 +253,7 @@ func TestExtractContent(t *testing.T) {
 	assert.Equal(t, "", endpoint.Description)
 	assert.Equal(t, nil, endpoint.Extensions["x-weight"])
 	assert.Equal(t, "Memory", endpoint.Extensions["x-data-source"])
-	assert.Equal(t, "SpotGetDepthV3", endpoint.OperationID)
+	assert.Equal(t, "GetDepthV3", endpoint.OperationID)
 	assert.Equal(t, []string{"Market Data"}, endpoint.Tags)
 }
 
@@ -530,4 +529,10 @@ func TestCreateSchema(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestToCategory(t *testing.T) {
+	assert.Equal(t, "Copy Trading", toCategory(&config.URLEntity{GroupName: "copy trading"}))
+	assert.Equal(t, "Usds Margined Futures", toCategory(&config.URLEntity{GroupName: "usds margined futures"}))
+	assert.Equal(t, "Spot", toCategory(&config.URLEntity{GroupName: "spot"}))
 }

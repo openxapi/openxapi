@@ -60,11 +60,7 @@ func (p *SpotDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, pro
 	if err != nil {
 		return nil, fmt.Errorf("parsing HTML: %w", err)
 	}
-
-	// Extract the page title to determine the API category
-	pageTitle := document.Find("title").First().Text()
-	category := extractCategory(pageTitle)
-
+	category := toCategory(urlEntity)
 	var endpoints []parser.Endpoint
 
 	parseEndpoint := func(headerElement string) func(i int, header *goquery.Selection) {
@@ -119,6 +115,14 @@ func (p *SpotDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, pro
 	document.Find("h4.anchor").Each(parseEndpoint("h4"))
 
 	return endpoints, nil
+}
+
+func toCategory(urlEntity *config.URLEntity) string {
+	items := strings.Split(urlEntity.GroupName, " ")
+	for i, item := range items {
+		items[i] = strings.Title(item)
+	}
+	return strings.Join(items, " ")
 }
 
 // extractEndpoint processes the content following an API header to extract endpoint information
@@ -183,7 +187,7 @@ func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content [
 				endpoint.Method = matches[1]
 				endpoint.Path = matches[2]
 				foundEndpoint = true
-				endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
+				endpoint.OperationID = operationID(endpoint.Method, endpoint.Path)
 
 				// Extract the API version from the path
 				apiVersionMatches := apiVersionRegex.FindStringSubmatch(endpoint.Path)
@@ -263,13 +267,8 @@ func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content [
 	return foundEndpoint, foundResponse, responseContent.String()
 }
 
-func operationID(docType, method, path string) string {
-	// GET /api/v3/exchangeInfo -> SpotGetExchangeInfoV3
-	// Spot is the capitalized version of the docType
-	// ExchangeInfoV3 is the method capitalized + the path capitalized
-	title := func(s string) string {
-		return strings.Title(strings.ToLower(s))
-	}
+func operationID(method, path string) string {
+	// GET /api/v3/exchangeInfo -> GetExchangeInfoV3
 	pathRegex := regexp.MustCompile(`^/(.*api)/v(\d+)/(.+)$`)
 	matches := pathRegex.FindStringSubmatch(path)
 	if len(matches) == 4 {
@@ -281,7 +280,7 @@ func operationID(docType, method, path string) string {
 		path = fmt.Sprintf("%sV%s", action, matches[2])
 	}
 	path = strings.Join(strings.Split(strings.Title(strings.ReplaceAll(strings.ReplaceAll(path, "/", " "), "-", " ")), " "), "")
-	return fmt.Sprintf("%s%s%s", title(docType), methodToAction(method), path)
+	return fmt.Sprintf("%s%s", methodToAction(method), path)
 }
 
 func methodToAction(method string) string {

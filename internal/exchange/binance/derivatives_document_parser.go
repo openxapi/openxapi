@@ -25,10 +25,7 @@ func (p *DerivativesDocumentParser) Parse(r io.Reader, urlEntity *config.URLEnti
 	if err != nil {
 		return nil, fmt.Errorf("parsing HTML: %w", err)
 	}
-
-	// Extract the URL to determine the API category
-	category := p.extractCategory(urlEntity.URL)
-
+	category := toCategory(urlEntity)
 	var endpoints []parser.Endpoint
 
 	parseEndpoint := func(headerElement string) func(i int, header *goquery.Selection) {
@@ -295,7 +292,7 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 				}
 				endpoint.Path = endpointPath
 				foundEndpoint = true
-				endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
+				endpoint.OperationID = operationID(endpoint.Method, endpoint.Path)
 
 				// Extract the API version from the path
 				apiVersionMatches := apiVersionRegex.FindStringSubmatch(endpoint.Path)
