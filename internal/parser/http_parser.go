@@ -102,22 +102,22 @@ func (p *HTTPParser) Parse(ctx context.Context, doc Documentation) ([]Endpoint, 
 			var urlEntity *config.URLEntity
 			if urlItem.Entity != nil {
 				urlEntity = urlItem.Entity
-				if urlEntity.DocType == "" {
-					urlEntity.DocType = group.DocType
-				}
-				if urlEntity.SecurityType == "" {
-					urlEntity.SecurityType = group.SecurityType
-				}
 			} else {
 				urlEntity = &config.URLEntity{
 					URL:          url,
-					GroupName:    group.Name,
-					DocType:      group.DocType,
-					SecurityType: group.SecurityType,
 				}
 			}
 			if urlEntity.DocType == "" {
-				urlEntity.DocType = doc.Type
+				urlEntity.DocType = group.DocType
+				if urlEntity.DocType == "" {
+					urlEntity.DocType = doc.Type
+				}
+			}
+			if urlEntity.GroupName == "" {
+				urlEntity.GroupName = group.Name
+			}
+			if urlEntity.SecurityType == "" {
+				urlEntity.SecurityType = group.SecurityType
 			}
 
 			// Parse the document and extract endpoints

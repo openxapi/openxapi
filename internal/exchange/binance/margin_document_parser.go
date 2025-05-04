@@ -61,6 +61,10 @@ func (p *MarginDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, p
 
 			// Process the collected content to extract endpoint information
 			endpointData, valid := p.extractEndpoint(content, category)
+			// If the operation ID is set, override the operation ID
+			if urlEntity.OperationID != "" {
+				endpointData.OperationID = urlEntity.OperationID
+			}
 
 			// Only add valid endpoints
 			if valid && endpointData.Path != "" && endpointData.Method != "" {

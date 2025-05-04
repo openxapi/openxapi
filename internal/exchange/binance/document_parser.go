@@ -28,12 +28,12 @@ func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protect
 	case "spot":
 		sp := &SpotDocumentParser{DocumentParser: p}
 		return sp.Parse(r, urlEntity, protectedEndpoints)
-	case "derivatives", "cmfutures", "options", "pmargin", "pmarginpro", "futuresdata":
+	case "derivatives":
 		uf := &DerivativesDocumentParser{
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
 		return uf.Parse(r, urlEntity, protectedEndpoints)
-	case "margin", "algo", "wallet", "copytrading", "convert", "subaccount", "exchangelink", "spotlinktrade", "futureslinktrade":
+	case "margin":
 		uf := &MarginDocumentParser{
 			DerivativesDocumentParser: &DerivativesDocumentParser{
 				SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
@@ -99,6 +99,10 @@ func (p *SpotDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, pro
 
 			// Process the collected content to extract endpoint information
 			endpointData, valid := p.extractEndpoint(content, category)
+			// If the operation ID is set, override the operation ID
+			if urlEntity.OperationID != "" {
+				endpointData.OperationID = urlEntity.OperationID
+			}
 
 			// Only add valid endpoints
 			if valid && endpointData.Path != "" && endpointData.Method != "" {

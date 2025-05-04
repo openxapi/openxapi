@@ -139,6 +139,8 @@ type URLEntity struct {
 	URL          string `yaml:"url"`
 	DocType      string `yaml:"doc_type"`
 	SecurityType string `yaml:"security_type"`
+	Protected    bool   `yaml:"protected"`
+	OperationID  string `yaml:"operation_id"`
 }
 
 type Settings struct {
