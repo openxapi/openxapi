@@ -315,7 +315,7 @@ func (p *DocumentParser) generateRespExample(respEle *goquery.Selection) string 
 }
 
 func (p *DocumentParser) extractRequestMethodAndPath(endpoint *parser.Endpoint, ele *goquery.Selection) error {
-	reqRegex := regexp.MustCompile(`(?i)(GET|POST|PUT|DELETE|PATCH)\s+(/api/v\d+/[^ ]+)`)
+	reqRegex := regexp.MustCompile(`(?i)(GET|Get|POST|Post|PUT|Put|DELETE|Delete|PATCH|Patch)\s+(/api/v\d+/[^ ]+)`)
 	matches := reqRegex.FindStringSubmatch(ele.Text())
 	if len(matches) != 3 {
 		return fmt.Errorf("request method and path not found")
@@ -389,7 +389,7 @@ func (p *DocumentParser) extractEndpointDocumentSection(endpointStartElement *go
 				codeEle := ele.Find("code").First()
 				if codeEle.Size() > 0 {
 					requestInfo := codeEle.Text()
-					reqRegex := regexp.MustCompile(`(?i)(GET|POST|PUT|DELETE|PATCH)\s+(/api/v\d+/[^ ]+)`)
+					reqRegex := regexp.MustCompile(`(?i)(GET|Get|POST|Post|PUT|Put|DELETE|Delete|PATCH|Patch)\s+(/api/v\d+/[^ ]+)`)
 					if reqRegex.MatchString(requestInfo) {
 						endpointSection.RequestMethodAndPath = codeEle
 					}

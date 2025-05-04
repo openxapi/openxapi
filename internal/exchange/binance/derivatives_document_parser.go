@@ -94,10 +94,15 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 
 		// Check if it's an API endpoint definition (GET, POST, etc.)
 		if strings.HasPrefix(codeText, "GET ") ||
+			strings.HasPrefix(codeText, "Get ") ||
 			strings.HasPrefix(codeText, "POST ") ||
+			strings.HasPrefix(codeText, "Post ") ||
 			strings.HasPrefix(codeText, "PUT ") ||
+			strings.HasPrefix(codeText, "Put ") ||
 			strings.HasPrefix(codeText, "DELETE ") ||
-			strings.HasPrefix(codeText, "PATCH ") {
+			strings.HasPrefix(codeText, "Delete ") ||
+			strings.HasPrefix(codeText, "PATCH ") ||
+			strings.HasPrefix(codeText, "Patch ") {
 			*content = append(*content, codeText)
 		}
 	}
@@ -288,7 +293,7 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 			matches := endpointRegex.FindStringSubmatch(line)
 			logrus.Debugf("len matches: %d", len(matches))
 			if len(matches) == 3 {
-				endpoint.Method = matches[1]
+				endpoint.Method = strings.ToUpper(matches[1])
 				endpointPath := strings.TrimSpace(matches[2])
 				endpointPath = strings.Split(endpointPath, " ")[0]
 				if !strings.HasPrefix(endpointPath, "/") {

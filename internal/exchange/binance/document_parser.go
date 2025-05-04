@@ -165,7 +165,7 @@ func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content [
 	p.tableContent = ""
 
 	// Regular expressions to identify different sections
-	endpointRegex := regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH) (.+)$`)
+	endpointRegex := regexp.MustCompile(`^(GET|Get|POST|Post|PUT|Put|DELETE|Delete|PATCH|Patch) (.+)$`)
 	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)?$`)
 	parametersRegex := regexp.MustCompile(`^Parameters:$`)
 	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
@@ -188,7 +188,7 @@ func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content [
 		if !foundEndpoint {
 			matches := endpointRegex.FindStringSubmatch(line)
 			if len(matches) == 3 {
-				endpoint.Method = matches[1]
+				endpoint.Method = strings.ToUpper(matches[1])
 				endpoint.Path = matches[2]
 				foundEndpoint = true
 				endpoint.OperationID = operationID(endpoint.Method, endpoint.Path)
@@ -849,9 +849,13 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 
 		// Check if it's an API endpoint definition (GET, POST, etc.)
 		if strings.HasPrefix(codeText, "GET ") ||
+			strings.HasPrefix(codeText, "Get ") ||
 			strings.HasPrefix(codeText, "POST ") ||
+			strings.HasPrefix(codeText, "Post ") ||
 			strings.HasPrefix(codeText, "PUT ") ||
+			strings.HasPrefix(codeText, "Put ") ||
 			strings.HasPrefix(codeText, "DELETE ") ||
+			strings.HasPrefix(codeText, "Delete ") ||
 			strings.HasPrefix(codeText, "PATCH ") {
 			*content = append(*content, codeText)
 		}
