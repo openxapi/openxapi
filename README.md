@@ -38,7 +38,7 @@ So that you can use the same specification to generate websocket client SDKs for
 ## Supported Exchanges
 
 | Exchange | Product | Modules | REST API | Websocket API |
-|:--------:|-------|:----------:|:----------:|:------------:|
+|:--------:|-------|----------|:----------:|:------------:|
 | <img src="./images/binance.jpg" width="100" /> | Spot | ✅ Spot Trading <br> ✅ Margin Trading <br> ✅ Algo Trading <br> ✅ Wallet <br> ✅ Copy Trading <br> ✅ Convert <br> ✅ Sub Account <br>✅ Binance Link <br>✅ Futures Data <br> ✅ Portfolio Margin Pro  | [OpenAPI](./specs/binance/openapi/spot.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
 | | USDS-M Futures | ✅ USDS Margined Futures | [OpenAPI](./specs/binance/openapi/umfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
 | | COIN-M Futures | ✅ COIN Margined Futures | [OpenAPI](./specs/binance/openapi/cmfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
@@ -48,8 +48,8 @@ So that you can use the same specification to generate websocket client SDKs for
 ## SDKs
 
 | Exchange | Go | Python | JavaScript | Rust |
-|:--------:|:----:|:------:|:----------:|:----:|
-| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) [![PyPI - Version](https://img.shields.io/pypi/v/openxapi-binance)](https://pypi.org/project/openxapi-binance/) | [Github](https://github.com/openxapi/binance-js) [![NPM Version](https://img.shields.io/npm/v/%40openxapi%2Fbinance)](https://www.npmjs.com/package/@openxapi/binance) | [Github](https://github.com/openxapi/binance-rs) [![Crates.io Version](https://img.shields.io/crates/v/openxapi-binance)](https://crates.io/crates/openxapi-binance) |
+|:--------:|----|------|----------|----|
+| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) <br> [![PyPI - Version](https://img.shields.io/pypi/v/openxapi-binance)](https://pypi.org/project/openxapi-binance/) | [Github](https://github.com/openxapi/binance-js) <br> [![NPM Version](https://img.shields.io/npm/v/%40openxapi%2Fbinance)](https://www.npmjs.com/package/@openxapi/binance) | [Github](https://github.com/openxapi/binance-rs) <br> [![Crates.io Version](https://img.shields.io/crates/v/openxapi-binance)](https://crates.io/crates/openxapi-binance) |
 
 ## Project Structure
 
