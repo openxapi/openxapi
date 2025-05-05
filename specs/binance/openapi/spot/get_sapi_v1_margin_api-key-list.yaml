@@ -1,0 +1,85 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMarginApiKeyListV1Resp:
+            example: '[ { "apiName": "testName1", "apiKey":"znpOzOAeLVgr2TuxWfNo43AaPWpBbJEoKezh1o8mSQb6ryE2odE11A4AoVlJbQoG", "ip": "192.168.0.1,192.168.0.2", "type": "RSA", "permissionMode": "TRADE" }, { "apiName": "testName2", "apiKey":"znpOzOAeLVgr2TuxWfNo43AaPWpBbJEoKezh1o8mSQb6ryE2odE11A4AoVlJbQoG", "ip": "192.168.0.1,192.168.0.2", "type": "Ed25519", "permissionMode": "READ" } ]'
+            items:
+                $ref: '#/components/schemas/GetMarginApiKeyListV1RespItem'
+            type: array
+        GetMarginApiKeyListV1RespItem:
+            properties:
+                apiKey:
+                    type: string
+                apiName:
+                    type: string
+                ip:
+                    type: string
+                permissionMode:
+                    type: string
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/api-key-list:
+        get:
+            description: This only applies to Special Key for Low Latency Trading.
+            operationId: GetMarginApiKeyListV1
+            parameters:
+                - description: isolated margin pair
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarginApiKeyListV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Special key List(Low Latency Trading)(TRADE)
+            tags:
+                - Margin Trading

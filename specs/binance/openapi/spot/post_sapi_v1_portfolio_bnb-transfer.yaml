@@ -1,0 +1,81 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreatePortfolioBnbTransferV1Req:
+            properties:
+                amount:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                transferSide:
+                    default: ""
+                    type: string
+            required:
+                - amount
+                - transferSide
+                - timestamp
+            type: object
+        CreatePortfolioBnbTransferV1Resp:
+            example: '{ "tranId": 100000001 }'
+            properties:
+                tranId:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/portfolio/bnb-transfer:
+        post:
+            description: BNB transfer can be between Margin Account and USDM Account
+            operationId: CreatePortfolioBnbTransferV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreatePortfolioBnbTransferV1Req'
+                description: The request body for CreatePortfolioBnbTransferV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePortfolioBnbTransferV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: BNB transfer(USER_DATA)
+            tags:
+                - Portfolio Margin Pro

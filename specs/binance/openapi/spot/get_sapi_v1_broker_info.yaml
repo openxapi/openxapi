@@ -1,0 +1,68 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetBrokerInfoV1Resp:
+            example: '{ "maxMakerCommission":0.002, "minMakerCommission":0.001, "maxTakerCommission":0.002, "minTakerCommission":0.001, "subAccountQty":400, "maxSubAccountQty":1000 }'
+            properties:
+                maxMakerCommission:
+                    type: number
+                maxSubAccountQty:
+                    type: integer
+                maxTakerCommission:
+                    type: number
+                minMakerCommission:
+                    type: number
+                minTakerCommission:
+                    type: number
+                subAccountQty:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/info:
+        get:
+            operationId: GetBrokerInfoV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBrokerInfoV1Resp'
+                    description: Successful operation
+            summary: Link Account Information
+            tags:
+                - Binance Link

@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        DeleteAlgoFuturesOrderV1Resp:
+            example: '{ "algoId": 14511, "success": true, "code": 0, "msg": "OK" }'
+            properties:
+                algoId:
+                    format: int64
+                    type: integer
+                code:
+                    type: integer
+                msg:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/algo/futures/order:
+        delete:
+            description: Cancel an active order.
+            operationId: DeleteAlgoFuturesOrderV1
+            parameters:
+                - description: eg. 14511
+                  in: query
+                  name: algoId
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteAlgoFuturesOrderV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel Algo Order(TRADE)
+            tags:
+                - Algo Trading

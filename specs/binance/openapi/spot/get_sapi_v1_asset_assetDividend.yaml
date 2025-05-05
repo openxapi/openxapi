@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetAssetAssetDividendV1Resp:
+            example: '{ "rows":[ { "id":1637366104, "amount":"10.00000000", "asset":"BHFT", "divTime":1563189166000, "enInfo":"BHFT distribution", "tranId":2968885920 }, { "id":1631750237, "amount":"10.00000000", "asset":"BHFT", "divTime":1563189165000, "enInfo":"BHFT distribution", "tranId":2968885920 } ], "total":2 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            divTime:
+                                format: int64
+                                type: integer
+                            enInfo:
+                                type: string
+                            id:
+                                type: integer
+                            tranId:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/assetDividend:
+        get:
+            description: Query asset dividend record.
+            operationId: GetAssetAssetDividendV1
+            parameters:
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 20, max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 20
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetAssetDividendV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Asset Dividend Record (USER_DATA)
+            tags:
+                - Wallet

@@ -41,7 +41,7 @@ func (s *stringsFlag) Set(value string) error {
 func init() {
 	flag.StringVar(&configFile, "config", "configs/config.yaml", "Path to configuration file")
 	flag.StringVar(&logLevel, "log-level", "info", "Logging level (debug, info, warn, error)")
-	flag.BoolVar(&useSamples, "use-samples", false, "Use sample files instead of making HTTP requests")
+	flag.BoolVar(&useSamples, "use-samples", true, "Use sample files instead of making HTTP requests")
 	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/<exchange>)")
 	flag.StringVar(&exchange, "exchange", "", "Filter by exchange name")
 	flag.StringVar(&docType, "doc-type", "", "Filter by documentation type")
@@ -131,9 +131,7 @@ func main() {
 
 			// Convert config Documentation to parser.Documentation
 			parserDoc := parser.Documentation{
-				Type:               doc.Type,
-				URLs:               doc.URLs,
-				ProtectedEndpoints: doc.ProtectedEndpoints,
+				Documentation: doc,
 			}
 
 			// Parse endpoints

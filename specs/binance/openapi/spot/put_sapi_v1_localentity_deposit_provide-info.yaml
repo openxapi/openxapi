@@ -1,0 +1,85 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        UpdateLocalentityDepositProvideInfoV1Req:
+            properties:
+                questionnaire:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                tranId:
+                    format: int64
+                    type: integer
+            required:
+                - tranId
+                - questionnaire
+                - timestamp
+            type: object
+        UpdateLocalentityDepositProvideInfoV1Resp:
+            example: '{ "trId": 765127651, "accepted": true, "info": "Deposit questionnaire accepted." }'
+            properties:
+                accepted:
+                    type: boolean
+                info:
+                    type: string
+                trId:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/localentity/deposit/provide-info:
+        put:
+            description: |-
+                Submit questionnaire for local entities that require travel rule.
+                The questionnaire is only applies to transactions from unhosted wallets or VASPs that are not
+                yet onboarded with GTR.
+            operationId: UpdateLocalentityDepositProvideInfoV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/UpdateLocalentityDepositProvideInfoV1Req'
+                description: The request body for UpdateLocalentityDepositProvideInfoV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/UpdateLocalentityDepositProvideInfoV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Submit Deposit Questionnaire (For local entities that require travel rule) (supporting network) (USER_DATA)
+            tags:
+                - Wallet

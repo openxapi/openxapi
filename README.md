@@ -37,27 +37,19 @@ So that you can use the same specification to generate websocket client SDKs for
 
 ## Supported Exchanges
 
-| Exchange | Product | Supported | REST API | Websocket API |
-|:--------:|-------|:----------:|:----------:|:------------:|
-| <img src="./images/binance.jpg" width="100" /> | Spot Trading | ✅ | [OpenAPI](./specs/binance/openapi/spot.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
-| | Derivatives - USDS-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/umfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
-| | Derivatives - COIN-M Futures | ✅ | [OpenAPI](./specs/binance/openapi/cmfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
-| | Derivatives - Options | ✅ | [OpenAPI](./specs/binance/openapi/options.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | |
-| | Derivatives - Portfolio Margin | ✅ | [OpenAPI](./specs/binance/openapi/pmargin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | |
-| | Derivatives - Portfolio Margin Pro | ✅ | [OpenAPI](./specs/binance/openapi/pmarginpro.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmarginpro.yaml) | |
-| | Derivatives - Futures Data | ✅ | [OpenAPI](./specs/binance/openapi/futuresdata.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/futuresdata.yaml) | |
-| | Margin Trading | ✅ | [OpenAPI](./specs/binance/openapi/margin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/margin.yaml) | |
-| | Algo Trading | ✅ | [OpenAPI](./specs/binance/openapi/algo.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/algo.yaml) | |
-| | Wallet | ✅ | [OpenAPI](./specs/binance/openapi/wallet.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/wallet.yaml) | |
-| | Copy Trading | ✅ | [OpenAPI](./specs/binance/openapi/copytrading.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/copytrading.yaml) | |
-| | Convert | ✅ | [OpenAPI](./specs/binance/openapi/convert.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/convert.yaml) | |
-| | Sub Account | ✅ | [OpenAPI](./specs/binance/openapi/subaccount.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/subaccount.yaml) | |
+| Exchange | Product | Modules | REST API | Websocket API |
+|:--------:|-------|----------|:----------:|:------------:|
+| <img src="./images/binance.jpg" width="100" /> | Spot | ✅ Spot Trading <br> ✅ Margin Trading <br> ✅ Algo Trading <br> ✅ Wallet <br> ✅ Copy Trading <br> ✅ Convert <br> ✅ Sub Account <br>✅ Binance Link <br>✅ Futures Data <br> ✅ Portfolio Margin Pro  | [OpenAPI](./specs/binance/openapi/spot.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/spot.yaml)| |
+| | USDS-M Futures | ✅ USDS Margined Futures | [OpenAPI](./specs/binance/openapi/umfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/umfutures.yaml) | |
+| | COIN-M Futures | ✅ COIN Margined Futures | [OpenAPI](./specs/binance/openapi/cmfutures.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/cmfutures.yaml) | |
+| | Options | ✅ Options | [OpenAPI](./specs/binance/openapi/options.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/options.yaml) | |
+| | Portfolio Margin | ✅ Portfolio Margin | [OpenAPI](./specs/binance/openapi/pmargin.yaml), [Swagger](https://swagger.openxapi.com?url=https://raw.githubusercontent.com/openxapi/openxapi/main/specs/binance/openapi/pmargin.yaml) | |
 
 ## SDKs
 
 | Exchange | Go | Python | JavaScript | Rust |
-|:--------:|:----:|:------:|:----------:|:----:|
-| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py), [PyPi](https://pypi.org/project/openxapi-binance) | [Github](https://github.com/openxapi/binance-js), [npm](https://www.npmjs.com/package/@openxapi/binance) | [Github](https://github.com/openxapi/binance-rs), [Cargo](https://crates.io/crates/openxapi-binance) |
+|:--------:|----|------|----------|----|
+| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) <br> [![PyPI - Version](https://img.shields.io/pypi/v/openxapi-binance)](https://pypi.org/project/openxapi-binance/) | [Github](https://github.com/openxapi/binance-js) <br> [![NPM Version](https://img.shields.io/npm/v/%40openxapi%2Fbinance)](https://www.npmjs.com/package/@openxapi/binance) | [Github](https://github.com/openxapi/binance-rs) <br> [![Crates.io Version](https://img.shields.io/crates/v/openxapi-binance)](https://crates.io/crates/openxapi-binance) |
 
 ## Project Structure
 
@@ -140,10 +132,10 @@ The generated OpenAPI specification will be saved in `specs/` directory.
 
 ### For the subsequent generations - Use sample files
 
-The program can save API documentation to sample files and use them for regenerate the OpenAPI specification offline, that said, you don't need to access the HTTP API documentation online, this is the recommended way to generate the OpenAPI specification after the first generation:
+The program can save API documentation to sample files and use them for regenerate the OpenAPI specification offline by default, that said, you don't need to access the HTTP API documentation online, this is the recommended way to generate the OpenAPI specification after the first generation:
 
 ```bash
-./openxapi --use-samples
+./openxapi
 ```
 
 Or simply use `make` command:

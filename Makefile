@@ -18,9 +18,9 @@ build:
 generate-spec:
 	@make build
 	@if [ -n "${EXCHANGE}" ]; then \
-		$(BINARY_NAME) -exchange ${EXCHANGE} -use-samples; \
+		$(BINARY_NAME) -exchange ${EXCHANGE}; \
 	else \
-		$(BINARY_NAME) -use-samples; \
+		$(BINARY_NAME); \
 	fi
 
 generate-sdk:
@@ -37,17 +37,24 @@ generate-sdk:
 			for file in $(shell find generator-configs/${EXCHANGE}/openapi/js -name "*.yaml"); do \
 				echo "Generating ${EXCHANGE} js SDK for $$file"; \
 				subdir=$$(echo "$$file" | sed -n 's|.*js/\(.*\)\.yaml|\1|p'); \
+				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
+				rm -rf ${REAL_OUTPUT_DIR}/$$subdir; \
 				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g typescript-axios -o ${OUTPUT_DIR}/src/$$subdir; \
 			done \
 		elif [ "${LANGUAGE}" == "go" ]; then \
 			for file in $(shell find generator-configs/${EXCHANGE}/openapi/go -name "*.yaml"); do \
+				echo "Generating ${EXCHANGE} go SDK for $$file"; \
 				subdir=$$(echo "$$file" | sed -n 's|.*go/\(.*\)\.yaml|\1|p'); \
-				echo "Generating ${EXCHANGE} go SDK for $$subdir"; \
+				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
+				rm -rf ${REAL_OUTPUT_DIR}/$$subdir; \
 				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g go -o ${OUTPUT_DIR}/$$subdir; \
 			done \
 		elif [ "${LANGUAGE}" == "python" ]; then \
 			for file in $(shell find generator-configs/${EXCHANGE}/openapi/python -name "*.yaml"); do \
 				echo "Generating ${EXCHANGE} python SDK for $$file"; \
+				subdir=$$(echo "$$file" | sed -n 's|.*python/\(.*\)\.yaml|\1|p'); \
+				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
+				rm -rf ${REAL_OUTPUT_DIR}/$$subdir; \
 				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g python -o ${OUTPUT_DIR}; \
 			done \
 		elif [ "${LANGUAGE}" == "rust" ]; then \
@@ -55,7 +62,7 @@ generate-sdk:
 				subdir=$$(echo "$$file" | sed -n 's|.*rust/\(.*\)\.yaml|\1|p'); \
 				echo "Generating ${EXCHANGE} rust SDK for $$subdir"; \
 				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
-				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g rust -o ${REAL_OUTPUT_DIR}/src/$${subdir}.tmp; \
+				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g rust -o ${OUTPUT_DIR}/src/$${subdir}.tmp; \
 				rm -rf $${REAL_OUTPUT_DIR}/src/$${subdir} $${REAL_OUTPUT_DIR}/docs/$${subdir}; \
 				mv $${REAL_OUTPUT_DIR}/src/$${subdir}.tmp/src $${REAL_OUTPUT_DIR}/src/$$subdir; \
 				mv $${REAL_OUTPUT_DIR}/src/$$subdir/lib.rs $${REAL_OUTPUT_DIR}/src/$$subdir/mod.rs; \

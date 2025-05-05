@@ -1,0 +1,104 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetPortfolioBalanceV1Resp:
+            example: '[ { "asset": "BTC",     "totalWalletBalance": "100",     "crossMarginAsset": "100",     "crossMarginBorrowed": "0",     "crossMarginFree": "100",     "crossMarginInterest": "0",     "crossMarginLocked": "0",   "umWalletBalance": "0",     "umUnrealizedPNL": "0",      "cmWalletBalance": "0",     "cmUnrealizedPNL": "0",     "updateTime": 0, "negativeBalance": "0", "optionWalletBalance": "0",   "optionEquity": "0"   } ]'
+            items:
+                $ref: '#/components/schemas/GetPortfolioBalanceV1RespItem'
+            type: array
+        GetPortfolioBalanceV1RespItem:
+            properties:
+                asset:
+                    type: string
+                cmUnrealizedPNL:
+                    type: string
+                cmWalletBalance:
+                    type: string
+                crossMarginAsset:
+                    type: string
+                crossMarginBorrowed:
+                    type: string
+                crossMarginFree:
+                    type: string
+                crossMarginInterest:
+                    type: string
+                crossMarginLocked:
+                    type: string
+                negativeBalance:
+                    type: string
+                optionEquity:
+                    type: string
+                optionWalletBalance:
+                    type: string
+                totalWalletBalance:
+                    type: string
+                umUnrealizedPNL:
+                    type: string
+                umWalletBalance:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/portfolio/balance:
+        get:
+            description: Query Portfolio Margin Pro account balance
+            operationId: GetPortfolioBalanceV1
+            parameters:
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPortfolioBalanceV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Portfolio Margin Pro Account Balance(USER_DATA)
+            tags:
+                - Portfolio Margin Pro

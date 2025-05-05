@@ -1,0 +1,108 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSubAccountFuturesMovePositionV1Resp:
+            example: '{ "total": 3, "futureMovePositionOrderVoList": [{ "fromUserEmail": "testFrom@google.com", "toUserEmail": "testTo@google.com", "productType": "UM", "symbol": "BTCUSDT", "price": "105025.50981609", "quantity": "0.00100000", "positionSide": "BOTH", "side": "SELL", "timeStamp": 1737544712000 }, { "fromUserEmail": "testFrom1@google.com", "toUserEmail": "testTo1@google.com", "productType": "UM", "symbol": "BTCUSDT", "price": "97100.00000000", "quantity": "0.00100000", "positionSide": "BOTH", "side": "SELL", "timeStamp": 1740041627000 }, { "fromUserEmail": "testFrom2@google.com", "toUserEmail": "testTo2@google.com", "productType": "UM", "symbol": "BTCUSDT", "price": "97108.62068889", "quantity": "0.00100000", "positionSide": "BOTH", "side": "SELL", "timeStamp": 1740041959000 }] }'
+            properties:
+                futureMovePositionOrderVoList:
+                    items:
+                        properties:
+                            fromUserEmail:
+                                type: string
+                            positionSide:
+                                type: string
+                            price:
+                                type: string
+                            productType:
+                                type: string
+                            quantity:
+                                type: string
+                            side:
+                                type: string
+                            symbol:
+                                type: string
+                            timeStamp:
+                                type: integer
+                            toUserEmail:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sub-account/futures/move-position:
+        get:
+            description: Query move position history
+            operationId: GetSubAccountFuturesMovePositionV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: page
+                  required: true
+                  schema:
+                    type: integer
+                - in: query
+                  name: row
+                  required: true
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSubAccountFuturesMovePositionV1Resp'
+                    description: Successful operation
+            summary: Get Move Position History for Sub-account (For Master Account)
+            tags:
+                - Sub Account

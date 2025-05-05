@@ -1,0 +1,96 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetApiReferralTradeVolV1Resp:
+            example: '[ { "unit": "USDT", "tradeVol": "53.60756000", "time": 1586736000000 }, { "unit": "USDT", "tradeVol": "43.60756000", "time": 1588723200000 } ]'
+            items:
+                $ref: '#/components/schemas/GetApiReferralTradeVolV1RespItem'
+            type: array
+        GetApiReferralTradeVolV1RespItem:
+            properties:
+                time:
+                    format: int64
+                    type: integer
+                tradeVol:
+                    type: string
+                unit:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/apiReferral/tradeVol:
+        get:
+            operationId: GetApiReferralTradeVolV1
+            parameters:
+                - description: 1:USDT Margined Futures, 2:COIN Margined Futures Default： USDT Margined Futures
+                  in: query
+                  name: type
+                  schema:
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 500, max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetApiReferralTradeVolV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get User Trade Volume (USER DATA)
+            tags:
+                - Binance Link

@@ -1,0 +1,97 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMarginCrossMarginDataV1Resp:
+            example: '[ { "vipLevel": 0, "coin": "BTC", "transferIn": true, "borrowable": true, "dailyInterest": "0.00026125", "yearlyInterest": "0.0953", "borrowLimit": "180", "marginablePairs": [ "BNBBTC", "TRXBTC", "ETHBTC", "BTCUSDT" ] } ]'
+            items:
+                $ref: '#/components/schemas/GetMarginCrossMarginDataV1RespItem'
+            type: array
+        GetMarginCrossMarginDataV1RespItem:
+            properties:
+                borrowLimit:
+                    type: string
+                borrowable:
+                    type: boolean
+                coin:
+                    type: string
+                dailyInterest:
+                    type: string
+                marginablePairs:
+                    items:
+                        type: string
+                    type: array
+                transferIn:
+                    type: boolean
+                vipLevel:
+                    type: integer
+                yearlyInterest:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/crossMarginData:
+        get:
+            description: Get cross margin fee data collection with any vip level or user's current specific data as https://www.binance.com/en/margin-fee
+            operationId: GetMarginCrossMarginDataV1
+            parameters:
+                - description: User&#39;s current specific margin data will be returned if vipLevel is omitted
+                  in: query
+                  name: vipLevel
+                  schema:
+                    type: integer
+                - in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    type: string
+                - description: No more than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarginCrossMarginDataV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Cross Margin Fee Data (USER_DATA)
+            tags:
+                - Margin Trading

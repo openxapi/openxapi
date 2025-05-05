@@ -1,0 +1,92 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateAssetGetFundingAssetV1Req:
+            properties:
+                asset:
+                    default: ""
+                    type: string
+                needBtcValuation:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - timestamp
+            type: object
+        CreateAssetGetFundingAssetV1Resp:
+            example: '[ { "asset": "USDT", "free": "1",     "locked": "0",   "freeze": "0",   "withdrawing": "0", "btcValuation": "0.00000091" } ]'
+            items:
+                $ref: '#/components/schemas/CreateAssetGetFundingAssetV1RespItem'
+            type: array
+        CreateAssetGetFundingAssetV1RespItem:
+            properties:
+                asset:
+                    type: string
+                btcValuation:
+                    type: string
+                free:
+                    type: string
+                freeze:
+                    type: string
+                locked:
+                    type: string
+                withdrawing:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/get-funding-asset:
+        post:
+            description: Query Funding Wallet
+            operationId: CreateAssetGetFundingAssetV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetGetFundingAssetV1Req'
+                description: The request body for CreateAssetGetFundingAssetV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetGetFundingAssetV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Funding Wallet (USER_DATA)
+            tags:
+                - Wallet

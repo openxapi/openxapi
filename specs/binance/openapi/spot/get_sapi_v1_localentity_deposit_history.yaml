@@ -1,0 +1,161 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLocalentityDepositHistoryV1Resp:
+            example: '[ { "trId": 123451123, "tranId": 17644346245865, "amount": "0.001", "coin": "BNB", "network": "BNB", "depositStatus": 0, "travelRuleStatus": 1, "address": "bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf23", "addressTag": "101764890", "txId": "98A3EA560C6B3336D348B6C83F0F95ECE4F1F5919E94BD006E5BF3BF264FACFC", "insertTime": 1661493146000, "transferType": 0, "confirmTimes": "1/1", "unlockConfirm": 0, "walletType": 0, "requireQuestionnaire": true, "questionnaire": null }, { "trId": 2451123, "tranId": 4544346245865, "amount":"0.50000000", "coin":"IOTA", "network":"IOTA", "depositStatus": 0, "travelRuleStatus": 0, "address":"SIZ9VLMHWATXKV99LH99CIGFJFUMLEHGWVZVNNZXRJJVWBPHYWPPBOSDORZ9EQSHCZAMPVAPGFYQAUUV9DROOXJLNW", "addressTag":"", "txId":"ESBFVQUTPIWQNJSPXFNHNYHSQNTGKRVKPRABQWTAXCDWOAKDKYWPTVG9BGXNVNKTLEJGESAVXIKIZ9999", "insertTime":1599620082000, "transferType":0, "confirmTimes": "1/1", "unlockConfirm": 0, "walletType": 0, "requireQuestionnaire": false, "questionnaire": "{''question1'':''answer1'',''question2'':''answer2''}" } ]'
+            items:
+                $ref: '#/components/schemas/GetLocalentityDepositHistoryV1RespItem'
+            type: array
+        GetLocalentityDepositHistoryV1RespItem:
+            properties:
+                address:
+                    type: string
+                addressTag:
+                    type: string
+                amount:
+                    type: string
+                coin:
+                    type: string
+                confirmTimes:
+                    type: string
+                depositStatus:
+                    type: integer
+                insertTime:
+                    format: int64
+                    type: integer
+                network:
+                    type: string
+                questionnaire:
+                    nullable: true
+                    type: object
+                requireQuestionnaire:
+                    type: boolean
+                trId:
+                    format: int64
+                    type: integer
+                tranId:
+                    format: int64
+                    type: integer
+                transferType:
+                    type: integer
+                travelRuleStatus:
+                    type: integer
+                txId:
+                    type: string
+                unlockConfirm:
+                    type: integer
+                walletType:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/localentity/deposit/history:
+        get:
+            description: Fetch deposit history for local entities that required travel rule.
+            operationId: GetLocalentityDepositHistoryV1
+            parameters:
+                - description: Comma(,) separated list of travel rule record Ids.
+                  in: query
+                  name: trId
+                  schema:
+                    default: ""
+                    type: string
+                - description: Comma(,) separated list of transaction Ids.
+                  in: query
+                  name: txId
+                  schema:
+                    default: ""
+                    type: string
+                - description: Comma(,) separated list of wallet tran Ids.
+                  in: query
+                  name: tranId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: network
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    type: string
+                - description: 0:Completed,1:Pending,2:Failed
+                  in: query
+                  name: travelRuleStatus
+                  schema:
+                    type: integer
+                - description: 'true: Only return records that pending deposit questionnaire. false/not provided: return all records.'
+                  in: query
+                  name: pendingQuestionnaire
+                  schema:
+                    type: boolean
+                - description: 'Default: 90 days from current timestamp'
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: present timestamp'
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:0
+                  in: query
+                  name: offset
+                  schema:
+                    type: integer
+                - description: Default:1000, Max:1000
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLocalentityDepositHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Deposit History (for local entities that required travel rule) (supporting network) (USER_DATA)
+            tags:
+                - Wallet

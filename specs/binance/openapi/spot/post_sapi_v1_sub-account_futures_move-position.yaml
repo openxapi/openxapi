@@ -1,0 +1,105 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateSubAccountFuturesMovePositionV1Req:
+            properties:
+                fromUserEmail:
+                    default: ""
+                    type: string
+                orderArgs:
+                    items:
+                        type: object
+                    type: array
+                productType:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                toUserEmail:
+                    default: ""
+                    type: string
+            required:
+                - fromUserEmail
+                - toUserEmail
+                - productType
+                - orderArgs
+                - timestamp
+            type: object
+        CreateSubAccountFuturesMovePositionV1Resp:
+            example: '{ "movePositionOrders": [{ "fromUserEmail": "testFrom@google.com", "toUserEmail": "testTo@google.com", "productType": "UM", "symbol": "BTCUSDT", "priceType": "MARK_PRICE", "price": "97139.00000000", "quantity": "0.001", "positionSide": "BOTH", "side": "BUY", "success": true }, { "fromUserEmail": "testFrom1@google.com", "toUserEmail": "1testTo@google.com", "productType": "UM", "symbol": "BTCUSDT", "priceType": "MARK_PRICE", "price": "97139.00000000", "quantity": "0.0011", "positionSide": "BOTH", "side": "BUY", "success": true }] }'
+            properties:
+                movePositionOrders:
+                    items:
+                        properties:
+                            fromUserEmail:
+                                type: string
+                            positionSide:
+                                type: string
+                            price:
+                                type: string
+                            priceType:
+                                type: string
+                            productType:
+                                type: string
+                            quantity:
+                                type: string
+                            side:
+                                type: string
+                            success:
+                                type: boolean
+                            symbol:
+                                type: string
+                            toUserEmail:
+                                type: string
+                        type: object
+                    type: array
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sub-account/futures/move-position:
+        post:
+            description: Move position between sub-master, master-sub, or sub-sub accounts when necessary
+            operationId: CreateSubAccountFuturesMovePositionV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateSubAccountFuturesMovePositionV1Req'
+                description: The request body for CreateSubAccountFuturesMovePositionV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSubAccountFuturesMovePositionV1Resp'
+                    description: Successful operation
+            summary: Move Position for Sub-account (For Master Account)
+            tags:
+                - Sub Account

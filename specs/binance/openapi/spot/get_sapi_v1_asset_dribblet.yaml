@@ -1,0 +1,110 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetAssetDribbletV1Resp:
+            example: '{ "total": 8,    "userAssetDribblets": [ { "operateTime": 1615985535000, "totalTransferedAmount": "0.00132256",    "totalServiceChargeAmount": "0.00002699",     "transId": 45178372831, "userAssetDribbletDetails": [            { "transId": 4359321, "serviceChargeAmount": "0.000009", "amount": "0.0009", "operateTime": 1615985535000, "transferedAmount": "0.000441", "fromAsset": "USDT" }, { "transId": 4359321, "serviceChargeAmount": "0.00001799", "amount": "0.0009", "operateTime": 1615985535000, "transferedAmount": "0.00088156", "fromAsset": "ETH" } ] }, { "operateTime":1616203180000, "totalTransferedAmount": "0.00058795", "totalServiceChargeAmount": "0.000012", "transId": 4357015, "userAssetDribbletDetails": [ { "transId": 4357015, "serviceChargeAmount": "0.00001", "amount": "0.001", "operateTime": 1616203180000, "transferedAmount": "0.00049", "fromAsset": "USDT" }, { "transId": 4357015, "serviceChargeAmount": "0.000002", "amount": "0.0001", "operateTime": 1616203180000, "transferedAmount": "0.00009795", "fromAsset": "ETH" } ] } ] }'
+            properties:
+                total:
+                    type: integer
+                userAssetDribblets:
+                    items:
+                        properties:
+                            operateTime:
+                                format: int64
+                                type: integer
+                            totalServiceChargeAmount:
+                                type: string
+                            totalTransferedAmount:
+                                type: string
+                            transId:
+                                format: int64
+                                type: integer
+                            userAssetDribbletDetails:
+                                items:
+                                    properties:
+                                        amount:
+                                            type: string
+                                        fromAsset:
+                                            type: string
+                                        operateTime:
+                                            format: int64
+                                            type: integer
+                                        serviceChargeAmount:
+                                            type: string
+                                        transId:
+                                            format: int64
+                                            type: integer
+                                        transferedAmount:
+                                            type: string
+                                    type: object
+                                type: array
+                        type: object
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/dribblet:
+        get:
+            description: Dustlog
+            operationId: GetAssetDribbletV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetDribbletV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: DustLog(USER_DATA)
+            tags:
+                - Wallet

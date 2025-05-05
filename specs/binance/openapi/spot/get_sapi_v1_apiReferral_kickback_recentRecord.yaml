@@ -1,0 +1,87 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetApiReferralKickbackRecentRecordV1Resp:
+            example: '[ { "income": "0.02063898", "asset":"BTC", "symbol": "ETHBTC", "time":1544433328000 }, { "income": "1.2063898", "asset":"USDT", "symbol": "BTCUSDT", "time":1581580800000 } ]'
+            items:
+                $ref: '#/components/schemas/GetApiReferralKickbackRecentRecordV1RespItem'
+            type: array
+        GetApiReferralKickbackRecentRecordV1RespItem:
+            properties:
+                asset:
+                    type: string
+                income:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/apiReferral/kickback/recentRecord:
+        get:
+            description: '- Only get the latest history of past 7 days.'
+            operationId: GetApiReferralKickbackRecentRecordV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 500, max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetApiReferralKickbackRecentRecordV1Resp'
+                    description: Successful operation
+            summary: Query Rebate Recent Record(For Client)
+            tags:
+                - Binance Link

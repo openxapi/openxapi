@@ -1,0 +1,101 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMarginInterestRateHistoryV1Resp:
+            example: '[ { "asset": "BTC", "dailyInterestRate": "0.00025000", "timestamp": 1611544731000, "vipLevel": 1 }, { "asset": "BTC", "dailyInterestRate": "0.00035000", "timestamp": 1610248118000, "vipLevel": 1 } ]'
+            items:
+                $ref: '#/components/schemas/GetMarginInterestRateHistoryV1RespItem'
+            type: array
+        GetMarginInterestRateHistoryV1RespItem:
+            properties:
+                asset:
+                    type: string
+                dailyInterestRate:
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                vipLevel:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/interestRateHistory:
+        get:
+            description: Query Margin Interest Rate History
+            operationId: GetMarginInterestRateHistoryV1
+            parameters:
+                - in: query
+                  name: asset
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Default: user&#39;s vip level'
+                  in: query
+                  name: vipLevel
+                  schema:
+                    type: integer
+                - description: 'Default: 7 days ago'
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: present. Maximum range: 1 months.'
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: No more than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarginInterestRateHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Margin Interest Rate History (USER_DATA)
+            tags:
+                - Margin Trading

@@ -1,0 +1,130 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetBrokerSubAccountDepositHistV1Resp:
+            example: '[ { "depositId": 1234567890123, "subAccountId": "1", "address": "0xddc66e4313fd6c737b6cae67cad90bb4e0ac7092", "addressTag": "", "amount": "139.04370000", "coin": "USDT", "insertTime": 1566791463000, "transferType": 0, "network": "ETH", "status": 1, "txId": "0x5759dfe9983a4c7619bce9bc736bb6c26f804091753bf66fa91e7cd5cfeebafd", "sourceAddress": "xxxxxxxxxxxxxx", "confirmTimes": "12/12", "selfReturnStatus": 0, "travelRuleStatus": 0  }, { "depositId": 1234567890123, "subAccountId": "2", "address": "0xddc66e4313fd6c737b6cae67kld90bb4e0ac7092", "addressTag": "", "amount": "1589.12345678", "coin": "BTC", "insertTime": 1566791463000, "transferType": 1, "network": "BNB", "status": 1, "txId": "Off-chain transfer dbea58fa48ef4cc59393da4552ae77d7", "sourceAddress": "xxxxxxxxxxxxxx", "confirmTimes": "12/12", "selfReturnStatus": 0, "travelRuleStatus": 1  } ]'
+            items:
+                $ref: '#/components/schemas/GetBrokerSubAccountDepositHistV1RespItem'
+            type: array
+        GetBrokerSubAccountDepositHistV1RespItem:
+            properties:
+                address:
+                    type: string
+                addressTag:
+                    type: string
+                amount:
+                    type: string
+                coin:
+                    type: string
+                confirmTimes:
+                    type: string
+                depositId:
+                    format: int64
+                    type: integer
+                insertTime:
+                    format: int64
+                    type: integer
+                network:
+                    type: string
+                selfReturnStatus:
+                    type: integer
+                sourceAddress:
+                    type: string
+                status:
+                    type: integer
+                subAccountId:
+                    type: string
+                transferType:
+                    type: integer
+                travelRuleStatus:
+                    type: integer
+                txId:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccount/depositHist:
+        get:
+            description: '- The query time period must be less than 7 days( default as the recent 7 days).'
+            operationId: GetBrokerSubAccountDepositHistV1
+            parameters:
+                - in: query
+                  name: subAccountId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    type: string
+                - description: '0(0:pending,6: credited but cannot withdraw, 1:success)'
+                  in: query
+                  name: status
+                  schema:
+                    type: integer
+                - description: 'Default: 7 days from current timestamp'
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: present timestamp'
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default：500
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                - description: Default：0
+                  in: query
+                  name: offset
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBrokerSubAccountDepositHistV1Resp'
+                    description: Successful operation
+            summary: Get Sub Account Deposit History
+            tags:
+                - Binance Link

@@ -1,0 +1,74 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetConvertExchangeInfoV1Resp:
+            example: '[ { "fromAsset":"BTC", "toAsset":"USDT", "fromAssetMinAmount":"0.0004", "fromAssetMaxAmount":"50", "toAssetMinAmount":"20", "toAssetMaxAmount":"2500000" } ]'
+            items:
+                $ref: '#/components/schemas/GetConvertExchangeInfoV1RespItem'
+            type: array
+        GetConvertExchangeInfoV1RespItem:
+            properties:
+                fromAsset:
+                    type: string
+                fromAssetMaxAmount:
+                    type: string
+                fromAssetMinAmount:
+                    type: string
+                toAsset:
+                    type: string
+                toAssetMaxAmount:
+                    type: string
+                toAssetMinAmount:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/convert/exchangeInfo:
+        get:
+            description: Query for all convertible token pairs and the tokens’ respective upper/lower limits
+            operationId: GetConvertExchangeInfoV1
+            parameters:
+                - description: User spends coin
+                  in: query
+                  name: fromAsset
+                  schema:
+                    default: ""
+                    type: string
+                - description: User receives coin
+                  in: query
+                  name: toAsset
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetConvertExchangeInfoV1Resp'
+                    description: Successful operation
+            summary: List All Convert Pairs
+            tags:
+                - Convert

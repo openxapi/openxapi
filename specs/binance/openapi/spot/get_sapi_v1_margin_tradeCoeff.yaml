@@ -1,0 +1,70 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMarginTradeCoeffV1Resp:
+            example: '{ "normalBar": "1.5", "marginCallBar": "1.3", "forceLiquidationBar": "1.1" }'
+            properties:
+                forceLiquidationBar:
+                    type: string
+                marginCallBar:
+                    type: string
+                normalBar:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/tradeCoeff:
+        get:
+            description: Get personal margin level information
+            operationId: GetMarginTradeCoeffV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarginTradeCoeffV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Summary of Margin account (USER_DATA)
+            tags:
+                - Margin Trading

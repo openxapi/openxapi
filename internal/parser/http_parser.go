@@ -8,11 +8,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/openxapi/openxapi/internal/config"
+
+	"github.com/sirupsen/logrus"
 )
 
 // HTTPDocumentParser defines the interface for HTTP document parsers
 type HTTPDocumentParser interface {
-	Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]Endpoint, error)
+	Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]Endpoint, error)
 }
 
 // HTTPParser is an implementation of the Parser interface for HTTP-based APIs
@@ -36,48 +40,94 @@ func (p *HTTPParser) Parse(ctx context.Context, doc Documentation) ([]Endpoint, 
 		return nil, fmt.Errorf("creating base directory: %w", err)
 	}
 
-	for _, url := range doc.URLs {
-		var r io.Reader
-		var err error
+	for _, group := range doc.URLGroups {
+		for _, urlItem := range group.URLs {
+			url := urlItem.URL()
+			var r io.Reader
+			var err error
 
-		// Generate a filename for the sample based on the URL
-		filename := p.generateSampleFilename(url)
-		samplePath := filepath.Join(baseDir, filename)
+			// Generate a filename for the sample based on the URL
+			filename := p.generateSampleFilename(url)
+			samplePath := filepath.Join(baseDir, filename)
 
-		// Check if we should use samples and if the sample file exists
-		if p.UseSamples {
-			// Try to read from the sample file
-			r, err = p.readSampleFile(samplePath)
-			if err != nil {
-				return nil, fmt.Errorf("reading sample file: %w", err)
-			}
-		} else {
-			// Make HTTP request to get the documentation
-			req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-			if err != nil {
-				return nil, fmt.Errorf("creating request: %w", err)
+			// Check if we should use samples and if the sample file exists
+			if p.UseSamples {
+				// Check if the sample file exists
+				if _, err := os.Stat(samplePath); os.IsNotExist(err) {
+					// If the sample file doesn't exist, make a HTTP request to get the documentation
+					// and save the response body to a sample file
+					// Make HTTP request to get the documentation
+					logrus.Infof("Fetching documentation from %s", url)
+					req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+					if err != nil {
+						return nil, fmt.Errorf("creating request: %w", err)
+					}
+
+					resp, err := p.Client.Do(req)
+					if err != nil {
+						return nil, fmt.Errorf("fetching documentation: %w", err)
+					}
+					defer resp.Body.Close()
+					r, err = p.saveResponseToSample(resp.Body, samplePath)
+					if err != nil {
+						return nil, fmt.Errorf("saving response to sample: %w", err)
+					}
+				} else {
+					// Try to read from the sample file
+					r, err = p.readSampleFile(samplePath)
+				}
+				if err != nil {
+					return nil, fmt.Errorf("reading sample file: %w", err)
+				}
+			} else {
+				// Make HTTP request to get the documentation
+				req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+				if err != nil {
+					return nil, fmt.Errorf("creating request: %w", err)
+				}
+
+				resp, err := p.Client.Do(req)
+				if err != nil {
+					return nil, fmt.Errorf("fetching documentation: %w", err)
+				}
+				defer resp.Body.Close()
+
+				// Save the response body to a sample file
+				r, err = p.saveResponseToSample(resp.Body, samplePath)
+				if err != nil {
+					return nil, fmt.Errorf("saving response to sample: %w", err)
+				}
 			}
 
-			resp, err := p.Client.Do(req)
-			if err != nil {
-				return nil, fmt.Errorf("fetching documentation: %w", err)
+			var urlEntity *config.URLEntity
+			if urlItem.Entity != nil {
+				urlEntity = urlItem.Entity
+			} else {
+				urlEntity = &config.URLEntity{
+					URL: url,
+				}
 			}
-			defer resp.Body.Close()
+			if urlEntity.DocType == "" {
+				urlEntity.DocType = group.DocType
+				if urlEntity.DocType == "" {
+					urlEntity.DocType = doc.Type
+				}
+			}
+			if urlEntity.GroupName == "" {
+				urlEntity.GroupName = group.Name
+			}
+			if urlEntity.SecurityType == "" {
+				urlEntity.SecurityType = group.SecurityType
+			}
 
-			// Save the response body to a sample file
-			r, err = p.saveResponseToSample(resp.Body, samplePath)
+			// Parse the document and extract endpoints
+			docEndpoints, err := p.DocParser.Parse(r, urlEntity, doc.ProtectedEndpoints)
 			if err != nil {
-				return nil, fmt.Errorf("saving response to sample: %w", err)
+				return nil, fmt.Errorf("parsing document: %w", err)
 			}
+
+			endpoints = append(endpoints, docEndpoints...)
 		}
-
-		// Parse the document and extract endpoints
-		docEndpoints, err := p.DocParser.Parse(r, url, doc.Type, doc.ProtectedEndpoints)
-		if err != nil {
-			return nil, err
-		}
-
-		endpoints = append(endpoints, docEndpoints...)
 	}
 
 	return endpoints, nil

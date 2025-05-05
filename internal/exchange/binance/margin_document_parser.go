@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/parser"
 )
 
@@ -14,17 +15,14 @@ type MarginDocumentParser struct {
 }
 
 // Parse parses an HTML document and extracts API endpoints
-func (p *MarginDocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	p.docType = docType
+func (p *MarginDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	p.docType = urlEntity.DocType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing HTML: %w", err)
 	}
-
-	// Extract the URL to determine the API category
-	category := p.extractCategory(url)
-
+	category := toCategory(urlEntity)
 	var endpoints []parser.Endpoint
 
 	parseEndpoint := func(headerElement string) func(i int, header *goquery.Selection) {
@@ -63,6 +61,10 @@ func (p *MarginDocumentParser) Parse(r io.Reader, url string, docType string, pr
 
 			// Process the collected content to extract endpoint information
 			endpointData, valid := p.extractEndpoint(content, category)
+			// If the operation ID is set, override the operation ID
+			if urlEntity.OperationID != "" {
+				endpointData.OperationID = urlEntity.OperationID
+			}
 
 			// Only add valid endpoints
 			if valid && endpointData.Path != "" && endpointData.Method != "" {

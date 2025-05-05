@@ -1,0 +1,83 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetPortfolioCollateralRateV2Resp:
+            example: '[ { "asset": "BNB", "collateralInfo": [ { "tierFloor": "0.0000", "tierCap": "1000.0000", "collateralRate": "1.0000", "cum":"0.0000"     }, { "tierFloor": "1000.0000", "tierCap": "2000.0000", "collateralRate": "0.9000", "cum":"0.0000" } ] }, { "asset": "USDT", "collateralInfo": [ { "tierFloor": "0.0000", "tierCap": "1000.0000", "collateralRate": "1.0000", "cum":"0.0000" }, { "tierFloor": "1000.0000", "tierCap": "2000.0000", "collateralRate": "0.9999", "cum":"0.0000" } ] } ]'
+            items:
+                $ref: '#/components/schemas/GetPortfolioCollateralRateV2RespItem'
+            type: array
+        GetPortfolioCollateralRateV2RespItem:
+            properties:
+                asset:
+                    type: string
+                collateralInfo:
+                    items:
+                        properties:
+                            collateralRate:
+                                type: string
+                            cum:
+                                type: string
+                            tierCap:
+                                type: string
+                            tierFloor:
+                                type: string
+                        type: object
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/portfolio/collateralRate:
+        get:
+            description: Portfolio Margin PRO Tiered Collateral Rate
+            operationId: GetPortfolioCollateralRateV2
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPortfolioCollateralRateV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Portfolio Margin Pro Tiered Collateral Rate(USER_DATA)
+            tags:
+                - Portfolio Margin Pro

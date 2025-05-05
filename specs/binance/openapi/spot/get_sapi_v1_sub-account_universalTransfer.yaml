@@ -1,0 +1,123 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSubAccountUniversalTransferV1Resp:
+            example: '{ "result": [ { "tranId": 92275823339, "fromEmail": "abctest@gmail.com", "toEmail": "deftest@gmail.com", "asset": "BNB", "amount": "0.01", "createTimeStamp": 1640317374000, "fromAccountType": "USDT_FUTURE", "toAccountType": "SPOT", "status": "SUCCESS", "clientTranId": "test" } ], "totalCount": 1 }'
+            properties:
+                result:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            clientTranId:
+                                type: string
+                            createTimeStamp:
+                                type: integer
+                            fromAccountType:
+                                type: string
+                            fromEmail:
+                                type: string
+                            status:
+                                type: string
+                            toAccountType:
+                                type: string
+                            toEmail:
+                                type: string
+                            tranId:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                totalCount:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sub-account/universalTransfer:
+        get:
+            description: Query Universal Transfer History
+            operationId: GetSubAccountUniversalTransferV1
+            parameters:
+                - in: query
+                  name: fromEmail
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: toEmail
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: clientTranId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - description: Default 500, Max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSubAccountUniversalTransferV1Resp'
+                    description: Successful operation
+            summary: Query Universal Transfer History(For Master Account)
+            tags:
+                - Sub Account

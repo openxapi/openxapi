@@ -1,0 +1,78 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMarginExchangeSmallLiabilityV1Resp:
+            example: '[ { "asset": "ETH", "interest": "0.00083334", "principal": "0.001", "liabilityAsset": "USDT", "liabilityQty": 0.3552 } ]'
+            items:
+                $ref: '#/components/schemas/GetMarginExchangeSmallLiabilityV1RespItem'
+            type: array
+        GetMarginExchangeSmallLiabilityV1RespItem:
+            properties:
+                asset:
+                    type: string
+                interest:
+                    type: string
+                liabilityAsset:
+                    type: string
+                liabilityQty:
+                    type: number
+                principal:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/exchange-small-liability:
+        get:
+            description: Query the coins which can be small liability exchange
+            operationId: GetMarginExchangeSmallLiabilityV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarginExchangeSmallLiabilityV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Small Liability Exchange Coin List (USER_DATA)
+            tags:
+                - Margin Trading

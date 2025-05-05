@@ -1,0 +1,76 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreatePortfolioRepayFuturesSwitchV1Req:
+            properties:
+                autoRepay:
+                    default: "true"
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - autoRepay
+                - timestamp
+            type: object
+        CreatePortfolioRepayFuturesSwitchV1Resp:
+            example: '{ "msg": "success" }'
+            properties:
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/portfolio/repay-futures-switch:
+        post:
+            description: Change Auto-repay-futures Status
+            operationId: CreatePortfolioRepayFuturesSwitchV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreatePortfolioRepayFuturesSwitchV1Req'
+                description: The request body for CreatePortfolioRepayFuturesSwitchV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePortfolioRepayFuturesSwitchV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Change Auto-repay-futures Status(TRADE)
+            tags:
+                - Portfolio Margin Pro

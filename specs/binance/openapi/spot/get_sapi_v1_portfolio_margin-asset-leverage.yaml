@@ -1,0 +1,60 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetPortfolioMarginAssetLeverageV1Resp:
+            example: '[ { "asset": "USDC", "leverage": 10 }, { "asset": "USDT", "leverage": 10 } ]'
+            items:
+                $ref: '#/components/schemas/GetPortfolioMarginAssetLeverageV1RespItem'
+            type: array
+        GetPortfolioMarginAssetLeverageV1RespItem:
+            properties:
+                asset:
+                    type: string
+                leverage:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/portfolio/margin-asset-leverage:
+        get:
+            description: Get Portfolio Margin Asset Leverage
+            operationId: GetPortfolioMarginAssetLeverageV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPortfolioMarginAssetLeverageV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Portfolio Margin Asset Leverage(USER_DATA)
+            tags:
+                - Portfolio Margin Pro

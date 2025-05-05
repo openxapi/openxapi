@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetAssetWalletBalanceV1Resp:
+            example: '[ { "activate": true, "balance": "0", "walletName": "Spot" }, { "activate": true, "balance": "0", "walletName": "Funding" }, { "activate": true, "balance": "0", "walletName": "Cross Margin" }, { "activate": true, "balance": "0", "walletName": "Isolated Margin" }, { "activate": true, "balance": "0.71842752", "walletName": "USDⓈ-M Futures" }, { "activate": true, "balance": "0", "walletName": "COIN-M Futures" }, { "activate": true, "balance": "0", "walletName": "Earn" }, { "activate": false, "balance": "0", "walletName": "Options" }, { "activate": true, "balance": "0", "walletName": "Trading Bots" }, { "activate": true, "balance": "0", "walletName": "Copy Trading" } ]'
+            items:
+                $ref: '#/components/schemas/GetAssetWalletBalanceV1RespItem'
+            type: array
+        GetAssetWalletBalanceV1RespItem:
+            properties:
+                activate:
+                    type: boolean
+                balance:
+                    type: string
+                walletName:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/wallet/balance:
+        get:
+            description: Query User Wallet Balance
+            operationId: GetAssetWalletBalanceV1
+            parameters:
+                - description: '`USDT`, `ETH`, `USDC`, `BNB`, etc. default `BTC`'
+                  in: query
+                  name: quoteAsset
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetWalletBalanceV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query User Wallet Balance (USER_DATA)
+            tags:
+                - Wallet

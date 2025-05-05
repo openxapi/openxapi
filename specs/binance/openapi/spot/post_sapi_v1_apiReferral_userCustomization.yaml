@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateApiReferralUserCustomizationV1Req:
+            properties:
+                apiAgentCode:
+                    default: ""
+                    type: string
+                customerId:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - customerId
+                - apiAgentCode
+                - timestamp
+            type: object
+        CreateApiReferralUserCustomizationV1Resp:
+            example: '{ "customerId": "abc123" }'
+            properties:
+                customerId:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/apiReferral/userCustomization:
+        post:
+            description: '- CustomerId must be unique for each apiAgent'
+            operationId: CreateApiReferralUserCustomizationV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateApiReferralUserCustomizationV1Req'
+                description: The request body for CreateApiReferralUserCustomizationV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateApiReferralUserCustomizationV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Customize Id For Client  (USER DATA)(For client)
+            tags:
+                - Binance Link

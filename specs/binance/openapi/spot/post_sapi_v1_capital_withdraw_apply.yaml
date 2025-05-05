@@ -1,0 +1,101 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateCapitalWithdrawApplyV1Req:
+            properties:
+                address:
+                    default: ""
+                    type: string
+                addressTag:
+                    default: ""
+                    type: string
+                amount:
+                    default: ""
+                    type: string
+                coin:
+                    default: ""
+                    type: string
+                name:
+                    default: ""
+                    type: string
+                network:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                transactionFeeFlag:
+                    default: false
+                    type: boolean
+                walletType:
+                    type: integer
+                withdrawOrderId:
+                    default: ""
+                    type: string
+            required:
+                - coin
+                - address
+                - amount
+                - timestamp
+            type: object
+        CreateCapitalWithdrawApplyV1Resp:
+            example: '{ "id":"7213fea8e94b4a5593d507237e5a555b" }'
+            properties:
+                id:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/capital/withdraw/apply:
+        post:
+            description: Submit a withdraw request.
+            operationId: CreateCapitalWithdrawApplyV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateCapitalWithdrawApplyV1Req'
+                description: The request body for CreateCapitalWithdrawApplyV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateCapitalWithdrawApplyV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Withdraw(USER_DATA)
+            tags:
+                - Wallet

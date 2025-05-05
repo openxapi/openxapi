@@ -57,28 +57,31 @@ func (p *Parser) CheckVersion(ctx context.Context, doc parser.Documentation) (bo
 	var lastModified time.Time
 	hasChanged := false
 
-	for _, url := range doc.URLs {
-		req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
-		if err != nil {
-			return false, time.Time{}, fmt.Errorf("creating HEAD request: %w", err)
-		}
-
-		resp, err := p.HTTPParser.Client.Do(req)
-		if err != nil {
-			return false, time.Time{}, fmt.Errorf("making HEAD request: %w", err)
-		}
-		defer resp.Body.Close()
-
-		// Extract Last-Modified header
-		lastModifiedHeader := resp.Header.Get("Last-Modified")
-		if lastModifiedHeader != "" {
-			lastModifiedTime, err := time.Parse(http.TimeFormat, lastModifiedHeader)
+	for _, group := range doc.URLGroups {
+		for _, urlItem := range group.URLs {
+			url := urlItem.URL()
+			req, err := http.NewRequestWithContext(ctx, "HEAD", url, nil)
 			if err != nil {
-				return false, time.Time{}, fmt.Errorf("parsing Last-Modified header: %w", err)
+				return false, time.Time{}, fmt.Errorf("creating HEAD request: %w", err)
 			}
-			if lastModifiedTime.After(lastModified) {
-				lastModified = lastModifiedTime
-				hasChanged = true
+
+			resp, err := p.HTTPParser.Client.Do(req)
+			if err != nil {
+				return false, time.Time{}, fmt.Errorf("making HEAD request: %w", err)
+			}
+			defer resp.Body.Close()
+
+			// Extract Last-Modified header
+			lastModifiedHeader := resp.Header.Get("Last-Modified")
+			if lastModifiedHeader != "" {
+				lastModifiedTime, err := time.Parse(http.TimeFormat, lastModifiedHeader)
+				if err != nil {
+					return false, time.Time{}, fmt.Errorf("parsing Last-Modified header: %w", err)
+				}
+				if lastModifiedTime.After(lastModified) {
+					lastModified = lastModifiedTime
+					hasChanged = true
+				}
 			}
 		}
 	}

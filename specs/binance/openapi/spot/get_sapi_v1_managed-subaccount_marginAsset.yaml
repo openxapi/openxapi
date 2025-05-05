@@ -1,0 +1,91 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetManagedSubaccountMarginAssetV1Resp:
+            example: '{ "marginLevel":"999", "totalAssetOfBtc":"0", "totalLiabilityOfBtc":"0", "totalNetAssetOfBtc":"0", "userAssets":[ { "asset":"MATIC", "borrowed":"0", "free":"0", "interest":"0", "locked":"0", "netAsset":"0" }, { "asset":"VET", "borrowed":"0", "free":"0", "interest":"0", "locked":"0", "netAsset":"0" }, { "asset":"BAKE", "borrowed":"0", "free":"0", "interest":"0", "locked":"0", "netAsset":"0" } ] }'
+            properties:
+                marginLevel:
+                    type: string
+                totalAssetOfBtc:
+                    type: string
+                totalLiabilityOfBtc:
+                    type: string
+                totalNetAssetOfBtc:
+                    type: string
+                userAssets:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            borrowed:
+                                type: string
+                            free:
+                                type: string
+                            interest:
+                                type: string
+                            locked:
+                                type: string
+                            netAsset:
+                                type: string
+                        type: object
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/managed-subaccount/marginAsset:
+        get:
+            description: Investor can use this api to query managed sub account margin asset details
+            operationId: GetManagedSubaccountMarginAssetV1
+            parameters:
+                - description: Managed Sub Account Email
+                  in: query
+                  name: email
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: No input or input &#34;MARGIN&#34; to get Cross Margin account details. Input &#34;ISOLATED_MARGIN&#34; to get Isolated Margin account details.
+                  in: query
+                  name: accountType
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetManagedSubaccountMarginAssetV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Managed Sub-account Margin Asset Details(For Investor Master Account)(USER_DATA)
+            tags:
+                - Sub Account

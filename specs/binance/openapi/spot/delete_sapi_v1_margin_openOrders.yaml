@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        DeleteMarginOpenOrdersV1Resp:
+            example: '[ { "symbol": "BTCUSDT", "isIsolated": true,        "origClientOrderId": "E6APeyTJvkMvLMYMqu1KQ4", "orderId": 11, "orderListId": -1, "clientOrderId": "pXLV6Hz6mprAcVYpVMTGgx", "price": "0.089853", "origQty": "0.178622", "executedQty": "0.000000", "cummulativeQuoteQty": "0.000000", "status": "CANCELED", "timeInForce": "GTC", "type": "LIMIT", "side": "BUY", "selfTradePreventionMode": "NONE" }, { "symbol": "BTCUSDT", "isIsolated": false,        "origClientOrderId": "A3EF2HCwxgZPFMrfwbgrhv", "orderId": 13, "orderListId": -1, "clientOrderId": "pXLV6Hz6mprAcVYpVMTGgx", "price": "0.090430", "origQty": "0.178622", "executedQty": "0.000000", "cummulativeQuoteQty": "0.000000", "status": "CANCELED", "timeInForce": "GTC", "type": "LIMIT", "side": "BUY", "selfTradePreventionMode": "NONE" }, { "orderListId": 1929, "contingencyType": "OCO", "listStatusType": "ALL_DONE", "listOrderStatus": "ALL_DONE", "listClientOrderId": "2inzWQdDvZLHbbAmAozX2N", "transactionTime": 1585230948299, "symbol": "BTCUSDT", "isIsolated": true,        "orders": [ { "symbol": "BTCUSDT", "orderId": 20, "clientOrderId": "CwOOIPHSmYywx6jZX77TdL" }, { "symbol": "BTCUSDT", "orderId": 21, "clientOrderId": "461cPg51vQjV3zIMOXNz39" } ], "orderReports": [ { "symbol": "BTCUSDT", "origClientOrderId": "CwOOIPHSmYywx6jZX77TdL", "orderId": 20, "orderListId": 1929, "clientOrderId": "pXLV6Hz6mprAcVYpVMTGgx", "price": "0.668611", "origQty": "0.690354", "executedQty": "0.000000", "cummulativeQuoteQty": "0.000000", "status": "CANCELED", "timeInForce": "GTC", "type": "STOP_LOSS_LIMIT", "side": "BUY", "stopPrice": "0.378131", "icebergQty": "0.017083" }, { "symbol": "BTCUSDT", "origClientOrderId": "461cPg51vQjV3zIMOXNz39", "orderId": 21, "orderListId": 1929, "clientOrderId": "pXLV6Hz6mprAcVYpVMTGgx", "price": "0.008791", "origQty": "0.690354", "executedQty": "0.000000", "cummulativeQuoteQty": "0.000000", "status": "CANCELED", "timeInForce": "GTC", "type": "LIMIT_MAKER", "side": "BUY", "icebergQty": "0.639962" } ] } ]'
+            items:
+                $ref: '#/components/schemas/DeleteMarginOpenOrdersV1RespItem'
+            type: array
+        DeleteMarginOpenOrdersV1RespItem:
+            properties:
+                clientOrderId:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                executedQty:
+                    type: string
+                isIsolated:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                orderListId:
+                    format: int64
+                    type: integer
+                origClientOrderId:
+                    type: string
+                origQty:
+                    type: string
+                price:
+                    type: string
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                symbol:
+                    type: string
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/openOrders:
+        delete:
+            description: |-
+                Cancels all active orders on a symbol for margin account.
+                This includes OCO orders.
+            operationId: DeleteMarginOpenOrdersV1
+            parameters:
+                - in: query
+                  name: symbol
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: for isolated margin or not, &#34;TRUE&#34;, &#34;FALSE&#34;，default &#34;FALSE&#34;
+                  in: query
+                  name: isIsolated
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/DeleteMarginOpenOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Margin Account Cancel all Open Orders on a Symbol (TRADE)
+            tags:
+                - Margin Trading

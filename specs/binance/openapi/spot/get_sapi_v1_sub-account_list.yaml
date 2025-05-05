@@ -1,0 +1,95 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSubAccountListV1Resp:
+            example: '{ "subAccounts":[ { "email":"testsub@gmail.com", "isFreeze":false, "createTime":1544433328000, "isManagedSubAccount": false, "isAssetManagementSubAccount": false }, { "email":"virtual@oxebmvfonoemail.com", "isFreeze":false, "createTime":1544433328000, "isManagedSubAccount": false, "isAssetManagementSubAccount": false } ] }'
+            properties:
+                subAccounts:
+                    items:
+                        properties:
+                            createTime:
+                                format: int64
+                                type: integer
+                            email:
+                                type: string
+                            isAssetManagementSubAccount:
+                                type: boolean
+                            isFreeze:
+                                type: boolean
+                            isManagedSubAccount:
+                                type: boolean
+                        type: object
+                    type: array
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sub-account/list:
+        get:
+            description: Query Sub-account List
+            operationId: GetSubAccountListV1
+            parameters:
+                - description: <a href="/docs/sub_account/account-management/Query-Sub-account-List#email-address">Sub-account email</a>
+                  in: query
+                  name: email
+                  schema:
+                    default: ""
+                    type: string
+                - description: true or false
+                  in: query
+                  name: isFreeze
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Default value: 1'
+                  in: query
+                  name: page
+                  schema:
+                    type: integer
+                - description: 'Default value: 1, Max value: 200'
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSubAccountListV1Resp'
+                    description: Successful operation
+            summary: Query Sub-account List(For Master Account)
+            tags:
+                - Sub Account

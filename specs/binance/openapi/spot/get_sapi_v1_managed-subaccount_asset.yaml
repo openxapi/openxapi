@@ -1,0 +1,79 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetManagedSubaccountAssetV1Resp:
+            example: '[ { "coin": "INJ", "name": "Injective Protocol", "totalBalance": "0", "availableBalance": "0", "inOrder": "0", "btcValue": "0" }, { "coin": "FILDOWN", "name": "FILDOWN", "totalBalance": "0", "availableBalance": "0", "inOrder": "0", "btcValue": "0" } ]'
+            items:
+                $ref: '#/components/schemas/GetManagedSubaccountAssetV1RespItem'
+            type: array
+        GetManagedSubaccountAssetV1RespItem:
+            properties:
+                availableBalance:
+                    type: string
+                btcValue:
+                    type: string
+                coin:
+                    type: string
+                inOrder:
+                    type: string
+                name:
+                    type: string
+                totalBalance:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/managed-subaccount/asset:
+        get:
+            description: Query Managed Sub-account Asset Details
+            operationId: GetManagedSubaccountAssetV1
+            parameters:
+                - in: query
+                  name: email
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetManagedSubaccountAssetV1Resp'
+                    description: Successful operation
+            summary: Query Managed Sub-account Asset Details(For Investor Master Account)
+            tags:
+                - Sub Account

@@ -1,0 +1,70 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMarginLeverageBracketV1Resp:
+            example: '[ { "assetNames":[ "SHIB", "FDUSD", "BTC", "ETH", "USDC" ], "rank":1, "brackets":[ { "leverage":10, "maxDebt":1000000.00000000, "maintenanceMarginRate":0.02000000, "initialMarginRate":0.1112, "fastNum":0 }, { "leverage":3, "maxDebt":4000000.00000000, "maintenanceMarginRate":0.07000000, "initialMarginRate":0.5000, "fastNum":60000.0000000000000000 } ] } ]'
+            items:
+                $ref: '#/components/schemas/GetMarginLeverageBracketV1RespItem'
+            type: array
+        GetMarginLeverageBracketV1RespItem:
+            properties:
+                assetNames:
+                    items:
+                        type: string
+                    type: array
+                brackets:
+                    items:
+                        properties:
+                            fastNum:
+                                type: integer
+                            initialMarginRate:
+                                type: number
+                            leverage:
+                                type: integer
+                            maintenanceMarginRate:
+                                type: number
+                            maxDebt:
+                                type: integer
+                        type: object
+                    type: array
+                rank:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/leverageBracket:
+        get:
+            description: Liability Coin Leverage Bracket in Cross Margin Pro Mode
+            operationId: GetMarginLeverageBracketV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarginLeverageBracketV1Resp'
+                    description: Successful operation
+            summary: Query Liability Coin Leverage Bracket in Cross Margin Pro Mode(MARKET_DATA)
+            tags:
+                - Margin Trading

@@ -1,0 +1,105 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetApiReferralTraderSummaryV1Resp:
+            example: '[ { "customerId": "sde001", "unit": "USDT", "tradeVol":"9.57083000", "rebateVol":"0.00035400", "time": 1586736000000 }, { "customerId": "ft****@gmail.com", "unit": "USDT", "tradeVol":"9.66741000", "rebateVol":"0.00034800", "time": 1588723200000 } ]'
+            items:
+                $ref: '#/components/schemas/GetApiReferralTraderSummaryV1RespItem'
+            type: array
+        GetApiReferralTraderSummaryV1RespItem:
+            properties:
+                customerId:
+                    type: string
+                rebateVol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                tradeVol:
+                    type: string
+                unit:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /fapi/v1/apiReferral/traderSummary:
+        get:
+            operationId: GetApiReferralTraderSummaryV1
+            parameters:
+                - in: query
+                  name: customerId
+                  schema:
+                    default: ""
+                    type: string
+                - description: 1:USDT Margined Futures, 2:COIN Margined Futures Default： USDT Margined Futures
+                  in: query
+                  name: type
+                  schema:
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 500, max 1000
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 1000
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetApiReferralTraderSummaryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Trader Detail (USER DATA)
+            tags:
+                - Binance Link

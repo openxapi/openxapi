@@ -1,0 +1,88 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetCapitalDepositAddressV1Resp:
+            example: '{ "address": "1HPn8Rx2y6nNSfagQBKy27GB99Vbzg89wv", "coin": "BTC", "tag": "", "url": "https://btc.com/1HPn8Rx2y6nNSfagQBKy27GB99Vbzg89wv" }'
+            properties:
+                address:
+                    type: string
+                coin:
+                    type: string
+                tag:
+                    type: string
+                url:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/capital/deposit/address:
+        get:
+            description: Fetch deposit address with network.
+            operationId: GetCapitalDepositAddressV1
+            parameters:
+                - in: query
+                  name: coin
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: network
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: amount
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCapitalDepositAddressV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Deposit Address(supporting network) (USER_DATA)
+            tags:
+                - Wallet

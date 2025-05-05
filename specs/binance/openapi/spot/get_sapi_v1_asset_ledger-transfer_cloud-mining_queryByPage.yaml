@@ -1,0 +1,118 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetAssetLedgerTransferCloudMiningQueryByPageV1Resp:
+            example: '{ "total":5, "rows":[ {"createTime":1667880112000,"tranId":121230610120,"type":248,"asset":"USDT","amount":"25.0068","status":"S"}, {"createTime":1666776366000,"tranId":119991507468,"type":249,"asset":"USDT","amount":"0.027","status":"S"}, {"createTime":1666764505000,"tranId":119977966327,"type":248,"asset":"USDT","amount":"0.027","status":"S"}, {"createTime":1666758189000,"tranId":119973601721,"type":248,"asset":"USDT","amount":"0.018","status":"S"}, {"createTime":1666757278000,"tranId":119973028551,"type":248,"asset":"USDT","amount":"0.018","status":"S"} ] }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            createTime:
+                                format: int64
+                                type: integer
+                            status:
+                                type: string
+                            tranId:
+                                format: int64
+                                type: integer
+                            type:
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/asset/ledger-transfer/cloud-mining/queryByPage:
+        get:
+            description: The query of Cloud-Mining payment and refund history
+            operationId: GetAssetLedgerTransferCloudMiningQueryByPageV1
+            parameters:
+                - description: The transaction id
+                  in: query
+                  name: tranId
+                  schema:
+                    format: int64
+                    type: integer
+                - description: The unique flag
+                  in: query
+                  name: clientTranId
+                  schema:
+                    default: ""
+                    type: string
+                - description: If it is blank, we will query all assets
+                  in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'inclusive, unit: ms'
+                  in: query
+                  name: startTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'exclusive, unit: ms'
+                  in: query
+                  name: endTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: current page, default 1, the min value is 1
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    type: integer
+                - description: page size, default 10, the max value is 100
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetLedgerTransferCloudMiningQueryByPageV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Cloud-Mining payment and refund history (USER_DATA)
+            tags:
+                - Wallet

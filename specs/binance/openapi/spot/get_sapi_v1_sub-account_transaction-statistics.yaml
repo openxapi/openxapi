@@ -1,0 +1,112 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        SubaccountGetSubAccountTransactionStatisticsV1Resp:
+            example: '{ "recent30BtcTotal": "0", "recent30BtcFuturesTotal": "0", "recent30BtcMarginTotal": "0", "recent30BusdTotal": "0", "recent30BusdFuturesTotal": "0", "recent30BusdMarginTotal": "0", "tradeInfoVos": [] }'
+            properties:
+                recent30BtcFuturesTotal:
+                    type: string
+                recent30BtcMarginTotal:
+                    type: string
+                recent30BtcTotal:
+                    type: string
+                recent30BusdFuturesTotal:
+                    type: string
+                recent30BusdMarginTotal:
+                    type: string
+                recent30BusdTotal:
+                    type: string
+                tradeInfoVos:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            userId:
+                                type: integer
+                                format: int64
+                            btc:
+                                type: integer
+                                format: int64
+                            btcFutures:
+                                type: integer
+                                format: int64
+                            btcMargin:
+                                type: integer
+                                format: int64
+                            busd:
+                                type: integer
+                                format: int64
+                            busdFutures:
+                                type: integer
+                                format: int64
+                            busdMargin:
+                                type: integer
+                                format: int64
+                            date:
+                                type: integer
+                                format: int64
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sub-account/transaction-statistics:
+        get:
+            description: Query Sub-account Transaction statistics (For Master Account).
+            operationId: GetSubAccountTransactionStatisticsV1
+            parameters:
+                - description: Sub user email
+                  in: query
+                  name: email
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/SubaccountGetSubAccountTransactionStatisticsV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Sub-account Transaction Statistics(For Master Account)(USER_DATA)
+            tags:
+                - Sub Account

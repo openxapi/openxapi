@@ -1,0 +1,108 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMarginExchangeSmallLiabilityHistoryV1Resp:
+            example: '{ "total": 1, "rows": [ { "asset": "ETH", "amount": "0.00083434", "targetAsset": "BUSD", "targetAmount": "1.37576819", "bizType": "EXCHANGE_SMALL_LIABILITY", "timestamp": 1672801339253 } ] }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            bizType:
+                                type: string
+                            targetAmount:
+                                type: string
+                            targetAsset:
+                                type: string
+                            timestamp:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/exchange-small-liability-history:
+        get:
+            description: Get Small liability Exchange History
+            operationId: GetMarginExchangeSmallLiabilityHistoryV1
+            parameters:
+                - description: Currently querying page. Start from 1. Default:1
+                  in: query
+                  name: current
+                  required: true
+                  schema:
+                    type: integer
+                - description: Default:10, Max:100
+                  in: query
+                  name: size
+                  required: true
+                  schema:
+                    type: integer
+                - description: 'Default: 30 days from current timestamp'
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: present timestamp'
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarginExchangeSmallLiabilityHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Small Liability Exchange History (USER_DATA)
+            tags:
+                - Margin Trading

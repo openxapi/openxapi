@@ -1,0 +1,135 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetAlgoSpotHistoricalOrdersV1Resp:
+            example: '{ "total": 1, "orders": [ { "algoId": 14518, "symbol": "BNBUSDT", "side": "BUY", "totalQty": "100.00", "executedQty": "0.00", "executedAmt": "0.00000000", "avgPrice": "0.000", "clientAlgoId": "acacab56b3c44bef9f6a8f8ebd2a8408", "bookTime": 1649757019503, "endTime": 1649757088101, "algoStatus": "CANCELLED", "algoType": "VP", "urgency": "LOW" } ] }'
+            properties:
+                orders:
+                    items:
+                        properties:
+                            algoId:
+                                format: int64
+                                type: integer
+                            algoStatus:
+                                type: string
+                            algoType:
+                                type: string
+                            avgPrice:
+                                type: string
+                            bookTime:
+                                format: int64
+                                type: integer
+                            clientAlgoId:
+                                type: string
+                            endTime:
+                                format: int64
+                                type: integer
+                            executedAmt:
+                                type: string
+                            executedQty:
+                                type: string
+                            side:
+                                type: string
+                            symbol:
+                                type: string
+                            totalQty:
+                                type: string
+                            urgency:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/algo/spot/historicalOrders:
+        get:
+            description: Get all historical SPOT TWAP orders
+            operationId: GetAlgoSpotHistoricalOrdersV1
+            parameters:
+                - description: Trading symbol eg. BTCUSDT
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: BUY or SELL
+                  in: query
+                  name: side
+                  schema:
+                    default: ""
+                    type: string
+                - description: in milliseconds  eg.1641522717552
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: in milliseconds  eg.1641522526562
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default is 1
+                  in: query
+                  name: page
+                  schema:
+                    type: integer
+                - description: MIN 1, MAX 100; Default 100
+                  in: query
+                  name: pageSize
+                  schema:
+                    default: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAlgoSpotHistoricalOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Historical Algo Orders(USER_DATA)
+            tags:
+                - Algo Trading

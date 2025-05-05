@@ -1,0 +1,133 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetBrokerUniversalTransferV1Resp:
+            example: '[ { "toId":"444016824578949121", "asset":"BTC", "qty":"0.1", "time":1544433328000, "status":"SUCCESS", "txnId":"12831078279", "clientTranId":"abc", "fromAccountType": "SPOT", "toAccountType": "USDT_FUTURE" }, { "toId":"444016824578949121", "asset":"USDT", "qty":"2", "time":1544433328000, "status":"SUCCESS", "txnId":"296666999", "clientTranId":"", "fromAccountType": "SPOT", "toAccountType": "USDT_FUTURE" } ]'
+            items:
+                $ref: '#/components/schemas/GetBrokerUniversalTransferV1RespItem'
+            type: array
+        GetBrokerUniversalTransferV1RespItem:
+            properties:
+                asset:
+                    type: string
+                clientTranId:
+                    type: string
+                fromAccountType:
+                    type: string
+                qty:
+                    type: string
+                status:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                toAccountType:
+                    type: string
+                toId:
+                    type: string
+                txnId:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/universalTransfer:
+        get:
+            description: |-
+                Caution:
+                - Either fromId or toId must be sent.
+                - If either fromId or toId is the master account itself, it will not return in response.
+                - If showAllStatus is true, the status in response will show four types: INIT,PROCESS,SUCCESS,FAILURE.
+                Query scope is limited to 100 days:
+                - Both startTime and endTime are provided: If it exceeds, the endTime will be re-calculated 100 days after the startTime.
+                - Neither startTime nor endTime are provided: Calculate 30 days before today.
+                - endTime is not provided: Calculate as Current time.
+                - startTime is not provided: Calculate 30 days before endTime.
+            operationId: GetBrokerUniversalTransferV1
+            parameters:
+                - in: query
+                  name: fromId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: toId
+                  schema:
+                    default: ""
+                    type: string
+                - description: client transfer id
+                  in: query
+                  name: clientTranId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - description: default 500, max 500
+                  in: query
+                  name: limit
+                  schema:
+                    default: 500
+                    maximum: 500
+                    type: integer
+                - description: TRUE or FALSE
+                  in: query
+                  name: showAllStatus
+                  schema:
+                    type: boolean
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBrokerUniversalTransferV1Resp'
+                    description: Successful operation
+            summary: Query Universal Transfer History
+            tags:
+                - Binance Link

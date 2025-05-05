@@ -1,0 +1,100 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSubAccountMarginAccountV1Resp:
+            example: '{ "email":"123@test.com", "marginLevel": "11.64405625", "totalAssetOfBtc": "6.82728457", "totalLiabilityOfBtc": "0.58633215", "totalNetAssetOfBtc": "6.24095242", "marginTradeCoeffVo": { "forceLiquidationBar": "1.10000000",   "marginCallBar": "1.50000000",         "normalBar": "2.00000000"       }, "marginUserAssetVoList": [ { "asset": "BTC", "borrowed": "0.00000000", "free": "0.00499500", "interest": "0.00000000", "locked": "0.00000000", "netAsset": "0.00499500" }, { "asset": "BNB", "borrowed": "201.66666672", "free": "2346.50000000", "interest": "0.00000000", "locked": "0.00000000", "netAsset": "2144.83333328" }, { "asset": "ETH", "borrowed": "0.00000000", "free": "0.00000000", "interest": "0.00000000", "locked": "0.00000000", "netAsset": "0.00000000" }, { "asset": "USDT", "borrowed": "0.00000000", "free": "0.00000000", "interest": "0.00000000", "locked": "0.00000000", "netAsset": "0.00000000" } ] }'
+            properties:
+                email:
+                    type: string
+                marginLevel:
+                    type: string
+                marginTradeCoeffVo:
+                    properties:
+                        forceLiquidationBar:
+                            type: string
+                        marginCallBar:
+                            type: string
+                        normalBar:
+                            type: string
+                    type: object
+                marginUserAssetVoList:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            borrowed:
+                                type: string
+                            free:
+                                type: string
+                            interest:
+                                type: string
+                            locked:
+                                type: string
+                            netAsset:
+                                type: string
+                        type: object
+                    type: array
+                totalAssetOfBtc:
+                    type: string
+                totalLiabilityOfBtc:
+                    type: string
+                totalNetAssetOfBtc:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sub-account/margin/account:
+        get:
+            description: Get Detail on Sub-account's Margin Account
+            operationId: GetSubAccountMarginAccountV1
+            parameters:
+                - description: <a href="/docs/sub_account/asset-management/Get-Detail-on-Sub-accounts-Margin-Account#email-address">Sub-account email</a>
+                  in: query
+                  name: email
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSubAccountMarginAccountV1Resp'
+                    description: Successful operation
+            summary: Get Detail on Sub-account's Margin Account(For Master Account)
+            tags:
+                - Sub Account

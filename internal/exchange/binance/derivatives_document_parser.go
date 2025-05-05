@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/parser"
 	"github.com/sirupsen/logrus"
 )
@@ -17,17 +18,14 @@ type DerivativesDocumentParser struct {
 }
 
 // Parse parses an HTML document and extracts API endpoints
-func (p *DerivativesDocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	p.docType = docType
+func (p *DerivativesDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	p.docType = urlEntity.DocType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing HTML: %w", err)
 	}
-
-	// Extract the URL to determine the API category
-	category := p.extractCategory(url)
-
+	category := toCategory(urlEntity)
 	var endpoints []parser.Endpoint
 
 	parseEndpoint := func(headerElement string) func(i int, header *goquery.Selection) {
@@ -66,6 +64,10 @@ func (p *DerivativesDocumentParser) Parse(r io.Reader, url string, docType strin
 
 			// Process the collected content to extract endpoint information
 			endpointData, valid := p.extractEndpoint(content, category)
+			// If the operation ID is set, override the operation ID
+			if urlEntity.OperationID != "" {
+				endpointData.OperationID = urlEntity.OperationID
+			}
 
 			// Only add valid endpoints
 			if valid && endpointData.Path != "" && endpointData.Method != "" {
@@ -92,10 +94,15 @@ func (p *DerivativesDocumentParser) collectElementContent(s *goquery.Selection, 
 
 		// Check if it's an API endpoint definition (GET, POST, etc.)
 		if strings.HasPrefix(codeText, "GET ") ||
+			strings.HasPrefix(codeText, "Get ") ||
 			strings.HasPrefix(codeText, "POST ") ||
+			strings.HasPrefix(codeText, "Post ") ||
 			strings.HasPrefix(codeText, "PUT ") ||
+			strings.HasPrefix(codeText, "Put ") ||
 			strings.HasPrefix(codeText, "DELETE ") ||
-			strings.HasPrefix(codeText, "PATCH ") {
+			strings.HasPrefix(codeText, "Delete ") ||
+			strings.HasPrefix(codeText, "PATCH ") ||
+			strings.HasPrefix(codeText, "Patch ") {
 			*content = append(*content, codeText)
 		}
 	}
@@ -286,7 +293,7 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 			matches := endpointRegex.FindStringSubmatch(line)
 			logrus.Debugf("len matches: %d", len(matches))
 			if len(matches) == 3 {
-				endpoint.Method = matches[1]
+				endpoint.Method = strings.ToUpper(matches[1])
 				endpointPath := strings.TrimSpace(matches[2])
 				endpointPath = strings.Split(endpointPath, " ")[0]
 				if !strings.HasPrefix(endpointPath, "/") {
@@ -294,7 +301,7 @@ func (p *DerivativesDocumentParser) extractContent(endpoint *parser.Endpoint, co
 				}
 				endpoint.Path = endpointPath
 				foundEndpoint = true
-				endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
+				endpoint.OperationID = operationID(endpoint.Method, endpoint.Path)
 
 				// Extract the API version from the path
 				apiVersionMatches := apiVersionRegex.FindStringSubmatch(endpoint.Path)

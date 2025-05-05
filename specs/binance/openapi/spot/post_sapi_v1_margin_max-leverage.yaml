@@ -1,0 +1,68 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateMarginMaxLeverageV1Req:
+            properties:
+                maxLeverage:
+                    type: integer
+            required:
+                - maxLeverage
+            type: object
+        CreateMarginMaxLeverageV1Resp:
+            example: '{ "success": true }'
+            properties:
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/max-leverage:
+        post:
+            description: Adjust cross margin max leverage
+            operationId: CreateMarginMaxLeverageV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateMarginMaxLeverageV1Req'
+                description: The request body for CreateMarginMaxLeverageV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateMarginMaxLeverageV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Adjust cross margin max leverage (USER_DATA)
+            tags:
+                - Margin Trading

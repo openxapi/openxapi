@@ -1,0 +1,119 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetAccountSnapshotV1Resp:
+            example: '{ "code":200,  "msg":"",  "snapshotVos":[ { "data":{ "balances":[ { "asset":"BTC", "free":"0.09905021", "locked":"0.00000000" }, { "asset":"USDT", "free":"1.89109409", "locked":"0.00000000" } ], "totalAssetOfBtc":"0.09942700" }, "type":"spot", "updateTime":1576281599000 } ] }'
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+                snapshotVos:
+                    items:
+                        properties:
+                            data:
+                                properties:
+                                    balances:
+                                        items:
+                                            properties:
+                                                asset:
+                                                    type: string
+                                                free:
+                                                    type: string
+                                                locked:
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    totalAssetOfBtc:
+                                        type: string
+                                type: object
+                            type:
+                                type: string
+                            updateTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/accountSnapshot:
+        get:
+            description: Daily account snapshot
+            operationId: GetAccountSnapshotV1
+            parameters:
+                - description: '&#34;SPOT&#34;, &#34;MARGIN&#34;, &#34;FUTURES&#34;'
+                  in: query
+                  name: type
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: min 7, max 30, default 7
+                  in: query
+                  name: limit
+                  schema:
+                    default: 7
+                    maximum: 30
+                    minimum: 7
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountSnapshotV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Daily Account Snapshot (USER_DATA)
+            tags:
+                - Wallet

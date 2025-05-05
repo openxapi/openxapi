@@ -10,8 +10,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/parser"
+
+	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,26 +23,26 @@ type DocumentParser struct {
 	docType string
 }
 
-func (p *DocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	switch docType {
+func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	switch urlEntity.DocType {
 	case "spot":
 		sp := &SpotDocumentParser{DocumentParser: p}
-		return sp.Parse(r, url, docType, protectedEndpoints)
-	case "umfutures", "cmfutures", "options", "pmargin", "pmarginpro", "futuresdata":
+		return sp.Parse(r, urlEntity, protectedEndpoints)
+	case "derivatives":
 		uf := &DerivativesDocumentParser{
 			SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 		}
-		return uf.Parse(r, url, docType, protectedEndpoints)
-	case "margin", "algo", "wallet", "copytrading", "convert", "subaccount", "exchangelink", "spotlinktrade", "futureslinktrade":
+		return uf.Parse(r, urlEntity, protectedEndpoints)
+	case "margin":
 		uf := &MarginDocumentParser{
 			DerivativesDocumentParser: &DerivativesDocumentParser{
 				SpotDocumentParser: &SpotDocumentParser{DocumentParser: p},
 			},
 		}
-		return uf.Parse(r, url, docType, protectedEndpoints)
+		return uf.Parse(r, urlEntity, protectedEndpoints)
 	default:
 		sp := &SpotDocumentParser{DocumentParser: p}
-		return sp.Parse(r, url, docType, protectedEndpoints)
+		return sp.Parse(r, urlEntity, protectedEndpoints)
 	}
 }
 
@@ -51,18 +53,14 @@ type SpotDocumentParser struct {
 }
 
 // Parse parses an HTML document and extracts API endpoints
-func (p *SpotDocumentParser) Parse(r io.Reader, url string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	p.docType = docType
+func (p *SpotDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	p.docType = urlEntity.DocType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing HTML: %w", err)
 	}
-
-	// Extract the page title to determine the API category
-	pageTitle := document.Find("title").First().Text()
-	category := extractCategory(pageTitle)
-
+	category := toCategory(urlEntity)
 	var endpoints []parser.Endpoint
 
 	parseEndpoint := func(headerElement string) func(i int, header *goquery.Selection) {
@@ -101,6 +99,10 @@ func (p *SpotDocumentParser) Parse(r io.Reader, url string, docType string, prot
 
 			// Process the collected content to extract endpoint information
 			endpointData, valid := p.extractEndpoint(content, category)
+			// If the operation ID is set, override the operation ID
+			if urlEntity.OperationID != "" {
+				endpointData.OperationID = urlEntity.OperationID
+			}
 
 			// Only add valid endpoints
 			if valid && endpointData.Path != "" && endpointData.Method != "" {
@@ -117,6 +119,14 @@ func (p *SpotDocumentParser) Parse(r io.Reader, url string, docType string, prot
 	document.Find("h4.anchor").Each(parseEndpoint("h4"))
 
 	return endpoints, nil
+}
+
+func toCategory(urlEntity *config.URLEntity) string {
+	items := strings.Split(urlEntity.GroupName, " ")
+	for i, item := range items {
+		items[i] = strings.Title(item)
+	}
+	return strings.Join(items, " ")
 }
 
 // extractEndpoint processes the content following an API header to extract endpoint information
@@ -155,7 +165,7 @@ func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content [
 	p.tableContent = ""
 
 	// Regular expressions to identify different sections
-	endpointRegex := regexp.MustCompile(`^(GET|POST|PUT|DELETE|PATCH) (.+)$`)
+	endpointRegex := regexp.MustCompile(`^(GET|Get|POST|Post|PUT|Put|DELETE|Delete|PATCH|Patch) (.+)$`)
 	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)?$`)
 	parametersRegex := regexp.MustCompile(`^Parameters:$`)
 	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
@@ -178,10 +188,10 @@ func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content [
 		if !foundEndpoint {
 			matches := endpointRegex.FindStringSubmatch(line)
 			if len(matches) == 3 {
-				endpoint.Method = matches[1]
+				endpoint.Method = strings.ToUpper(matches[1])
 				endpoint.Path = matches[2]
 				foundEndpoint = true
-				endpoint.OperationID = operationID(p.docType, endpoint.Method, endpoint.Path)
+				endpoint.OperationID = operationID(endpoint.Method, endpoint.Path)
 
 				// Extract the API version from the path
 				apiVersionMatches := apiVersionRegex.FindStringSubmatch(endpoint.Path)
@@ -261,13 +271,8 @@ func (p *SpotDocumentParser) extractContent(endpoint *parser.Endpoint, content [
 	return foundEndpoint, foundResponse, responseContent.String()
 }
 
-func operationID(docType, method, path string) string {
-	// GET /api/v3/exchangeInfo -> SpotGetExchangeInfoV3
-	// Spot is the capitalized version of the docType
-	// ExchangeInfoV3 is the method capitalized + the path capitalized
-	title := func(s string) string {
-		return strings.Title(strings.ToLower(s))
-	}
+func operationID(method, path string) string {
+	// GET /api/v3/exchangeInfo -> GetExchangeInfoV3
 	pathRegex := regexp.MustCompile(`^/(.*api)/v(\d+)/(.+)$`)
 	matches := pathRegex.FindStringSubmatch(path)
 	if len(matches) == 4 {
@@ -279,7 +284,7 @@ func operationID(docType, method, path string) string {
 		path = fmt.Sprintf("%sV%s", action, matches[2])
 	}
 	path = strings.Join(strings.Split(strings.Title(strings.ReplaceAll(strings.ReplaceAll(path, "/", " "), "-", " ")), " "), "")
-	return fmt.Sprintf("%s%s%s", title(docType), methodToAction(method), path)
+	return fmt.Sprintf("%s%s", methodToAction(method), path)
 }
 
 func methodToAction(method string) string {
@@ -844,9 +849,13 @@ func (p *SpotDocumentParser) collectElementContent(s *goquery.Selection, content
 
 		// Check if it's an API endpoint definition (GET, POST, etc.)
 		if strings.HasPrefix(codeText, "GET ") ||
+			strings.HasPrefix(codeText, "Get ") ||
 			strings.HasPrefix(codeText, "POST ") ||
+			strings.HasPrefix(codeText, "Post ") ||
 			strings.HasPrefix(codeText, "PUT ") ||
+			strings.HasPrefix(codeText, "Put ") ||
 			strings.HasPrefix(codeText, "DELETE ") ||
+			strings.HasPrefix(codeText, "Delete ") ||
 			strings.HasPrefix(codeText, "PATCH ") {
 			*content = append(*content, codeText)
 		}

@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetPortfolioAccountV1Resp:
+            example: '{ "uniMMR": "5167.92171923",         "accountEquity": "122607.35137903",   "actualEquity": "142607.35137903",    "accountMaintMargin": "23.72469206",  "accountInitialMargin": "47.44938412",  "totalAvailableBalance" : "122,559.90199491", "accountStatus": "NORMAL",    "accountType": "PM_1"      }'
+            properties:
+                accountEquity:
+                    type: string
+                accountInitialMargin:
+                    type: string
+                accountMaintMargin:
+                    type: string
+                accountStatus:
+                    type: string
+                accountType:
+                    type: string
+                actualEquity:
+                    type: string
+                totalAvailableBalance:
+                    type: string
+                uniMMR:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/portfolio/account:
+        get:
+            description: Get Portfolio Margin Pro Account Info
+            operationId: GetPortfolioAccountV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPortfolioAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Portfolio Margin Pro Account Info(USER_DATA)
+            tags:
+                - Portfolio Margin Pro

@@ -1,0 +1,84 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetAccountApiTradingStatusV1Resp:
+            example: '{ "data": {           "isLocked": false,    "plannedRecoverTime": 0,   "triggerCondition": { "GCR": 150,   "IFER": 150,  "UFR": 300    }, "updateTime": 1547630471725 } }'
+            properties:
+                data:
+                    properties:
+                        isLocked:
+                            type: boolean
+                        plannedRecoverTime:
+                            format: int64
+                            type: integer
+                        triggerCondition:
+                            properties:
+                                GCR:
+                                    type: integer
+                                IFER:
+                                    type: integer
+                                UFR:
+                                    type: integer
+                            type: object
+                        updateTime:
+                            format: int64
+                            type: integer
+                    type: object
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/account/apiTradingStatus:
+        get:
+            description: Fetch account api trading status detail.
+            operationId: GetAccountApiTradingStatusV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountApiTradingStatusV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Account API Trading Status (USER_DATA)
+            tags:
+                - Wallet

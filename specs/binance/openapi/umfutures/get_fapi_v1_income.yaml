@@ -8,12 +8,12 @@ components:
                 msg:
                     type: string
             type: object
-        UmfuturesGetIncomeV1Resp:
-            example: '[ { "symbol": "", "incomeType": "TRANSFER", "income": "-0.37500000",   "asset": "USDT", "info":"TRANSFER", "time": 1570608000000, "tranId":9689322392, "tradeId":"" }, { "symbol": "BTCUSDT", "incomeType": "COMMISSION", "income": "-0.01000000", "asset": "USDT", "info":"COMMISSION", "time": 1570636800000, "tranId":9689322392, "tradeId":"2059192" } ]'
+        GetIncomeV1Resp:
+            example: '[ { "symbol": "", "incomeType": "TRANSFER", "income": "-0.37500000", "asset": "USDT", "info":"", "time": 1570608000000 }, { "symbol": "BTCUSDT", "incomeType": "COMMISSION", "income": "-0.01000000", "asset": "USDT", "info":"", "time": 1570636800000 } ]'
             items:
-                $ref: '#/components/schemas/UmfuturesGetIncomeV1RespItem'
+                $ref: '#/components/schemas/GetIncomeV1RespItem'
             type: array
-        UmfuturesGetIncomeV1RespItem:
+        GetIncomeV1RespItem:
             properties:
                 asset:
                     type: string
@@ -26,11 +26,6 @@ components:
                 symbol:
                     type: string
                 time:
-                    format: int64
-                    type: integer
-                tradeId:
-                    type: string
-                tranId:
                     format: int64
                     type: integer
             type: object
@@ -46,15 +41,18 @@ openapi: ""
 paths:
     /fapi/v1/income:
         get:
-            description: Query income history
-            operationId: UmfuturesGetIncomeV1
+            description: |-
+                - If incomeType  is not sent, all kinds of flow will be returned
+                - If startTime and endTime are not sent, the most recent limit datas will be returned.
+                - If the number of data between startTime and endTime is larger than limit, response will be return as startTime + limit.
+            operationId: GetIncomeV1
             parameters:
                 - in: query
                   name: symbol
                   schema:
                     default: ""
                     type: string
-                - description: TRANSFER, WELCOME_BONUS, REALIZED_PNL, FUNDING_FEE, COMMISSION, INSURANCE_CLEAR, REFERRAL_KICKBACK, COMMISSION_REBATE, API_REBATE, CONTEST_REWARD, CROSS_COLLATERAL_TRANSFER, OPTIONS_PREMIUM_FEE, OPTIONS_SETTLE_PROFIT, INTERNAL_TRANSFER, AUTO_EXCHANGE, DELIVERED_SETTELMENT, COIN_SWAP_DEPOSIT, COIN_SWAP_WITHDRAW, POSITION_LIMIT_INCREASE_FEE, STRATEGY_UMFUTURES_TRANSFER，FEE_RETURN，BFUSD_REWARD
+                - description: '&#34;TRANSFER&#34;，&#34;WELCOME_BONUS&#34;, &#34;REALIZED_PNL&#34;，&#34;FUNDING_FEE&#34;, &#34;COMMISSION&#34;, and &#34;INSURANCE_CLEAR&#34;'
                   in: query
                   name: incomeType
                   schema:
@@ -71,10 +69,6 @@ paths:
                   name: endTime
                   schema:
                     format: int64
-                    type: integer
-                - in: query
-                  name: page
-                  schema:
                     type: integer
                 - description: Default 100; max 1000
                   in: query
@@ -111,10 +105,10 @@ paths:
                     content:
                         application/json:
                             schema:
-                                $ref: '#/components/schemas/UmfuturesGetIncomeV1Resp'
+                                $ref: '#/components/schemas/GetIncomeV1Resp'
                     description: Successful operation
             security:
                 - ApiKey: []
-            summary: Get Income History (USER_DATA)
+            summary: Get Income History(USER DATA)
             tags:
-                - Account
+                - Binance Link

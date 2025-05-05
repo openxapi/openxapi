@@ -1,0 +1,70 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMarginAllAssetsV1Resp:
+            example: '[ { "assetFullName": "USD coin", "assetName": "USDC", "isBorrowable": true, "isMortgageable": true, "userMinBorrow": "0.00000000", "userMinRepay": "0.00000000", "delistTime": 1704973040 } ]'
+            items:
+                $ref: '#/components/schemas/GetMarginAllAssetsV1RespItem'
+            type: array
+        GetMarginAllAssetsV1RespItem:
+            properties:
+                assetFullName:
+                    type: string
+                assetName:
+                    type: string
+                delistTime:
+                    format: int64
+                    type: integer
+                isBorrowable:
+                    type: boolean
+                isMortgageable:
+                    type: boolean
+                userMinBorrow:
+                    type: string
+                userMinRepay:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/allAssets:
+        get:
+            description: Get All Margin Assets.
+            operationId: GetMarginAllAssetsV1
+            parameters:
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarginAllAssetsV1Resp'
+                    description: Successful operation
+            summary: Get All Margin Assets (MARKET_DATA)
+            tags:
+                - Margin Trading

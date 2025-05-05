@@ -1,0 +1,96 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetBrokerSubAccountV1Resp:
+            example: '[ { "subaccountId": "1", "email": "vai_42038996_47411276_brokersubuser@lac.info", "tag":"bob123", "makerCommission": 0.001, "takerCommission": 0.001, "marginMakerCommission": -1,   "marginTakerCommission": -1,   "createTime":1544433328000 }, { "subaccountId": "2", "email":"123@abc.com", "tag":"bob123", "makerCommission":0.001, "takerCommission":0.001, "marginMakerCommission": 10, "marginTakerCommission": 10, "createTime":1544433328000 } ]'
+            items:
+                $ref: '#/components/schemas/GetBrokerSubAccountV1RespItem'
+            type: array
+        GetBrokerSubAccountV1RespItem:
+            properties:
+                createTime:
+                    format: int64
+                    type: integer
+                email:
+                    type: string
+                makerCommission:
+                    type: number
+                marginMakerCommission:
+                    type: integer
+                marginTakerCommission:
+                    type: integer
+                subaccountId:
+                    type: string
+                tag:
+                    type: string
+                takerCommission:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccount:
+        get:
+            operationId: GetBrokerSubAccountV1
+            parameters:
+                - in: query
+                  name: subAccountId
+                  schema:
+                    default: ""
+                    type: string
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: default 500
+                  in: query
+                  name: size
+                  schema:
+                    default: 500
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBrokerSubAccountV1Resp'
+                    description: Successful operation
+            summary: Query Sub Account
+            tags:
+                - Binance Link

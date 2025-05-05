@@ -1,0 +1,141 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetCapitalDepositHisrecV1Resp:
+            example: '[ { "id": "769800519366885376", "amount": "0.001", "coin": "BNB", "network": "BNB", "status": 1, "address": "bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf23", "addressTag": "101764890", "txId": "98A3EA560C6B3336D348B6C83F0F95ECE4F1F5919E94BD006E5BF3BF264FACFC", "insertTime": 1661493146000, "completeTime":1661493146000, "transferType": 0, "confirmTimes": "1/1", "unlockConfirm": 0, "walletType": 0 }, { "id": "769754833590042625", "amount":"0.50000000", "coin":"IOTA", "network":"IOTA", "status":1, "address":"SIZ9VLMHWATXKV99LH99CIGFJFUMLEHGWVZVNNZXRJJVWBPHYWPPBOSDORZ9EQSHCZAMPVAPGFYQAUUV9DROOXJLNW", "addressTag":"", "txId":"ESBFVQUTPIWQNJSPXFNHNYHSQNTGKRVKPRABQWTAXCDWOAKDKYWPTVG9BGXNVNKTLEJGESAVXIKIZ9999", "insertTime":1599620082000, "completeTime":1661493146000, "transferType":0, "confirmTimes": "1/1", "unlockConfirm": 0, "walletType": 0 } ]'
+            items:
+                $ref: '#/components/schemas/GetCapitalDepositHisrecV1RespItem'
+            type: array
+        GetCapitalDepositHisrecV1RespItem:
+            properties:
+                address:
+                    type: string
+                addressTag:
+                    type: string
+                amount:
+                    type: string
+                coin:
+                    type: string
+                completeTime:
+                    format: int64
+                    type: integer
+                confirmTimes:
+                    type: string
+                id:
+                    type: string
+                insertTime:
+                    format: int64
+                    type: integer
+                network:
+                    type: string
+                status:
+                    type: integer
+                transferType:
+                    type: integer
+                txId:
+                    type: string
+                unlockConfirm:
+                    type: integer
+                walletType:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/capital/deposit/hisrec:
+        get:
+            description: Fetch deposit history.
+            operationId: GetCapitalDepositHisrecV1
+            parameters:
+                - description: 'Default: `false`, return `sourceAddress`field when set to `true`'
+                  in: query
+                  name: includeSource
+                  schema:
+                    default: false
+                    type: boolean
+                - in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    type: string
+                - description: 0(0:pending, 6:credited but cannot withdraw, 7:Wrong Deposit, 8:Waiting User confirm, 1:success, 2:rejected)
+                  in: query
+                  name: status
+                  schema:
+                    type: integer
+                - description: 'Default: 90 days from current timestamp'
+                  in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Default: present timestamp'
+                  in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:0
+                  in: query
+                  name: offset
+                  schema:
+                    type: integer
+                - description: Default:1000, Max:1000
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: txId
+                  schema:
+                    default: ""
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCapitalDepositHisrecV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Deposit History (supporting network) (USER_DATA)
+            tags:
+                - Wallet

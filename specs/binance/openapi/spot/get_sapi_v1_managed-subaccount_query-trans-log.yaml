@@ -1,0 +1,132 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetManagedSubaccountQueryTransLogV1Resp:
+            example: '{ "managerSubTransferHistoryVos": [ { "fromEmail": "test_0_virtual@kq3kno9imanagedsub.com", "fromAccountType": "SPOT", "toEmail": "wdywl0lddakh@test.com", "toAccountType": "SPOT", "asset": "BNB", "amount": "0.01", "scheduledData": 1679416673000, "createTime": 1679416673000, "status": "SUCCESS", "tranId": 91077779 }, { "fromEmail": "wdywl0lddakh@test.com", "fromAccountType": "SPOT", "toEmail": "test_0_virtual@kq3kno9imanagedsub.com", "toAccountType": "SPOT", "asset": "BNB", "amount": "1", "scheduledData": 1679416616000, "createTime": 1679416616000, "status": "SUCCESS", "tranId": 91077676 } ], "count": 2 }'
+            properties:
+                count:
+                    type: integer
+                managerSubTransferHistoryVos:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            createTime:
+                                format: int64
+                                type: integer
+                            fromAccountType:
+                                type: string
+                            fromEmail:
+                                type: string
+                            scheduledData:
+                                type: integer
+                            status:
+                                type: string
+                            toAccountType:
+                                type: string
+                            toEmail:
+                                type: string
+                            tranId:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/managed-subaccount/query-trans-log:
+        get:
+            description: Query Managed Sub Account Transfer Log (For Trading Team Sub Account)
+            operationId: GetManagedSubaccountQueryTransLogV1
+            parameters:
+                - description: Start Time
+                  in: query
+                  name: startTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: End Time (The start time and end time interval cannot exceed half a year)
+                  in: query
+                  name: endTime
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Page
+                  in: query
+                  name: page
+                  required: true
+                  schema:
+                    type: integer
+                - description: 'Limit (Max: 500)'
+                  in: query
+                  name: limit
+                  required: true
+                  schema:
+                    maximum: 500
+                    type: integer
+                - description: Transfer Direction (FROM/TO)
+                  in: query
+                  name: transfers
+                  schema:
+                    default: ""
+                    type: string
+                - description: Transfer function account type (SPOT/MARGIN/ISOLATED_MARGIN/USDT_FUTURE/COIN_FUTURE)
+                  in: query
+                  name: transferFunctionAccountType
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetManagedSubaccountQueryTransLogV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Managed Sub Account Transfer Log (For Trading Team Sub Account)(USER_DATA)
+            tags:
+                - Sub Account

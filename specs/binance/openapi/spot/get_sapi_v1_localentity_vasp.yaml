@@ -1,0 +1,60 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLocalentityVaspV1Resp:
+            example: '[ { "vaspName":"Binance", "vaspCode":"BINANCE" }, { "vaspName":"HashKeyGlobal", "vaspCode":"NVBH3Z_nNEHjvqbUfkaL" } ]'
+            items:
+                $ref: '#/components/schemas/GetLocalentityVaspV1RespItem'
+            type: array
+        GetLocalentityVaspV1RespItem:
+            properties:
+                vaspCode:
+                    type: string
+                vaspName:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/localentity/vasp:
+        get:
+            description: Fetch the onboarded VASP list for local entities that required travel rule.
+            operationId: GetLocalentityVaspV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLocalentityVaspV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Onboarded VASP list (for local entities that require travel rule) (supporting network) (USER_DATA)
+            tags:
+                - Wallet

@@ -1,0 +1,91 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetAccountApiRestrictionsV1Resp:
+            example: '{ "ipRestrict":false, "createTime":1698645219000, "enableReading":true, "enableWithdrawals":false,  "enableInternalTransfer":false,   "enableMargin":false,   "enableFutures":false,    "permitsUniversalTransfer":false,  "enableVanillaOptions":false,   "enableFixApiTrade": false,    "enableFixReadOnly": true, "enableSpotAndMarginTrading":false,  "enablePortfolioMarginTrading":true   }'
+            properties:
+                createTime:
+                    format: int64
+                    type: integer
+                enableFixApiTrade:
+                    type: boolean
+                enableFixReadOnly:
+                    type: boolean
+                enableFutures:
+                    type: boolean
+                enableInternalTransfer:
+                    type: boolean
+                enableMargin:
+                    type: boolean
+                enablePortfolioMarginTrading:
+                    type: boolean
+                enableReading:
+                    type: boolean
+                enableSpotAndMarginTrading:
+                    type: boolean
+                enableVanillaOptions:
+                    type: boolean
+                enableWithdrawals:
+                    type: boolean
+                ipRestrict:
+                    type: boolean
+                permitsUniversalTransfer:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/account/apiRestrictions:
+        get:
+            description: Get API Key Permission
+            operationId: GetAccountApiRestrictionsV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountApiRestrictionsV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get API Key Permission (USER_DATA)
+            tags:
+                - Wallet

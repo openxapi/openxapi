@@ -1,0 +1,98 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateBrokerSubAccountApiPermissionV1Req:
+            properties:
+                canTrade:
+                    default: ""
+                    type: string
+                futuresTrade:
+                    default: ""
+                    type: string
+                marginTrade:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                subAccountApiKey:
+                    default: ""
+                    type: string
+                subAccountId:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - subAccountId
+                - subAccountApiKey
+                - canTrade
+                - marginTrade
+                - futuresTrade
+                - timestamp
+            type: object
+        CreateBrokerSubAccountApiPermissionV1Resp:
+            example: '{ "subaccountId": "1", "apikey":"vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A", "canTrade": true, "marginTrade": true, "futuresTrade": true }'
+            properties:
+                apikey:
+                    type: string
+                canTrade:
+                    type: boolean
+                futuresTrade:
+                    type: boolean
+                marginTrade:
+                    type: boolean
+                subaccountId:
+                    type: string
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccountApi/permission:
+        post:
+            description: |-
+                Caution:
+                - This request will change the api permission for a sub account.
+                - You need to enable "trade" option for the api key which requests this endpoint.
+                - Sub account should be enable margin before its api-key's marginTrade being enabled.
+                - Sub account should be enable futures before its api-key's futuresTrade being enabled.
+            operationId: CreateBrokerSubAccountApiPermissionV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateBrokerSubAccountApiPermissionV1Req'
+                description: The request body for CreateBrokerSubAccountApiPermissionV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateBrokerSubAccountApiPermissionV1Resp'
+                    description: Successful operation
+            summary: Change Sub Account Api Permission
+            tags:
+                - Binance Link

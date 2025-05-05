@@ -9,8 +9,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
+	"github.com/openxapi/openxapi/internal/config"
 	"github.com/openxapi/openxapi/internal/parser"
+
+	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/html"
 )
@@ -313,7 +315,7 @@ func (p *DocumentParser) generateRespExample(respEle *goquery.Selection) string 
 }
 
 func (p *DocumentParser) extractRequestMethodAndPath(endpoint *parser.Endpoint, ele *goquery.Selection) error {
-	reqRegex := regexp.MustCompile(`(?i)(GET|POST|PUT|DELETE|PATCH)\s+(/api/v\d+/[^ ]+)`)
+	reqRegex := regexp.MustCompile(`(?i)(GET|Get|POST|Post|PUT|Put|DELETE|Delete|PATCH|Patch)\s+(/api/v\d+/[^ ]+)`)
 	matches := reqRegex.FindStringSubmatch(ele.Text())
 	if len(matches) != 3 {
 		return fmt.Errorf("request method and path not found")
@@ -387,7 +389,7 @@ func (p *DocumentParser) extractEndpointDocumentSection(endpointStartElement *go
 				codeEle := ele.Find("code").First()
 				if codeEle.Size() > 0 {
 					requestInfo := codeEle.Text()
-					reqRegex := regexp.MustCompile(`(?i)(GET|POST|PUT|DELETE|PATCH)\s+(/api/v\d+/[^ ]+)`)
+					reqRegex := regexp.MustCompile(`(?i)(GET|Get|POST|Post|PUT|Put|DELETE|Delete|PATCH|Patch)\s+(/api/v\d+/[^ ]+)`)
 					if reqRegex.MatchString(requestInfo) {
 						endpointSection.RequestMethodAndPath = codeEle
 					}
@@ -472,13 +474,13 @@ func (p *DocumentParser) extractEndpointDocumentSection(endpointStartElement *go
 	return endpointSection
 }
 
-func (p *DocumentParser) Parse(r io.Reader, docURL string, docType string, protectedEndpoints []string) ([]parser.Endpoint, error) {
-	u, err := url.Parse(docURL)
+func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedEndpoints []string) ([]parser.Endpoint, error) {
+	u, err := url.Parse(urlEntity.URL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing URL: %w", err)
 	}
 
-	p.docType = docType
+	p.docType = urlEntity.DocType
 	// Parse HTML document
 	document, err := goquery.NewDocumentFromReader(r)
 	if err != nil {

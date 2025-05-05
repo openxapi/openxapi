@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSubAccountFuturesAccountSummaryV2Resp:
+            example: '{ "futureAccountSummaryResp": { "totalInitialMargin": "9.83137400", "totalMaintenanceMargin": "0.41568700", "totalMarginBalance": "23.03235621", "totalOpenOrderInitialMargin": "9.00000000", "totalPositionInitialMargin": "0.83137400", "totalUnrealizedProfit": "0.03219710", "totalWalletBalance": "22.15879444", "asset": "USD",   "subAccountList":[ { "email": "123@test.com", "totalInitialMargin": "9.00000000", "totalMaintenanceMargin": "0.00000000", "totalMarginBalance": "22.12659734", "totalOpenOrderInitialMargin": "9.00000000", "totalPositionInitialMargin": "0.00000000", "totalUnrealizedProfit": "0.00000000", "totalWalletBalance": "22.12659734", "asset": "USD"   }, { "email": "345@test.com", "totalInitialMargin": "0.83137400", "totalMaintenanceMargin": "0.41568700", "totalMarginBalance": "0.90575887", "totalOpenOrderInitialMargin": "0.00000000", "totalPositionInitialMargin": "0.83137400", "totalUnrealizedProfit": "0.03219710", "totalWalletBalance": "0.87356177", "asset": "USD" } ] } }'
+            properties:
+                futureAccountSummaryResp:
+                    properties:
+                        asset:
+                            type: string
+                        subAccountList:
+                            items:
+                                properties:
+                                    asset:
+                                        type: string
+                                    email:
+                                        type: string
+                                    totalInitialMargin:
+                                        type: string
+                                    totalMaintenanceMargin:
+                                        type: string
+                                    totalMarginBalance:
+                                        type: string
+                                    totalOpenOrderInitialMargin:
+                                        type: string
+                                    totalPositionInitialMargin:
+                                        type: string
+                                    totalUnrealizedProfit:
+                                        type: string
+                                    totalWalletBalance:
+                                        type: string
+                                type: object
+                            type: array
+                        totalInitialMargin:
+                            type: string
+                        totalMaintenanceMargin:
+                            type: string
+                        totalMarginBalance:
+                            type: string
+                        totalOpenOrderInitialMargin:
+                            type: string
+                        totalPositionInitialMargin:
+                            type: string
+                        totalUnrealizedProfit:
+                            type: string
+                        totalWalletBalance:
+                            type: string
+                    type: object
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/sub-account/futures/accountSummary:
+        get:
+            description: Get Summary of Sub-account's Futures Account
+            operationId: GetSubAccountFuturesAccountSummaryV2
+            parameters:
+                - description: 1:USDT Margined Futures, 2:COIN Margined Futures
+                  in: query
+                  name: futuresType
+                  required: true
+                  schema:
+                    type: integer
+                - description: default:1
+                  in: query
+                  name: page
+                  schema:
+                    type: integer
+                - description: default:10, max:20
+                  in: query
+                  name: limit
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSubAccountFuturesAccountSummaryV2Resp'
+                    description: Successful operation
+            summary: Get Summary of Sub-account's Futures Account V2(For Master Account)
+            tags:
+                - Sub Account

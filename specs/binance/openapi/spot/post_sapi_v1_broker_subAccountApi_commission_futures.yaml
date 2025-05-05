@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateBrokerSubAccountApiCommissionFuturesV1Req:
+            properties:
+                makerAdjustment:
+                    type: integer
+                recvWindow:
+                    format: int64
+                    type: integer
+                subAccountId:
+                    default: ""
+                    type: string
+                symbol:
+                    default: ""
+                    type: string
+                takerAdjustment:
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - subAccountId
+                - symbol
+                - makerAdjustment
+                - takerAdjustment
+                - timestamp
+            type: object
+        CreateBrokerSubAccountApiCommissionFuturesV1Resp:
+            example: '{ "subAccountId": 1, "symbol": "BTCUSDT", "makerAdjustment": 150,  "takerAdjustment": 150,  "makerCommission": 450,  "takerCommission": 550  }'
+            properties:
+                makerAdjustment:
+                    type: integer
+                makerCommission:
+                    type: integer
+                subAccountId:
+                    format: int64
+                    type: integer
+                symbol:
+                    type: string
+                takerAdjustment:
+                    type: integer
+                takerCommission:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccountApi/commission/futures:
+        post:
+            description: |-
+                This request will change the USDT-Ⓜ futures commission for a sub account.
+                You need to enable "trade" option for the api key which requests this endpoint.
+                The sub-account's USDT-Ⓜ futures commission of a symbol equals to the base commission of the symbol on the sub-account's fee tier plus the commission adjustment.
+            operationId: CreateBrokerSubAccountApiCommissionFuturesV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateBrokerSubAccountApiCommissionFuturesV1Req'
+                description: The request body for CreateBrokerSubAccountApiCommissionFuturesV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateBrokerSubAccountApiCommissionFuturesV1Resp'
+                    description: Successful operation
+            summary: Change Sub Account USDT-Ⓜ Futures Commission Adjustment
+            tags:
+                - Binance Link

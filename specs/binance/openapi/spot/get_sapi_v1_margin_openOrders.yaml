@@ -1,0 +1,119 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        MarginGetMarginOpenOrdersV1Resp:
+            example: '[ { "clientOrderId": "qhcZw71gAkCCTv0t0k8LUK", "cummulativeQuoteQty": "0.00000000", "executedQty": "0.00000000", "icebergQty": "0.00000000", "isWorking": true, "orderId": 211842552, "origQty": "0.30000000", "price": "0.00475010", "side": "SELL", "status": "NEW", "stopPrice": "0.00000000", "symbol": "BNBBTC", "isIsolated": true, "time": 1562040170089, "timeInForce": "GTC", "type": "LIMIT", "selfTradePreventionMode": "NONE", "updateTime": 1562040170089 } ]'
+            items:
+                $ref: '#/components/schemas/MarginGetMarginOpenOrdersV1RespItem'
+            type: array
+        MarginGetMarginOpenOrdersV1RespItem:
+            properties:
+                clientOrderId:
+                    type: string
+                cummulativeQuoteQty:
+                    type: string
+                executedQty:
+                    type: string
+                icebergQty:
+                    type: string
+                isIsolated:
+                    type: boolean
+                isWorking:
+                    type: boolean
+                orderId:
+                    format: int64
+                    type: integer
+                origQty:
+                    type: string
+                price:
+                    type: string
+                selfTradePreventionMode:
+                    type: string
+                side:
+                    type: string
+                status:
+                    type: string
+                stopPrice:
+                    type: string
+                symbol:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+                timeInForce:
+                    type: string
+                type:
+                    type: string
+                updateTime:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/margin/openOrders:
+        get:
+            description: Query Margin Account's Open Orders
+            operationId: GetMarginOpenOrdersV1
+            parameters:
+                - in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    type: string
+                - description: for isolated margin or not, &#34;TRUE&#34;, &#34;FALSE&#34;，default &#34;FALSE&#34;
+                  in: query
+                  name: isIsolated
+                  schema:
+                    default: ""
+                    type: string
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/MarginGetMarginOpenOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Margin Account's Open Orders (USER_DATA)
+            tags:
+                - Margin Trading

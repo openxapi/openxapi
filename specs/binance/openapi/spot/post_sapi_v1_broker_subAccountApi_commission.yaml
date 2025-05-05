@@ -1,0 +1,89 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateBrokerSubAccountApiCommissionV1Req:
+            properties:
+                makerCommission:
+                    type: number
+                marginMakerCommission:
+                    type: number
+                marginTakerCommission:
+                    type: number
+                recvWindow:
+                    format: int64
+                    type: integer
+                subAccountId:
+                    default: ""
+                    type: string
+                takerCommission:
+                    type: number
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - subAccountId
+                - makerCommission
+                - takerCommission
+                - timestamp
+            type: object
+        CreateBrokerSubAccountApiCommissionV1Resp:
+            example: '{ "subAccountId": "1", "makerCommission": 0.001, "takerCommission": 0.002, "marginMakerCommission": 0.001, "marginTakerCommission": 0.002 }'
+            properties:
+                makerCommission:
+                    type: number
+                marginMakerCommission:
+                    type: number
+                marginTakerCommission:
+                    type: number
+                subAccountId:
+                    type: string
+                takerCommission:
+                    type: number
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/broker/subAccountApi/commission:
+        post:
+            description: |-
+                This request will change the commission for a sub account.
+                You need to enable "trade" option for the api key which requests this endpoint.
+            operationId: CreateBrokerSubAccountApiCommissionV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateBrokerSubAccountApiCommissionV1Req'
+                description: The request body for CreateBrokerSubAccountApiCommissionV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateBrokerSubAccountApiCommissionV1Resp'
+                    description: Successful operation
+            summary: Change Sub Account Commission
+            tags:
+                - Binance Link
