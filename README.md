@@ -132,10 +132,10 @@ The generated OpenAPI specification will be saved in `specs/` directory.
 
 ### For the subsequent generations - Use sample files
 
-The program can save API documentation to sample files and use them for regenerate the OpenAPI specification offline, that said, you don't need to access the HTTP API documentation online, this is the recommended way to generate the OpenAPI specification after the first generation:
+The program can save API documentation to sample files and use them for regenerate the OpenAPI specification offline by default, that said, you don't need to access the HTTP API documentation online, this is the recommended way to generate the OpenAPI specification after the first generation:
 
 ```bash
-./openxapi --use-samples
+./openxapi
 ```
 
 Or simply use `make` command:
