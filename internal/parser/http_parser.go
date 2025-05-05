@@ -104,7 +104,7 @@ func (p *HTTPParser) Parse(ctx context.Context, doc Documentation) ([]Endpoint, 
 				urlEntity = urlItem.Entity
 			} else {
 				urlEntity = &config.URLEntity{
-					URL:          url,
+					URL: url,
 				}
 			}
 			if urlEntity.DocType == "" {
