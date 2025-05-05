@@ -38,7 +38,7 @@ generate-sdk:
 				echo "Generating ${EXCHANGE} js SDK for $$file"; \
 				subdir=$$(echo "$$file" | sed -n 's|.*js/\(.*\)\.yaml|\1|p'); \
 				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
-				rm -rf ${REAL_OUTPUT_DIR}/$$subdir; \
+				rm -rf ${REAL_OUTPUT_DIR}/src/$$subdir; \
 				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g typescript-axios -o ${OUTPUT_DIR}/src/$$subdir; \
 			done \
 		elif [ "${LANGUAGE}" == "go" ]; then \
@@ -54,7 +54,7 @@ generate-sdk:
 				echo "Generating ${EXCHANGE} python SDK for $$file"; \
 				subdir=$$(echo "$$file" | sed -n 's|.*python/\(.*\)\.yaml|\1|p'); \
 				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
-				rm -rf ${REAL_OUTPUT_DIR}/$$subdir; \
+				rm -rf ${REAL_OUTPUT_DIR}/binance/$$subdir; \
 				$(OPENAPI_GENERATOR_CLI) generate -c $$file -g python -o ${OUTPUT_DIR}; \
 			done \
 		elif [ "${LANGUAGE}" == "rust" ]; then \
@@ -73,6 +73,25 @@ generate-sdk:
 			done \
 		fi \
 	fi
+
+release:
+	@if [ -z "${EXCHANGE}" -o -z "${VERSION}" -o -z "${BASE_OUTPUT_DIR}" ]; then \
+		echo "Usage: make release EXCHANGE=<exchange> VERSION=<version> BASE_OUTPUT_DIR=<base_output_dir>"; \
+		exit 1; \
+	fi
+	@sed -i '' 's/version: .*/version: ${VERSION}/' configs/exchanges/${EXCHANGE}/restapi.yaml
+	@sed -i '' 's/packageVersion: .*/packageVersion: ${VERSION}/' generator-configs/${EXCHANGE}/openapi/go/*.yaml
+	@sed -i '' 's/packageVersion: .*/packageVersion: ${VERSION}/' generator-configs/${EXCHANGE}/openapi/python/*.yaml
+	@make generate-spec EXCHANGE=${EXCHANGE}
+
+	@BASE_REAL_OUTPUT_DIR=${BASE_REAL_OUTPUT_DIR:-${BASE_OUTPUT_DIR}}
+	make generate-sdk EXCHANGE=${EXCHANGE} LANGUAGE=go OUTPUT_DIR=${BASE_OUTPUT_DIR}/binance-go REAL_OUTPUT_DIR=${BASE_REAL_OUTPUT_DIR}/binance-go
+	make generate-sdk EXCHANGE=${EXCHANGE} LANGUAGE=python OUTPUT_DIR=${BASE_OUTPUT_DIR}/binance-py REAL_OUTPUT_DIR=${BASE_REAL_OUTPUT_DIR}/binance-py
+	@sed -i '' 's/^version = .*/version = "${VERSION}"/' ${BASE_REAL_OUTPUT_DIR}/binance-py/pyproject.toml
+	make generate-sdk EXCHANGE=${EXCHANGE} LANGUAGE=rust OUTPUT_DIR=${BASE_OUTPUT_DIR}/binance-rs REAL_OUTPUT_DIR=${BASE_REAL_OUTPUT_DIR}/binance-rs
+	@sed -i '' 's/^version = .*/version = "${VERSION}"/' ${BASE_REAL_OUTPUT_DIR}/binance-rs/Cargo.toml
+	make generate-sdk EXCHANGE=${EXCHANGE} LANGUAGE=js OUTPUT_DIR=${BASE_OUTPUT_DIR}/binance-js REAL_OUTPUT_DIR=${BASE_REAL_OUTPUT_DIR}/binance-js
+	@sed -i '' 's/"version": .*/"version": "${VERSION}",/' ${BASE_REAL_OUTPUT_DIR}/binance-js/package.json
 
 clean:
 	@rm -rf $(BIN_DIR)
