@@ -1,0 +1,130 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMiningWorkerListV1Resp:
+            example: '{ "code": 0, "msg": "", "data": { "workerDatas": [ { "workerId": "1420554439452400131",   "workerName": "2X73",                "status": 3,                         "hashRate": 0,                       "dayHashRate": 0,                    "rejectRate": 0,                     "lastShareTime": 1587712919000       }, { "workerId": "7893926126382807951", "workerName": "AZDC1.1A10101", "status": 2, "hashRate": 29711247541680, "dayHashRate": 12697781298013.66, "rejectRate": 0, "lastShareTime": 1587969727000 } ], "totalNum": 18530,            "pageSize": 20                } }'
+            properties:
+                code:
+                    type: integer
+                data:
+                    properties:
+                        pageSize:
+                            type: integer
+                        totalNum:
+                            type: integer
+                        workerDatas:
+                            items:
+                                properties:
+                                    dayHashRate:
+                                        type: integer
+                                    hashRate:
+                                        type: integer
+                                    lastShareTime:
+                                        format: int64
+                                        type: integer
+                                    rejectRate:
+                                        type: integer
+                                    status:
+                                        type: integer
+                                    workerId:
+                                        type: string
+                                    workerName:
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/mining/worker/list:
+        get:
+            description: Request for Miner List
+            operationId: GetMiningWorkerListV1
+            parameters:
+                - description: Algorithm(sha256)
+                  in: query
+                  name: algo
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Mining account
+                  in: query
+                  name: userName
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Page number，default is first page，start form 1
+                  in: query
+                  name: pageIndex
+                  schema:
+                    type: integer
+                - description: sort sequence(default=0)0 positive sequence，1 negative sequence
+                  in: query
+                  name: sort
+                  schema:
+                    type: integer
+                - description: 'Sort by( default 1): <br/><br/>1: miner name, <br/><br/>2: real-time computing power, <br/><br/>3: daily average computing power, <br/><br/>4: real-time rejection rate, <br/><br/>5: last submission time'
+                  in: query
+                  name: sortColumn
+                  schema:
+                    default: 1
+                    type: integer
+                - description: miners status(default=0),0 all，1 valid，2 invalid，3 failure
+                  in: query
+                  name: workerStatus
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMiningWorkerListV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Request for Miner List(USER_DATA)
+            tags:
+                - Mining

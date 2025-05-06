@@ -1,0 +1,141 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMiningPaymentListV1Resp:
+            example: '{ "code": 0, "msg": "", "data": { "accountProfits": [ { "time": 1586188800000,             "type": 31,  "hashTransfer": null,             "transferAmount": null,           "dayHashRate": 129129903378244,   "profitAmount": 8.6083060304,    "coinName":"BTC",               "status": 2     }, { "time": 1607529600000, "coinName": "BTC", "type": 0, "dayHashRate": 9942053925926, "profitAmount": 0.85426469, "hashTransfer": 200000000000, "transferAmount": 0.02180958, "status": 2 }, { "time": 1607443200000, "coinName": "BTC", "type": 31, "dayHashRate": 200000000000, "profitAmount": 0.02905916, "hashTransfer": null, "transferAmount": null, "status": 2 } ], "totalNum": 3,           "pageSize": 20           } }'
+            properties:
+                code:
+                    type: integer
+                data:
+                    properties:
+                        accountProfits:
+                            items:
+                                properties:
+                                    coinName:
+                                        type: string
+                                    dayHashRate:
+                                        type: integer
+                                    hashTransfer:
+                                        nullable: true
+                                        type: object
+                                    profitAmount:
+                                        type: number
+                                    status:
+                                        type: integer
+                                    time:
+                                        format: int64
+                                        type: integer
+                                    transferAmount:
+                                        nullable: true
+                                        type: object
+                                    type:
+                                        type: integer
+                                type: object
+                            type: array
+                        pageSize:
+                            type: integer
+                        totalNum:
+                            type: integer
+                    type: object
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/mining/payment/list:
+        get:
+            description: Query Earnings List
+            operationId: GetMiningPaymentListV1
+            parameters:
+                - description: Transfer algorithm(sha256)
+                  in: query
+                  name: algo
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Mining account
+                  in: query
+                  name: userName
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Coin name
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    type: string
+                - description: Search date, millisecond timestamp, while empty query all
+                  in: query
+                  name: startDate
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Search date, millisecond timestamp, while empty query all
+                  in: query
+                  name: endDate
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Page number, empty default first page, starting from 1
+                  in: query
+                  name: pageIndex
+                  schema:
+                    type: integer
+                - description: Number of pages, minimum 10, maximum 200
+                  in: query
+                  name: pageSize
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMiningPaymentListV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Earnings List(USER_DATA)
+            tags:
+                - Mining

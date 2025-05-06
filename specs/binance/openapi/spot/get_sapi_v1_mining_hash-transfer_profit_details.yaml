@@ -1,0 +1,117 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMiningHashTransferProfitDetailsV1Resp:
+            example: '{ "code": 0, "msg": "", "data": { "profitTransferDetails": [{ "poolUsername": "test4001",   "toPoolUsername": "pop",     "algoName": "sha256",       "hashRate": 200000000000,   "day": 20201213,           "amount": 0.2256872,      "coinName": "BTC"         }, { "poolUsername": "test4001", "toPoolUsername": "pop", "algoName": "sha256", "hashRate": 200000000000, "day": 20201213, "amount": 0.2256872, "coinName": "BTC" } ], "totalNum": 8, "pageSize": 200 } }'
+            properties:
+                code:
+                    type: integer
+                data:
+                    properties:
+                        pageSize:
+                            type: integer
+                        profitTransferDetails:
+                            items:
+                                properties:
+                                    algoName:
+                                        type: string
+                                    amount:
+                                        type: number
+                                    coinName:
+                                        type: string
+                                    day:
+                                        type: integer
+                                    hashRate:
+                                        type: integer
+                                    poolUsername:
+                                        type: string
+                                    toPoolUsername:
+                                        type: string
+                                type: object
+                            type: array
+                        totalNum:
+                            type: integer
+                    type: object
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/mining/hash-transfer/profit/details:
+        get:
+            description: Hashrate Resale Detail(USER_DATA)
+            operationId: GetMiningHashTransferProfitDetailsV1
+            parameters:
+                - description: Mining ID
+                  in: query
+                  name: configId
+                  required: true
+                  schema:
+                    type: integer
+                - description: Mining Account
+                  in: query
+                  name: userName
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Page number, empty default first page, starting from 1
+                  in: query
+                  name: pageIndex
+                  schema:
+                    type: integer
+                - description: Number of pages, minimum 10, maximum 200
+                  in: query
+                  name: pageSize
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMiningHashTransferProfitDetailsV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Hashrate Resale Detail(USER_DATA)
+            tags:
+                - Mining
