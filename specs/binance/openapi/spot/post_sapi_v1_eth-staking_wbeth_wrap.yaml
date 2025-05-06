@@ -1,0 +1,80 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateEthStakingWbethWrapV1Req:
+            properties:
+                amount:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - amount
+                - timestamp
+            type: object
+        CreateEthStakingWbethWrapV1Resp:
+            example: '{ "success": true, "wbethAmount": "0.23092091", "exchangeRate": "1.001212343432" }'
+            properties:
+                exchangeRate:
+                    type: string
+                success:
+                    type: boolean
+                wbethAmount:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/eth-staking/wbeth/wrap:
+        post:
+            description: Wrap BETH
+            operationId: CreateEthStakingWbethWrapV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateEthStakingWbethWrapV1Req'
+                description: The request body for CreateEthStakingWbethWrapV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateEthStakingWbethWrapV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Wrap BETH(TRADE)
+            tags:
+                - Staking

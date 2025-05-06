@@ -1,0 +1,114 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSolStakingSolHistoryRedemptionHistoryV1Resp:
+            example: '{ "rows": [ { "time":1575018510000, "arrivalTime":1575018510000, "asset":"BNSOL", "amount":"21312.23223", "distributeAsset":"SOL", "distributeAmount":"21338.0699", "exchangeRate": "1.00121234", "status":"SUCCESS"     } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            arrivalTime:
+                                format: int64
+                                type: integer
+                            asset:
+                                type: string
+                            distributeAmount:
+                                type: string
+                            distributeAsset:
+                                type: string
+                            exchangeRate:
+                                type: string
+                            status:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sol-staking/sol/history/redemptionHistory:
+        get:
+            description: Get SOL redemption history
+            operationId: GetSolStakingSolHistoryRedemptionHistoryV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Currently querying page. Start from 1. Default: 1'
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: 'Default: 10, Max: 100'
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSolStakingSolHistoryRedemptionHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get SOL redemption history(USER_DATA)
+            tags:
+                - Staking

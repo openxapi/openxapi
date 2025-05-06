@@ -1,0 +1,108 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetEthStakingWbethHistoryUnwrapHistoryV1Resp:
+            example: '{ "rows": [ { "time": 1575018510000, "fromAsset": "WBETH", "fromAmount": "21312.23223", "toAsset": "BETH", "toAmount": "21312.23223", "exchangeRate": "1.01243253",  "status": "SUCCESS"  } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            exchangeRate:
+                                type: string
+                            fromAmount:
+                                type: string
+                            fromAsset:
+                                type: string
+                            status:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                            toAmount:
+                                type: string
+                            toAsset:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/eth-staking/wbeth/history/unwrapHistory:
+        get:
+            description: Get WBETH unwrap history
+            operationId: GetEthStakingWbethHistoryUnwrapHistoryV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Currently querying page. Start from 1. Default:1
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:10, Max:100
+                  in: query
+                  name: size
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetEthStakingWbethHistoryUnwrapHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get WBETH unwrap history(USER_DATA)
+            tags:
+                - Staking

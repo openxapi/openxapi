@@ -1,0 +1,82 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetEthStakingAccountV2Resp:
+            example: '{ "holdingInETH":"1.22330928", "holdings":{ "wbethAmount":"1.10928781", "bethAmount":"1.90002112" }, "thirtyDaysProfitInETH":"0.22330928", "profit":{ "amountFromWBETH":"0.12330928", "amountFromBETH":"0.1" } }'
+            properties:
+                holdingInETH:
+                    type: string
+                holdings:
+                    properties:
+                        bethAmount:
+                            type: string
+                        wbethAmount:
+                            type: string
+                    type: object
+                profit:
+                    properties:
+                        amountFromBETH:
+                            type: string
+                        amountFromWBETH:
+                            type: string
+                    type: object
+                thirtyDaysProfitInETH:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/eth-staking/account:
+        get:
+            description: ETH Staking account
+            operationId: GetEthStakingAccountV2
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetEthStakingAccountV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: ETH Staking account(USER_DATA)
+            tags:
+                - Staking
