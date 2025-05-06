@@ -8774,6 +8774,103 @@ components:
                     format: int64
                     type: integer
             type: object
+        GetNftHistoryDepositV1Resp:
+            example: '{ "total": 2, "list": [ { "network": "ETH",   "txID": null,       "contractAdrress": "0xe507c961ee127d4439977a61af39c34eafee0dc6",   "tokenId": "10014",    "timestamp": 1629986047000 }, { "network": "BSC", "txID": null, "contractAdrress": "0x058451b463bab04f52c0799d55c4094f507acfa9", "tokenId": "10016", "timestamp": 1630083581000 } ] }'
+            properties:
+                list:
+                    items:
+                        properties:
+                            contractAdrress:
+                                type: string
+                            network:
+                                type: string
+                            timestamp:
+                                format: int64
+                                type: integer
+                            tokenId:
+                                type: string
+                            txID:
+                                nullable: true
+                                type: object
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetNftHistoryTransactionsV1Resp:
+            example: '{ "total": 2,   "list": [ { "orderNo": "1_470502070600699904",  "tokens": [ { "network": "BSC",   "tokenId": "216000000496",   "contractAddress": "MYSTERY_BOX0000087"   } ], "tradeTime": 1626941236000, "tradeAmount": "19.60000000", "tradeCurrency": "BNB" }, { "orderNo": "1_488306442479116288", "tokens": [ { "network": "BSC", "tokenId": "132900000007", "contractAddress": "0xAf12111a592e408DAbC740849fcd5e68629D9fb6" } ], "tradeTime": 1631186130000, "tradeAmount": "192.00000000", "tradeCurrency": "BNB" } ] }'
+            properties:
+                list:
+                    items:
+                        properties:
+                            orderNo:
+                                type: string
+                            tokens:
+                                items:
+                                    properties:
+                                        contractAddress:
+                                            type: string
+                                        network:
+                                            type: string
+                                        tokenId:
+                                            type: string
+                                    type: object
+                                type: array
+                            tradeAmount:
+                                type: string
+                            tradeCurrency:
+                                type: string
+                            tradeTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetNftHistoryWithdrawV1Resp:
+            example: '{ "total": 178, "list": [ { "network": "ETH", "txID": "0x2be5eed31d787fdb4880bc631c8e76bdfb6150e137f5cf1732e0416ea206f57f", "contractAdrress": "0xe507c961ee127d4439977a61af39c34eafee0dc6",   "tokenId": "1000001247",     "timestamp": 1633674433000, "fee": 0.1,          "feeAsset": "ETH"    }, { "network": "ETH", "txID": "0x3b3aea5c0a4faccd6f306641e6deb9713ab229ac233be3be227f580311e4362a", "contractAdrress": "0xe507c961ee127d4439977a61af39c34eafee0dc6", "tokenId": "40000030", "timestamp": 1633677022000, "fee": 0.1, "feeAsset": "ETH" } ] }'
+            properties:
+                list:
+                    items:
+                        properties:
+                            contractAdrress:
+                                type: string
+                            fee:
+                                type: number
+                            feeAsset:
+                                type: string
+                            network:
+                                type: string
+                            timestamp:
+                                format: int64
+                                type: integer
+                            tokenId:
+                                type: string
+                            txID:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetNftUserGetAssetV1Resp:
+            example: '{ "total": 347, "list": [ { "network": "BSC",   "contractAddress": "REGULAR11234567891779",  "tokenId": "100900000017"   }, { "network": "BSC", "contractAddress": "SSMDQ8W59", "tokenId": "200500000011" }, { "network": "BSC", "contractAddress": "SSMDQ8W59", "tokenId": "200500000019" } ] }'
+            properties:
+                list:
+                    items:
+                        properties:
+                            contractAddress:
+                                type: string
+                            network:
+                                type: string
+                            tokenId:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
         GetOpenOrderListV3Resp:
             example: '[ { "orderListId": 31, "contingencyType": "OCO", "listStatusType": "EXEC_STARTED", "listOrderStatus": "EXECUTING", "listClientOrderId": "wuB13fmulKj3YjdqWEcsnp", "transactionTime": 1565246080644, "symbol": "LTCBTC", "orders": [ { "symbol": "LTCBTC", "orderId": 4, "clientOrderId": "r3EH2N76dHfLoSZWIUw1bT" }, { "symbol": "LTCBTC", "orderId": 5, "clientOrderId": "Cv1SnyPD3qhqpbjpYEHbd2" } ] } ]'
             items:
@@ -24185,6 +24282,254 @@ paths:
             summary: Request for Miner List(USER_DATA)
             tags:
                 - Mining
+    /sapi/v1/nft/history/deposit:
+        get:
+            description: et NFT Deposit History
+            operationId: GetNftHistoryDepositV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 50, Max 50
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 50
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNftHistoryDepositV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get NFT Deposit History(USER_DATA)
+            tags:
+                - Nft
+    /sapi/v1/nft/history/transactions:
+        get:
+            description: Get NFT Transaction History
+            operationId: GetNftHistoryTransactionsV1
+            parameters:
+                - description: '0: purchase order, 1: sell order, 2: royalty income, 3: primary market order, 4: mint fee'
+                  in: query
+                  name: orderType
+                  required: true
+                  schema:
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 50, Max 50
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 50
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNftHistoryTransactionsV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get NFT Transaction History(USER_DATA)
+            tags:
+                - Nft
+    /sapi/v1/nft/history/withdraw:
+        get:
+            description: Get NFT Withdraw History
+            operationId: GetNftHistoryWithdrawV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 50, Max 50
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 50
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNftHistoryWithdrawV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get NFT Withdraw History(USER_DATA)
+            tags:
+                - Nft
+    /sapi/v1/nft/user/getAsset:
+        get:
+            description: Get NFT Asset
+            operationId: GetNftUserGetAssetV1
+            parameters:
+                - description: Default 50, Max 50
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 50
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNftUserGetAssetV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get NFT Asset(USER_DATA)
+            tags:
+                - Nft
     /sapi/v1/portfolio/account:
         get:
             description: Get Portfolio Margin Pro Account Info

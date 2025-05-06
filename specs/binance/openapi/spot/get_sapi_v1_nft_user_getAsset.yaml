@@ -1,0 +1,90 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetNftUserGetAssetV1Resp:
+            example: '{ "total": 347, "list": [ { "network": "BSC",   "contractAddress": "REGULAR11234567891779",  "tokenId": "100900000017"   }, { "network": "BSC", "contractAddress": "SSMDQ8W59", "tokenId": "200500000011" }, { "network": "BSC", "contractAddress": "SSMDQ8W59", "tokenId": "200500000019" } ] }'
+            properties:
+                list:
+                    items:
+                        properties:
+                            contractAddress:
+                                type: string
+                            network:
+                                type: string
+                            tokenId:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/nft/user/getAsset:
+        get:
+            description: Get NFT Asset
+            operationId: GetNftUserGetAssetV1
+            parameters:
+                - description: Default 50, Max 50
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 50
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNftUserGetAssetV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get NFT Asset(USER_DATA)
+            tags:
+                - Nft
