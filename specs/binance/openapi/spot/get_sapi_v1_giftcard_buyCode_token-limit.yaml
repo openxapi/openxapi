@@ -1,0 +1,88 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetGiftcardBuyCodeTokenLimitV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": [ { "coin": "BNB", "fromMin": "0.01", "fromMax": "1" } ], "success":true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    items:
+                        properties:
+                            coin:
+                                type: string
+                            fromMax:
+                                type: string
+                            fromMin:
+                                type: string
+                        type: object
+                    type: array
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/giftcard/buyCode/token-limit:
+        get:
+            description: This API is to help you verify which tokens are available for you to create Stablecoin-Denominated gift cards as mentioned in section 2 and its’ limitation.
+            operationId: GetGiftcardBuyCodeTokenLimitV1
+            parameters:
+                - description: 'The token you want to pay, example: BUSD'
+                  in: query
+                  name: baseToken
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetGiftcardBuyCodeTokenLimitV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Fetch Token Limit(USER_DATA)
+            tags:
+                - Gift Card

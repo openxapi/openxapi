@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateGiftcardBuyCodeV1Req:
+            properties:
+                baseToken:
+                    default: ""
+                    type: string
+                baseTokenAmount:
+                    type: number
+                faceToken:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - baseToken
+                - faceToken
+                - baseTokenAmount
+                - timestamp
+            type: object
+        CreateGiftcardBuyCodeV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": { "referenceNo": "0033002144060553", "code": "6H9EKF5ECCWFBHGE", "expiredTime": 1727417154000 }, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        code:
+                            type: string
+                        expiredTime:
+                            format: int64
+                            type: integer
+                        referenceNo:
+                            type: string
+                    type: object
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/giftcard/buyCode:
+        post:
+            description: |-
+                This API is for creating a dual-token ( stablecoin-denominated) Binance Gift Card. You may create a gift card using USDT as baseToken, that is redeemable to another designated token (faceToken). For example, you can create a fixed-value BTC gift card and pay with 100 USDT plus 1 USDT fee. This gift card can keep the value fixed at 100 USDT before redemption, and will be redeemable to BTC equivalent to 100 USDT upon redemption.
+
+
+                Once successfully created, the amount of baseToken (e.g. USDT) in the fixed-value gift card along with the fee would be deducted from your funding wallet.
+
+
+                To get started with, please make sure:
+
+                You have a Binance account
+                You have passed KYB
+                You have a sufﬁcient balance(Gift Card amount and fee amount) in your Binance funding wallet
+                You need Enable Withdrawals for the API Key which requests this endpoint.
+            operationId: CreateGiftcardBuyCodeV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateGiftcardBuyCodeV1Req'
+                description: The request body for CreateGiftcardBuyCodeV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateGiftcardBuyCodeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Create a dual-token gift card(fixed value, discount feature)(TRADE)
+            tags:
+                - Gift Card

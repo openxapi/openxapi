@@ -1,0 +1,86 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetGiftcardVerifyV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": { "valid":true, "token":"BNB",   "amount":"0.00000001"   }, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        amount:
+                            type: string
+                        token:
+                            type: string
+                        valid:
+                            type: boolean
+                    type: object
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/giftcard/verify:
+        get:
+            description: This API is for verifying whether the Binance Gift Card is valid or not by entering Gift Card Number.
+            operationId: GetGiftcardVerifyV1
+            parameters:
+                - description: Enter the Gift Card Number
+                  in: query
+                  name: referenceNo
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetGiftcardVerifyV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Verify Binance Gift Card by Gift Card Number(USER_DATA)
+            tags:
+                - Gift Card

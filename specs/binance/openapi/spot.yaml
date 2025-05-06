@@ -1414,6 +1414,125 @@ components:
                 wbethAmount:
                     type: string
             type: object
+        CreateGiftcardBuyCodeV1Req:
+            properties:
+                baseToken:
+                    default: ""
+                    type: string
+                baseTokenAmount:
+                    type: number
+                faceToken:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - baseToken
+                - faceToken
+                - baseTokenAmount
+                - timestamp
+            type: object
+        CreateGiftcardBuyCodeV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": { "referenceNo": "0033002144060553", "code": "6H9EKF5ECCWFBHGE", "expiredTime": 1727417154000 }, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        code:
+                            type: string
+                        expiredTime:
+                            format: int64
+                            type: integer
+                        referenceNo:
+                            type: string
+                    type: object
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+        CreateGiftcardCreateCodeV1Req:
+            properties:
+                amount:
+                    type: number
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                token:
+                    default: ""
+                    type: string
+            required:
+                - token
+                - amount
+                - timestamp
+            type: object
+        CreateGiftcardCreateCodeV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": { "referenceNo": "0033002144060553", "code": "6H9EKF5ECCWFBHGE", "expiredTime": 1727417154000 }, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        code:
+                            type: string
+                        expiredTime:
+                            format: int64
+                            type: integer
+                        referenceNo:
+                            type: string
+                    type: object
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+        CreateGiftcardRedeemCodeV1Req:
+            properties:
+                code:
+                    default: ""
+                    type: string
+                externalUid:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - code
+                - timestamp
+            type: object
+        CreateGiftcardRedeemCodeV1Resp:
+            example: '{ "code":"000000", "message":"success", "data":{ "referenceNo":"0033002328060227", "identityNo":"10317392647411060736", "token":"BNB", "amount":"0.00000001" }, "success":true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        amount:
+                            type: string
+                        identityNo:
+                            type: string
+                        referenceNo:
+                            type: string
+                        token:
+                            type: string
+                    type: object
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
         CreateLoanFlexibleAdjustLtvV2Req:
             properties:
                 adjustmentAmount:
@@ -6456,6 +6575,58 @@ components:
                                 type: string
                         type: object
                     type: array
+            type: object
+        GetGiftcardBuyCodeTokenLimitV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": [ { "coin": "BNB", "fromMin": "0.01", "fromMax": "1" } ], "success":true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    items:
+                        properties:
+                            coin:
+                                type: string
+                            fromMax:
+                                type: string
+                            fromMin:
+                                type: string
+                        type: object
+                    type: array
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+        GetGiftcardCryptographyRsaPublicKeyV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCXBBVKLAc1GQ5FsIFFqOHrPTox5noBONIKr+IAedTR9FkVxq6e65updEbfdhRNkMOeYIO2i0UylrjGC0X8YSoIszmrVHeV0l06Zh1oJuZos1+7N+WLuz9JvlPaawof3GUakTxYWWCa9+8KIbLKsoKMdfS96VT+8iOXO3quMGKUmQIDAQAB", "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    type: string
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+        GetGiftcardVerifyV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": { "valid":true, "token":"BNB",   "amount":"0.00000001"   }, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        amount:
+                            type: string
+                        token:
+                            type: string
+                        valid:
+                            type: boolean
+                    type: object
+                message:
+                    type: string
+                success:
+                    type: boolean
             type: object
         GetHistoricalTradesV3Resp:
             example: '[ { "id": 28457, "price": "4.00000100", "qty": "12.00000000", "quoteQty": "48.000012", "time": 1499865549590, "isBuyerMaker": true, "isBestMatch": true } ]'
@@ -18962,6 +19133,261 @@ paths:
             summary: Get Future TickLevel Orderbook Historical Data Download Link(USER_DATA)
             tags:
                 - Futures Data
+    /sapi/v1/giftcard/buyCode:
+        post:
+            description: |-
+                This API is for creating a dual-token ( stablecoin-denominated) Binance Gift Card. You may create a gift card using USDT as baseToken, that is redeemable to another designated token (faceToken). For example, you can create a fixed-value BTC gift card and pay with 100 USDT plus 1 USDT fee. This gift card can keep the value fixed at 100 USDT before redemption, and will be redeemable to BTC equivalent to 100 USDT upon redemption.
+
+
+                Once successfully created, the amount of baseToken (e.g. USDT) in the fixed-value gift card along with the fee would be deducted from your funding wallet.
+
+
+                To get started with, please make sure:
+
+                You have a Binance account
+                You have passed KYB
+                You have a sufﬁcient balance(Gift Card amount and fee amount) in your Binance funding wallet
+                You need Enable Withdrawals for the API Key which requests this endpoint.
+            operationId: CreateGiftcardBuyCodeV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateGiftcardBuyCodeV1Req'
+                description: The request body for CreateGiftcardBuyCodeV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateGiftcardBuyCodeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Create a dual-token gift card(fixed value, discount feature)(TRADE)
+            tags:
+                - Gift Card
+    /sapi/v1/giftcard/buyCode/token-limit:
+        get:
+            description: This API is to help you verify which tokens are available for you to create Stablecoin-Denominated gift cards as mentioned in section 2 and its’ limitation.
+            operationId: GetGiftcardBuyCodeTokenLimitV1
+            parameters:
+                - description: 'The token you want to pay, example: BUSD'
+                  in: query
+                  name: baseToken
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetGiftcardBuyCodeTokenLimitV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Fetch Token Limit(USER_DATA)
+            tags:
+                - Gift Card
+    /sapi/v1/giftcard/createCode:
+        post:
+            description: This API is for creating a Binance Gift Card.
+            operationId: CreateGiftcardCreateCodeV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateGiftcardCreateCodeV1Req'
+                description: The request body for CreateGiftcardCreateCodeV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateGiftcardCreateCodeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Create a single-token gift card (USER_DATA)
+            tags:
+                - Gift Card
+    /sapi/v1/giftcard/cryptography/rsa-public-key:
+        get:
+            description: |-
+                This API is for fetching the RSA Public Key.
+                This RSA Public key will be used to encrypt the card code.
+            operationId: GetGiftcardCryptographyRsaPublicKeyV1
+            parameters:
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetGiftcardCryptographyRsaPublicKeyV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Fetch RSA Public Key(USER_DATA)
+            tags:
+                - Gift Card
+    /sapi/v1/giftcard/redeemCode:
+        post:
+            description: |-
+                This API is for redeeming a Binance Gift Card
+                Once redeemed, the coins will be deposited in your funding wallet.
+            operationId: CreateGiftcardRedeemCodeV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateGiftcardRedeemCodeV1Req'
+                description: The request body for CreateGiftcardRedeemCodeV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateGiftcardRedeemCodeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Redeem a Binance Gift Card(USER_DATA)
+            tags:
+                - Gift Card
+    /sapi/v1/giftcard/verify:
+        get:
+            description: This API is for verifying whether the Binance Gift Card is valid or not by entering Gift Card Number.
+            operationId: GetGiftcardVerifyV1
+            parameters:
+                - description: Enter the Gift Card Number
+                  in: query
+                  name: referenceNo
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetGiftcardVerifyV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Verify Binance Gift Card by Gift Card Number(USER_DATA)
+            tags:
+                - Gift Card
     /sapi/v1/loan/borrow/history:
         get:
             description: Get Loan Borrow History
