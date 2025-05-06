@@ -1,0 +1,84 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanVipRequestInterestRateV1Resp:
+            example: '[ { "asset": "BUSD", "flexibleDailyInterestRate": "0.001503", "flexibleYearlyInterestRate": "0.548595", "time": 1577233578000 }, { "asset": "BTC", "flexibleDailyInterestRate": "0.001503", "flexibleYearlyInterestRate": "0.548595", "time": 1577233562000 } ]'
+            items:
+                $ref: '#/components/schemas/GetLoanVipRequestInterestRateV1RespItem'
+            type: array
+        GetLoanVipRequestInterestRateV1RespItem:
+            properties:
+                asset:
+                    type: string
+                flexibleDailyInterestRate:
+                    type: string
+                flexibleYearlyInterestRate:
+                    type: string
+                time:
+                    format: int64
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/loan/vip/request/interestRate:
+        get:
+            description: Get Borrow Interest Rate
+            operationId: GetLoanVipRequestInterestRateV1
+            parameters:
+                - description: Max 10 assets, Multiple split by &#34;,&#34;
+                  in: query
+                  name: loanCoin
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipRequestInterestRateV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Borrow Interest Rate(USER_DATA)
+            tags:
+                - Vip Loan

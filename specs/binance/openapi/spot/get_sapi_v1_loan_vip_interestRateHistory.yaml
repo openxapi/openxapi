@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanVipInterestRateHistoryV1Resp:
+            example: '{ "rows": [ { "coin": "USDT", "annualizedInterestRate": "0.0647", "time": 1575018510000, "coin": "USDT", "annualizedInterestRate": "0.0647", "time": 1575018510000 } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            annualizedInterestRate:
+                                type: string
+                            coin:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/loan/vip/interestRateHistory:
+        get:
+            description: Get VIP Loan Interest Rate History
+            operationId: GetLoanVipInterestRateHistoryV1
+            parameters:
+                - in: query
+                  name: coin
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Check current querying page, start from 1. Default：1；Max：1000.
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default：10; Max：100.
+                  in: query
+                  name: limit
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipInterestRateHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get VIP Loan Interest Rate History (USER_DATA)
+            tags:
+                - Vip Loan

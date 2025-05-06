@@ -1559,6 +1559,97 @@ components:
                 repayStatus:
                     type: string
             type: object
+        CreateLoanVipBorrowV1Resp:
+            example: '{ "loanAccountId": "12345678",  "requestId": "12345678", "loanCoin": "BTC", "isFlexibleRate": "No", "loanAmount": "100.55", "collateralAccountId": "12345678,12345678,12345678", "collateralCoin": "BUSD,USDT,ETH", "loanTerm": "30" }'
+            properties:
+                collateralAccountId:
+                    type: string
+                collateralCoin:
+                    type: string
+                isFlexibleRate:
+                    type: string
+                loanAccountId:
+                    type: string
+                loanAmount:
+                    type: string
+                loanCoin:
+                    type: string
+                loanTerm:
+                    type: string
+                requestId:
+                    type: string
+            type: object
+        CreateLoanVipRenewV1Req:
+            properties:
+                loanTerm:
+                    type: integer
+                orderId:
+                    format: int64
+                    type: integer
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - orderId
+                - loanTerm
+                - timestamp
+            type: object
+        CreateLoanVipRenewV1Resp:
+            example: '{ "loanAccountId": "12345678",  "loanCoin": "BTC", "loanAmount": "100.55", "collateralAccountId": "12345677,12345678,12345679", "collateralCoin": "BUSD,USDT,ETH", "loanTerm": "30" }'
+            properties:
+                collateralAccountId:
+                    type: string
+                collateralCoin:
+                    type: string
+                loanAccountId:
+                    type: string
+                loanAmount:
+                    type: string
+                loanCoin:
+                    type: string
+                loanTerm:
+                    type: string
+            type: object
+        CreateLoanVipRepayV1Req:
+            properties:
+                amount:
+                    default: ""
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - orderId
+                - amount
+                - timestamp
+            type: object
+        CreateLoanVipRepayV1Resp:
+            example: '{ "loanCoin": "BUSD", "repayAmount": "200.5", "remainingPrincipal": "100.5", "remainingInterest": "0", "collateralCoin": "BNB,BTC,ETH", "currentLTV": "0.25", "repayStatus": "Repaid"  }'
+            properties:
+                collateralCoin:
+                    type: string
+                currentLTV:
+                    type: string
+                loanCoin:
+                    type: string
+                remainingInterest:
+                    type: string
+                remainingPrincipal:
+                    type: string
+                repayAmount:
+                    type: string
+                repayStatus:
+                    type: string
+            type: object
         CreateLocalentityBrokerWithdrawApplyV1Req:
             properties:
                 address:
@@ -6548,6 +6639,234 @@ components:
                         type: object
                     type: array
                 total:
+                    type: integer
+            type: object
+        GetLoanVipAccruedInterestV1Resp:
+            example: '{ "rows": [ { "loanCoin": "USDT", "principalAmount": "10000", "interestAmount": "1.2", "annualInterestRate": "0.001273", "accrualTime": 1575018510000, "orderId": 756783308056935434  } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            accrualTime:
+                                format: int64
+                                type: integer
+                            annualInterestRate:
+                                type: string
+                            interestAmount:
+                                type: string
+                            loanCoin:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            principalAmount:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetLoanVipCollateralAccountV1Resp:
+            example: '{ "rows": [ { "collateralAccountId": "12345678", "collateralCoin": "BNB,BTC,ETH" }, { "collateralAccountId": "23456789", "collateralCoin": "BNB,BTC,ETH" } ], "total": 2 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralAccountId:
+                                type: string
+                            collateralCoin:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetLoanVipCollateralDataV1Resp:
+            example: '{ "rows": [ { "collateralCoin": "BUSD", "_1stCollateralRatio": "100%", "_1stCollateralRange": "1-10000000", "_2ndCollateralRatio": "80%", "_2ndCollateralRange": "10000000-100000000", "_3rdCollateralRatio": "60%", "_3rdCollateralRange": "100000000-1000000000", "_4thCollateralRatio": "0%", "_4thCollateralRange": ">10000000000" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            _1stCollateralRange:
+                                type: string
+                            _1stCollateralRatio:
+                                type: string
+                            _2ndCollateralRange:
+                                type: string
+                            _2ndCollateralRatio:
+                                type: string
+                            _3rdCollateralRange:
+                                type: string
+                            _3rdCollateralRatio:
+                                type: string
+                            _4thCollateralRange:
+                                type: string
+                            _4thCollateralRatio:
+                                type: string
+                            collateralCoin:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetLoanVipInterestRateHistoryV1Resp:
+            example: '{ "rows": [ { "coin": "USDT", "annualizedInterestRate": "0.0647", "time": 1575018510000, "coin": "USDT", "annualizedInterestRate": "0.0647", "time": 1575018510000 } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            annualizedInterestRate:
+                                type: string
+                            coin:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetLoanVipLoanableDataV1Resp:
+            example: '{ "rows": [ { "loanCoin": "BUSD", "_flexibleDailyInterestRate": "0.001503", "_flexibleYearlyInterestRate": "0.548595", "_30dDailyInterestRate": "0.000136", "_30dYearlyInterestRate": "0.03450", "_60dDailyInterestRate": "0.000145", "_60dYearlyInterestRate": "0.04103", "minLimit": "100", "maxLimit": "1000000", "vipLevel": 1 } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            _30dDailyInterestRate:
+                                type: string
+                            _30dYearlyInterestRate:
+                                type: string
+                            _60dDailyInterestRate:
+                                type: string
+                            _60dYearlyInterestRate:
+                                type: string
+                            _flexibleDailyInterestRate:
+                                type: string
+                            _flexibleYearlyInterestRate:
+                                type: string
+                            loanCoin:
+                                type: string
+                            maxLimit:
+                                type: string
+                            minLimit:
+                                type: string
+                            vipLevel:
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetLoanVipOngoingOrdersV1Resp:
+            example: '{ "rows": [ { "orderId": 100000001, "loanCoin": "BUSD", "totalDebt": "10000", "residualInterest": "10.27687923", "collateralAccountId": "12345678,23456789", "collateralCoin": "BNB,BTC,ETH", "totalCollateralValueAfterHaircut": "25000.27565492", "lockedCollateralValue": "25000.27565492", "currentLTV": "0.57", "expirationTime": 1575018510000, "loanDate": "1676851200000", "loanTerm": "30days",                 "expirationTime": 1575018510000       } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralAccountId:
+                                type: string
+                            collateralCoin:
+                                type: string
+                            currentLTV:
+                                type: string
+                            expirationTime:
+                                format: int64
+                                type: integer
+                            loanCoin:
+                                type: string
+                            loanDate:
+                                type: string
+                            loanTerm:
+                                type: string
+                            lockedCollateralValue:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            residualInterest:
+                                type: string
+                            totalCollateralValueAfterHaircut:
+                                type: string
+                            totalDebt:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetLoanVipRepayHistoryV1Resp:
+            example: '{ "rows": [ { "loanCoin": "BUSD", "repayAmount": "10000", "collateralCoin": "BNB,BTC,ETH", "repayStatus": "Repaid",  "loanDate": "1676851200000", "repayTime": "1575018510000", "orderId": "756783308056935434" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralCoin:
+                                type: string
+                            loanCoin:
+                                type: string
+                            loanDate:
+                                type: string
+                            orderId:
+                                type: string
+                            repayAmount:
+                                type: string
+                            repayStatus:
+                                type: string
+                            repayTime:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetLoanVipRequestDataV1Resp:
+            example: '{ "rows": [ { "loanAccountId": "12345678",  "orderId": "12345678", "requestId": "12345678", "loanCoin": "BTC", "loanAmount": "100.55", "collateralAccountId": "12345678,12345678,12345678", "collateralCoin": "BUSD,USDT,ETH", "loanTerm": "30", "status": "Repaid",  "loanDate":"1676851200000" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralAccountId:
+                                type: string
+                            collateralCoin:
+                                type: string
+                            loanAccountId:
+                                type: string
+                            loanAmount:
+                                type: string
+                            loanCoin:
+                                type: string
+                            loanDate:
+                                type: string
+                            loanTerm:
+                                type: string
+                            orderId:
+                                type: string
+                            requestId:
+                                type: string
+                            status:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+        GetLoanVipRequestInterestRateV1Resp:
+            example: '[ { "asset": "BUSD", "flexibleDailyInterestRate": "0.001503", "flexibleYearlyInterestRate": "0.548595", "time": 1577233578000 }, { "asset": "BTC", "flexibleDailyInterestRate": "0.001503", "flexibleYearlyInterestRate": "0.548595", "time": 1577233562000 } ]'
+            items:
+                $ref: '#/components/schemas/GetLoanVipRequestInterestRateV1RespItem'
+            type: array
+        GetLoanVipRequestInterestRateV1RespItem:
+            properties:
+                asset:
+                    type: string
+                flexibleDailyInterestRate:
+                    type: string
+                flexibleYearlyInterestRate:
+                    type: string
+                time:
+                    format: int64
                     type: integer
             type: object
         GetLocalentityDepositHistoryV1Resp:
@@ -18538,6 +18857,647 @@ paths:
             summary: Get Loan Repayment History(USER_DATA)
             tags:
                 - Crypto Loan
+    /sapi/v1/loan/vip/accruedInterest:
+        get:
+            description: GET /sapi/v1/loan/vip/accruedInterest
+            operationId: GetLoanVipAccruedInterestV1
+            parameters:
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Current querying page. Start from 1; default: 1; max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10; max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipAccruedInterestV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get VIP Loan Accrued Interest(USER_DATA)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/borrow:
+        post:
+            description: VIP loan is available for VIP users only.
+            operationId: CreateLoanVipBorrowV1
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateLoanVipBorrowV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: VIP Loan Borrow(TRADE)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/collateral/account:
+        get:
+            description: VIP loan is available for VIP users only
+            operationId: GetLoanVipCollateralAccountV1
+            parameters:
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: collateralAccountId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipCollateralAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Check VIP Loan Collateral Account (USER_DATA)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/collateral/data:
+        get:
+            description: Get Collateral Asset Data
+            operationId: GetLoanVipCollateralDataV1
+            parameters:
+                - in: query
+                  name: collateralCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipCollateralDataV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Collateral Asset Data(USER_DATA)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/interestRateHistory:
+        get:
+            description: Get VIP Loan Interest Rate History
+            operationId: GetLoanVipInterestRateHistoryV1
+            parameters:
+                - in: query
+                  name: coin
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Check current querying page, start from 1. Default：1；Max：1000.
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default：10; Max：100.
+                  in: query
+                  name: limit
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipInterestRateHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get VIP Loan Interest Rate History (USER_DATA)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/loanable/data:
+        get:
+            description: Get interest rate and borrow limit of loanable assets. The borrow limit is shown in USD value.
+            operationId: GetLoanVipLoanableDataV1
+            parameters:
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - description: default:user&#39;s vip level
+                  in: query
+                  name: vipLevel
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipLoanableDataV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Loanable Assets Data(USER_DATA)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/ongoing/orders:
+        get:
+            description: VIP loan is available for VIP users only.
+            operationId: GetLoanVipOngoingOrdersV1
+            parameters:
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: collateralAccountId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: collateralCoin
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Currently querying page. Start from 1, Default:1, Max: 1000.'
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10, Max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipOngoingOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get VIP Loan Ongoing Orders(USER_DATA)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/renew:
+        post:
+            description: VIP loan is available for VIP users only.
+            operationId: CreateLoanVipRenewV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateLoanVipRenewV1Req'
+                description: The request body for CreateLoanVipRenewV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateLoanVipRenewV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: VIP Loan Renew(TRADE)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/repay:
+        post:
+            description: VIP loan is available for VIP users only.
+            operationId: CreateLoanVipRepayV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateLoanVipRepayV1Req'
+                description: The request body for CreateLoanVipRepayV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateLoanVipRepayV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: VIP Loan Repay(TRADE)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/repay/history:
+        get:
+            description: GET /sapi/v1/loan/vip/repay/history
+            operationId: GetLoanVipRepayHistoryV1
+            parameters:
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Currently querying page. Start from 1, Default:1, Max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10, Max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipRepayHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get VIP Loan Repayment History(USER_DATA)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/request/data:
+        get:
+            description: Query Application Status
+            operationId: GetLoanVipRequestDataV1
+            parameters:
+                - description: 'Currently querying page. Start from 1, Default:1, Max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10, Max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipRequestDataV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Application Status(USER_DATA)
+            tags:
+                - Vip Loan
+    /sapi/v1/loan/vip/request/interestRate:
+        get:
+            description: Get Borrow Interest Rate
+            operationId: GetLoanVipRequestInterestRateV1
+            parameters:
+                - description: Max 10 assets, Multiple split by &#34;,&#34;
+                  in: query
+                  name: loanCoin
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipRequestInterestRateV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Borrow Interest Rate(USER_DATA)
+            tags:
+                - Vip Loan
     /sapi/v1/localentity/broker/deposit/provide-info:
         put:
             description: |-

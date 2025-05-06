@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanVipRepayHistoryV1Resp:
+            example: '{ "rows": [ { "loanCoin": "BUSD", "repayAmount": "10000", "collateralCoin": "BNB,BTC,ETH", "repayStatus": "Repaid",  "loanDate": "1676851200000", "repayTime": "1575018510000", "orderId": "756783308056935434" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralCoin:
+                                type: string
+                            loanCoin:
+                                type: string
+                            loanDate:
+                                type: string
+                            orderId:
+                                type: string
+                            repayAmount:
+                                type: string
+                            repayStatus:
+                                type: string
+                            repayTime:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/loan/vip/repay/history:
+        get:
+            description: GET /sapi/v1/loan/vip/repay/history
+            operationId: GetLoanVipRepayHistoryV1
+            parameters:
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Currently querying page. Start from 1, Default:1, Max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10, Max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipRepayHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get VIP Loan Repayment History(USER_DATA)
+            tags:
+                - Vip Loan

@@ -1,0 +1,122 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanVipAccruedInterestV1Resp:
+            example: '{ "rows": [ { "loanCoin": "USDT", "principalAmount": "10000", "interestAmount": "1.2", "annualInterestRate": "0.001273", "accrualTime": 1575018510000, "orderId": 756783308056935434  } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            accrualTime:
+                                format: int64
+                                type: integer
+                            annualInterestRate:
+                                type: string
+                            interestAmount:
+                                type: string
+                            loanCoin:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            principalAmount:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/loan/vip/accruedInterest:
+        get:
+            description: GET /sapi/v1/loan/vip/accruedInterest
+            operationId: GetLoanVipAccruedInterestV1
+            parameters:
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Current querying page. Start from 1; default: 1; max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10; max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipAccruedInterestV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get VIP Loan Accrued Interest(USER_DATA)
+            tags:
+                - Vip Loan
