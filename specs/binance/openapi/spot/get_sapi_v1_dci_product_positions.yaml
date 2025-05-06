@@ -1,0 +1,118 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetDciProductPositionsV1Resp:
+            example: '{ "total": 1, "list": [ { "id": "10160533",  "investCoin": "USDT", "exercisedCoin": "BNB", "subscriptionAmount": "0.5", "strikePrice": "330", "duration": 4, "settleDate": 1708416000000, "purchaseStatus": "PURCHASE_SUCCESS", "apr": "0.0365", "orderId": 7973677530, "purchaseEndTime": 1708329600000,  "optionType": "PUT", "autoCompoundPlan": "STANDARD"  } ] }'
+            properties:
+                list:
+                    items:
+                        properties:
+                            apr:
+                                type: string
+                            autoCompoundPlan:
+                                type: string
+                            duration:
+                                type: integer
+                            exercisedCoin:
+                                type: string
+                            id:
+                                type: string
+                            investCoin:
+                                type: string
+                            optionType:
+                                type: string
+                            orderId:
+                                format: int64
+                                type: integer
+                            purchaseEndTime:
+                                format: int64
+                                type: integer
+                            purchaseStatus:
+                                type: string
+                            settleDate:
+                                type: integer
+                            strikePrice:
+                                type: string
+                            subscriptionAmount:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/dci/product/positions:
+        get:
+            description: Get Dual Investment positions (batch)
+            operationId: GetDciProductPositionsV1
+            parameters:
+                - description: '`PENDING`:Products are purchasing, will give results later;`PURCHASE_SUCCESS`:purchase successfully;`SETTLED`: Products are finish settling;`PURCHASE_FAIL`:fail to purchase;`REFUNDING`:refund ongoing;`REFUND_SUCCESS`:refund to spot account successfully; `SETTLING`:Products are settling. If don&#39;t fill this field, will response all the position status.'
+                  in: query
+                  name: status
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Default: 10, Max:100'
+                  in: query
+                  name: pageSize
+                  schema:
+                    default: 10
+                    format: int64
+                    type: integer
+                - description: Default:1
+                  in: query
+                  name: pageIndex
+                  schema:
+                    type: integer
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetDciProductPositionsV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Dual Investment positions(USER_DATA)
+            tags:
+                - Dual Investment

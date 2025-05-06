@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateDciProductSubscribeV1Req:
+            properties:
+                autoCompoundPlan:
+                    default: ""
+                    type: string
+                depositAmount:
+                    default: ""
+                    type: string
+                id:
+                    default: ""
+                    type: string
+                orderId:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - id
+                - orderId
+                - depositAmount
+                - autoCompoundPlan
+                - timestamp
+            type: object
+        CreateDciProductSubscribeV1Resp:
+            example: '{ "positionId": 10208824, "investCoin": "BNB", "exercisedCoin": "USDT", "subscriptionAmount": "0.002", "duration": 4, "autoCompoundPlan": "STANDARD",  "strikePrice": "380", "settleDate": 1709020800000, "purchaseStatus": "PURCHASE_SUCCESS", "apr": "0.7397", "orderId": 8259117597, "purchaseTime": 1708677583874, "optionType": "CALL" }'
+            properties:
+                apr:
+                    type: string
+                autoCompoundPlan:
+                    type: string
+                duration:
+                    type: integer
+                exercisedCoin:
+                    type: string
+                investCoin:
+                    type: string
+                optionType:
+                    type: string
+                orderId:
+                    format: int64
+                    type: integer
+                positionId:
+                    format: int64
+                    type: integer
+                purchaseStatus:
+                    type: string
+                purchaseTime:
+                    format: int64
+                    type: integer
+                settleDate:
+                    type: integer
+                strikePrice:
+                    type: string
+                subscriptionAmount:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/dci/product/subscribe:
+        post:
+            description: Subscribe Dual Investment products
+            operationId: CreateDciProductSubscribeV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateDciProductSubscribeV1Req'
+                description: The request body for CreateDciProductSubscribeV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateDciProductSubscribeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Subscribe Dual Investment products(USER_DATA)
+            tags:
+                - Dual Investment
