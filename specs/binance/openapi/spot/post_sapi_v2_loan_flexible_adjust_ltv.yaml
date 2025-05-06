@@ -1,0 +1,98 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateLoanFlexibleAdjustLtvV2Req:
+            properties:
+                adjustmentAmount:
+                    default: ""
+                    type: string
+                collateralCoin:
+                    default: ""
+                    type: string
+                direction:
+                    default: ""
+                    type: string
+                loanCoin:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - loanCoin
+                - collateralCoin
+                - adjustmentAmount
+                - direction
+                - timestamp
+            type: object
+        CreateLoanFlexibleAdjustLtvV2Resp:
+            example: '{ "loanCoin": "BUSD", "collateralCoin": "BNB", "direction": "ADDITIONAL", "adjustmentAmount": "5.235", "currentLTV": "0.52", "status": "Succeeds"  }'
+            properties:
+                adjustmentAmount:
+                    type: string
+                collateralCoin:
+                    type: string
+                currentLTV:
+                    type: string
+                direction:
+                    type: string
+                loanCoin:
+                    type: string
+                status:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/adjust/ltv:
+        post:
+            description: Flexible Loan Adjust LTV
+            operationId: CreateLoanFlexibleAdjustLtvV2
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateLoanFlexibleAdjustLtvV2Req'
+                description: The request body for CreateLoanFlexibleAdjustLtvV2
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateLoanFlexibleAdjustLtvV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Flexible Loan Adjust LTV(TRADE)
+            tags:
+                - Crypto Loan

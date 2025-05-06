@@ -1,0 +1,125 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanFlexibleLiquidationHistoryV2Resp:
+            example: '{ "rows": [ { "loanCoin": "BUSD", "liquidationDebt": "10000", "collateralCoin": "BNB", "liquidationCollateralAmount": "123", "returnCollateralAmount": "0.2", "liquidationFee": "1.2", "liquidationStartingPrice": "49.27565492", "liquidationStartingTime": 1575018510000, "status": "Liquidated"  } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralCoin:
+                                type: string
+                            liquidationCollateralAmount:
+                                type: string
+                            liquidationDebt:
+                                type: string
+                            liquidationFee:
+                                type: string
+                            liquidationStartingPrice:
+                                type: string
+                            liquidationStartingTime:
+                                format: int64
+                                type: integer
+                            loanCoin:
+                                type: string
+                            returnCollateralAmount:
+                                type: string
+                            status:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/liquidation/history:
+        get:
+            operationId: GetLoanFlexibleLiquidationHistoryV2
+            parameters:
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: collateralCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Current querying page. Start from 1; default: 1; max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10; max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanFlexibleLiquidationHistoryV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Flexible Loan Liquidation History (USER_DATA)
+            tags:
+                - Crypto Loan

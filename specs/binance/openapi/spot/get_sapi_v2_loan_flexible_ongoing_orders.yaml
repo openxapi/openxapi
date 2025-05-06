@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanFlexibleOngoingOrdersV2Resp:
+            example: '{ "rows": [ { "loanCoin": "BUSD", "totalDebt": "10000", "collateralCoin": "BNB", "collateralAmount": "49.27565492", "currentLTV": "0.57" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralAmount:
+                                type: string
+                            collateralCoin:
+                                type: string
+                            currentLTV:
+                                type: string
+                            loanCoin:
+                                type: string
+                            totalDebt:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/ongoing/orders:
+        get:
+            description: Get Flexible Loan Ongoing Orders
+            operationId: GetLoanFlexibleOngoingOrdersV2
+            parameters:
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: collateralCoin
+                  schema:
+                    default: ""
+                    type: string
+                - description: 'Current querying page. Start from 1; default: 1; max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10; max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanFlexibleOngoingOrdersV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Flexible Loan Ongoing Orders(USER_DATA)
+            tags:
+                - Crypto Loan

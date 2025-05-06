@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanFlexibleBorrowHistoryV2Resp:
+            example: '{ "rows": [ { "loanCoin": "BUSD", "initialLoanAmount": "10000", "collateralCoin": "BNB", "initialCollateralAmount": "49.27565492", "borrowTime": 1575018510000, "status": "SUCCESS"  } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            borrowTime:
+                                format: int64
+                                type: integer
+                            collateralCoin:
+                                type: string
+                            initialCollateralAmount:
+                                type: string
+                            initialLoanAmount:
+                                type: string
+                            loanCoin:
+                                type: string
+                            status:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/borrow/history:
+        get:
+            description: Get Flexible Loan Borrow History
+            operationId: GetLoanFlexibleBorrowHistoryV2
+            parameters:
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: collateralCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Current querying page. Start from 1; default: 1; max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10; max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanFlexibleBorrowHistoryV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Flexible Loan Borrow History(USER_DATA)
+            tags:
+                - Crypto Loan

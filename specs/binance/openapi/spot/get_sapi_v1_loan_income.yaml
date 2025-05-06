@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanIncomeV1Resp:
+            example: '[ { "asset": "BUSD", "type": "borrowIn", "amount": "100", "timestamp": 1633771139847, "tranId": "80423589583" }, { "asset": "BUSD", "type": "borrowIn", "amount": "100", "timestamp": 1634638371496, "tranId": "81685123491" } ]'
+            items:
+                $ref: '#/components/schemas/GetLoanIncomeV1RespItem'
+            type: array
+        GetLoanIncomeV1RespItem:
+            properties:
+                amount:
+                    type: string
+                asset:
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+                tranId:
+                    type: string
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/loan/income:
+        get:
+            description: Get Crypto Loans Income History
+            operationId: GetLoanIncomeV1
+            parameters:
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - description: All types will be returned by default. Enum：`borrowIn` ,`collateralSpent`, `repayAmount`, `collateralReturn`(Collateral return after repayment), `addCollateral`, `removeCollateral`, `collateralReturnAfterLiquidation`
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 20, max 100
+                  in: query
+                  name: limit
+                  schema:
+                    default: 20
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanIncomeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Crypto Loans Income History(USER_DATA)
+            tags:
+                - Crypto Loan

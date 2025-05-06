@@ -1,0 +1,100 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateLoanFlexibleRepayV2Req:
+            properties:
+                collateralCoin:
+                    default: ""
+                    type: string
+                collateralReturn:
+                    type: boolean
+                fullRepayment:
+                    type: boolean
+                loanCoin:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                repayAmount:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - loanCoin
+                - collateralCoin
+                - repayAmount
+                - timestamp
+            type: object
+        CreateLoanFlexibleRepayV2Resp:
+            example: '{ "loanCoin": "BUSD", "collateralCoin": "BNB", "remainingDebt": "100.5", "remainingCollateral": "5.253", "fullRepayment": false, "currentLTV": "0.25", "repayStatus": "Repaid"  }'
+            properties:
+                collateralCoin:
+                    type: string
+                currentLTV:
+                    type: string
+                fullRepayment:
+                    type: boolean
+                loanCoin:
+                    type: string
+                remainingCollateral:
+                    type: string
+                remainingDebt:
+                    type: string
+                repayStatus:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/repay:
+        post:
+            description: Flexible Loan Repay
+            operationId: CreateLoanFlexibleRepayV2
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateLoanFlexibleRepayV2Req'
+                description: The request body for CreateLoanFlexibleRepayV2
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateLoanFlexibleRepayV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Flexible Loan Repay(TRADE)
+            tags:
+                - Crypto Loan
