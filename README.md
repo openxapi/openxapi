@@ -49,7 +49,7 @@ So that you can use the same specification to generate websocket client SDKs for
 
 | Exchange | Go | Python | JavaScript | Rust |
 |:--------:|----|------|----------|----|
-| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) <br> [![GitHub go.mod Go version](https://img.shields.io/github/go-mod/go-version/openxapi/binance-go)](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) <br> [![PyPI - Version](https://img.shields.io/pypi/v/openxapi-binance)](https://pypi.org/project/openxapi-binance/) | [Github](https://github.com/openxapi/binance-js) <br> [![NPM Version](https://img.shields.io/npm/v/%40openxapi%2Fbinance)](https://www.npmjs.com/package/@openxapi/binance) | [Github](https://github.com/openxapi/binance-rs) <br> [![Crates.io Version](https://img.shields.io/crates/v/openxapi-binance)](https://crates.io/crates/openxapi-binance) |
+| <img src="./images/binance.jpg" width="100" /> | [Github](https://github.com/openxapi/binance-go) <br> [![GitHub Tag](https://img.shields.io/github/v/tag/openxapi/binance-go)](https://github.com/openxapi/binance-go) | [Github](https://github.com/openxapi/binance-py) <br> [![PyPI - Version](https://img.shields.io/pypi/v/openxapi-binance)](https://pypi.org/project/openxapi-binance/) | [Github](https://github.com/openxapi/binance-js) <br> [![NPM Version](https://img.shields.io/npm/v/%40openxapi%2Fbinance)](https://www.npmjs.com/package/@openxapi/binance) | [Github](https://github.com/openxapi/binance-rs) <br> [![Crates.io Version](https://img.shields.io/crates/v/openxapi-binance)](https://crates.io/crates/openxapi-binance) |
 
 ## Project Structure
 
