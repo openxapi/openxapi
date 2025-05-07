@@ -9412,6 +9412,93 @@ components:
                     format: int64
                     type: integer
             type: object
+        GetPayTransactionsV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": [ { "orderType": "C2C",  "transactionId": "M_P_71505104267788288", "transactionTime": 1610090460133,  "amount": "23.72469206",  "currency": "BNB", "walletType": 1,  "walletTypes": [1,2],  "fundsDetail": [  { "currency": "USDT",  "amount": "1.2", "walletAssetCost":[  {"1":"0.6"}, {"2":"0.6"} ] }, { "currency": "ETH", "amount": "0.0001", "walletAssetCost":[ {"1":"0.00005"}, {"2":"0.00005"} ] } ], "payerInfo":{ "name":"Jack",  "type":"USER",  "binanceId":"12345678",  "accountId":"67736251"  }, "receiverInfo":{ "name":"Alan",  "type":"MERCHANT",  "email":"alan@binance.com",  "binanceId":"34355667",  "accountId":"21326891",  "countryCode":"1",  "phoneNumber":"8057651210", "mobileCode":"US",  "extend": {  "institutionName": "", "cardNumber": "", "digitalWalletId": "" } } } ], "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            currency:
+                                type: string
+                            fundsDetail:
+                                items:
+                                    properties:
+                                        amount:
+                                            type: string
+                                        currency:
+                                            type: string
+                                        walletAssetCost:
+                                            items:
+                                                properties:
+                                                    "1":
+                                                        type: string
+                                                type: object
+                                            type: array
+                                    type: object
+                                type: array
+                            orderType:
+                                type: string
+                            payerInfo:
+                                properties:
+                                    accountId:
+                                        type: string
+                                    binanceId:
+                                        type: string
+                                    name:
+                                        type: string
+                                    type:
+                                        type: string
+                                type: object
+                            receiverInfo:
+                                properties:
+                                    accountId:
+                                        type: string
+                                    binanceId:
+                                        type: string
+                                    countryCode:
+                                        type: string
+                                    email:
+                                        type: string
+                                    extend:
+                                        properties:
+                                            cardNumber:
+                                                type: string
+                                            digitalWalletId:
+                                                type: string
+                                            institutionName:
+                                                type: string
+                                        type: object
+                                    mobileCode:
+                                        type: string
+                                    name:
+                                        type: string
+                                    phoneNumber:
+                                        type: string
+                                    type:
+                                        type: string
+                                type: object
+                            transactionId:
+                                type: string
+                            transactionTime:
+                                format: int64
+                                type: integer
+                            walletType:
+                                type: integer
+                            walletTypes:
+                                items:
+                                    type: integer
+                                type: array
+                        type: object
+                    type: array
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
         GetPingV3Resp:
             example: '{}'
             type: object
@@ -25714,6 +25801,61 @@ paths:
             summary: Get NFT Asset(USER_DATA)
             tags:
                 - Nft
+    /sapi/v1/pay/transactions:
+        get:
+            description: Get Pay Trade History
+            operationId: GetPayTransactionsV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 100, max 100
+                  in: query
+                  name: limit
+                  schema:
+                    default: 100
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPayTransactionsV1Resp'
+                    description: Successful operation
+            summary: Get Pay Trade History
+            tags:
+                - Binance Pay History
     /sapi/v1/portfolio/account:
         get:
             description: Get Portfolio Margin Pro Account Info
