@@ -1,0 +1,87 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateSimpleEarnFlexibleRedeemV1Req:
+            properties:
+                amount:
+                    default: ""
+                    type: string
+                destAccount:
+                    default: ""
+                    type: string
+                productId:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                redeemAll:
+                    type: boolean
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - productId
+                - timestamp
+            type: object
+        CreateSimpleEarnFlexibleRedeemV1Resp:
+            example: '{ "redeemId": 40607, "success": true }'
+            properties:
+                redeemId:
+                    format: int64
+                    type: integer
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/flexible/redeem:
+        post:
+            description: Redeem Flexible Product
+            operationId: CreateSimpleEarnFlexibleRedeemV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateSimpleEarnFlexibleRedeemV1Req'
+                description: The request body for CreateSimpleEarnFlexibleRedeemV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSimpleEarnFlexibleRedeemV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Redeem Flexible Product(TRADE)
+            tags:
+                - Simple Earn

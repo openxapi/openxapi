@@ -1,0 +1,121 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSimpleEarnFlexibleHistoryRewardsRecordV1Resp:
+            example: '{ "rows": [ { "asset": "BUSD", "rewards": "0.00006408", "projectId": "USDT001", "type": "BONUS", "time": 1577233578000 }, { "asset": "USDT", "rewards": "0.00687654", "projectId": "USDT001", "type": "REALTIME", "time": 1577233562000 } ], "total": 2 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            asset:
+                                type: string
+                            projectId:
+                                type: string
+                            rewards:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                            type:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/flexible/history/rewardsRecord:
+        get:
+            description: Get Flexible Rewards History
+            operationId: GetSimpleEarnFlexibleHistoryRewardsRecordV1
+            parameters:
+                - in: query
+                  name: productId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: '`Bonus` - Bonus tiered APR, `REALTIME` Real-time APR, `REWARDS` Historical rewards,`ALL`(set to default)'
+                  in: query
+                  name: type
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Currently querying the page. Start from 1. Default:1
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:10, Max:100
+                  in: query
+                  name: size
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSimpleEarnFlexibleHistoryRewardsRecordV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Flexible Rewards History(USER_DATA)
+            tags:
+                - Simple Earn

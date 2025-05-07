@@ -1,0 +1,77 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSimpleEarnAccountV1Resp:
+            example: '{ "totalAmountInBTC": "0.01067982", "totalAmountInUSDT": "77.13289230", "totalFlexibleAmountInBTC": "0.00000000", "totalFlexibleAmountInUSDT": "0.00000000", "totalLockedInBTC": "0.01067982", "totalLockedInUSDT": "77.13289230" }'
+            properties:
+                totalAmountInBTC:
+                    type: string
+                totalAmountInUSDT:
+                    type: string
+                totalFlexibleAmountInBTC:
+                    type: string
+                totalFlexibleAmountInUSDT:
+                    type: string
+                totalLockedInBTC:
+                    type: string
+                totalLockedInUSDT:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/account:
+        get:
+            description: Simple Account query
+            operationId: GetSimpleEarnAccountV1
+            parameters:
+                - description: The value cannot be greater than `60000`
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSimpleEarnAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Simple Account(USER_DATA)
+            tags:
+                - Simple Earn
