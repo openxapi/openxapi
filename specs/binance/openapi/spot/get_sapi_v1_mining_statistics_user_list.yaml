@@ -1,0 +1,103 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMiningStatisticsUserListV1Resp:
+            example: '{ "code": 0, "msg": "", "data": [ { "type": "H_hashrate",         "userName": "test",          "list": [ { "time": 1585267200000,     "hashrate": "0.00000000",  "reject": "0.00000000"     }, { "time": 1585353600000, "hashrate": "0.00000000", "reject": "0.00000000" } ] }, { "type": "D_hashrate",         "userName": "test",           "list": [ { "time": 1587906000000,      "hashrate": "0.00000000",  "reject": "0.00000000"     }, { "time": 1587909600000, "hashrate": "0.00000000", "reject": "0.00000000" } ] } ] }'
+            properties:
+                code:
+                    type: integer
+                data:
+                    items:
+                        properties:
+                            list:
+                                items:
+                                    properties:
+                                        hashrate:
+                                            type: string
+                                        reject:
+                                            type: string
+                                        time:
+                                            format: int64
+                                            type: integer
+                                    type: object
+                                type: array
+                            type:
+                                type: string
+                            userName:
+                                type: string
+                        type: object
+                    type: array
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/mining/statistics/user/list:
+        get:
+            description: Query Account List
+            operationId: GetMiningStatisticsUserListV1
+            parameters:
+                - description: Algorithm(sha256)
+                  in: query
+                  name: algo
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Mining account
+                  in: query
+                  name: userName
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMiningStatisticsUserListV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Account List(USER_DATA)
+            tags:
+                - Mining

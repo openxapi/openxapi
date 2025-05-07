@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMiningHashTransferConfigDetailsListV1Resp:
+            example: '{ "code": 0, "msg": "", "data": { "configDetails": [ { "configId": 168,      "poolUsername": "123",   "toPoolUsername": "user1",  "algoName": "Ethash",      "hashRate": 5000000,      "startDay": 20201210,    "endDay": 20210405,    "status": 1        }, { "configId": 166, "poolUsername": "pop", "toPoolUsername": "111111", "algoName": "Ethash", "hashRate": 3320000, "startDay": 20201226, "endDay": 20201227, "status": 0 } ], "totalNum": 21, "pageSize": 200 } }'
+            properties:
+                code:
+                    type: integer
+                data:
+                    properties:
+                        configDetails:
+                            items:
+                                properties:
+                                    algoName:
+                                        type: string
+                                    configId:
+                                        format: int64
+                                        type: integer
+                                    endDay:
+                                        type: integer
+                                    hashRate:
+                                        type: integer
+                                    poolUsername:
+                                        type: string
+                                    startDay:
+                                        type: integer
+                                    status:
+                                        type: integer
+                                    toPoolUsername:
+                                        type: string
+                                type: object
+                            type: array
+                        pageSize:
+                            type: integer
+                        totalNum:
+                            type: integer
+                    type: object
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/mining/hash-transfer/config/details/list:
+        get:
+            description: Hashrate Resale List
+            operationId: GetMiningHashTransferConfigDetailsListV1
+            parameters:
+                - description: Page number, empty default first page, starting from 1
+                  in: query
+                  name: pageIndex
+                  schema:
+                    type: integer
+                - description: Number of pages, minimum 10, maximum 200
+                  in: query
+                  name: pageSize
+                  schema:
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMiningHashTransferConfigDetailsListV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Hashrate Resale List (USER_DATA)
+            tags:
+                - Mining

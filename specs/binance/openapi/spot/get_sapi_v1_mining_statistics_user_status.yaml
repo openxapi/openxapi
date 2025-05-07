@@ -1,0 +1,117 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMiningStatisticsUserStatusV1Resp:
+            example: '{ "code": 0, "msg": "", "data": { "fifteenMinHashRate": "457835490067496409.00000000",           "dayHashRate": "214289268068874127.65000000",                  "validNum": 0,                                                 "invalidNum": 17562,                                           "profitToday":{                                               "BTC":"0.00314332", "BSV":"56.17055953", "BCH":"106.61586001" }, "profitYesterday":{                                        "BTC":"0.00314332", "BSV":"56.17055953", "BCH":"106.61586001" }, "userName": "test",                                     "unit": "h/s",                                         "algo": "sha256"                                       } }'
+            properties:
+                code:
+                    type: integer
+                data:
+                    properties:
+                        algo:
+                            type: string
+                        dayHashRate:
+                            type: string
+                        fifteenMinHashRate:
+                            type: string
+                        invalidNum:
+                            type: integer
+                        profitToday:
+                            properties:
+                                BCH:
+                                    type: string
+                                BSV:
+                                    type: string
+                                BTC:
+                                    type: string
+                            type: object
+                        profitYesterday:
+                            properties:
+                                BCH:
+                                    type: string
+                                BSV:
+                                    type: string
+                                BTC:
+                                    type: string
+                            type: object
+                        unit:
+                            type: string
+                        userName:
+                            type: string
+                        validNum:
+                            type: integer
+                    type: object
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/mining/statistics/user/status:
+        get:
+            description: Statistic List
+            operationId: GetMiningStatisticsUserStatusV1
+            parameters:
+                - description: Algorithm(sha256)
+                  in: query
+                  name: algo
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Mining account
+                  in: query
+                  name: userName
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMiningStatisticsUserStatusV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Statistic List(USER_DATA)
+            tags:
+                - Mining

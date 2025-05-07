@@ -1,0 +1,94 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanVipCollateralDataV1Resp:
+            example: '{ "rows": [ { "collateralCoin": "BUSD", "_1stCollateralRatio": "100%", "_1stCollateralRange": "1-10000000", "_2ndCollateralRatio": "80%", "_2ndCollateralRange": "10000000-100000000", "_3rdCollateralRatio": "60%", "_3rdCollateralRange": "100000000-1000000000", "_4thCollateralRatio": "0%", "_4thCollateralRange": ">10000000000" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            _1stCollateralRange:
+                                type: string
+                            _1stCollateralRatio:
+                                type: string
+                            _2ndCollateralRange:
+                                type: string
+                            _2ndCollateralRatio:
+                                type: string
+                            _3rdCollateralRange:
+                                type: string
+                            _3rdCollateralRatio:
+                                type: string
+                            _4thCollateralRange:
+                                type: string
+                            _4thCollateralRatio:
+                                type: string
+                            collateralCoin:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/loan/vip/collateral/data:
+        get:
+            description: Get Collateral Asset Data
+            operationId: GetLoanVipCollateralDataV1
+            parameters:
+                - in: query
+                  name: collateralCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipCollateralDataV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Collateral Asset Data(USER_DATA)
+            tags:
+                - Vip Loan

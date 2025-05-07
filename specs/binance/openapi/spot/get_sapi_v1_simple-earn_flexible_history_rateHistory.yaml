@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSimpleEarnFlexibleHistoryRateHistoryV1Resp:
+            example: '{ "rows": [ { "productId": "BUSD001", "asset": "BUSD", "annualPercentageRate": "0.00006408", "time": 1577233578000 } ], "total": "1" }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            annualPercentageRate:
+                                type: string
+                            asset:
+                                type: string
+                            productId:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/flexible/history/rateHistory:
+        get:
+            description: Get Rate History
+            operationId: GetSimpleEarnFlexibleHistoryRateHistoryV1
+            parameters:
+                - in: query
+                  name: productId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: '&#34;DAY&#34;,&#34;YEAR&#34;,default&#34;DAY&#34;'
+                  in: query
+                  name: aprPeriod
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Currently querying page. Start from 1. Default:1
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:10, Max:100
+                  in: query
+                  name: size
+                  schema:
+                    format: int64
+                    type: integer
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSimpleEarnFlexibleHistoryRateHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Rate History(USER_DATA)
+            tags:
+                - Simple Earn

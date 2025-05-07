@@ -1,0 +1,70 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateLoanFlexibleRepayCollateralV2Resp:
+            example: '{ "loanCoin":"BUSD", "collateralCoin":"BNB", "remainingDebt":"100.5", "remainingCollateral":"5.253", "fullRepayment":false, "currentLTV":"0.25", "repayStatus":"Repaid" }'
+            properties:
+                collateralCoin:
+                    type: string
+                currentLTV:
+                    type: string
+                fullRepayment:
+                    type: boolean
+                loanCoin:
+                    type: string
+                remainingCollateral:
+                    type: string
+                remainingDebt:
+                    type: string
+                repayStatus:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/repay/collateral:
+        post:
+            description: |-
+                ** Request Weight(UID)
+                ** 6000
+                Parameters:
+                - repayAmount refers to the loan amount the user would like to repay
+            operationId: CreateLoanFlexibleRepayCollateralV2
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateLoanFlexibleRepayCollateralV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Flexible Loan Collateral Repayment (TRADE)
+            tags:
+                - Crypto Loan

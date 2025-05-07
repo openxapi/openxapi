@@ -176,6 +176,10 @@ func TestCleanResponseLine(t *testing.T) {
 			`"trId": 123456, # The travel rule record Id`,
 			`"trId": 123456, `,
 		},
+		{
+			`"canRedeemEarly": true,        //When it is true, early redemption can be operated `,
+			`"canRedeemEarly": true,        `,
+		},
 	}
 	for _, test := range tests {
 		assert.Equal(t, test.expected, cleanResponseLine(test.input))

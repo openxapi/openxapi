@@ -1,0 +1,122 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetC2cOrderMatchListUserOrderHistoryV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": [ { "orderNumber":"20219644646554779648", "advNo": "11218246497340923904", "tradeType": "SELL", "asset": "BUSD", "fiat": "CNY", "fiatSymbol": "￥", "amount": "5000.00000000",   "totalPrice": "33400.00000000", "unitPrice": "6.68",  "orderStatus": "COMPLETED",   "createTime": 1619361369000, "commission": "0",    "counterPartNickName": "ab***", "advertisementRole": "TAKER" } ], "total": 1, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    items:
+                        properties:
+                            advNo:
+                                type: string
+                            advertisementRole:
+                                type: string
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            commission:
+                                type: string
+                            counterPartNickName:
+                                type: string
+                            createTime:
+                                format: int64
+                                type: integer
+                            fiat:
+                                type: string
+                            fiatSymbol:
+                                type: string
+                            orderNumber:
+                                type: string
+                            orderStatus:
+                                type: string
+                            totalPrice:
+                                type: string
+                            tradeType:
+                                type: string
+                            unitPrice:
+                                type: string
+                        type: object
+                    type: array
+                message:
+                    type: string
+                success:
+                    type: boolean
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/c2c/orderMatch/listUserOrderHistory:
+        get:
+            description: Get C2C Trade History
+            operationId: GetC2cOrderMatchListUserOrderHistoryV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetC2cOrderMatchListUserOrderHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get C2C Trade History (USER_DATA)
+            tags:
+                - C2c

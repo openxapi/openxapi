@@ -1,0 +1,71 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSolStakingAccountV1Resp:
+            example: '{ "bnsolAmount":"1.10928781", "holdingInSOL":"1.22330928", "thirtyDaysProfitInSOL":"0.22330928" }'
+            properties:
+                bnsolAmount:
+                    type: string
+                holdingInSOL:
+                    type: string
+                thirtyDaysProfitInSOL:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sol-staking/account:
+        get:
+            description: SOL Staking account
+            operationId: GetSolStakingAccountV1
+            parameters:
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSolStakingAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: SOL Staking account(USER_DATA)
+            tags:
+                - Staking

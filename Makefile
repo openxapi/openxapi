@@ -23,6 +23,29 @@ generate-spec:
 		$(BINARY_NAME); \
 	fi
 
+validate-spec:
+	@if [ -z "${EXCHANGE}" ]; then \
+		echo "Usage: make validate-spec EXCHANGE=<exchange>"; \
+		exit 1; \
+	fi
+	@echo "Checking for invalid operationId in ${EXCHANGE} specs"
+	@invalid_specs=$$(grep -L -E 'operationId: (Get|Create|Update|Delete)' specs/${EXCHANGE}/openapi/*/*.yaml || true); \
+	if [ -n "$${invalid_specs}" ]; then \
+		echo "Invalid operationId in the following specs:"; \
+		echo "$${invalid_specs}"; \
+		echo "Please make sure the operationId starts with Get|Create|Update|Delete"; \
+		exit 1; \
+	fi
+	@echo "Checking for OpenAPI spec in ${EXCHANGE} specs"
+	@if [ -z "${OPENAPI_GENERATOR_CLI}" ]; then \
+		echo "OPENAPI_GENERATOR_CLI is not set. Please set it to the path of the openapi-generator-cli executable."; \
+		exit 1; \
+	fi
+	@for file in $(shell find specs/${EXCHANGE}/openapi -name "*.yaml" -depth 1); do \
+		echo "Validating ${EXCHANGE} spec for $$file"; \
+		$(OPENAPI_GENERATOR_CLI) validate -i $$file; \
+	done
+
 generate-sdk:
 	@if [ -z "${EXCHANGE}" -o -z "${LANGUAGE}" -o -z "${OUTPUT_DIR}" ]; then \
 		echo "Usage: make generate-sdk EXCHANGE=<exchange> LANGUAGE=<language> OUTPUT_DIR=<output_dir>"; \

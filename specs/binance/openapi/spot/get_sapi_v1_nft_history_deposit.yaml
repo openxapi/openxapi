@@ -1,0 +1,106 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetNftHistoryDepositV1Resp:
+            example: '{ "total": 2, "list": [ { "network": "ETH",   "txID": null,       "contractAdrress": "0xe507c961ee127d4439977a61af39c34eafee0dc6",   "tokenId": "10014",    "timestamp": 1629986047000 }, { "network": "BSC", "txID": null, "contractAdrress": "0x058451b463bab04f52c0799d55c4094f507acfa9", "tokenId": "10016", "timestamp": 1630083581000 } ] }'
+            properties:
+                list:
+                    items:
+                        properties:
+                            contractAdrress:
+                                type: string
+                            network:
+                                type: string
+                            timestamp:
+                                format: int64
+                                type: integer
+                            tokenId:
+                                type: string
+                            txID:
+                                nullable: true
+                                type: object
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/nft/history/deposit:
+        get:
+            description: et NFT Deposit History
+            operationId: GetNftHistoryDepositV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 50, Max 50
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 50
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNftHistoryDepositV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get NFT Deposit History(USER_DATA)
+            tags:
+                - Nft

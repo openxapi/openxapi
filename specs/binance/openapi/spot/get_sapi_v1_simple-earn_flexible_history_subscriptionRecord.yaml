@@ -1,0 +1,130 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSimpleEarnFlexibleHistorySubscriptionRecordV1Resp:
+            example: '{ "rows": [ { "amount": "100.00000000", "asset": "USDT", "time": 1575018510000, "purchaseId": 26055, "productId": "USDT001", "type": "AUTO",  "sourceAccount": "SPOT",      "amtFromSpot": "30",  "amtFromFunding": "70",  "status": "SUCCESS"  } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            amtFromFunding:
+                                type: string
+                            amtFromSpot:
+                                type: string
+                            asset:
+                                type: string
+                            productId:
+                                type: string
+                            purchaseId:
+                                format: int64
+                                type: integer
+                            sourceAccount:
+                                type: string
+                            status:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                            type:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/flexible/history/subscriptionRecord:
+        get:
+            description: Get Flexible Subscription Record
+            operationId: GetSimpleEarnFlexibleHistorySubscriptionRecordV1
+            parameters:
+                - in: query
+                  name: productId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: purchaseId
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Currently querying the page. Start from 1. Default:1
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:10, Max:100
+                  in: query
+                  name: size
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSimpleEarnFlexibleHistorySubscriptionRecordV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Flexible Subscription Record(USER_DATA)
+            tags:
+                - Simple Earn

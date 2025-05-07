@@ -1,0 +1,89 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateSimpleEarnFlexibleSubscribeV1Req:
+            properties:
+                amount:
+                    default: ""
+                    type: string
+                autoSubscribe:
+                    default: true
+                    type: boolean
+                productId:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                sourceAccount:
+                    default: ""
+                    type: string
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - productId
+                - amount
+                - timestamp
+            type: object
+        CreateSimpleEarnFlexibleSubscribeV1Resp:
+            example: '{ "purchaseId": 40607, "success": true }'
+            properties:
+                purchaseId:
+                    format: int64
+                    type: integer
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/flexible/subscribe:
+        post:
+            description: Subscribe Flexible Product
+            operationId: CreateSimpleEarnFlexibleSubscribeV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateSimpleEarnFlexibleSubscribeV1Req'
+                description: The request body for CreateSimpleEarnFlexibleSubscribeV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSimpleEarnFlexibleSubscribeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Subscribe Flexible Product(TRADE)
+            tags:
+                - Simple Earn

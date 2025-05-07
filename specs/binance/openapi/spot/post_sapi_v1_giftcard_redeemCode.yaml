@@ -1,0 +1,96 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateGiftcardRedeemCodeV1Req:
+            properties:
+                code:
+                    default: ""
+                    type: string
+                externalUid:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - code
+                - timestamp
+            type: object
+        CreateGiftcardRedeemCodeV1Resp:
+            example: '{ "code":"000000", "message":"success", "data":{ "referenceNo":"0033002328060227", "identityNo":"10317392647411060736", "token":"BNB", "amount":"0.00000001" }, "success":true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        amount:
+                            type: string
+                        identityNo:
+                            type: string
+                        referenceNo:
+                            type: string
+                        token:
+                            type: string
+                    type: object
+                message:
+                    type: string
+                success:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/giftcard/redeemCode:
+        post:
+            description: |-
+                This API is for redeeming a Binance Gift Card
+                Once redeemed, the coins will be deposited in your funding wallet.
+            operationId: CreateGiftcardRedeemCodeV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateGiftcardRedeemCodeV1Req'
+                description: The request body for CreateGiftcardRedeemCodeV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateGiftcardRedeemCodeV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Redeem a Binance Gift Card(USER_DATA)
+            tags:
+                - Gift Card

@@ -1,0 +1,82 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateMiningHashTransferConfigCancelV1Req:
+            properties:
+                configId:
+                    type: integer
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+                userName:
+                    default: ""
+                    type: string
+            required:
+                - configId
+                - userName
+                - timestamp
+            type: object
+        CreateMiningHashTransferConfigCancelV1Resp:
+            example: '{ "code": 0, "msg": "", "data": true }'
+            properties:
+                code:
+                    type: integer
+                data:
+                    type: boolean
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/mining/hash-transfer/config/cancel:
+        post:
+            operationId: CreateMiningHashTransferConfigCancelV1
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateMiningHashTransferConfigCancelV1Req'
+                description: The request body for CreateMiningHashTransferConfigCancelV1
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateMiningHashTransferConfigCancelV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Cancel hashrate resale configuration(USER_DATA)
+            tags:
+                - Mining

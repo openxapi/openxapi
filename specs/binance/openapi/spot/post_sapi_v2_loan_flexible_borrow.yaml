@@ -1,0 +1,94 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        CreateLoanFlexibleBorrowV2Req:
+            properties:
+                collateralAmount:
+                    default: ""
+                    type: string
+                collateralCoin:
+                    default: ""
+                    type: string
+                loanAmount:
+                    default: ""
+                    type: string
+                loanCoin:
+                    default: ""
+                    type: string
+                recvWindow:
+                    format: int64
+                    type: integer
+                timestamp:
+                    format: int64
+                    type: integer
+            required:
+                - loanCoin
+                - collateralCoin
+                - timestamp
+            type: object
+        CreateLoanFlexibleBorrowV2Resp:
+            example: '{ "loanCoin": "BUSD", "loanAmount": "100.5", "collateralCoin": "BNB", "collateralAmount": "50.5", "status": "Succeeds"  }'
+            properties:
+                collateralAmount:
+                    type: string
+                collateralCoin:
+                    type: string
+                loanAmount:
+                    type: string
+                loanCoin:
+                    type: string
+                status:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/borrow:
+        post:
+            description: Borrow Flexible Loan
+            operationId: CreateLoanFlexibleBorrowV2
+            requestBody:
+                content:
+                    application/x-www-form-urlencoded:
+                        schema:
+                            $ref: '#/components/schemas/CreateLoanFlexibleBorrowV2Req'
+                description: The request body for CreateLoanFlexibleBorrowV2
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateLoanFlexibleBorrowV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Flexible Loan Borrow(TRADE)
+            tags:
+                - Crypto Loan

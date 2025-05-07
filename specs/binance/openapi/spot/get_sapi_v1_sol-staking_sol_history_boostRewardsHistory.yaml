@@ -1,0 +1,114 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSolStakingSolHistoryBoostRewardsHistoryV1Resp:
+            example: '{ "rows":[ { "time":1729520680, "token":"SOL", "amount":"1.20291028", "bnsolHolding":"2.0928798",  "status":"SUCCESS"  } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            bnsolHolding:
+                                type: string
+                            status:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                            token:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sol-staking/sol/history/boostRewardsHistory:
+        get:
+            description: Get Boost rewards history
+            operationId: GetSolStakingSolHistoryBoostRewardsHistoryV1
+            parameters:
+                - description: '&#34;CLAIM&#34;, &#34;DISTRIBUTE&#34;, default &#34;CLAIM&#34;'
+                  in: query
+                  name: type
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Currently querying page. Start from 1. Default: 1'
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: 'Default: 10, Max: 100'
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSolStakingSolHistoryBoostRewardsHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Boost Rewards History(USER_DATA)
+            tags:
+                - Staking

@@ -1,0 +1,117 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSimpleEarnFlexibleListV1Resp:
+            example: '{ "rows":[ { "asset": "BTC", "latestAnnualPercentageRate": "0.05000000", "tierAnnualPercentageRate": { "0-5BTC": 0.05, "5-10BTC": 0.03 }, "airDropPercentageRate": "0.05000000", "canPurchase": true, "canRedeem": true, "isSoldOut": true, "hot": true, "minPurchaseAmount": "0.01000000", "productId": "BTC001", "subscriptionStartTime": "1646182276000", "status": "PURCHASING"  } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            airDropPercentageRate:
+                                type: string
+                            asset:
+                                type: string
+                            canPurchase:
+                                type: boolean
+                            canRedeem:
+                                type: boolean
+                            hot:
+                                type: boolean
+                            isSoldOut:
+                                type: boolean
+                            latestAnnualPercentageRate:
+                                type: string
+                            minPurchaseAmount:
+                                type: string
+                            productId:
+                                type: string
+                            status:
+                                type: string
+                            subscriptionStartTime:
+                                type: string
+                            tierAnnualPercentageRate:
+                                properties:
+                                    0-5BTC:
+                                        type: number
+                                    5-10BTC:
+                                        type: number
+                                type: object
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/flexible/list:
+        get:
+            description: Get available Simple Earn flexible product list
+            operationId: GetSimpleEarnFlexibleListV1
+            parameters:
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - description: Currently querying page. Start from 1. Default:1
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default:10, Max:100
+                  in: query
+                  name: size
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSimpleEarnFlexibleListV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Simple Earn Flexible Product List(USER_DATA)
+            tags:
+                - Simple Earn

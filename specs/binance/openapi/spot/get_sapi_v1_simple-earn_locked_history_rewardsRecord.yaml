@@ -1,0 +1,117 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSimpleEarnLockedHistoryRewardsRecordV1Resp:
+            example: '{ "rows": [ { "positionId": 123123, "time": 1575018510000, "asset": "BNB", "lockPeriod": "30", "amount": "21312.23223", "type":"Locked Rewards" }, { "positionId":"123123", "time":1575018510000, "asset":"BNB", "amount":"1.23223", "type":"Boost Rewards" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            asset:
+                                type: string
+                            lockPeriod:
+                                type: string
+                            positionId:
+                                format: int64
+                                type: integer
+                            time:
+                                format: int64
+                                type: integer
+                            type:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/locked/history/rewardsRecord:
+        get:
+            description: Get Locked Rewards History
+            operationId: GetSimpleEarnLockedHistoryRewardsRecordV1
+            parameters:
+                - in: query
+                  name: positionId
+                  schema:
+                    type: integer
+                - in: query
+                  name: asset
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Currently querying the page. Start from 1, Default:1, Max: 1,000'
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    maximum: 1
+                    type: integer
+                - description: Default:10, Max:100
+                  in: query
+                  name: size
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSimpleEarnLockedHistoryRewardsRecordV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Locked Rewards History(USER_DATA)
+            tags:
+                - Simple Earn

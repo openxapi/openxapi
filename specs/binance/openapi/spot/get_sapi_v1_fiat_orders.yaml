@@ -1,0 +1,127 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetFiatOrdersV1Resp:
+            example: '{ "code": "000000", "message": "success", "data": [ { "orderNo":"7d76d611-0568-4f43-afb6-24cac7767365", "fiatCurrency": "BRL", "indicatedAmount": "10.00", "amount": "10.00", "totalFee": "0.00",    "method": "BankAccount",   "status": "Expired",   "createTime": 1626144956000, "updateTime": 1626400907000 } ], "total": 1, "success": true }'
+            properties:
+                code:
+                    type: string
+                data:
+                    items:
+                        properties:
+                            amount:
+                                type: string
+                            createTime:
+                                format: int64
+                                type: integer
+                            fiatCurrency:
+                                type: string
+                            indicatedAmount:
+                                type: string
+                            method:
+                                type: string
+                            orderNo:
+                                type: string
+                            status:
+                                type: string
+                            totalFee:
+                                type: string
+                            updateTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                message:
+                    type: string
+                success:
+                    type: boolean
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/fiat/orders:
+        get:
+            description: Get Fiat Deposit/Withdraw History
+            operationId: GetFiatOrdersV1
+            parameters:
+                - description: 0-deposit,1-withdraw
+                  in: query
+                  name: transactionType
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: beginTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - description: default 100, max 500
+                  in: query
+                  name: rows
+                  schema:
+                    default: 100
+                    maximum: 500
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetFiatOrdersV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Fiat Deposit/Withdraw History (USER_DATA)
+            tags:
+                - Fiat

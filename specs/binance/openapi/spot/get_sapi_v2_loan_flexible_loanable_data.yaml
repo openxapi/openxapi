@@ -1,0 +1,84 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanFlexibleLoanableDataV2Resp:
+            example: '{ "rows": [ { "loanCoin": "BUSD", "flexibleInterestRate": "0.00000491", "flexibleMinLimit": "100", "flexibleMaxLimit": "1000000" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            flexibleInterestRate:
+                                type: string
+                            flexibleMaxLimit:
+                                type: string
+                            flexibleMinLimit:
+                                type: string
+                            loanCoin:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/loanable/data:
+        get:
+            description: Get interest rate and borrow limit of flexible loanable assets. The borrow limit is shown in USD value.
+            operationId: GetLoanFlexibleLoanableDataV2
+            parameters:
+                - in: query
+                  name: loanCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanFlexibleLoanableDataV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Flexible Loan Assets Data(USER_DATA)
+            tags:
+                - Crypto Loan

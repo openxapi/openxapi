@@ -1,0 +1,110 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSimpleEarnLockedSubscriptionPreviewV1Resp:
+            example: '[ { "rewardAsset": "AXS", "totalRewardAmt": "5.17181528", "extraRewardAsset": "BNB", "estTotalExtraRewardAmt": "5.17181528", "boostRewardAsset": "AXS", "estDailyRewardAmt": "1.20928901", "nextPay": "1.29295383", "nextPayDate": "1646697600000", "valueDate": "1646697600000", "rewardsEndDate": "1651449600000", "deliverDate": "1651536000000", "nextSubscriptionDate": "1651536000000" } ]'
+            items:
+                $ref: '#/components/schemas/GetSimpleEarnLockedSubscriptionPreviewV1RespItem'
+            type: array
+        GetSimpleEarnLockedSubscriptionPreviewV1RespItem:
+            properties:
+                boostRewardAsset:
+                    type: string
+                deliverDate:
+                    type: string
+                estDailyRewardAmt:
+                    type: string
+                estTotalExtraRewardAmt:
+                    type: string
+                extraRewardAsset:
+                    type: string
+                nextPay:
+                    type: string
+                nextPayDate:
+                    type: string
+                nextSubscriptionDate:
+                    type: string
+                rewardAsset:
+                    type: string
+                rewardsEndDate:
+                    type: string
+                totalRewardAmt:
+                    type: string
+                valueDate:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/locked/subscriptionPreview:
+        get:
+            description: Get Locked Subscription Preview
+            operationId: GetSimpleEarnLockedSubscriptionPreviewV1
+            parameters:
+                - in: query
+                  name: projectId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: amount
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: true or false, default true.
+                  in: query
+                  name: autoSubscribe
+                  schema:
+                    default: true
+                    type: boolean
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSimpleEarnLockedSubscriptionPreviewV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Locked Subscription Preview(USER_DATA)
+            tags:
+                - Simple Earn

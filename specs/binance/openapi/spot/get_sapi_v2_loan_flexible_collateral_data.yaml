@@ -1,0 +1,86 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanFlexibleCollateralDataV2Resp:
+            example: '{ "rows": [ { "collateralCoin": "BNB", "initialLTV": "0.65", "marginCallLTV": "0.75", "liquidationLTV": "0.83", "maxLimit": "1000000" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralCoin:
+                                type: string
+                            initialLTV:
+                                type: string
+                            liquidationLTV:
+                                type: string
+                            marginCallLTV:
+                                type: string
+                            maxLimit:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v2/loan/flexible/collateral/data:
+        get:
+            description: Get LTV information and collateral limit of flexible loan's collateral assets. The collateral limit is shown in USD value.
+            operationId: GetLoanFlexibleCollateralDataV2
+            parameters:
+                - in: query
+                  name: collateralCoin
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanFlexibleCollateralDataV2Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Flexible Loan Collateral Assets Data(USER_DATA)
+            tags:
+                - Crypto Loan

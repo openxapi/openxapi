@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetRebateTaxQueryV1Resp:
+            example: '{ "status": "OK", "type": "GENERAL", "code": "000000000", "data": { "page": 1,   "totalRecords": 2,   "totalPageNum": 1,   "data": [ { "asset": "USDT",   "type": 1,         "amount": "0.0001126", "updateTime": 1637651320000 }, { "asset": "ETH", "type": 1, "amount": "0.00000056", "updateTime": 1637928379000 } ] } }'
+            properties:
+                code:
+                    type: string
+                data:
+                    properties:
+                        data:
+                            items:
+                                properties:
+                                    amount:
+                                        type: string
+                                    asset:
+                                        type: string
+                                    type:
+                                        type: integer
+                                    updateTime:
+                                        format: int64
+                                        type: integer
+                                type: object
+                            type: array
+                        page:
+                            type: integer
+                        totalPageNum:
+                            type: integer
+                        totalRecords:
+                            type: integer
+                    type: object
+                status:
+                    type: string
+                type:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/rebate/taxQuery:
+        get:
+            description: Get Spot Rebate History Records
+            operationId: GetRebateTaxQueryV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetRebateTaxQueryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Spot Rebate History Records (USER_DATA)
+            tags:
+                - Rebate

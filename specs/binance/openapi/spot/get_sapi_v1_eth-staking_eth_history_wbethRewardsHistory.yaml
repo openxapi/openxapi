@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetEthStakingEthHistoryWbethRewardsHistoryV1Resp:
+            example: '{ "estRewardsInETH":"1.23230920", "rows":[ { "time":1575018510000, "amountInETH":"0.23223", "holding":"2.3223",  "holdingInETH":"2.4231", "annualPercentageRate":"0.5" } ], "total": 1 }'
+            properties:
+                estRewardsInETH:
+                    type: string
+                rows:
+                    items:
+                        properties:
+                            amountInETH:
+                                type: string
+                            annualPercentageRate:
+                                type: string
+                            holding:
+                                type: string
+                            holdingInETH:
+                                type: string
+                            time:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/eth-staking/eth/history/wbethRewardsHistory:
+        get:
+            description: Get WBETH rewards history
+            operationId: GetEthStakingEthHistoryWbethRewardsHistoryV1
+            parameters:
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: 'Currently querying page. Start from 1. Default: 1'
+                  in: query
+                  name: current
+                  schema:
+                    default: 1
+                    format: int64
+                    type: integer
+                - description: 'Default: 10, Max: 100'
+                  in: query
+                  name: size
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetEthStakingEthHistoryWbethRewardsHistoryV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get WBETH rewards history(USER_DATA)
+            tags:
+                - Staking

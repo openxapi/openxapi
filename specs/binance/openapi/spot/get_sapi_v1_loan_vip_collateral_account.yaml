@@ -1,0 +1,85 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanVipCollateralAccountV1Resp:
+            example: '{ "rows": [ { "collateralAccountId": "12345678", "collateralCoin": "BNB,BTC,ETH" }, { "collateralAccountId": "23456789", "collateralCoin": "BNB,BTC,ETH" } ], "total": 2 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralAccountId:
+                                type: string
+                            collateralCoin:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/loan/vip/collateral/account:
+        get:
+            description: VIP loan is available for VIP users only
+            operationId: GetLoanVipCollateralAccountV1
+            parameters:
+                - in: query
+                  name: orderId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: collateralAccountId
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipCollateralAccountV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Check VIP Loan Collateral Account (USER_DATA)
+            tags:
+                - Vip Loan

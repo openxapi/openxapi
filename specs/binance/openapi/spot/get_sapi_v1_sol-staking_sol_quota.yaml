@@ -1,0 +1,88 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSolStakingSolQuotaV1Resp:
+            example: '{ "leftStakingPersonalQuota": "1000", "leftRedemptionPersonalQuota": "1000", "minStakeAmount": "0.01000000", "minRedeemAmount": "0.00000001", "redeemPeriod": 4, "stakeable": true, "redeemable": true, "soldOut": false, "commissionFee": "0.25000000", "nextEpochTime": 725993969475, "calculating": false }'
+            properties:
+                calculating:
+                    type: boolean
+                commissionFee:
+                    type: string
+                leftRedemptionPersonalQuota:
+                    type: string
+                leftStakingPersonalQuota:
+                    type: string
+                minRedeemAmount:
+                    type: string
+                minStakeAmount:
+                    type: string
+                nextEpochTime:
+                    format: int64
+                    type: integer
+                redeemPeriod:
+                    type: integer
+                redeemable:
+                    type: boolean
+                soldOut:
+                    type: boolean
+                stakeable:
+                    type: boolean
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/sol-staking/sol/quota:
+        get:
+            description: Get SOL staking quota
+            operationId: GetSolStakingSolQuotaV1
+            parameters:
+                - description: The value cannot be greater than 60000
+                  in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSolStakingSolQuotaV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get SOL staking quota details(USER_DATA)
+            tags:
+                - Staking

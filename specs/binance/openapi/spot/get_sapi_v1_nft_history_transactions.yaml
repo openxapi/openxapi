@@ -1,0 +1,120 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetNftHistoryTransactionsV1Resp:
+            example: '{ "total": 2,   "list": [ { "orderNo": "1_470502070600699904",  "tokens": [ { "network": "BSC",   "tokenId": "216000000496",   "contractAddress": "MYSTERY_BOX0000087"   } ], "tradeTime": 1626941236000, "tradeAmount": "19.60000000", "tradeCurrency": "BNB" }, { "orderNo": "1_488306442479116288", "tokens": [ { "network": "BSC", "tokenId": "132900000007", "contractAddress": "0xAf12111a592e408DAbC740849fcd5e68629D9fb6" } ], "tradeTime": 1631186130000, "tradeAmount": "192.00000000", "tradeCurrency": "BNB" } ] }'
+            properties:
+                list:
+                    items:
+                        properties:
+                            orderNo:
+                                type: string
+                            tokens:
+                                items:
+                                    properties:
+                                        contractAddress:
+                                            type: string
+                                        network:
+                                            type: string
+                                        tokenId:
+                                            type: string
+                                    type: object
+                                type: array
+                            tradeAmount:
+                                type: string
+                            tradeCurrency:
+                                type: string
+                            tradeTime:
+                                format: int64
+                                type: integer
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/nft/history/transactions:
+        get:
+            description: Get NFT Transaction History
+            operationId: GetNftHistoryTransactionsV1
+            parameters:
+                - description: '0: purchase order, 1: sell order, 2: royalty income, 3: primary market order, 4: mint fee'
+                  in: query
+                  name: orderType
+                  required: true
+                  schema:
+                    type: integer
+                - in: query
+                  name: startTime
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: endTime
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 50, Max 50
+                  in: query
+                  name: limit
+                  schema:
+                    default: 50
+                    maximum: 50
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: page
+                  schema:
+                    default: 1
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetNftHistoryTransactionsV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get NFT Transaction History(USER_DATA)
+            tags:
+                - Nft

@@ -1,0 +1,125 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetMiningPaymentUidV1Resp:
+            example: '{ "code": 0, "msg": "", "data": { "accountProfits": [ { "time": 1607443200000, "coinName": "BTC",    "type": 2,            "puid": 59985472,     "subName": "vdvaghani",  "amount": 0.09186957     } ], "totalNum": 3,           "pageSize": 20           } }'
+            properties:
+                code:
+                    type: integer
+                data:
+                    properties:
+                        accountProfits:
+                            items:
+                                properties:
+                                    amount:
+                                        type: number
+                                    coinName:
+                                        type: string
+                                    puid:
+                                        type: integer
+                                    subName:
+                                        type: string
+                                    time:
+                                        format: int64
+                                        type: integer
+                                    type:
+                                        type: integer
+                                type: object
+                            type: array
+                        pageSize:
+                            type: integer
+                        totalNum:
+                            type: integer
+                    type: object
+                msg:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/mining/payment/uid:
+        get:
+            description: Mining Account Earning
+            operationId: GetMiningPaymentUidV1
+            parameters:
+                - description: Algorithm(sha256)
+                  in: query
+                  name: algo
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - description: Millisecond timestamp
+                  in: query
+                  name: startDate
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Millisecond timestamp
+                  in: query
+                  name: endDate
+                  schema:
+                    format: int64
+                    type: integer
+                - description: Default 1
+                  in: query
+                  name: pageIndex
+                  schema:
+                    default: 1
+                    type: integer
+                - description: Min 10,Max 200
+                  in: query
+                  name: pageSize
+                  schema:
+                    maximum: 200
+                    minimum: 10
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMiningPaymentUidV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Mining Account Earning(USER_DATA)
+            tags:
+                - Mining

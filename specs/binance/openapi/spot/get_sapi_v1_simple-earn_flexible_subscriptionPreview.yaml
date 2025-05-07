@@ -1,0 +1,88 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetSimpleEarnFlexibleSubscriptionPreviewV1Resp:
+            example: '{ "totalAmount": "1232.32230982", "rewardAsset": "BUSD", "airDropAsset": "BETH", "estDailyBonusRewards": "0.22759183", "estDailyRealTimeRewards": "0.22759183", "estDailyAirdropRewards": "0.22759183" }'
+            properties:
+                airDropAsset:
+                    type: string
+                estDailyAirdropRewards:
+                    type: string
+                estDailyBonusRewards:
+                    type: string
+                estDailyRealTimeRewards:
+                    type: string
+                rewardAsset:
+                    type: string
+                totalAmount:
+                    type: string
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/simple-earn/flexible/subscriptionPreview:
+        get:
+            description: Get Flexible Subscription Preview
+            operationId: GetSimpleEarnFlexibleSubscriptionPreviewV1
+            parameters:
+                - in: query
+                  name: productId
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: amount
+                  required: true
+                  schema:
+                    default: ""
+                    type: string
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSimpleEarnFlexibleSubscriptionPreviewV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Flexible Subscription Preview(USER_DATA)
+            tags:
+                - Simple Earn

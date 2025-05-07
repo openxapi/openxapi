@@ -1,0 +1,106 @@
+components:
+    schemas:
+        APIError:
+            description: binance API error
+            properties:
+                code:
+                    type: integer
+                msg:
+                    type: string
+            type: object
+        GetLoanVipRequestDataV1Resp:
+            example: '{ "rows": [ { "loanAccountId": "12345678",  "orderId": "12345678", "requestId": "12345678", "loanCoin": "BTC", "loanAmount": "100.55", "collateralAccountId": "12345678,12345678,12345678", "collateralCoin": "BUSD,USDT,ETH", "loanTerm": "30", "status": "Repaid",  "loanDate":"1676851200000" } ], "total": 1 }'
+            properties:
+                rows:
+                    items:
+                        properties:
+                            collateralAccountId:
+                                type: string
+                            collateralCoin:
+                                type: string
+                            loanAccountId:
+                                type: string
+                            loanAmount:
+                                type: string
+                            loanCoin:
+                                type: string
+                            loanDate:
+                                type: string
+                            loanTerm:
+                                type: string
+                            orderId:
+                                type: string
+                            requestId:
+                                type: string
+                            status:
+                                type: string
+                        type: object
+                    type: array
+                total:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-MBX-APIKEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /sapi/v1/loan/vip/request/data:
+        get:
+            description: Query Application Status
+            operationId: GetLoanVipRequestDataV1
+            parameters:
+                - description: 'Currently querying page. Start from 1, Default:1, Max: 1000'
+                  in: query
+                  name: current
+                  schema:
+                    format: int64
+                    maximum: 1000
+                    type: integer
+                - description: 'Default: 10, Max: 100'
+                  in: query
+                  name: limit
+                  schema:
+                    default: 10
+                    format: int64
+                    maximum: 100
+                    type: integer
+                - in: query
+                  name: recvWindow
+                  schema:
+                    format: int64
+                    type: integer
+                - in: query
+                  name: timestamp
+                  required: true
+                  schema:
+                    format: int64
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetLoanVipRequestDataV1Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Query Application Status(USER_DATA)
+            tags:
+                - Vip Loan
