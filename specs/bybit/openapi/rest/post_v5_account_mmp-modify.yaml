@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAccountMmpModifyV5Req:
+            properties:
+                baseCoin:
+                    default: ""
+                    description: Base coin, uppercase only
+                    type: string
+                deltaLimit:
+                    default: ""
+                    description: Delta limit (positive and up to 2 decimal places)
+                    type: string
+                frozenPeriod:
+                    default: ""
+                    description: Frozen period (ms). "0" means the trade will remain frozen until manually reset
+                    type: string
+                qtyLimit:
+                    default: ""
+                    description: Trade qty limit (positive and up to 2 decimal places)
+                    type: string
+                window:
+                    default: ""
+                    description: Time window (ms)
+                    type: string
+            type: object
+        CreateAccountMmpModifyV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success"}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/mmp-modify:
+        post:
+            operationId: CreateAccountMmpModifyV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountMmpModifyV5Req'
+                description: The request body for CreateAccountMmpModifyV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountMmpModifyV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set MMP
+            tags:
+                - Account

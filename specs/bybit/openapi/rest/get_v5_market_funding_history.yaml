@@ -1,0 +1,119 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketFundingHistoryV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "category": "linear",        "list": [            {                "symbol": "ETHPERP",                "fundingRate": "0.0001",                "fundingRateTimestamp": "1672041600000"            }        ]    },    "retExtInfo": {},    "time": 1672051897447}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    fundingRate:
+                                        default: ""
+                                        description: Funding rate
+                                        type: string
+                                    fundingRateTimestamp:
+                                        default: ""
+                                        description: Funding rate timestamp (ms)
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/funding/history:
+        get:
+            description: |+
+                Query for historical funding rates. Each symbol has a different funding interval. For example, if the interval is 8 hours and the current time is UTC 12, then it returns the last funding rate, which settled at UTC 8.
+
+                To query the funding rate interval, please refer to the instruments-info endpoint.
+
+                Covers: USDT and USDC perpetual / Inverse perpetual
+
+            operationId: GetMarketFundingHistoryV5
+            parameters:
+                - description: Product type. `linear`,`inverse`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `linear`,`inverse`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: The start timestamp (ms)
+                  in: query
+                  name: startTime
+                  schema:
+                    description: The start timestamp (ms)
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `200`]. Default: `200`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `200`]. Default: `200`'
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketFundingHistoryV5Resp'
+                    description: Successful operation
+            summary: Get Funding Rate History
+            tags:
+                - Market

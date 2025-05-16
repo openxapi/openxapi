@@ -1,0 +1,121 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpreadTickersV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "Success",    "result": {        "list": [            {                "symbol": "SOLUSDT_SOL/USDT",                "bidPrice": "",                "bidSize": "",                "askPrice": "",                "askSize": "",                "lastPrice": "19.444",                "highPrice24h": "23.8353",                "lowPrice24h": "0",                "prevPrice24h": "20",                "volume24h": "24694.9"            }        ]    },    "retExtInfo": {},    "time": 1744079413254}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Ticker info
+                            items:
+                                properties:
+                                    askPrice:
+                                        default: ""
+                                        description: Ask 1 price
+                                        type: string
+                                    askSize:
+                                        default: ""
+                                        description: Ask 1 size
+                                        type: string
+                                    bidPrice:
+                                        default: ""
+                                        description: Bid 1 price
+                                        type: string
+                                    bidSize:
+                                        default: ""
+                                        description: Bid 1 size
+                                        type: string
+                                    highPrice24h:
+                                        default: ""
+                                        description: The highest price in the last 24 hours
+                                        type: string
+                                    lastPrice:
+                                        default: ""
+                                        description: Last trade price
+                                        type: string
+                                    lowPrice24h:
+                                        default: ""
+                                        description: The lowest price in the last 24 hours
+                                        type: string
+                                    prevPrice24h:
+                                        default: ""
+                                        description: Price 24 hours ago
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Spread combination symbol name
+                                        type: string
+                                    volume24h:
+                                        default: ""
+                                        description: Volume for 24h
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/tickers:
+        get:
+            description: |+
+                Query for the latest price snapshot, best bid/ask price, and trading volume of different spread combinations in the last 24 hours.
+
+            operationId: GetSpreadTickersV5
+            parameters:
+                - description: Spread combination symbol name
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Spread combination symbol name
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpreadTickersV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Spread Tickers
+            tags:
+                - Spread Trading

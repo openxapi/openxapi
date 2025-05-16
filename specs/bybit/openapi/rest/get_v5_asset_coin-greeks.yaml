@@ -1,0 +1,101 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetCoinGreeksV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "baseCoin": "BTC",                "totalDelta": "0.00004001",                "totalGamma": "-0.00000009",                "totalVega": "-0.00039689",                "totalTheta": "0.01243824"            }        ]    },    "retExtInfo": {},    "time": 1672287887942}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    baseCoin:
+                                        default: ""
+                                        description: Base coin. e.g.,`BTC`,`ETH`,`SOL`
+                                        type: string
+                                    totalDelta:
+                                        default: ""
+                                        description: Delta value
+                                        type: string
+                                    totalGamma:
+                                        default: ""
+                                        description: Gamma value
+                                        type: string
+                                    totalTheta:
+                                        default: ""
+                                        description: Theta value
+                                        type: string
+                                    totalVega:
+                                        default: ""
+                                        description: Vega value
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/coin-greeks:
+        get:
+            description: |+
+                Get current account Greeks information
+
+            operationId: GetAssetCoinGreeksV5
+            parameters:
+                - description: Base coin, uppercase only. If not passed, all supported base coin greeks will be returned by default
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: Base coin, uppercase only. If not passed, all supported base coin greeks will be returned by default
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetCoinGreeksV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Coin Greeks
+            tags:
+                - Account

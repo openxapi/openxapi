@@ -1,0 +1,140 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetEarnPositionV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "list": [            {                "coin": "BTC",                "productId": "8",                "amount": "0.1",                "totalPnl": "0.000027397260273973",                "claimableYield": "0",                "id": "326",                "status": "Active",                "orderId": "1a5a8945-e042-4dd5-a93f-c0f0577377ad",                "estimateRedeemTime": "",                "estimateStakeTime": "",                "estimateInterestCalculationTime": "1744243200000",                "settlementTime": "1744675200000"            }        ]    },    "retExtInfo": {},    "time": 1739944577575}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    amount:
+                                        default: ""
+                                        description: Total staked amount
+                                        type: string
+                                    claimableYield:
+                                        default: ""
+                                        description: Yield accrues on an hourly basis and is distributed at 00:30 UTC daily. If you unstake your assets before yield distribution, any undistributed yield will be credited to your account along with your principal. Onchain products do not return values
+                                        type: string
+                                    coin:
+                                        default: ""
+                                        description: Coin name
+                                        type: string
+                                    estimateInterestCalculationTime:
+                                        default: ""
+                                        description: Estimated Interest accrual time, in milliseconds. Only for Onchain
+                                        type: string
+                                    estimateRedeemTime:
+                                        default: ""
+                                        description: Estimate redeem time, in milliseconds. Only for Onchain
+                                        type: string
+                                    estimateStakeTime:
+                                        default: ""
+                                        description: Estimate stake time, in milliseconds. Only for Onchain
+                                        type: string
+                                    id:
+                                        default: ""
+                                        description: Position Id. Only for Onchain
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Order Id. Only for Onchain
+                                        type: string
+                                    productId:
+                                        default: ""
+                                        description: Product ID
+                                        type: string
+                                    settlementTime:
+                                        default: ""
+                                        description: Settlement time, in milliseconds. Only has value for Onchain `Fixed` product
+                                        type: string
+                                    status:
+                                        default: ""
+                                        description: '`Processing`,`Active`. Only for Onchain'
+                                        type: string
+                                    totalPnl:
+                                        default: ""
+                                        description: Return the profit of the current position. Only has value in Onchain non-LST mode
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/earn/position:
+        get:
+            operationId: GetEarnPositionV5
+            parameters:
+                - description: '`FlexibleSaving`,`OnChain`'
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: '`FlexibleSaving`,`OnChain`'
+                    type: string
+                - description: Product ID
+                  in: query
+                  name: productId
+                  schema:
+                    default: ""
+                    description: Product ID
+                    type: string
+                - description: Coin name
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin name
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetEarnPositionV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Staked Position
+            tags:
+                - Earn

@@ -1,0 +1,210 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateUserCreateSubApiV5Req:
+            properties:
+                ips:
+                    default: ""
+                    description: 'Set the IP bind. example: `"192.168.0.1,192.168.0.2"`'
+                    type: string
+                note:
+                    default: ""
+                    description: Set a remark
+                    type: string
+                permissions:
+                    description: Tick the types of permission.
+                    properties:
+                        ContractTrade:
+                            description: Contract Trade. `["Order","Position"]`
+                            items:
+                                type: string
+                            type: array
+                        CopyTrading:
+                            description: 'Copytrade. `["CopyTrading"]`  because using signal copy trading now, please refer to '
+                            items:
+                                type: string
+                            type: array
+                        Derivatives:
+                            description: This param is  because system will automatically add this permission according to your account is UTA or Classic
+                            items:
+                                type: string
+                            type: array
+                        Earn:
+                            description: Earn product. `["Earn"]`
+                            items:
+                                type: string
+                            type: array
+                        Exchange:
+                            description: Convert. `["ExchangeHistory"]`
+                            items:
+                                type: string
+                            type: array
+                        Options:
+                            description: USDC Contract. `["OptionsTrade"]`
+                            items:
+                                type: string
+                            type: array
+                        Spot:
+                            description: Spot Trade. `["SpotTrade"]`
+                            items:
+                                type: string
+                            type: array
+                        Wallet:
+                            description: |+
+                                Wallet. `["AccountTransfer","SubMemberTransferList"]`
+
+                            items:
+                                type: string
+                            type: array
+                    type: object
+                readOnly:
+                    description: '`0`：Read and Write. `1`：Read only'
+                    type: integer
+                subuid:
+                    description: Sub user Id
+                    type: integer
+            type: object
+        CreateUserCreateSubApiV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "id": "16651283",        "note": "testxxx",        "apiKey": "xxxxx",        "readOnly": 0,        "secret": "xxxxxxxx",        "permissions": {            "ContractTrade": [],            "Spot": [],            "Wallet": [                "AccountTransfer"            ],            "Options": [],            "CopyTrading": [],            "BlockTrade": [],            "Exchange": [],            "NFT": [],            "Earn": ["Earn"]        }    },    "retExtInfo": {},    "time": 1676430007643}'
+            properties:
+                result:
+                    properties:
+                        apiKey:
+                            default: ""
+                            description: Api key
+                            type: string
+                        id:
+                            default: ""
+                            description: Unique id. Internal used
+                            type: string
+                        note:
+                            default: ""
+                            description: The remark
+                            type: string
+                        permissions:
+                            description: The types of permission
+                            properties:
+                                BlockTrade:
+                                    description: Permission of blocktrade. Not applicable to sub account, always `[]`
+                                    items:
+                                        type: string
+                                    type: array
+                                ContractTrade:
+                                    description: Permisson of contract trade
+                                    items:
+                                        type: string
+                                    type: array
+                                CopyTrading:
+                                    description: Permission of copytrade,  always `[]`
+                                    items:
+                                        type: string
+                                    type: array
+                                Derivatives:
+                                    description: Permission of Unified account
+                                    items:
+                                        type: string
+                                    type: array
+                                Earn:
+                                    description: Permission of earn product
+                                    items:
+                                        type: string
+                                    type: array
+                                Exchange:
+                                    description: Permission of convert
+                                    items:
+                                        type: string
+                                    type: array
+                                NFT:
+                                    description: Deprecated, always `[]`
+                                    items:
+                                        type: string
+                                    type: array
+                                Options:
+                                    description: Permission of USDC Contract. It supports trade option and usdc perpetual.
+                                    items:
+                                        type: string
+                                    type: array
+                                Spot:
+                                    description: Permisson of spot
+                                    items:
+                                        type: string
+                                    type: array
+                                Wallet:
+                                    description: Permisson of wallet
+                                    items:
+                                        type: string
+                                    type: array
+                            type: object
+                        readOnly:
+                            description: '`0`: Read and Write. `1`: Read only'
+                            type: integer
+                        secret:
+                            default: ""
+                            description: The secret paired with api key.
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/create-sub-api:
+        post:
+            description: |+
+                To create new API key for those newly created sub UID. Use master user's api key only.
+
+            operationId: CreateUserCreateSubApiV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateUserCreateSubApiV5Req'
+                description: The request body for CreateUserCreateSubApiV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateUserCreateSubApiV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Create Sub UID API Key
+            tags:
+                - User

@@ -1,0 +1,221 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateUserUpdateApiV5Req:
+            properties:
+                ips:
+                    default: ""
+                    description: 'Set the IP bind. example: `"192.168.0.1,192.168.0.2"`'
+                    type: string
+                permissions:
+                    description: Tick the types of permission. Don't send this param if you don't want to change the permission
+                    properties:
+                        Affiliate:
+                            description: 'Affiliate. `["Affiliate"]` '
+                            items:
+                                type: string
+                            type: array
+                        BlockTrade:
+                            description: Blocktrade. `["BlockTrade"]`
+                            items:
+                                type: string
+                            type: array
+                        ContractTrade:
+                            description: Contract Trade. `["Order","Position"]`
+                            items:
+                                type: string
+                            type: array
+                        CopyTrading:
+                            description: 'Copytrade. `["CopyTrading"]`, '
+                            items:
+                                type: string
+                            type: array
+                        Derivatives:
+                            description: This param is  because system will automatically add this permission according to your account is UTA or Classic
+                            items:
+                                type: string
+                            type: array
+                        Earn:
+                            description: Earn product. `["Earn"]`
+                            items:
+                                type: string
+                            type: array
+                        Exchange:
+                            description: Convert. `["ExchangeHistory"]`
+                            items:
+                                type: string
+                            type: array
+                        NFT:
+                            description: Deprecated
+                            items:
+                                type: string
+                            type: array
+                        Options:
+                            description: USDC Contract. `["OptionsTrade"]`
+                            items:
+                                type: string
+                            type: array
+                        Spot:
+                            description: Spot Trade. `["SpotTrade"]`
+                            items:
+                                type: string
+                            type: array
+                        Wallet:
+                            description: Wallet. `["AccountTransfer","SubMemberTransfer"]`
+                            items:
+                                type: string
+                            type: array
+                    type: object
+                readOnly:
+                    description: '`0` (default)：Read and Write. `1`：Read only'
+                    type: integer
+            type: object
+        CreateUserUpdateApiV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "id": "13770661",        "note": "xxxxx",        "apiKey": "xxxxx",        "readOnly": 0,        "secret": "",        "permissions": {            "ContractTrade": [                "Order",                "Position"            ],            "Spot": [                "SpotTrade"            ],            "Wallet": [                "AccountTransfer",                "SubMemberTransfer"            ],            "Options": [                "OptionsTrade"            ],            "Derivatives": [                "DerivativesTrade"            ],            "CopyTrading": [                "CopyTrading"            ],            "BlockTrade": [],            "Exchange": [                "ExchangeHistory"            ],            "Earn": [],            "NFT": [                "NFTQueryProductList"            ]        },        "ips": [            "*"        ]    },    "retExtInfo": {},    "time": 1676431265427}'
+            properties:
+                result:
+                    properties:
+                        apiKey:
+                            default: ""
+                            description: Api key
+                            type: string
+                        id:
+                            default: ""
+                            description: Unique id. Internal used
+                            type: string
+                        ips:
+                            description: IP bound
+                            items:
+                                type: string
+                            type: array
+                        note:
+                            default: ""
+                            description: The remark
+                            type: string
+                        permissions:
+                            description: The types of permission
+                            properties:
+                                BlockTrade:
+                                    description: Permission of blocktrade. Not applicable to sub account, always `[]`
+                                    items:
+                                        type: string
+                                    type: array
+                                ContractTrade:
+                                    description: Permisson of contract trade
+                                    items:
+                                        type: string
+                                    type: array
+                                CopyTrading:
+                                    description: Permission of copytrade. Not applicable to sub account, always `[]`
+                                    items:
+                                        type: string
+                                    type: array
+                                Derivatives:
+                                    description: Permission of Unified account
+                                    items:
+                                        type: string
+                                    type: array
+                                Earn:
+                                    description: Permission of Earn
+                                    items:
+                                        type: string
+                                    type: array
+                                Exchange:
+                                    description: Permission of convert
+                                    items:
+                                        type: string
+                                    type: array
+                                NFT:
+                                    description: Deprecated, always `[]`
+                                    items:
+                                        type: string
+                                    type: array
+                                Options:
+                                    description: Permission of USDC Contract. It supports trade option and usdc perpetual.
+                                    items:
+                                        type: string
+                                    type: array
+                                Spot:
+                                    description: Permisson of spot
+                                    items:
+                                        type: string
+                                    type: array
+                                Wallet:
+                                    description: Permisson of wallet
+                                    items:
+                                        type: string
+                                    type: array
+                            type: object
+                        readOnly:
+                            description: '`0`：Read and Write. `1`：Read only'
+                            type: integer
+                        secret:
+                            default: ""
+                            description: Always `""`
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/update-api:
+        post:
+            description: |+
+                Modify the settings of master api key. Use the api key pending to be modified to call the endpoint. Use master user's api key only.
+
+            operationId: CreateUserUpdateApiV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateUserUpdateApiV5Req'
+                description: The request body for CreateUserUpdateApiV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateUserUpdateApiV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Modify Master API Key
+            tags:
+                - User

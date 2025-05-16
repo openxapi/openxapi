@@ -1,0 +1,131 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetUserAffCustomerInfoV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "uid": "1513500",        "takerVol30Day": "10",        "makerVol30Day": "20",        "tradeVol30Day": "30",        "depositAmount30Day": "90",        "takerVol365Day": "100",        "makerVol365Day": "500",        "tradeVol365Day": "600",        "depositAmount365Day": "1300",        "totalWalletBalance": "4",        "depositUpdateTime": "2023-06-01 05:12:04",        "vipLevel": "99",        "volUpdateTime": "2023-06-02 00:00:00",        "KycLevel": 1    },    "retExtInfo": {},    "time": 1685596324508}'
+            properties:
+                result:
+                    properties:
+                        KycLevel:
+                            description: KYC level. `1`, `2`, `0`
+                            type: integer
+                        depositAmount30Day:
+                            default: ""
+                            description: Deposit amount in last 30 days (USDT)
+                            type: string
+                        depositAmount365Day:
+                            default: ""
+                            description: Total deposit amount in the past year (USDT)
+                            type: string
+                        depositUpdateTime:
+                            default: ""
+                            description: The update date time (UTC) of deposit data
+                            type: string
+                        makerVol30Day:
+                            default: ""
+                            description: Maker volume in last 30 days (USDT)
+                            type: string
+                        makerVol365Day:
+                            default: ""
+                            description: Maker volume in the past year (USDT)
+                            type: string
+                        takerVol30Day:
+                            default: ""
+                            description: Taker volume in last 30 days (USDT). All volume related attributes below includes Derivatives, Option, Spot volume
+                            type: string
+                        takerVol365Day:
+                            default: ""
+                            description: Taker volume in the past year (USDT)
+                            type: string
+                        totalWalletBalance:
+                            default: ""
+                            description: 'Wallet balance range '
+                            type: string
+                        tradeVol30Day:
+                            default: ""
+                            description: Total trading volume in last 30 days (USDT)
+                            type: string
+                        tradeVol365Day:
+                            default: ""
+                            description: Total trading volume in the past year (USDT)
+                            type: string
+                        uid:
+                            default: ""
+                            description: UID
+                            type: string
+                        vipLevel:
+                            default: ""
+                            description: VIP level
+                            type: string
+                        volUpdateTime:
+                            default: ""
+                            description: The update date of volume data time (UTC)
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/aff-customer-info:
+        get:
+            description: |+
+                To use this endpoint, you should have an affiliate account and only tick "affiliate" permission while creating the API key.
+                Affiliate site: https://affiliates.bybit.com
+
+            operationId: GetUserAffCustomerInfoV5
+            parameters:
+                - description: The master account UID of affiliate's client
+                  in: query
+                  name: uid
+                  schema:
+                    default: ""
+                    description: The master account UID of affiliate's client
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetUserAffCustomerInfoV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Affiliate User Info
+            tags:
+                - Affiliate

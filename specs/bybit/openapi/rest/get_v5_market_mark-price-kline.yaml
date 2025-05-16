@@ -1,0 +1,114 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketMarkPriceKlineV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "symbol": "BTCUSDT",        "category": "linear",        "list": [            [            "1670608800000",            "17164.16",            "17164.16",            "17121.5",            "17131.64"            ]        ]    },    "retExtInfo": {},    "time": 1672026361839}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            items:
+                                type: string
+                            type: array
+                        symbol:
+                            default: ""
+                            description: Symbol name
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/mark-price-kline:
+        get:
+            description: |+
+                Query for historical mark price klines. Charts are returned in groups based on the requested interval.
+
+                Covers: USDT contract / USDC contract / Inverse contract
+
+            operationId: GetMarketMarkPriceKlineV5
+            parameters:
+                - description: 'Product type. `linear`,`inverse` '
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: 'Product type. `linear`,`inverse` '
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: Kline interval. `1`,`3`,`5`,`15`,`30`,`60`,`120`,`240`,`360`,`720`,`D`,`M`,`W`
+                  in: query
+                  name: interval
+                  schema:
+                    default: ""
+                    description: Kline interval. `1`,`3`,`5`,`15`,`30`,`60`,`120`,`240`,`360`,`720`,`D`,`M`,`W`
+                    type: string
+                - description: The start timestamp (ms)
+                  in: query
+                  name: start
+                  schema:
+                    description: The start timestamp (ms)
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: end
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `1000`]. Default: `200`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `1000`]. Default: `200`'
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketMarkPriceKlineV5Resp'
+                    description: Successful operation
+            summary: Get Mark Price Kline
+            tags:
+                - Market

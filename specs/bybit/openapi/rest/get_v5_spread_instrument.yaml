@@ -1,0 +1,175 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpreadInstrumentV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "symbol": "SOLUSDT_SOL/USDT",                "contractType": "FundingRateArb",                "status": "Trading",                "baseCoin": "SOL",                "quoteCoin": "USDT",                "settleCoin": "USDT",                "tickSize": "0.0001",                "minPrice": "-1999.9998",                "maxPrice": "1999.9998",                "lotSize": "0.1",                "minSize": "0.1",                "maxSize": "50000",                "launchTime": "1743675300000",                "deliveryTime": "0",                "legs": [                    {                        "symbol": "SOLUSDT",                        "contractType": "LinearPerpetual"                    },                    {                        "symbol": "SOLUSDT",                        "contractType": "Spot"                    }                ]            }        ],        "nextPageCursor": "first%3D100008%26last%3D100008"    },    "retExtInfo": {},    "time": 1744076802479}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: instrument info
+                            items:
+                                properties:
+                                    baseCoin:
+                                        default: ""
+                                        description: Base coin
+                                        type: string
+                                    contractType:
+                                        default: ""
+                                        description: Legs contract type, `LinearPerpetual`, `LinearFutures`, `Spot`
+                                        type: string
+                                    deliveryTime:
+                                        default: ""
+                                        description: Delivery timestamp (ms)
+                                        type: string
+                                    launchTime:
+                                        default: ""
+                                        description: Launch timestamp (ms)
+                                        type: string
+                                    legs:
+                                        description: Legs information
+                                        items:
+                                            properties:
+                                                contractType:
+                                                    default: ""
+                                                    description: Legs contract type, `LinearPerpetual`, `LinearFutures`, `Spot`
+                                                    type: string
+                                                symbol:
+                                                    default: ""
+                                                    description: Legs symbol name
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    lotSize:
+                                        default: ""
+                                        description: Order qty precision
+                                        type: string
+                                    maxPrice:
+                                        default: ""
+                                        description: Max. order price
+                                        type: string
+                                    maxSize:
+                                        default: ""
+                                        description: Max. order qty
+                                        type: string
+                                    minPrice:
+                                        default: ""
+                                        description: Min. order price
+                                        type: string
+                                    minSize:
+                                        default: ""
+                                        description: Min. order qty
+                                        type: string
+                                    quoteCoin:
+                                        default: ""
+                                        description: Quote coin
+                                        type: string
+                                    settleCoin:
+                                        default: ""
+                                        description: Settle coin
+                                        type: string
+                                    status:
+                                        default: ""
+                                        description: Spread status, `Trading`, `Settling`
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Legs symbol name
+                                        type: string
+                                    tickSize:
+                                        default: ""
+                                        description: The step to increase/reduce order price
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/instrument:
+        get:
+            description: |+
+                Query for the instrument specification of spread combinations
+
+            operationId: GetSpreadInstrumentV5
+            parameters:
+                - description: Spread combination symbol name
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Spread combination symbol name
+                    type: string
+                - description: Base coin, uppercase only
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: Base coin, uppercase only
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `500`]. Default: `200`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `500`]. Default: `200`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpreadInstrumentV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Spread Instruments Info
+            tags:
+                - Spread Trading

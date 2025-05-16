@@ -1,0 +1,85 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAccountWithdrawalV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "availableWithdrawal": "4.54549050",        "availableWithdrawalMap": {            "BTC": "4.54549050",            "SOL": "33.16713007",            "XRP": "10805.54548970",            "ETH": "17.76451865"        }    },    "retExtInfo": {},    "time": 1739858984601}'
+            properties:
+                result:
+                    properties:
+                        availableWithdrawal:
+                            default: ""
+                            description: Transferable amount for the 1st coin in the request
+                            type: string
+                        availableWithdrawalMap:
+                            description: |-
+                                Transferable amount map for each requested coin. In the map, key is the requested coin, and value is the accordingly amount(string)
+
+                                e.g., "availableWithdrawalMap":{"BTC":"4.54549050","SOL":"33.16713007","XRP":"10805.54548970","ETH":"17.76451865"}
+                            type: object
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/withdrawal:
+        get:
+            description: |+
+                Query the available amount to transfer of a specific coin in the Unified wallet.
+
+            operationId: GetAccountWithdrawalV5
+            parameters:
+                - description: Coin name, uppercase only. Supports up to 20 coins per request, use comma to separate. `BTC,USDC,USDT,SOL`
+                  in: query
+                  name: coinName
+                  schema:
+                    default: ""
+                    description: Coin name, uppercase only. Supports up to 20 coins per request, use comma to separate. `BTC,USDC,USDT,SOL`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountWithdrawalV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Transferable Amount (Unified)
+            tags:
+                - Account

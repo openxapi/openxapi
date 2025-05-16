@@ -1,0 +1,95 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAccountInfoV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "marginMode": "REGULAR_MARGIN",        "updatedTime": "1697078946000",        "unifiedMarginStatus": 4,        "dcpStatus": "OFF",        "timeWindow": 10,        "smpGroup": 0,        "isMasterTrader": false,        "spotHedgingStatus": "OFF"    }}'
+            properties:
+                result:
+                    properties:
+                        dcpStatus:
+                            default: ""
+                            description: 'deprecated, always `OFF`. Please use '
+                            type: string
+                        isMasterTrader:
+                            description: Whether this account is a leader (copytrading). `true`, `false`
+                            type: boolean
+                        marginMode:
+                            default: ""
+                            description: '`ISOLATED_MARGIN`, `REGULAR_MARGIN`, `PORTFOLIO_MARGIN`'
+                            type: string
+                        smpGroup:
+                            description: deprecated, always `0`. Please query  endpoint
+                            type: integer
+                        spotHedgingStatus:
+                            default: ""
+                            description: Whether the unified account enables Spot hedging. `ON`, `OFF`
+                            type: string
+                        timeWindow:
+                            description: 'deprecated, always `0`. Please use '
+                            type: integer
+                        unifiedMarginStatus:
+                            description: Account status
+                            type: integer
+                        updatedTime:
+                            default: ""
+                            description: Account data updated timestamp (ms)
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/info:
+        get:
+            description: |+
+                Query the account information, like margin mode, account mode, etc.
+
+            operationId: GetAccountInfoV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountInfoV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Account Info
+            tags:
+                - Account

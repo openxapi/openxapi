@@ -1,0 +1,145 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateOrderAmendV5Req:
+            properties:
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                orderId:
+                    default: ""
+                    description: Order ID. Either `orderId` or `orderLinkId` is required
+                    type: string
+                orderIv:
+                    default: ""
+                    description: Implied volatility. `option` . Pass the real value, e.g for 10%, 0.1 should be passed
+                    type: string
+                orderLinkId:
+                    default: ""
+                    description: User customised order ID. Either `orderId` or `orderLinkId` is required
+                    type: string
+                price:
+                    default: ""
+                    description: Order price after modification. Do not pass it if not modify the price
+                    type: string
+                qty:
+                    default: ""
+                    description: Order quantity after modification. Do not pass it if not modify the qty
+                    type: string
+                slLimitPrice:
+                    default: ""
+                    description: 'Limit order price when stop loss is triggered. Only working when original order sets partial limit tp/sl. '
+                    type: string
+                slTriggerBy:
+                    default: ""
+                    description: The price type to trigger stop loss. When set a take profit, this param is  if no initial value for the order
+                    type: string
+                stopLoss:
+                    default: ""
+                    description: 'Stop loss price after modification. If pass "0", it means cancel the existing stop loss of the order. Do not pass it if you do not want to modify the stop loss. '
+                    type: string
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                takeProfit:
+                    default: ""
+                    description: 'Take profit price after modification. If pass "0", it means cancel the existing take profit of the order. Do not pass it if you do not want to modify the take profit. '
+                    type: string
+                tpLimitPrice:
+                    default: ""
+                    description: 'Limit order price when take profit is triggered. Only working when original order sets partial limit tp/sl. '
+                    type: string
+                tpTriggerBy:
+                    default: ""
+                    description: The price type to trigger take profit. When set a take profit, this param is  if no initial value for the order
+                    type: string
+                tpslMode:
+                    default: ""
+                    description: TP/SL mode Valid for `linear` & `inverse`
+                    type: string
+                triggerBy:
+                    default: ""
+                    description: Trigger price type
+                    type: string
+                triggerPrice:
+                    default: ""
+                    type: string
+            type: object
+        CreateOrderAmendV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "orderId": "c6f055d9-7f21-4079-913d-e6523a9cfffa",        "orderLinkId": "linear-004"    },    "retExtInfo": {},    "time": 1672217093461}'
+            properties:
+                result:
+                    properties:
+                        orderId:
+                            default: ""
+                            description: Order ID
+                            type: string
+                        orderLinkId:
+                            default: ""
+                            description: User customised order ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/order/amend:
+        post:
+            operationId: CreateOrderAmendV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateOrderAmendV5Req'
+                description: The request body for CreateOrderAmendV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateOrderAmendV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Amend Order
+            tags:
+                - Trade

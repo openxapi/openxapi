@@ -1,0 +1,206 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAccountContractTransactionLogV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "id": "467153",                "symbol": "BTCUSD",                "category": "inverse",                "side": "Sell",                "transactionTime": "1714032000000",                "type": "SETTLEMENT",                "qty": "1000",                "size": "-1000",                "currency": "BTC",                "tradePrice": "63974.88",                "funding": "-0.00000156",                "fee": "",                "cashFlow": "0.00000000",                "change": "0.00000156",                "cashBalance": "1.1311",                "feeRate": "-0.00010000",                "bonusChange": "",                "tradeId": "423a565c-f1b6-4c81-bc62-760cd7dd89e7",                "orderId": "",                "orderLinkId": ""            }        ],        "nextPageCursor": "cursor_id%3D467153%26"    },    "retExtInfo": {},    "time": 1714035117258}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    bonusChange:
+                                        default: ""
+                                        description: The change of bonus
+                                        type: string
+                                    cashBalance:
+                                        default: ""
+                                        description: Cash balance. This is the wallet balance after a cash change
+                                        type: string
+                                    cashFlow:
+                                        default: ""
+                                        description: Cash flow, e.g., (1) close the position, and unRPL converts to RPL, (2) transfer in or transfer out. This does not include trading fee, funding fee
+                                        type: string
+                                    category:
+                                        default: ""
+                                        description: Product type
+                                        type: string
+                                    change:
+                                        default: ""
+                                        description: Change = cashFlow - funding - fee
+                                        type: string
+                                    currency:
+                                        default: ""
+                                        description: currency
+                                        type: string
+                                    fee:
+                                        default: ""
+                                        description: 'Trading fee '
+                                        type: string
+                                    feeRate:
+                                        default: ""
+                                        type: string
+                                    funding:
+                                        default: ""
+                                        description: 'Funding fee '
+                                        type: string
+                                    id:
+                                        default: ""
+                                        description: Unique id
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Order ID
+                                        type: string
+                                    orderLinkId:
+                                        default: ""
+                                        description: User customised order ID
+                                        type: string
+                                    qty:
+                                        default: ""
+                                        description: 'Quantity '
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: Side. `Buy`,`Sell`,`None`
+                                        type: string
+                                    size:
+                                        default: ""
+                                        description: Size. The rest position size after the trade is executed, and it has direction, i.e., short with "-"
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                    tradeId:
+                                        default: ""
+                                        description: Trade ID
+                                        type: string
+                                    tradePrice:
+                                        default: ""
+                                        description: Trade price
+                                        type: string
+                                    transactionTime:
+                                        default: ""
+                                        description: Transaction timestamp (ms)
+                                        type: string
+                                    type:
+                                        default: ""
+                                        description: Type
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/contract-transaction-log:
+        get:
+            description: |+
+                Query transaction logs in the derivatives wallet (classic account), and inverse derivatives account (upgraded to UTA)
+
+                Permission: "Contract - Position"
+                Apply to: classic account, UTA1.0(inverse)
+
+            operationId: GetAccountContractTransactionLogV5
+            parameters:
+                - description: Currency, uppercase only
+                  in: query
+                  name: currency
+                  schema:
+                    default: ""
+                    description: Currency, uppercase only
+                    type: string
+                - description: BaseCoin, uppercase only. e.g., BTC of BTCPERP
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: BaseCoin, uppercase only. e.g., BTC of BTCPERP
+                    type: string
+                - description: Types of transaction logs
+                  in: query
+                  name: type
+                  schema:
+                    default: ""
+                    description: Types of transaction logs
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: The end timestamp (ms)
+                  in: query
+                  name: endTime
+                  schema:
+                    description: The end timestamp (ms)
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountContractTransactionLogV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Transaction Log
+            tags:
+                - Account

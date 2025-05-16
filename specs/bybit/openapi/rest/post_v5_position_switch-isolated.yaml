@@ -1,0 +1,95 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionSwitchIsolatedV5Req:
+            properties:
+                buyLeverage:
+                    default: ""
+                    description: The value must be equal to `sellLeverage` value
+                    type: string
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                sellLeverage:
+                    default: ""
+                    description: The value must be equal to `buyLeverage` value
+                    type: string
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                tradeMode:
+                    description: '`0`: cross margin. `1`: isolated margin'
+                    type: integer
+            type: object
+        CreatePositionSwitchIsolatedV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {},    "retExtInfo": {},    "time": 1675248433635}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/switch-isolated:
+        post:
+            description: |+
+                Select cross margin mode or isolated margin mode per symbol level
+
+            operationId: CreatePositionSwitchIsolatedV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionSwitchIsolatedV5Req'
+                description: The request body for CreatePositionSwitchIsolatedV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionSwitchIsolatedV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Switch Cross/Isolated Margin
+            tags:
+                - Position

@@ -1,0 +1,85 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateOrderDisconnectedCancelAllV5Req:
+            properties:
+                product:
+                    default: ""
+                    description: '`OPTIONS`(default), `DERIVATIVES`, `SPOT`'
+                    type: string
+                timeWindow:
+                    description: 'Disconnection timing window time. [`3`, `300`], unit: second'
+                    type: integer
+            type: object
+        CreateOrderDisconnectedCancelAllV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success"}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/order/disconnected-cancel-all:
+        post:
+            description: |+
+                You can use this endpoint to get your current DCP configuration.
+
+                Your private websocket connection must subscribe "dcp" topic in order to trigger DCP successfully
+
+            operationId: CreateOrderDisconnectedCancelAllV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateOrderDisconnectedCancelAllV5Req'
+                description: The request body for CreateOrderDisconnectedCancelAllV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateOrderDisconnectedCancelAllV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Disconnect Cancel All
+            tags:
+                - Trade

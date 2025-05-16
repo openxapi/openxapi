@@ -1,0 +1,70 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAccountSmpGroupV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "smpGroup": 0    },    "retExtInfo": {},    "time": 1702363848539}'
+            properties:
+                result:
+                    properties:
+                        smpGroup:
+                            description: Smp group ID. If the UID has no group, it is `0` by default
+                            type: integer
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/smp-group:
+        get:
+            description: |+
+                Query the SMP group ID of self match prevention
+
+            operationId: GetAccountSmpGroupV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountSmpGroupV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get SMP Group ID
+            tags:
+                - Account

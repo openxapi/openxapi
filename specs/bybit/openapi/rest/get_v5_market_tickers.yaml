@@ -1,0 +1,90 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketTickersV5Resp:
+            example: ""
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/tickers:
+        get:
+            description: |+
+                Query for the latest price snapshot, best bid/ask price, and trading volume in the last 24 hours.
+
+                Covers: Spot / USDT contract / USDC contract / Inverse contract / Option
+
+            operationId: GetMarketTickersV5
+            parameters:
+                - description: Product type. `spot`,`linear`,`inverse`,`option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `spot`,`linear`,`inverse`,`option`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: 'Base coin, uppercase only. Apply to `option` '
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: 'Base coin, uppercase only. Apply to `option` '
+                    type: string
+                - description: 'Expiry date. e.g., 25DEC22. Apply to `option` '
+                  in: query
+                  name: expDate
+                  schema:
+                    default: ""
+                    description: 'Expiry date. e.g., 25DEC22. Apply to `option` '
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketTickersV5Resp'
+                    description: Successful operation
+            summary: Get Tickers
+            tags:
+                - Market

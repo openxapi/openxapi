@@ -1,0 +1,107 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpreadOrderbookV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "Success",    "result": {        "s": "SOLUSDT_SOL/USDT",        "b": [            [                "21.0000",                "0.1"            ]        ],        "a": [            [                "23.0107",                "4.6"            ]        ],        "u": 46977,        "ts": 1744077242177,        "seq": 213110,        "cts": 1744076329043    },    "retExtInfo": {},    "time": 1744077243583}'
+            properties:
+                result:
+                    properties:
+                        a:
+                            description: Ask, seller. Order by price asc
+                            items:
+                                type: string
+                            type: array
+                        b:
+                            description: Bid, buyer. Sort by price desc
+                            items:
+                                type: string
+                            type: array
+                        cts:
+                            description: 'The timestamp from the match engine when this orderbook data is produced. It can be correlated with `T` from '
+                            type: integer
+                        s:
+                            default: ""
+                            description: Spread combination symbol name
+                            type: string
+                        seq:
+                            description: Cross sequence
+                            type: integer
+                        ts:
+                            description: The timestamp (ms) that the system generates the data
+                            type: integer
+                        u:
+                            description: Update ID, is always in sequence, it is corresponding to `u` in the wss 25-level orderbook
+                            type: integer
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/orderbook:
+        get:
+            description: |+
+                Query spread orderbook depth data
+
+            operationId: GetSpreadOrderbookV5
+            parameters:
+                - description: Spread combination symbol name
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Spread combination symbol name
+                    type: string
+                - description: 'Limit size for each bid and ask [`1`, `25`]. Default: `1`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit size for each bid and ask [`1`, `25`]. Default: `1`'
+                    type: integer
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpreadOrderbookV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Spread Orderbook
+            tags:
+                - Spread Trading

@@ -1,0 +1,173 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetCryptoLoanOngoingOrdersV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "list": [            {                "collateralAmount": "0.0964687",                "collateralCurrency": "BTC",                "currentLTV": "0.4161",                "expirationTime": "1731149999000",                "hourlyInterestRate": "0.0000010633",                "loanCurrency": "USDT",                "loanTerm": "30",                "orderId": "1793683005081680384",                "residualInterest": "0.04016",                "residualPenaltyInterest": "0",                "totalDebt": "1888.005198"            }        ],        "nextPageCursor": ""    },    "retExtInfo": {},    "time": 1728630980861}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    collateralAmount:
+                                        default: ""
+                                        description: Collateral amount
+                                        type: string
+                                    collateralCurrency:
+                                        default: ""
+                                        description: Collateral coin
+                                        type: string
+                                    currentLTV:
+                                        default: ""
+                                        description: Current LTV
+                                        type: string
+                                    expirationTime:
+                                        default: ""
+                                        description: Loan maturity time, keeps `""` for flexible loan
+                                        type: string
+                                    hourlyInterestRate:
+                                        default: ""
+                                        description: 'Hourly interest rate '
+                                        type: string
+                                    loanCurrency:
+                                        default: ""
+                                        description: Loan coin
+                                        type: string
+                                    loanTerm:
+                                        default: ""
+                                        description: Loan term, `7`, `14`, `30`, `90`, `180` days, keep `""` for flexible loan
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Loan order ID
+                                        type: string
+                                    residualInterest:
+                                        default: ""
+                                        description: Unpaid interest
+                                        type: string
+                                    residualPenaltyInterest:
+                                        default: ""
+                                        description: Unpaid penalty interest
+                                        type: string
+                                    totalDebt:
+                                        default: ""
+                                        description: Unpaid principal
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/ongoing-orders:
+        get:
+            description: |+
+                Query for your ongoing loans.
+
+                Permission: "Spot trade"
+
+            operationId: GetCryptoLoanOngoingOrdersV5
+            parameters:
+                - description: Loan order ID
+                  in: query
+                  name: orderId
+                  schema:
+                    default: ""
+                    description: Loan order ID
+                    type: string
+                - description: Loan coin name
+                  in: query
+                  name: loanCurrency
+                  schema:
+                    default: ""
+                    description: Loan coin name
+                    type: string
+                - description: Collateral coin name
+                  in: query
+                  name: collateralCurrency
+                  schema:
+                    default: ""
+                    description: Collateral coin name
+                    type: string
+                - description: By default, query all types
+                  in: query
+                  name: loanTermType
+                  schema:
+                    default: ""
+                    description: By default, query all types
+                    type: string
+                - description: '`7`, `14`, `30`, `90`, `180` days, working when `loanTermType`=1'
+                  in: query
+                  name: loanTerm
+                  schema:
+                    default: ""
+                    description: '`7`, `14`, `30`, `90`, `180` days, working when `loanTermType`=1'
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `100`]. Default: `10`'
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: 'Limit for data size per page. [`1`, `100`]. Default: `10`'
+                    type: string
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCryptoLoanOngoingOrdersV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Unpaid Loans
+            tags:
+                - Crypto Loan

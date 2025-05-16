@@ -1,0 +1,99 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpotLeverTokenReferenceV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "basket": "-132.460000082171973364",        "circulation": "30097.901900052619091704",        "leverage": "-2.666924651755770729",        "ltCoin": "BTC3S",        "nav": "27.692082719770373048",        "navTime": "1672991679858"    },    "retExtInfo": {},    "time": 1672991679937}'
+            properties:
+                result:
+                    properties:
+                        basket:
+                            default: ""
+                            description: basket
+                            type: string
+                        circulation:
+                            default: ""
+                            description: Circulating supply in the secondary market
+                            type: string
+                        leverage:
+                            default: ""
+                            description: Real leverage calculated by last traded price
+                            type: string
+                        ltCoin:
+                            default: ""
+                            description: Abbreviation of the LT, such as BTC3L
+                            type: string
+                        nav:
+                            default: ""
+                            description: net value
+                            type: string
+                        navTime:
+                            default: ""
+                            description: Update time for net asset value (in milliseconds and UTC time zone)
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spot-lever-token/reference:
+        get:
+            description: |+
+                Get leverage token market information
+
+            operationId: GetSpotLeverTokenReferenceV5
+            parameters:
+                - description: Abbreviation of the LT, such as BTC3L
+                  in: query
+                  name: ltCoin
+                  schema:
+                    default: ""
+                    description: Abbreviation of the LT, such as BTC3L
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpotLeverTokenReferenceV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Leveraged Token Market
+            tags:
+                - Spot Leverage Token

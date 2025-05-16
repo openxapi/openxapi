@@ -1,0 +1,115 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAccountFeeRateV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "list": [            {                "symbol": "ETHUSDT",                "takerFeeRate": "0.0006",                "makerFeeRate": "0.0001"            }        ]    },    "retExtInfo": {},    "time": 1676360412576}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: 'Product type. `spot`, `option`. '
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    baseCoin:
+                                        default: ""
+                                        description: 'Base coin. `SOL`, `BTC`, `ETH` '
+                                        type: string
+                                    makerFeeRate:
+                                        default: ""
+                                        description: Maker fee rate
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name. Keeps `""` for Options
+                                        type: string
+                                    takerFeeRate:
+                                        default: ""
+                                        description: Taker fee rate
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/fee-rate:
+        get:
+            description: |+
+                Get the trading fee rate.
+
+            operationId: GetAccountFeeRateV5
+            parameters:
+                - description: Product type. `spot`, `linear`, `inverse`, `option`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type. `spot`, `linear`, `inverse`, `option`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only. Valid for `linear`, `inverse`, `spot`
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only. Valid for `linear`, `inverse`, `spot`
+                    type: string
+                - description: Base coin, uppercase only. `SOL`, `BTC`, `ETH`. Valid for `option`
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: Base coin, uppercase only. `SOL`, `BTC`, `ETH`. Valid for `option`
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountFeeRateV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Fee Rate
+            tags:
+                - Account

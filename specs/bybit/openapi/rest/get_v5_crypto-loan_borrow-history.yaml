@@ -1,0 +1,162 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetCryptoLoanBorrowHistoryV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "list": [            {                "borrowTime": "1728546174028",                "collateralCurrency": "BTC",                "expirationTime": "1729148399000",                "hourlyInterestRate": "0.0000010241",                "initialCollateralAmount": "0.0494727",                "initialLoanAmount": "1",                "loanCurrency": "ETH",                "loanTerm": "7",                "orderId": "1793569729874260992",                "repaidInterest": "0.00000515",                "repaidPenaltyInterest": "0",                "status": 1            }        ],        "nextPageCursor": ""    },    "retExtInfo": {},    "time": 1728632014857}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    borrowTime:
+                                        default: ""
+                                        description: The timestamp to borrow
+                                        type: string
+                                    collateralCurrency:
+                                        default: ""
+                                        description: Collateral coin
+                                        type: string
+                                    expirationTime:
+                                        default: ""
+                                        description: Loan maturity time, keeps `""` for flexible loan
+                                        type: string
+                                    hourlyInterestRate:
+                                        default: ""
+                                        description: 'Hourly interest rate '
+                                        type: string
+                                    initialCollateralAmount:
+                                        default: ""
+                                        description: Initial amount to mortgage
+                                        type: string
+                                    initialLoanAmount:
+                                        default: ""
+                                        description: Initial loan amount
+                                        type: string
+                                    loanCurrency:
+                                        default: ""
+                                        description: Loan coin
+                                        type: string
+                                    loanTerm:
+                                        default: ""
+                                        description: Loan term, `7`, `14`, `30`, `90`, `180` days, keep `""` for flexible loan
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Loan order ID
+                                        type: string
+                                    repaidInterest:
+                                        default: ""
+                                        description: Total interest repaid
+                                        type: string
+                                    repaidPenaltyInterest:
+                                        default: ""
+                                        description: Total penalty interest repaid
+                                        type: string
+                                    status:
+                                        description: 'Loan order status `1`: fully repaid manually; `2`: fully repaid by liquidation'
+                                        type: integer
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/borrow-history:
+        get:
+            description: |+
+                Query for the last 6 months worth of your completed (fully paid off) loans.
+
+                Permission: "Spot trade"
+
+            operationId: GetCryptoLoanBorrowHistoryV5
+            parameters:
+                - description: Loan order ID
+                  in: query
+                  name: orderId
+                  schema:
+                    default: ""
+                    description: Loan order ID
+                    type: string
+                - description: Loan coin name
+                  in: query
+                  name: loanCurrency
+                  schema:
+                    default: ""
+                    description: Loan coin name
+                    type: string
+                - description: Collateral coin name
+                  in: query
+                  name: collateralCurrency
+                  schema:
+                    default: ""
+                    description: Collateral coin name
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `100`]. Default: `10`'
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: 'Limit for data size per page. [`1`, `100`]. Default: `10`'
+                    type: string
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCryptoLoanBorrowHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Completed Loan History
+            tags:
+                - Crypto Loan

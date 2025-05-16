@@ -1,0 +1,65 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetMarketTimeV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "timeSecond": "1688639403",        "timeNano": "1688639403423213947"    },    "retExtInfo": {},    "time": 1688639403423}'
+            properties:
+                result:
+                    properties:
+                        timeNano:
+                            default: ""
+                            description: Bybit server timestamp (nano)
+                            type: string
+                        timeSecond:
+                            default: ""
+                            description: Bybit server timestamp (sec)
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/market/time:
+        get:
+            operationId: GetMarketTimeV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetMarketTimeV5Resp'
+                    description: Successful operation
+            summary: Get Bybit Server Time
+            tags:
+                - Market

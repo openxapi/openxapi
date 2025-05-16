@@ -1,0 +1,93 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateInsLoanAssociationUidV5Req:
+            properties:
+                operate:
+                    default: ""
+                    description: '`0`: bind, `1`: unbind'
+                    type: string
+                uid:
+                    default: ""
+                    description: 'UID '
+                    type: string
+            type: object
+        CreateInsLoanAssociationUidV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "uid": "592324",        "operate": "0"    },    "retExtInfo": {},    "time": 1699257746135}'
+            properties:
+                result:
+                    properties:
+                        operate:
+                            default: ""
+                            description: '`0`: bind, `1`: unbind'
+                            type: string
+                        uid:
+                            default: ""
+                            description: UID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/ins-loan/association-uid:
+        post:
+            description: |+
+                For the institutional loan product, you can bind new UIDs to the risk unit or unbind UID from the risk unit.
+
+            operationId: CreateInsLoanAssociationUidV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateInsLoanAssociationUidV5Req'
+                description: The request body for CreateInsLoanAssociationUidV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateInsLoanAssociationUidV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Bind Or Unbind UID
+            tags:
+                - Institutional Loan

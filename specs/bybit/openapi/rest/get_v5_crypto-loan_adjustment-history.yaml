@@ -1,0 +1,142 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetCryptoLoanAdjustmentHistoryV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "request.success",    "result": {        "list": [            {                "adjustId": "1794318409405331968",                "adjustTime": "1728635422814",                "afterLTV": "0.7164",                "amount": "0.001",                "collateralCurrency": "BTC",                "direction": 1,                "orderId": "1794267532472646144",                "preLTV": "0.6546"            }        ],        "nextPageCursor": "1844656778923966466"    },    "retExtInfo": {},    "time": 1728635873329}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    adjustId:
+                                        default: ""
+                                        description: Collateral adjustment transaction ID
+                                        type: string
+                                    adjustTime:
+                                        default: ""
+                                        description: Adjust timestamp
+                                        type: string
+                                    afterLTV:
+                                        default: ""
+                                        description: LTV after the adjustment
+                                        type: string
+                                    collateralCurrency:
+                                        default: ""
+                                        description: Collateral coin
+                                        type: string
+                                    direction:
+                                        description: 'The direction of adjustment, `0`: add collateral; `1`: reduce collateral'
+                                        type: integer
+                                    orderId:
+                                        default: ""
+                                        description: Loan order ID
+                                        type: string
+                                    preLTV:
+                                        default: ""
+                                        description: LTV before the adjustment
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/crypto-loan/adjustment-history:
+        get:
+            description: |+
+                Query for your LTV adjustment history.
+
+                Permission: "Spot trade"
+
+            operationId: GetCryptoLoanAdjustmentHistoryV5
+            parameters:
+                - description: Loan order ID
+                  in: query
+                  name: orderId
+                  schema:
+                    default: ""
+                    description: Loan order ID
+                    type: string
+                - description: Collateral adjustment transaction ID
+                  in: query
+                  name: adjustId
+                  schema:
+                    default: ""
+                    description: Collateral adjustment transaction ID
+                    type: string
+                - description: Collateral coin name
+                  in: query
+                  name: collateralCurrency
+                  schema:
+                    default: ""
+                    description: Collateral coin name
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `100`]. Default: `10`'
+                  in: query
+                  name: limit
+                  schema:
+                    default: ""
+                    description: 'Limit for data size per page. [`1`, `100`]. Default: `10`'
+                    type: string
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetCryptoLoanAdjustmentHistoryV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Loan LTV Adjustment History
+            tags:
+                - Crypto Loan

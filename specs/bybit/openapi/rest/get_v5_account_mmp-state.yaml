@@ -1,0 +1,108 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAccountMmpStateV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "result": [            {                "baseCoin": "BTC",                "mmpEnabled": true,                "window": "5000",                "frozenPeriod": "100000",                "qtyLimit": "0.01",                "deltaLimit": "0.01",                "mmpFrozenUntil": "1675760625519",                "mmpFrozen": false            }        ]    },    "retExtInfo": {},    "time": 1675843188984}'
+            properties:
+                result:
+                    properties:
+                        result:
+                            description: Object
+                            items:
+                                properties:
+                                    baseCoin:
+                                        default: ""
+                                        description: Base coin
+                                        type: string
+                                    deltaLimit:
+                                        default: ""
+                                        description: Delta limit
+                                        type: string
+                                    frozenPeriod:
+                                        default: ""
+                                        description: Frozen period (ms)
+                                        type: string
+                                    mmpEnabled:
+                                        description: Whether the account is enabled mmp
+                                        type: boolean
+                                    mmpFrozen:
+                                        description: 'Whether the mmp is triggered. '
+                                        type: boolean
+                                    mmpFrozenUntil:
+                                        default: ""
+                                        description: Unfreeze timestamp (ms)
+                                        type: string
+                                    qtyLimit:
+                                        default: ""
+                                        description: Trade qty limit
+                                        type: string
+                                    window:
+                                        default: ""
+                                        description: Time window (ms)
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/mmp-state:
+        get:
+            operationId: GetAccountMmpStateV5
+            parameters:
+                - description: Base coin, uppercase only
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: Base coin, uppercase only
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountMmpStateV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get MMP State
+            tags:
+                - Account

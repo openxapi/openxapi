@@ -1,0 +1,197 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetEarnProductV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "list": [            {                "category": "FlexibleSaving",                "estimateApr": "3%",                "coin": "BTC",                "minStakeAmount": "0.001",                "maxStakeAmount": "10",                "precision": "8",                "productId": "430",                "status": "Available",                "bonusEvents": [],                "minRedeemAmount": "",                "maxRedeemAmount": "",                "duration": "",                "term": 0,                "swapCoin": "",                "swapCoinPrecision": "",                "stakeExchangeRate": "",                "redeemExchangeRate": "",                "rewardDistributionType": "",                "rewardIntervalMinute": 0,                "redeemProcessingMinute": 0,                "stakeTime": "",                "interestCalculationTime": ""            }        ]    },    "retExtInfo": {},    "time": 1739935669110}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    announcement:
+                                        default: ""
+                                        description: Announcement link
+                                        type: string
+                                    apr:
+                                        default: ""
+                                        description: Yesterday's Rewards APR
+                                        type: string
+                                    bonusEvents:
+                                        description: Bonus
+                                        items:
+                                            properties:
+                                                announcement:
+                                                    default: ""
+                                                    description: Announcement link
+                                                    type: string
+                                                apr:
+                                                    default: ""
+                                                    description: Yesterday's Rewards APR
+                                                    type: string
+                                                coin:
+                                                    default: ""
+                                                    description: Reward coin
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    category:
+                                        default: ""
+                                        description: '`FlexibleSaving`,`OnChain`'
+                                        type: string
+                                    coin:
+                                        default: ""
+                                        description: Reward coin
+                                        type: string
+                                    duration:
+                                        default: ""
+                                        description: '`Fixed`,`Flexible`. Product Type'
+                                        type: string
+                                    estimateApr:
+                                        default: ""
+                                        description: "Estimated APR, e.g., `3%`, `4.25%`\n\n: 1)The Est. APR provides a dynamic preview of your potential returns, updated every 10 minutes in response to market conditions. \n\n2) Please note that this is an estimate and may differ from the actual APR you will receive.\n\n3) Platform Reward APRs are not shown"
+                                        type: string
+                                    interestCalculationTime:
+                                        default: ""
+                                        description: Interest accrual time, in milliseconds
+                                        type: string
+                                    maxRedeemAmount:
+                                        default: ""
+                                        description: Maximum redemption amount. Only has value in Onchain LST mode
+                                        type: string
+                                    maxStakeAmount:
+                                        default: ""
+                                        description: Maximum stake amount
+                                        type: string
+                                    minRedeemAmount:
+                                        default: ""
+                                        description: Minimum redemption amount. Only has value in Onchain LST mode
+                                        type: string
+                                    minStakeAmount:
+                                        default: ""
+                                        description: Minimum stake amount
+                                        type: string
+                                    precision:
+                                        default: ""
+                                        description: Amount precision
+                                        type: string
+                                    productId:
+                                        default: ""
+                                        description: Product ID
+                                        type: string
+                                    redeemExchangeRate:
+                                        default: ""
+                                        description: Estimated redeem exchange rate. Only has value in Onchain LST mode
+                                        type: string
+                                    redeemProcessingMinute:
+                                        default: ""
+                                        description: Estimated redemption minutes
+                                        type: string
+                                    rewardDistributionType:
+                                        default: ""
+                                        description: '`Simple`, `Compound`, `LST`. Only has value for Onchain'
+                                        type: string
+                                    rewardIntervalMinute:
+                                        description: Frequency of reward distribution (minutes)
+                                        type: integer
+                                    stakeExchangeRate:
+                                        default: ""
+                                        description: Estimated stake exchange rate. Only has value in Onchain LST mode
+                                        type: string
+                                    stakeTime:
+                                        default: ""
+                                        description: Staking on-chain time, in milliseconds
+                                        type: string
+                                    status:
+                                        default: ""
+                                        description: '`Available`, `NotAvailable`'
+                                        type: string
+                                    swapCoin:
+                                        default: ""
+                                        description: swap coin. Only has value in Onchain LST mode
+                                        type: string
+                                    swapCoinPrecision:
+                                        default: ""
+                                        description: swap coin precision. Only has value in Onchain LST mode
+                                        type: string
+                                    term:
+                                        description: 'Unit: Day. Only when duration = `Fixed` for OnChain'
+                                        type: integer
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/earn/product:
+        get:
+            description: |+
+                Bybit Saving FAQ
+
+                Does not need authentication.
+
+            operationId: GetEarnProductV5
+            parameters:
+                - description: |-
+                    `FlexibleSaving`,`OnChain`
+
+                    : currently, only flexible savings and on chain is supported
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: |-
+                        `FlexibleSaving`,`OnChain`
+
+                        : currently, only flexible savings and on chain is supported
+                    type: string
+                - description: Coin name, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin name, uppercase only
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetEarnProductV5Resp'
+                    description: Successful operation
+            summary: Get Product Info
+            tags:
+                - Earn

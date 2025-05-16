@@ -1,0 +1,81 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateUserDelSubmemberV5Req:
+            properties:
+                subMemberId:
+                    default: ""
+                    description: Sub UID
+                    type: string
+            type: object
+        CreateUserDelSubmemberV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {},    "retExtInfo": {},    "time": 1698907012962}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/del-submember:
+        post:
+            description: |+
+                Delete a sub UID. Before deleting the UID, please make sure there is no asset.
+                Use master user's api key**.
+
+            operationId: CreateUserDelSubmemberV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateUserDelSubmemberV5Req'
+                description: The request body for CreateUserDelSubmemberV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateUserDelSubmemberV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Delete Sub UID
+            tags:
+                - User

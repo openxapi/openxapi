@@ -1,0 +1,172 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpreadOrderRealtimeV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "nextPageCursor": "aaaee090-fab3-42ea-aea0-c9fbfe6c4bc4%3A1744096099767%2Caaaee090-fab3-42ea-aea0-c9fbfe6c4bc4%3A1744096099767",        "list": [            {                "symbol": "SOLUSDT_SOL/USDT",                "orderType": "Limit",                "updatedTime": "1744096099771",                "orderLinkId": "",                "side": "Buy",                "orderId": "aaaee090-fab3-42ea-aea0-c9fbfe6c4bc4",                "leavesQty": "0.1",                "orderStatus": "New",                "cumExecQty": "0",                "price": "-4",                "qty": "0.1",                "createdTime": "1744096099767",                "timeInForce": "PostOnly",                "baseCoin": "SOL"            }        ]    },    "retExtInfo": {},    "time": 1744096103435}'
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Order info
+                            items:
+                                properties:
+                                    baseCoin:
+                                        default: ""
+                                        description: Base coin
+                                        type: string
+                                    createdTime:
+                                        default: ""
+                                        description: Order created timestamp (ms)
+                                        type: string
+                                    cumExecQty:
+                                        default: ""
+                                        description: Cumulative executed order qty
+                                        type: string
+                                    leavesQty:
+                                        default: ""
+                                        description: The remaining qty not executed
+                                        type: string
+                                    orderId:
+                                        default: ""
+                                        description: Spread combination order ID
+                                        type: string
+                                    orderLinkId:
+                                        default: ""
+                                        description: User customised order ID
+                                        type: string
+                                    orderStatus:
+                                        default: ""
+                                        description: Order status, `New`, `PartiallyFilled`
+                                        type: string
+                                    orderType:
+                                        default: ""
+                                        description: Order type, `Market`, `Limit`
+                                        type: string
+                                    price:
+                                        default: ""
+                                        description: Order price
+                                        type: string
+                                    qty:
+                                        default: ""
+                                        description: Order qty
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: Side, `Buy`, `Sell`
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Spread combination symbol name
+                                        type: string
+                                    timeInForce:
+                                        default: ""
+                                        description: Time in force, `GTC`, `FOK`, `IOC`, `PostOnly`
+                                        type: string
+                                    updatedTime:
+                                        default: ""
+                                        description: Order updated timestamp (ms)
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/order/realtime:
+        get:
+            operationId: GetSpreadOrderRealtimeV5
+            parameters:
+                - description: Spread combination symbol name
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Spread combination symbol name
+                    type: string
+                - description: Base coin
+                  in: query
+                  name: baseCoin
+                  schema:
+                    default: ""
+                    description: Base coin
+                    type: string
+                - description: Spread combination order ID
+                  in: query
+                  name: orderId
+                  schema:
+                    default: ""
+                    description: Spread combination order ID
+                    type: string
+                - description: User customised order ID
+                  in: query
+                  name: orderLinkId
+                  schema:
+                    default: ""
+                    description: User customised order ID
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpreadOrderRealtimeV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Spread Open Orders
+            tags:
+                - Spread Trading

@@ -1,0 +1,102 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateSpreadOrderAmendV5Req:
+            properties:
+                orderId:
+                    default: ""
+                    description: Spread combination order ID. Either `orderId` or `orderLinkId` is required
+                    type: string
+                orderLinkId:
+                    default: ""
+                    description: User customised order ID. Either `orderId` or `orderLinkId` is required
+                    type: string
+                price:
+                    default: ""
+                    description: Order price after modification
+                    type: string
+                qty:
+                    default: ""
+                    description: Order quantity after modification, either "qty" or "price" is required
+                    type: string
+                symbol:
+                    default: ""
+                    description: Spread combination symbol name
+                    type: string
+            type: object
+        CreateSpreadOrderAmendV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "orderId": "b0e6c938-9731-4122-8552-01e6dc06b303",        "orderLinkId": "1744072052193428475"    },    "retExtInfo": {},    "time": 1744083952599}'
+            properties:
+                result:
+                    properties:
+                        orderId:
+                            default: ""
+                            description: Order ID
+                            type: string
+                        orderLinkId:
+                            default: ""
+                            description: User customised order ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/order/amend:
+        post:
+            operationId: CreateSpreadOrderAmendV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSpreadOrderAmendV5Req'
+                description: The request body for CreateSpreadOrderAmendV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSpreadOrderAmendV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Amend Spread Order
+            tags:
+                - Spread Trading

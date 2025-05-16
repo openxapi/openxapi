@@ -1,0 +1,109 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAccountQueryDcpInfoV5Resp:
+            example: |4
+                {
+                    "retCode": 0,
+                    "retMsg": "success",
+                    "result": {
+                        "dcpInfos": [
+                            {
+                                "product": "SPOT",
+                                "dcpStatus": "ON",
+                                "timeWindow": "10"
+                            },
+                            {
+                                "product": "DERIVATIVES",
+                                "dcpStatus": "ON",
+                                "timeWindow": "10"
+                            }
+                        ]
+                    },
+                    "retExtInfo": {},
+                    "time": 1717065531697
+                }
+            properties:
+                result:
+                    properties:
+                        dcpInfos:
+                            description: DCP config for each product
+                            items:
+                                properties:
+                                    dcpStatus:
+                                        default: ""
+                                        description: ' status: `ON`'
+                                        type: string
+                                    product:
+                                        default: ""
+                                        description: '`SPOT`, `DERIVATIVES`, `OPTIONS`'
+                                        type: string
+                                    timeWindow:
+                                        default: ""
+                                        description: 'DCP trigger time window which user pre-set. Between [3, 300] seconds, default: 10 sec'
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/query-dcp-info:
+        get:
+            description: |+
+                Query the DCP configuration of the account. Before calling the interface, please make sure you have applied for the UTA account DCP configuration with your account manager
+
+                Only the configured main / sub account can query information from this API. Calling this API by an account always returns empty.
+
+                If you only request to activate Spot trading for DCP, the contract and options data will not be returned.
+
+            operationId: GetAccountQueryDcpInfoV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAccountQueryDcpInfoV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get DCP Info
+            tags:
+                - Account

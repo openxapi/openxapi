@@ -1,0 +1,82 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateUserFrozenSubMemberV5Req:
+            properties:
+                frozen:
+                    description: '`0`：unfreeze, `1`：freeze'
+                    type: integer
+                subuid:
+                    description: Sub user Id
+                    type: integer
+            type: object
+        CreateUserFrozenSubMemberV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {},    "retExtInfo": {},    "time": 1676430697553}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/frozen-sub-member:
+        post:
+            description: |+
+                Freeze Sub UID. Use master user's api key only.
+
+            operationId: CreateUserFrozenSubMemberV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateUserFrozenSubMemberV5Req'
+                description: The request body for CreateUserFrozenSubMemberV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateUserFrozenSubMemberV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Freeze Sub UID
+            tags:
+                - User

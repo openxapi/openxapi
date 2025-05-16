@@ -1,0 +1,127 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetBrokerAccountInfoV5Resp:
+            example: |
+                {
+                    "retCode": 0,
+                    "retMsg": "success",
+                    "result": {
+                        "subAcctQty": "2",
+                        "maxSubAcctQty": "20",
+                        "baseFeeRebateRate": {
+                            "spot": "10.0%",
+                            "derivatives": "10.0%"
+                        },
+                        "markupFeeRebateRate": {
+                            "spot": "6.00%",
+                            "derivatives": "9.00%",
+                            "convert": "3.00%"
+                        },
+                        "ts": "1701395633402"
+                    },
+                    "retExtInfo": {},
+                    "time": 1701395633403
+                }
+            properties:
+                result:
+                    properties:
+                        baseFeeRebateRate:
+                            description: Rebate percentage of the base fee
+                            properties:
+                                derivatives:
+                                    default: ""
+                                    description: Rebate percentage of the base fee for derivatives, e.g., 10.00%
+                                    type: string
+                                spot:
+                                    default: ""
+                                    description: Rebate percentage of the base fee for spot, e.g., 10.00%
+                                    type: string
+                            type: object
+                        markupFeeRebateRate:
+                            description: Rebate percentage of the mark up fee
+                            properties:
+                                convert:
+                                    default: ""
+                                    description: Rebate percentage of the mark up fee for convert, e.g., 10.00%
+                                    type: string
+                                derivatives:
+                                    default: ""
+                                    description: Rebate percentage of the mark up fee for derivatives, e.g., 10.00%
+                                    type: string
+                                spot:
+                                    default: ""
+                                    description: Rebate percentage of the mark up fee for spot, e.g., 10.00%
+                                    type: string
+                            type: object
+                        maxSubAcctQty:
+                            default: ""
+                            description: The max limit of sub account can be created
+                            type: string
+                        subAcctQty:
+                            default: ""
+                            description: The qty of sub account has been created
+                            type: string
+                        ts:
+                            default: ""
+                            description: System timestamp (ms)
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/broker/account-info:
+        get:
+            description: |+
+                API rate limit: 10 req / sec
+
+            operationId: GetBrokerAccountInfoV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetBrokerAccountInfoV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Account Info
+            tags:
+                - Exchange Broker

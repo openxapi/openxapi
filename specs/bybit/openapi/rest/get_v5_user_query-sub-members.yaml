@@ -1,0 +1,94 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetUserQuerySubMembersV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "",    "result": {        "subMembers": [            {                "uid": "53888001",                "username": "xxx001",                "memberType": 1,                "status": 1,                "remark": "test",                "accountMode": 3            },            {                "uid": "53888002",                "username": "xxx002",                "memberType": 6,                "status": 1,                "remark": "",                "accountMode": 1            }        ]    },    "retExtInfo": {},    "time": 1676430319452}'
+            properties:
+                result:
+                    properties:
+                        subMembers:
+                            description: Object
+                            items:
+                                properties:
+                                    accountMode:
+                                        description: The account mode of the user account
+                                        type: integer
+                                    memberType:
+                                        description: '`1`: normal sub account, `6`: custodial sub account'
+                                        type: integer
+                                    remark:
+                                        default: ""
+                                        description: The remark
+                                        type: string
+                                    status:
+                                        description: The status of the user account
+                                        type: integer
+                                    uid:
+                                        default: ""
+                                        description: Sub user Id
+                                        type: string
+                                    username:
+                                        default: ""
+                                        description: Username
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/user/query-sub-members:
+        get:
+            description: |+
+                Get at most 10k sub UID of master account. Use master user's api key only.
+
+            operationId: GetUserQuerySubMembersV5
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetUserQuerySubMembersV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Sub UID List (Limited)
+            tags:
+                - User

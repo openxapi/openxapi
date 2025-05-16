@@ -1,0 +1,84 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAccountSetCollateralSwitchV5Req:
+            properties:
+                coin:
+                    default: ""
+                    description: 'Coin name, uppercase only '
+                    type: string
+                collateralSwitch:
+                    default: ""
+                    description: '`ON`: switch on collateral, `OFF`: switch off collateral'
+                    type: string
+            type: object
+        CreateAccountSetCollateralSwitchV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "SUCCESS",    "result": {},    "retExtInfo": {},    "time": 1690515818656}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/set-collateral-switch:
+        post:
+            description: |+
+                You can decide whether the assets in the Unified account needs to be collateral coins.
+
+            operationId: CreateAccountSetCollateralSwitchV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSetCollateralSwitchV5Req'
+                description: The request body for CreateAccountSetCollateralSwitchV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSetCollateralSwitchV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Collateral Coin
+            tags:
+                - Account

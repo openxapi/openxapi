@@ -1,0 +1,95 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAccountSetMarginModeV5Req:
+            properties:
+                setMarginMode:
+                    default: ""
+                    description: '`ISOLATED_MARGIN`, `REGULAR_MARGIN`(i.e. Cross margin), `PORTFOLIO_MARGIN`'
+                    type: string
+            type: object
+        CreateAccountSetMarginModeV5Resp:
+            example: '{    "retCode": 3400045,    "retMsg": "Set margin mode failed",    "result": {        "reasons": [            {                "reasonCode": "3400000",                "reasonMsg": "Equity needs to be equal to or greater than 1000 USDC"            }        ]    }}'
+            properties:
+                result:
+                    properties:
+                        reasons:
+                            description: Object. If requested successfully, it is an empty array
+                            items:
+                                properties:
+                                    reasonCode:
+                                        default: ""
+                                        description: Fail reason code
+                                        type: string
+                                    reasonMsg:
+                                        default: ""
+                                        description: Fail reason msg
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/set-margin-mode:
+        post:
+            description: |+
+                Default is regular margin mode
+
+            operationId: CreateAccountSetMarginModeV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSetMarginModeV5Req'
+                description: The request body for CreateAccountSetMarginModeV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSetMarginModeV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Margin Mode
+            tags:
+                - Account

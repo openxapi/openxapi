@@ -1,0 +1,111 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAssetTransferUniversalTransferV5Req:
+            properties:
+                amount:
+                    default: ""
+                    description: Amount
+                    type: string
+                coin:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+                fromAccountType:
+                    default: ""
+                    description: From account type
+                    type: string
+                fromMemberId:
+                    description: From UID
+                    type: integer
+                toAccountType:
+                    default: ""
+                    description: To account type
+                    type: string
+                toMemberId:
+                    description: To UID
+                    type: integer
+                transferId:
+                    default: ""
+                    description: . Please manually generate a UUID
+                    type: string
+            type: object
+        CreateAssetTransferUniversalTransferV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "transferId": "be7a2462-1138-4e27-80b1-62653f24925e",        "status": "SUCCESS"    },    "retExtInfo": {},    "time": 1672189450195}'
+            properties:
+                result:
+                    properties:
+                        status:
+                            default: ""
+                            description: 'Transfer status '
+                            type: string
+                        transferId:
+                            default: ""
+                            description: UUID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/transfer/universal-transfer:
+        post:
+            description: |+
+                Transfer between sub-sub or main-sub.
+
+            operationId: CreateAssetTransferUniversalTransferV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAssetTransferUniversalTransferV5Req'
+                description: The request body for CreateAssetTransferUniversalTransferV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAssetTransferUniversalTransferV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Create Universal Transfer
+            tags:
+                - Asset

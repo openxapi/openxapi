@@ -1,0 +1,90 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreatePositionSetAutoAddMarginV5Req:
+            properties:
+                autoAddMargin:
+                    description: 'Turn on/off. `0`: off. `1`: on'
+                    type: integer
+                category:
+                    default: ""
+                    description: 'Product type '
+                    type: string
+                positionIdx:
+                    description: 'Used to identify positions in different position modes. For hedge mode position, this param is '
+                    type: integer
+                symbol:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+            type: object
+        CreatePositionSetAutoAddMarginV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {},    "retExtInfo": {},    "time": 1675255135069}'
+            properties:
+                result:
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/position/set-auto-add-margin:
+        post:
+            description: |+
+                Turn on/off auto-add-margin for isolated margin position
+
+            operationId: CreatePositionSetAutoAddMarginV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreatePositionSetAutoAddMarginV5Req'
+                description: The request body for CreatePositionSetAutoAddMarginV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreatePositionSetAutoAddMarginV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Auto Add Margin
+            tags:
+                - Position

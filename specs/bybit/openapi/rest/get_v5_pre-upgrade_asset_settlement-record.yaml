@@ -1,0 +1,135 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetPreUpgradeAssetSettlementRecordV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "nextPageCursor": "25%3A0%2C25%3A0",        "category": "linear",        "list": [            {                "realisedPnl": "45.76",                "symbol": "ETHPERP",                "side": "Sell",                "markPrice": "1668.44",                "size": "-0.5",                "createdTime": "1686787200000",                "sessionAvgPrice": "1668.41"            }        ]    },    "retExtInfo": {},    "time": 1686809851749}'
+            properties:
+                result:
+                    properties:
+                        category:
+                            default: ""
+                            description: Product type
+                            type: string
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    createdTime:
+                                        default: ""
+                                        description: Created time (ms)
+                                        type: string
+                                    markPrice:
+                                        default: ""
+                                        description: Mark price
+                                        type: string
+                                    realisedPnl:
+                                        default: ""
+                                        description: Realised PnL
+                                        type: string
+                                    sessionAvgPrice:
+                                        default: ""
+                                        description: Settlement price
+                                        type: string
+                                    side:
+                                        default: ""
+                                        description: '`Buy`,`Sell`'
+                                        type: string
+                                    size:
+                                        default: ""
+                                        description: Position size
+                                        type: string
+                                    symbol:
+                                        default: ""
+                                        description: Symbol name
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Cursor. Used for pagination
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/pre-upgrade/asset/settlement-record:
+        get:
+            description: "Query session settlement records of USDC perpetual before you upgrade the account to Unified account.\n\nUTA2.0: \nBy category=option, you can query USDC Perps settlement data occurred during classic account\n\nUTA1.0: \nBy category=option, you can query USDC Perps settlement data occurred during classic account\n\n"
+            operationId: GetPreUpgradeAssetSettlementRecordV5
+            parameters:
+                - description: Product type `linear`
+                  in: query
+                  name: category
+                  schema:
+                    default: ""
+                    description: Product type `linear`
+                    type: string
+                - description: Symbol name, like `BTCUSDT`, uppercase only
+                  in: query
+                  name: symbol
+                  schema:
+                    default: ""
+                    description: Symbol name, like `BTCUSDT`, uppercase only
+                    type: string
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `20`'
+                    type: integer
+                - description: Cursor. Used for pagination
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Used for pagination
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetPreUpgradeAssetSettlementRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Pre-upgrade USDC Session Settlement
+            tags:
+                - Pre-upgrade

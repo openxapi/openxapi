@@ -1,0 +1,169 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAssetDepositQueryRecordV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "rows": [            {                "coin": "USDT",                "chain": "ETH",                "amount": "10000",                "txID": "skip-notification-scene-test-amount-202212270944-533285-USDT",                "status": 3,                "toAddress": "test-amount-address",                "tag": "",                "depositFee": "",                "successAt": "1672134274000",                "confirmations": "10000",                "txIndex": "",                "blockHash": "",                "batchReleaseLimit": "-1",                "depositType": "0",                "fromAddress": ""            }        ],        "nextPageCursor": "eyJtaW5JRCI6MTA0NjA0MywibWF4SUQiOjEwNDYwNDN9"    },    "retExtInfo": {},    "time": 1672191992512}'
+            properties:
+                result:
+                    properties:
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                        rows:
+                            description: Object
+                            items:
+                                properties:
+                                    amount:
+                                        default: ""
+                                        description: Amount
+                                        type: string
+                                    batchReleaseLimit:
+                                        default: ""
+                                        description: The deposit limit for this coin in this chain. `"-1"` means no limit
+                                        type: string
+                                    blockHash:
+                                        default: ""
+                                        description: Hash number on the chain
+                                        type: string
+                                    chain:
+                                        default: ""
+                                        description: Chain
+                                        type: string
+                                    coin:
+                                        default: ""
+                                        description: Coin
+                                        type: string
+                                    confirmations:
+                                        default: ""
+                                        description: Number of confirmation blocks
+                                        type: string
+                                    depositFee:
+                                        default: ""
+                                        description: Deposit fee
+                                        type: string
+                                    depositType:
+                                        default: ""
+                                        description: 'The deposit type. `0`: normal deposit, `10`: the deposit reaches daily deposit limit, `20`: abnormal deposit'
+                                        type: string
+                                    fromAddress:
+                                        default: ""
+                                        description: From address of deposit, only shown when the deposit comes from on-chain and from address is unique, otherwise gives `""`
+                                        type: string
+                                    status:
+                                        description: Deposit status
+                                        type: integer
+                                    successAt:
+                                        default: ""
+                                        description: Last updated time
+                                        type: string
+                                    tag:
+                                        default: ""
+                                        description: Tag of deposit target address
+                                        type: string
+                                    toAddress:
+                                        default: ""
+                                        description: Deposit target address
+                                        type: string
+                                    txID:
+                                        default: ""
+                                        description: Transaction ID
+                                        type: string
+                                    txIndex:
+                                        default: ""
+                                        description: Transaction sequence number
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/asset/deposit/query-record:
+        get:
+            description: |+
+                Query deposit records.
+
+            operationId: GetAssetDepositQueryRecordV5
+            parameters:
+                - description: Coin, uppercase only
+                  in: query
+                  name: coin
+                  schema:
+                    default: ""
+                    description: Coin, uppercase only
+                    type: string
+                - description: 'The start timestamp (ms) '
+                  in: query
+                  name: startTime
+                  schema:
+                    description: 'The start timestamp (ms) '
+                    type: integer
+                - description: 'The end timestamp (ms) '
+                  in: query
+                  name: endTime
+                  schema:
+                    description: 'The end timestamp (ms) '
+                    type: integer
+                - description: 'Limit for data size per page. [`1`, `50`]. Default: `50`'
+                  in: query
+                  name: limit
+                  schema:
+                    description: 'Limit for data size per page. [`1`, `50`]. Default: `50`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAssetDepositQueryRecordV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Deposit Records (on-chain)
+            tags:
+                - Asset

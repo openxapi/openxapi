@@ -1,0 +1,113 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateSpreadOrderCreateV5Req:
+            properties:
+                orderLinkId:
+                    default: ""
+                    description: User customised order ID, a max of 45 characters. Combinations of numbers, letters (upper and lower cases), dashes, and underscores are supported.
+                    type: string
+                orderType:
+                    default: ""
+                    description: '`Limit`, `Market`'
+                    type: string
+                price:
+                    default: ""
+                    description: Order price
+                    type: string
+                qty:
+                    default: ""
+                    description: Order qty
+                    type: string
+                side:
+                    default: ""
+                    description: Order side, `Buy`, `Sell`
+                    type: string
+                symbol:
+                    default: ""
+                    description: Spread combination symbol name
+                    type: string
+                timeInForce:
+                    default: ""
+                    description: ' `IOC`, `FOK`, `GTC`, `PostOnly`'
+                    type: string
+            type: object
+        CreateSpreadOrderCreateV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "OK",    "result": {        "orderId": "1b00b997-d825-465e-ad1d-80b0eb1955af",        "orderLinkId": "1744072052193428479"    },    "retExtInfo": {},    "time": 1744075839332}'
+            properties:
+                result:
+                    properties:
+                        orderId:
+                            default: ""
+                            description: Spread combination order ID
+                            type: string
+                        orderLinkId:
+                            default: ""
+                            description: User customised order ID
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spread/order/create:
+        post:
+            description: |+
+                Place a spread combination order, up to 50 open orders per account
+
+            operationId: CreateSpreadOrderCreateV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateSpreadOrderCreateV5Req'
+                description: The request body for CreateSpreadOrderCreateV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateSpreadOrderCreateV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Create Spread Order
+            tags:
+                - Spread Trading

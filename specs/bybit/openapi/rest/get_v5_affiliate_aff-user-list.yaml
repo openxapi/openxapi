@@ -1,0 +1,200 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetAffiliateAffUserListV5Resp:
+            example: |
+                {
+                    "retCode": 0,
+                    "retMsg": "",
+                    "result": {
+                        "list": [
+                            {
+                                "userId": "101527036",
+                                "registerTime": "2024-06-21",
+                                "source": "1564",
+                                "remarks": "test",
+                                "isKyc": false,
+                                "takerVol30Day": "10",
+                                "makerVol30Day": "20",
+                                "tradeVol30Day": "30",
+                                "depositAmount30Day": "90",
+                                "takerVol365Day": "100",
+                                "makerVol365Day": "500",
+                                "tradeVol365Day": "600",
+                                "depositAmount365Day": "1300"
+                            },
+                            {
+                                "userId": "103929118",
+                                "registerTime": "2024-11-12",
+                                "source": "1564",
+                                "remarks": "",
+                                "isKyc": false,
+                                "takerVol30Day": "10",
+                                "makerVol30Day": "20",
+                                "tradeVol30Day": "30",
+                                "depositAmount30Day": "90",
+                                "takerVol365Day": "100",
+                                "makerVol365Day": "500",
+                                "tradeVol365Day": "600",
+                                "depositAmount365Day": "1300"
+                            }
+                        ],
+                        "nextPageCursor": "16197"
+                    },
+                    "retExtInfo": {},
+                    "time": 1733205472513
+                }
+            properties:
+                result:
+                    properties:
+                        list:
+                            description: Object
+                            items:
+                                properties:
+                                    depositAmount30Day:
+                                        default: ""
+                                        description: Deposit amount in last 30 days (USDT), update in 5 mins
+                                        type: string
+                                    depositAmount365Day:
+                                        default: ""
+                                        description: Total deposit amount in the past year (USDT), update in 5 mins
+                                        type: string
+                                    isKyc:
+                                        description: Whether KYC is completed
+                                        type: boolean
+                                    makerVol30Day:
+                                        default: ""
+                                        description: Maker volume in last 30 days (USDT), update at T + 1
+                                        type: string
+                                    makerVol365Day:
+                                        default: ""
+                                        description: Maker volume in the past year (USDT), update at T + 1
+                                        type: string
+                                    registerTime:
+                                        default: ""
+                                        description: user register time
+                                        type: string
+                                    remarks:
+                                        description: The remark
+                                        type: integer
+                                    source:
+                                        description: user registration source, from which referrer code
+                                        type: integer
+                                    takerVol30Day:
+                                        default: ""
+                                        description: Taker volume in last 30 days (USDT), update at T + 1. All volume related attributes below includes Derivatives, Option, Spot volume
+                                        type: string
+                                    takerVol365Day:
+                                        default: ""
+                                        description: Taker volume in the past year (USDT), update at T + 1
+                                        type: string
+                                    tradeVol30Day:
+                                        default: ""
+                                        description: Total trading volume in last 30 days (USDT), update at T + 1
+                                        type: string
+                                    tradeVol365Day:
+                                        default: ""
+                                        description: Total trading volume in the past year (USDT), update at T + 1
+                                        type: string
+                                    userId:
+                                        default: ""
+                                        description: user Id
+                                        type: string
+                                type: object
+                            type: array
+                        nextPageCursor:
+                            default: ""
+                            description: Refer to the `cursor` request parameter
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/affiliate/aff-user-list:
+        get:
+            description: |+
+                To use this endpoint, you should have an affiliate account and only tick "affiliate" permission while creating the API key.
+                Affiliate site: https://affiliates.bybit.com
+
+            operationId: GetAffiliateAffUserListV5
+            parameters:
+                - description: 'Limit for data size per page. [`0`, `1000`]. Default: `0`'
+                  in: query
+                  name: size
+                  schema:
+                    description: 'Limit for data size per page. [`0`, `1000`]. Default: `0`'
+                    type: integer
+                - description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                  in: query
+                  name: cursor
+                  schema:
+                    default: ""
+                    description: Cursor. Use the `nextPageCursor` token from the response to retrieve the next page of the result set
+                    type: string
+                - description: '`true`: return deposit info; `false`(default): does not return deposit info'
+                  in: query
+                  name: needDeposit
+                  schema:
+                    description: '`true`: return deposit info; `false`(default): does not return deposit info'
+                    type: boolean
+                - description: '`true`: return 30 days trading info; `false`(default): does not return 30 days trading info'
+                  in: query
+                  name: need30
+                  schema:
+                    description: '`true`: return 30 days trading info; `false`(default): does not return 30 days trading info'
+                    type: boolean
+                - description: '`true`: return 365 days trading info; `false`(default): does not return 365 days trading info'
+                  in: query
+                  name: need365
+                  schema:
+                    description: '`true`: return 365 days trading info; `false`(default): does not return 365 days trading info'
+                    type: boolean
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetAffiliateAffUserListV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Get Affiliate User List
+            tags:
+                - Affiliate

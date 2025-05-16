@@ -1,0 +1,88 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        CreateAccountSetHedgingModeV5Req:
+            properties:
+                setHedgingMode:
+                    default: ""
+                    description: '`ON`, `OFF`'
+                    type: string
+            type: object
+        CreateAccountSetHedgingModeV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "SUCCESS"}'
+            properties:
+                result:
+                    properties:
+                        retCode:
+                            description: Result code
+                            type: integer
+                        retMsg:
+                            default: ""
+                            description: Result message
+                            type: string
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+    securitySchemes:
+        ApiKey:
+            in: header
+            name: X-BAPI-API-KEY
+            type: apiKey
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/account/set-hedging-mode:
+        post:
+            description: |+
+                You can turn on/off Spot hedging feature in Portfolio margin for Unified account
+
+            operationId: CreateAccountSetHedgingModeV5
+            requestBody:
+                content:
+                    application/json:
+                        schema:
+                            $ref: '#/components/schemas/CreateAccountSetHedgingModeV5Req'
+                description: The request body for CreateAccountSetHedgingModeV5
+                required: true
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/CreateAccountSetHedgingModeV5Resp'
+                    description: Successful operation
+            security:
+                - ApiKey: []
+            summary: Set Spot Hedging
+            tags:
+                - Account

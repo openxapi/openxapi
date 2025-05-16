@@ -1,0 +1,145 @@
+components:
+    schemas:
+        APIError:
+            description: BYBIT API error
+            properties:
+                retCode:
+                    type: string
+                retMsg:
+                    type: string
+            type: object
+        GetSpotMarginTradeDataV5Resp:
+            example: '{    "retCode": 0,    "retMsg": "success",    "result": {        "vipCoinList": [            {                "list": [                    {                        "borrowable": true,                        "collateralRatio": "0.95",                        "currency": "BTC",                        "hourlyBorrowRate": "0.0000015021220000",                        "liquidationOrder": "11",                        "marginCollateral": true,                        "maxBorrowingAmount": "3"                    }                ],                "vipLevel": "No VIP"            }        ]    }}'
+            properties:
+                result:
+                    properties:
+                        vipCoinList:
+                            description: Object
+                            items:
+                                properties:
+                                    borrowable:
+                                        description: Whether it is allowed to be borrowed
+                                        type: boolean
+                                    collateralRatio:
+                                        default: ""
+                                        description: 'Due to the new Tiered Collateral value logic, this field will no longer be accurate starting on February 19, 2025. Please refer to '
+                                        type: string
+                                    currency:
+                                        default: ""
+                                        description: Coin name
+                                        type: string
+                                    hourlyBorrowRate:
+                                        default: ""
+                                        description: Borrow interest rate per hour
+                                        type: string
+                                    liquidationOrder:
+                                        default: ""
+                                        description: Liquidation order
+                                        type: string
+                                    list:
+                                        description: Object
+                                        items:
+                                            properties:
+                                                borrowable:
+                                                    description: Whether it is allowed to be borrowed
+                                                    type: boolean
+                                                collateralRatio:
+                                                    default: ""
+                                                    description: 'Due to the new Tiered Collateral value logic, this field will no longer be accurate starting on February 19, 2025. Please refer to '
+                                                    type: string
+                                                currency:
+                                                    default: ""
+                                                    description: Coin name
+                                                    type: string
+                                                hourlyBorrowRate:
+                                                    default: ""
+                                                    description: Borrow interest rate per hour
+                                                    type: string
+                                                liquidationOrder:
+                                                    default: ""
+                                                    description: Liquidation order
+                                                    type: string
+                                                marginCollateral:
+                                                    description: Whether it can be used as a margin collateral currency
+                                                    type: boolean
+                                                maxBorrowingAmount:
+                                                    default: ""
+                                                    description: Max borrow amount
+                                                    type: string
+                                            type: object
+                                        type: array
+                                    marginCollateral:
+                                        description: Whether it can be used as a margin collateral currency
+                                        type: boolean
+                                    maxBorrowingAmount:
+                                        default: ""
+                                        description: Max borrow amount
+                                        type: string
+                                    vipLevel:
+                                        default: ""
+                                        description: Vip level
+                                        type: string
+                                type: object
+                            type: array
+                    type: object
+                retCode:
+                    default: ""
+                    type: integer
+                retExtInfo:
+                    type: object
+                retMsg:
+                    default: ""
+                    type: string
+                time:
+                    type: integer
+            type: object
+info:
+    title: ""
+    version: ""
+openapi: ""
+paths:
+    /v5/spot-margin-trade/data:
+        get:
+            description: |+
+                This margin data is for Unified account in particular.
+
+                Does not need authentication.
+
+            operationId: GetSpotMarginTradeDataV5
+            parameters:
+                - description: Vip level
+                  in: query
+                  name: vipLevel
+                  schema:
+                    default: ""
+                    description: Vip level
+                    type: string
+                - description: Coin name, uppercase only
+                  in: query
+                  name: currency
+                  schema:
+                    default: ""
+                    description: Coin name, uppercase only
+                    type: string
+            responses:
+                4XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Client Error
+                5XX:
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/APIError'
+                    description: Server Error
+                "200":
+                    content:
+                        application/json:
+                            schema:
+                                $ref: '#/components/schemas/GetSpotMarginTradeDataV5Resp'
+                    description: Successful operation
+            summary: Get VIP Margin Data
+            tags:
+                - Spot Margin Trade (UTA)
