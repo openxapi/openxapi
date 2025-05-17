@@ -1,0 +1,555 @@
+asyncapi: 3.0.0
+info:
+  title: Binance Spot WebSocket API
+  version: 0.1.0
+  description: |
+    AsyncAPI specification for Binance Spot WebSocket streams.
+    This specification describes the WebSocket API for Binance Spot market data.
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  contact:
+    name: Binance
+    url: https://www.binance.com
+    email: api@binance.com
+
+servers:
+  production:
+    host: stream.binance.com:9443
+    protocol: wss
+    description: Main production WebSocket server
+  production2:
+    host: stream.binance.com:443
+    protocol: wss
+    description: Alternative production WebSocket server
+  dataStream:
+    host: data-stream.binance.vision
+    protocol: wss
+    description: Market data only WebSocket server
+
+channels:
+  singleStream:
+    address: '/ws/{streamName}'
+    parameters:
+      streamName:
+        description: |
+          Name of the stream. Format: <symbol>@<streamType>[_<parameter>]
+          Examples: bnbbtc@aggTrade, bnbbtc@kline_1m, bnbbtc@depth
+    description: Channel for single stream data
+    messages:
+      aggregateTrade:
+        $ref: '#/components/messages/aggregateTrade'
+      trade:
+        $ref: '#/components/messages/trade'
+      kline:
+        $ref: '#/components/messages/kline'
+      miniTicker:
+        $ref: '#/components/messages/miniTicker'
+      ticker:
+        $ref: '#/components/messages/ticker'
+      bookTicker:
+        $ref: '#/components/messages/bookTicker'
+      depth:
+        $ref: '#/components/messages/depth'
+
+  combinedStream:
+    address: '/stream'
+    description: Channel for combined stream data
+    messages:
+      combinedMessage:
+        $ref: '#/components/messages/combinedMessage'
+
+operations:
+  subscribeSingleStream:
+    action: receive
+    channel:
+      $ref: '#/channels/singleStream'
+    messages:
+      - $ref: '#/channels/singleStream/messages/aggregateTrade'
+      - $ref: '#/channels/singleStream/messages/trade'
+      - $ref: '#/channels/singleStream/messages/kline'
+      - $ref: '#/channels/singleStream/messages/miniTicker'
+      - $ref: '#/channels/singleStream/messages/ticker'
+      - $ref: '#/channels/singleStream/messages/bookTicker'
+      - $ref: '#/channels/singleStream/messages/depth'
+    summary: Receive data from a single stream
+    description: |
+      Connect to a single WebSocket stream to receive real-time market data.
+      The stream name is specified in the URL path.
+
+  subscribeCombinedStream:
+    action: receive
+    channel:
+      $ref: '#/channels/combinedStream'
+    messages:
+      - $ref: '#/channels/combinedStream/messages/combinedMessage'
+    summary: Receive data from multiple streams combined
+    description: |
+      Connect to a combined WebSocket stream to receive real-time market data from multiple streams.
+      The streams are specified in the subscription message sent after connection.
+
+components:
+  messages:
+    aggregateTrade:
+      name: aggregateTrade
+      title: Aggregate Trade Streams
+      summary: Aggregated trade information for a single taker order
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - e
+          - E
+          - s
+          - a
+          - p
+          - q
+          - f
+          - l
+          - T
+          - m
+        properties:
+          e:
+            type: string
+            description: Event type
+            example: "aggTrade"
+          E:
+            type: integer
+            description: Event time
+            example: 1672515782136
+          s:
+            type: string
+            description: Symbol
+            example: "BNBBTC"
+          a:
+            type: integer
+            description: Aggregate trade ID
+            example: 12345
+          p:
+            type: string
+            description: Price
+            example: "0.001"
+          q:
+            type: string
+            description: Quantity
+            example: "100"
+          f:
+            type: integer
+            description: First trade ID
+            example: 100
+          l:
+            type: integer
+            description: Last trade ID
+            example: 105
+          T:
+            type: integer
+            description: Trade time
+            example: 1672515782136
+          m:
+            type: boolean
+            description: Is the buyer the market maker?
+            example: true
+
+    trade:
+      name: trade
+      title: Trade Streams
+      summary: Raw trade information with unique buyer and seller
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - e
+          - E
+          - s
+          - t
+          - p
+          - q
+          - T
+          - m
+        properties:
+          e:
+            type: string
+            description: Event type
+            example: "trade"
+          E:
+            type: integer
+            description: Event time
+            example: 1672515782136
+          s:
+            type: string
+            description: Symbol
+            example: "BNBBTC"
+          t:
+            type: integer
+            description: Trade ID
+            example: 12345
+          p:
+            type: string
+            description: Price
+            example: "0.001"
+          q:
+            type: string
+            description: Quantity
+            example: "100"
+          T:
+            type: integer
+            description: Trade time
+            example: 1672515782136
+          m:
+            type: boolean
+            description: Is the buyer the market maker?
+            example: true
+
+    kline:
+      name: kline
+      title: Kline/Candlestick Streams
+      summary: Updates to current klines/candlestick every second
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - e
+          - E
+          - s
+          - k
+        properties:
+          e:
+            type: string
+            description: Event type
+            example: "kline"
+          E:
+            type: integer
+            description: Event time
+            example: 1672515782136
+          s:
+            type: string
+            description: Symbol
+            example: "BNBBTC"
+          k:
+            type: object
+            description: Kline data
+            required:
+              - t
+              - T
+              - s
+              - i
+              - o
+              - c
+              - h
+              - l
+              - v
+              - q
+            properties:
+              t:
+                type: integer
+                description: Kline start time
+                example: 1672515780000
+              T:
+                type: integer
+                description: Kline close time
+                example: 1672515839999
+              s:
+                type: string
+                description: Symbol
+                example: "BNBBTC"
+              i:
+                type: string
+                description: Interval
+                example: "1m"
+              o:
+                type: string
+                description: Open price
+                example: "0.0010"
+              c:
+                type: string
+                description: Close price
+                example: "0.0020"
+              h:
+                type: string
+                description: High price
+                example: "0.0025"
+              l:
+                type: string
+                description: Low price
+                example: "0.0015"
+              v:
+                type: string
+                description: Base asset volume
+                example: "1000"
+              q:
+                type: string
+                description: Quote asset volume
+                example: "1.0000"
+              n:
+                type: integer
+                description: Number of trades
+                example: 100
+              V:
+                type: string
+                description: Taker buy base asset volume
+                example: "500"
+              Q:
+                type: string
+                description: Taker buy quote asset volume
+                example: "0.5000"
+              B:
+                type: string
+                description: Ignore
+                example: "0"
+
+    miniTicker:
+      name: miniTicker
+      title: Mini Ticker Stream
+      summary: 24hr rolling window mini-ticker statistics
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - e
+          - E
+          - s
+          - c
+          - o
+          - h
+          - l
+          - v
+          - q
+        properties:
+          e:
+            type: string
+            description: Event type
+            example: "24hrMiniTicker"
+          E:
+            type: integer
+            description: Event time
+            example: 1672515782136
+          s:
+            type: string
+            description: Symbol
+            example: "BNBBTC"
+          c:
+            type: string
+            description: Close price
+            example: "0.0025"
+          o:
+            type: string
+            description: Open price
+            example: "0.0010"
+          h:
+            type: string
+            description: High price
+            example: "0.0025"
+          l:
+            type: string
+            description: Low price
+            example: "0.0010"
+          v:
+            type: string
+            description: Total traded base asset volume
+            example: "10000"
+          q:
+            type: string
+            description: Total traded quote asset volume
+            example: "18"
+
+    ticker:
+      name: ticker
+      title: Ticker Streams
+      summary: 24hr ticker statistics for a symbol
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - e
+          - E
+          - s
+        properties:
+          e:
+            type: string
+            description: Event type
+            example: "24hrTicker"
+          E:
+            type: integer
+            description: Event time
+            example: 1672515782136
+          s:
+            type: string
+            description: Symbol
+            example: "BNBBTC"
+          p:
+            type: string
+            description: Price change
+            example: "0.0015"
+          P:
+            type: string
+            description: Price change percent
+            example: "250.00"
+          w:
+            type: string
+            description: Weighted average price
+            example: "0.0018"
+          c:
+            type: string
+            description: Last price
+            example: "0.0025"
+          Q:
+            type: string
+            description: Last quantity
+            example: "10"
+          o:
+            type: string
+            description: Open price
+            example: "0.0010"
+          h:
+            type: string
+            description: High price
+            example: "0.0025"
+          l:
+            type: string
+            description: Low price
+            example: "0.0010"
+          v:
+            type: string
+            description: Total traded base asset volume
+            example: "10000"
+          q:
+            type: string
+            description: Total traded quote asset volume
+            example: "18"
+          O:
+            type: integer
+            description: Statistics open time
+            example: 1672429382136
+          C:
+            type: integer
+            description: Statistics close time
+            example: 1672515782136
+          F:
+            type: integer
+            description: First trade ID
+            example: 1000
+          L:
+            type: integer
+            description: Last trade ID
+            example: 1500
+          n:
+            type: integer
+            description: Total number of trades
+            example: 500
+
+    bookTicker:
+      name: bookTicker
+      title: Book Ticker Stream
+      summary: Best bid/ask price and quantity updates
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - u
+          - s
+          - b
+          - B
+          - a
+          - A
+        properties:
+          u:
+            type: integer
+            description: Order book updateId
+            example: 400900217
+          s:
+            type: string
+            description: Symbol
+            example: "BNBUSDT"
+          b:
+            type: string
+            description: Best bid price
+            example: "25.35190000"
+          B:
+            type: string
+            description: Best bid qty
+            example: "31.21000000"
+          a:
+            type: string
+            description: Best ask price
+            example: "25.36520000"
+          A:
+            type: string
+            description: Best ask qty
+            example: "40.66000000"
+
+    depth:
+      name: depth
+      title: Depth Streams
+      summary: Order book price and quantity depth updates
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - e
+          - E
+          - s
+          - U
+          - u
+          - b
+          - a
+        properties:
+          e:
+            type: string
+            description: Event type
+            example: "depthUpdate"
+          E:
+            type: integer
+            description: Event time
+            example: 1672515782136
+          s:
+            type: string
+            description: Symbol
+            example: "BNBBTC"
+          U:
+            type: integer
+            description: First update ID
+            example: 157
+          u:
+            type: integer
+            description: Final update ID
+            example: 160
+          b:
+            type: array
+            description: Bids to be updated [price, quantity]
+            items:
+              type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                type: string
+            example: [["0.0024", "10"], ["0.0023", "15"]]
+          a:
+            type: array
+            description: Asks to be updated [price, quantity]
+            items:
+              type: array
+              minItems: 2
+              maxItems: 2
+              items:
+                type: string
+            example: [["0.0026", "5"], ["0.0027", "20"]]
+
+    combinedMessage:
+      name: combinedMessage
+      title: Combined Stream Message
+      summary: Message from a combined stream
+      contentType: application/json
+      payload:
+        type: object
+        required:
+          - stream
+          - data
+        properties:
+          stream:
+            type: string
+            description: Stream name
+            example: "btcusdt@aggTrade"
+          data:
+            type: object
+            description: Original payload data
+            additionalProperties: true 
