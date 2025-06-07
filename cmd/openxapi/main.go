@@ -103,14 +103,14 @@ func main() {
 		switch exchangeName {
 		case "binance":
 			if useSamples {
-				p = binance.NewParserWithOptions(useSamples, exchangeSamplesDir)
+				p = binance.NewParser(binance.WithSamples(useSamples), binance.WithSamplesDir(exchangeSamplesDir))
 				logrus.Infof("Using sample files from %s", exchangeSamplesDir)
 			} else {
 				p = binance.NewParser()
 			}
 		case "okx":
 			if useSamples {
-				p = okx.NewParserWithOptions(useSamples, exchangeSamplesDir)
+				p = okx.NewParser(okx.WithSamples(useSamples), okx.WithSamplesDir(exchangeSamplesDir))
 				logrus.Infof("Using sample files from %s", exchangeSamplesDir)
 			} else {
 				p = okx.NewParser()

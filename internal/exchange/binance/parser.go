@@ -15,9 +15,9 @@ type Parser struct {
 }
 
 // NewParser creates a new Binance parser
-func NewParser() *Parser {
+func NewParser(opts ...func(*Parser)) *Parser {
 	name := "binance"
-	return &Parser{
+	p := &Parser{
 		HTTPParser: parser.HTTPParser{
 			Name:       name,
 			Client:     &http.Client{},
@@ -26,22 +26,21 @@ func NewParser() *Parser {
 			DocParser:  &DocumentParser{},
 		},
 	}
+	for _, opt := range opts {
+		opt(p)
+	}
+	return p
 }
 
-// NewParserWithOptions creates a new Binance parser with options
-func NewParserWithOptions(useSamples bool, samplesDir string) *Parser {
-	name := "binance"
-	if samplesDir == "" {
-		samplesDir = fmt.Sprintf("samples/%s", name)
+func WithSamples(useSamples bool) func(*Parser) {
+	return func(p *Parser) {
+		p.HTTPParser.UseSamples = useSamples
 	}
-	return &Parser{
-		HTTPParser: parser.HTTPParser{
-			Name:       name,
-			Client:     &http.Client{},
-			UseSamples: useSamples,
-			SamplesDir: samplesDir,
-			DocParser:  &DocumentParser{},
-		},
+}
+
+func WithSamplesDir(samplesDir string) func(*Parser) {
+	return func(p *Parser) {
+		p.HTTPParser.SamplesDir = samplesDir
 	}
 }
 
