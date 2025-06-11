@@ -25,154 +25,326 @@ func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protect
 	}
 
 	var channels []parser.Channel
+	category := toCategory(urlEntity)
 
-	// Look for h3 headers that represent API methods
-	doc.Find("h3").Each(func(i int, s *goquery.Selection) {
-		methodTitle := strings.TrimSpace(s.Text())
+	parseMethod := func(headerElement string) func(i int, header *goquery.Selection) {
+		return func(i int, header *goquery.Selection) {
+			// Get the header text and clean it
+			headerText := cleanText(header.Text())
 
-		// Skip if this is not a WebSocket API method
-		if !p.isWebSocketAPIMethod(methodTitle) {
-			return
+			// Skip headers that are not methods (similar to REST implementation)
+			if isNonMethodHeader(headerText) {
+				return
+			}
+
+			// Collect all content elements after the header until we find the next h3/h4
+			var content []string
+			content = append(content, headerText)
+
+			// Find all elements between this header and the next header
+			var nextElements []*goquery.Selection
+			nextHeader := header.NextAll().Filter(headerElement).First()
+			if nextHeader.Length() > 0 {
+				header.NextUntil(headerElement).Each(func(j int, el *goquery.Selection) {
+					nextElements = append(nextElements, el)
+				})
+			} else {
+				header.NextAll().Each(func(j int, el *goquery.Selection) {
+					nextElements = append(nextElements, el)
+				})
+			}
+
+			// Process each element to extract content
+			for _, el := range nextElements {
+				p.collectElementContent(el, &content)
+			}
+
+			// Process the collected content to extract method information
+			channelData, valid := p.extractMethod(content, category)
+
+			// If the operation ID is set, override the method name
+			if urlEntity.OperationID != "" {
+				channelData.Name = urlEntity.OperationID
+			}
+
+			// Only add valid methods
+			if valid && channelData.Name != "" {
+				p.processMethod(channelData, protectedMethods)
+				channels = append(channels, *channelData)
+			}
 		}
+	}
 
-		logrus.Debugf("Processing WebSocket API method: %s", methodTitle)
-
-		channel := p.parseMethodFromSection(s, urlEntity, protectedMethods)
-		if channel != nil {
-			channels = append(channels, *channel)
-		}
-	})
+	// Find all API method sections using anchor classes (similar to REST implementation)
+	doc.Find("h3.anchor").Each(parseMethod("h3"))
+	doc.Find("h4.anchor").Each(parseMethod("h4"))
 
 	logrus.Infof("Extracted %d WebSocket API methods from Binance documentation", len(channels))
 	return channels, nil
 }
 
-// isWebSocketAPIMethod checks if the section title represents a WebSocket API method
-func (p *DocumentParser) isWebSocketAPIMethod(title string) bool {
-	// Skip headers that are not API methods
-	skipPatterns := []string{
-		"on this page",
-		"table of contents",
-		"navigation",
-		"breadcrumb",
+// toCategory converts URL entity to category (borrowed from REST implementation)
+func toCategory(urlEntity *config.URLEntity) string {
+	items := strings.Split(urlEntity.GroupName, " ")
+	for i, item := range items {
+		items[i] = strings.Title(item)
+	}
+	return strings.Join(items, " ")
+}
+
+// isNonMethodHeader returns true if the header is not an API method (similar to REST implementation)
+func isNonMethodHeader(text string) bool {
+	nonMethodHeaders := []string{
+		"Terminology",
+		"Examples",
+		"Table of Contents",
+		"On this page",
+		"Navigation",
 	}
 
-	lowerTitle := strings.ToLower(title)
-	for _, pattern := range skipPatterns {
-		if strings.Contains(lowerTitle, pattern) {
-			return false
-		}
-	}
-
-	// Look for typical API method patterns
-	methodPatterns := []string{
-		"test connectivity",
-		"check server time",
-		"exchange information",
-		"information",
-		"connectivity",
-		"ping",
-		"time",
-		"request",
-		"query",
-		"get",
-		"fetch",
-		"retrieve",
-	}
-
-	for _, pattern := range methodPatterns {
-		if strings.Contains(lowerTitle, pattern) {
+	for _, h := range nonMethodHeaders {
+		if strings.Contains(text, h) {
 			return true
 		}
 	}
-
 	return false
 }
 
-// parseMethodFromSection parses API method information from a documentation section
-func (p *DocumentParser) parseMethodFromSection(section *goquery.Selection, urlEntity *config.URLEntity, protectedMethods []string) *parser.Channel {
-	methodTitle := strings.TrimSpace(section.Text())
-
-	// Extract method name from the first code block following the title
-	methodName := ""
-	requestSchema := &parser.Schema{Type: "object"}
-	responseSchema := &parser.Schema{Type: "object"}
-
-	// Look for the first code block after the section title to get the request
-	requestCodeBlock := section.NextAllFiltered("div.language-javascript").First()
-	if requestCodeBlock.Length() > 0 {
-		requestCode := strings.TrimSpace(requestCodeBlock.Find("code").Text())
-		methodName = p.extractMethodNameFromRequest(requestCode)
-		requestSchema = p.parseJSONSchema(requestCode, "request")
-	}
-
-	// Extract description
-	description := ""
-	section.NextAllFiltered("p").First().Each(func(i int, s *goquery.Selection) {
-		text := strings.TrimSpace(s.Text())
-		if text != "" && !strings.HasPrefix(strings.ToLower(text), "note:") {
-			description = text
+// cleanText removes invisible Unicode characters and trims whitespace (borrowed from REST implementation)
+func cleanText(text string) string {
+	text = strings.Map(func(r rune) rune {
+		if r == '\u200b' || r == '\u200c' || r == '\u200d' || r == '\ufeff' {
+			return -1
 		}
-	})
-
-	// Extract weight
-	weight := p.extractWeight(section)
-
-	// Extract parameters from table
-	parameters := p.extractParameters(section)
-
-	// Extract data source
-	dataSource := p.extractDataSource(section)
-
-	// Extract response from the last code block in the section
-	responseCodeBlocks := section.NextAllFiltered("div.language-javascript")
-	if responseCodeBlocks.Length() > 1 {
-		responseCode := strings.TrimSpace(responseCodeBlocks.Last().Find("code").Text())
-		responseSchema = p.parseJSONSchema(responseCode, "response")
-	}
-
-	// Use method name from request, or derive from title
-	if methodName == "" {
-		methodName = p.extractMethodNameFromTitle(methodTitle)
-	}
-
-	// Create channel
-	channel := &parser.Channel{
-		Name:        methodName,
-		Description: description,
-		Summary:     methodTitle,
-		Parameters:  parameters,
-		Messages:    make(map[string]*parser.Message),
-		Tags:        []string{urlEntity.DocType},
-		Protected:   p.isProtectedMethod(methodName, protectedMethods),
-		Metadata: map[string]interface{}{
-			"weight":      weight,
-			"dataSource":  dataSource,
-			"methodTitle": methodTitle,
-		},
-	}
-
-	// Add request message
-	channel.Messages["send"] = &parser.Message{
-		Title:       fmt.Sprintf("%s Request", methodTitle),
-		Description: fmt.Sprintf("Send a %s request", methodName),
-		Payload:     requestSchema,
-	}
-
-	// Add response message
-	channel.Messages["receive"] = &parser.Message{
-		Title:       fmt.Sprintf("%s Response", methodTitle),
-		Description: fmt.Sprintf("Receive response from %s", methodName),
-		Payload:     responseSchema,
-	}
-
-	return channel
+		return r
+	}, text)
+	return strings.TrimSpace(text)
 }
 
-// extractMethodNameFromRequest extracts method name from JSON request
-func (p *DocumentParser) extractMethodNameFromRequest(requestCode string) string {
+// collectElementContent extracts content from HTML elements (adapted from REST implementation)
+func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]string) {
+	// Extract WebSocket method from code blocks
+	if s.Is(".theme-code-block") {
+		codeText := s.Find(".prism-code").Text()
+		codeText = strings.TrimSpace(codeText)
+		if codeText != "" {
+			*content = append(*content, "CODE:"+codeText)
+		}
+	}
+
+	// Extract text from paragraphs
+	if s.Is("p") {
+		text := cleanText(s.Text())
+		if text != "" {
+			*content = append(*content, text)
+		}
+	}
+
+	// Extract JSON examples from code blocks
+	if s.HasClass("language-javascript") || s.HasClass("language-json") {
+		var lines []string
+		code := s.Find("code")
+		code.Children().Each(func(i int, child *goquery.Selection) {
+			text := cleanResponseLine(child.Text())
+			if text != "" {
+				lines = append(lines, text)
+			}
+		})
+		jsonText := strings.Join(lines, " ")
+		if jsonText != "" {
+			*content = append(*content, "JSON:"+jsonText)
+		}
+	}
+
+	// Look for parameter tables after "Parameters:" paragraph
+	if s.Is("p") && strings.Contains(strings.ToLower(s.Text()), "parameters:") {
+		var foundTable bool
+		s.NextUntil("p").Each(func(i int, el *goquery.Selection) {
+			if !foundTable && el.Is("table") {
+				tableHtml, _ := el.Html()
+				if tableHtml != "" {
+					*content = append(*content, "TABLE:"+tableHtml)
+					foundTable = true
+				}
+			}
+		})
+	}
+
+	// Extract content from divs that might contain important information
+	if s.Is("div.theme-doc-markdown") {
+		s.Children().Each(func(i int, child *goquery.Selection) {
+			p.collectElementContent(child, content)
+		})
+	}
+
+	// Extract content from list items
+	if s.Is("li") {
+		text := cleanText(s.Text())
+		if text != "" {
+			*content = append(*content, "- "+text)
+		}
+	}
+
+	// Extract content from unordered lists
+	if s.Is("ul") {
+		s.Children().Each(func(i int, li *goquery.Selection) {
+			text := cleanText(li.Text())
+			if text != "" {
+				*content = append(*content, "- "+text)
+			}
+		})
+	}
+}
+
+// cleanResponseLine cleans response JSON lines (borrowed from REST implementation)
+func cleanResponseLine(text string) string {
+	commentRegex := regexp.MustCompile(`(\s+|,)(//|#).*`)
+	commentRegex2 := regexp.MustCompile(`//\s+.*`)
+	text = cleanText(text)
+	text = commentRegex.ReplaceAllString(text, "$1")
+	text = commentRegex2.ReplaceAllString(text, "")
+	text = strings.ReplaceAll(text, "\t", "")
+	text = strings.ReplaceAll(text, "\u00a0", "")
+	text = strings.ReplaceAll(text, "\\", "")
+	if strings.HasPrefix(strings.TrimSpace(text), "//") {
+		return ""
+	}
+	return text
+}
+
+// extractMethod processes the content following a method header to extract method information
+func (p *DocumentParser) extractMethod(content []string, category string) (*parser.Channel, bool) {
+	for i, line := range content {
+		logrus.Debugf("line %d: %s", i, line)
+	}
+
+	channel := &parser.Channel{
+		Tags:     []string{category},
+		Messages: make(map[string]*parser.Message),
+		Metadata: make(map[string]interface{}),
+	}
+
+	foundMethod, requestSchema, responseSchema := p.extractContent(channel, content)
+	if !foundMethod {
+		return nil, false
+	}
+
+	if err := p.extractParameters(channel, content); err != nil {
+		logrus.Debugf("extractParameters error: %s", err)
+	}
+
+	// Add request and response messages
+	if requestSchema != nil {
+		channel.Messages["send"] = &parser.Message{
+			Title:       fmt.Sprintf("%s Request", channel.Summary),
+			Description: fmt.Sprintf("Send a %s request", channel.Name),
+			Payload:     requestSchema,
+		}
+	}
+
+	if responseSchema != nil {
+		channel.Messages["receive"] = &parser.Message{
+			Title:       fmt.Sprintf("%s Response", channel.Summary),
+			Description: fmt.Sprintf("Receive response from %s", channel.Name),
+			Payload:     responseSchema,
+		}
+	}
+
+	return channel, foundMethod
+}
+
+// extractContent extracts method information from content lines
+func (p *DocumentParser) extractContent(channel *parser.Channel, content []string) (bool, *parser.Schema, *parser.Schema) {
+	// Set the summary from the first content item if available
+	if len(content) > 0 {
+		channel.Summary = content[0]
+	}
+
+	var description strings.Builder
+	var foundMethod, foundWeight, foundDataSource bool
+	var requestSchema, responseSchema *parser.Schema
+
+	// Regular expressions to identify different sections
+	weightRegex := regexp.MustCompile(`^Weight:?\s*(\d+|[a-zA-Z].*)?$`)
+	dataSourceRegex := regexp.MustCompile(`^Data Source:?\s*(.+)$`)
+
+	// Process each line of content
+	for i, line := range content {
+		if i == 0 {
+			continue // Skip summary
+		}
+
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		// Extract JSON from code blocks
+		if strings.HasPrefix(line, "CODE:") {
+			jsonCode := strings.TrimPrefix(line, "CODE:")
+			methodName := p.extractMethodNameFromJSON(jsonCode)
+			if methodName != "" && channel.Name == "" {
+				channel.Name = methodName
+				foundMethod = true
+			}
+			if requestSchema == nil {
+				requestSchema = p.parseJSONSchema(jsonCode, "request")
+			}
+		}
+
+		// Extract JSON examples
+		if strings.HasPrefix(line, "JSON:") {
+			jsonCode := strings.TrimPrefix(line, "JSON:")
+			if responseSchema == nil {
+				responseSchema = p.parseJSONSchema(jsonCode, "response")
+			}
+		}
+
+		// Check for weight information
+		if !foundWeight {
+			matches := weightRegex.FindStringSubmatch(line)
+			if len(matches) == 2 {
+				if weightInt, err := strconv.Atoi(matches[1]); err == nil {
+					channel.Metadata["weight"] = weightInt
+					foundWeight = true
+				}
+				continue
+			}
+		}
+
+		// Check for data source
+		if !foundDataSource {
+			matches := dataSourceRegex.FindStringSubmatch(line)
+			if len(matches) == 2 {
+				channel.Metadata["dataSource"] = matches[1]
+				foundDataSource = true
+				continue
+			}
+		}
+
+		// Collect description
+		if !foundWeight && !foundDataSource && !strings.HasPrefix(line, "TABLE:") {
+			description.WriteString(line)
+			description.WriteString("\n")
+		}
+	}
+
+	// Set the description
+	channel.Description = strings.TrimSpace(description.String())
+
+	// Generate method name if not found
+	if channel.Name == "" && channel.Summary != "" {
+		channel.Name = p.generateMethodName(channel.Summary)
+		foundMethod = true
+	}
+
+	return foundMethod, requestSchema, responseSchema
+}
+
+// extractMethodNameFromJSON extracts method name from JSON content
+func (p *DocumentParser) extractMethodNameFromJSON(jsonCode string) string {
 	var requestJSON map[string]interface{}
-	if err := json.Unmarshal([]byte(requestCode), &requestJSON); err != nil {
+	if err := json.Unmarshal([]byte(jsonCode), &requestJSON); err != nil {
 		return ""
 	}
 
@@ -183,163 +355,71 @@ func (p *DocumentParser) extractMethodNameFromRequest(requestCode string) string
 	return ""
 }
 
-// extractMethodNameFromTitle derives method name from section title
-func (p *DocumentParser) extractMethodNameFromTitle(title string) string {
-	title = strings.ToLower(title)
-	title = strings.ReplaceAll(title, " ", "_")
-	title = strings.ReplaceAll(title, "-", "_")
-
-	// Clean up common words
-	cleanWords := []string{"test", "check", "get", "fetch", "query", "retrieve"}
-	for _, word := range cleanWords {
-		title = strings.ReplaceAll(title, word+"_", "")
-		title = strings.ReplaceAll(title, "_"+word, "")
-	}
-
-	return title
+// generateMethodName generates a method name from the summary
+func (p *DocumentParser) generateMethodName(summary string) string {
+	name := strings.ToLower(summary)
+	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.ReplaceAll(name, "-", "_")
+	name = regexp.MustCompile(`[^a-z0-9_]`).ReplaceAllString(name, "")
+	return name
 }
 
-// extractWeight extracts the weight value from the section
-func (p *DocumentParser) extractWeight(section *goquery.Selection) int {
-	// Look for "Weight:" pattern in following text
-	current := section
-	for i := 0; i < 10; i++ { // Search next 10 siblings
-		current = current.Next()
-		if current.Length() == 0 {
-			break
-		}
-
-		text := strings.TrimSpace(current.Text())
-		if strings.HasPrefix(strings.ToLower(text), "weight:") {
-			// Extract number from "Weight: 20" format
-			re := regexp.MustCompile(`weight:\s*(\d+)`)
-			matches := re.FindStringSubmatch(strings.ToLower(text))
-			if len(matches) > 1 {
-				if weight, err := strconv.Atoi(matches[1]); err == nil {
-					return weight
-				}
-			}
+// extractParameters extracts parameters from content
+func (p *DocumentParser) extractParameters(channel *parser.Channel, content []string) error {
+	for _, line := range content {
+		if strings.HasPrefix(line, "TABLE:") {
+			tableContent := strings.TrimPrefix(line, "TABLE:")
+			return p.parseParameterTable(channel, tableContent)
 		}
 	}
-
-	return 1 // Default weight
+	return nil
 }
 
-// extractDataSource extracts the data source from the section
-func (p *DocumentParser) extractDataSource(section *goquery.Selection) string {
-	// Look for "Data Source:" pattern
-	current := section
-	for i := 0; i < 15; i++ { // Search next 15 siblings
-		current = current.Next()
-		if current.Length() == 0 {
-			break
-		}
-
-		text := strings.TrimSpace(current.Text())
-		if strings.HasPrefix(strings.ToLower(text), "data source:") {
-			// Extract value after "Data Source:"
-			parts := strings.SplitN(text, ":", 2)
-			if len(parts) > 1 {
-				return strings.TrimSpace(parts[1])
-			}
-		}
+// parseParameterTable parses parameter information from HTML table
+func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableContent string) error {
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader("<table>" + tableContent + "</table>"))
+	if err != nil {
+		return fmt.Errorf("creating document from reader: %w", err)
 	}
 
-	return "Unknown"
-}
-
-// extractParameters extracts parameters from parameter table
-func (p *DocumentParser) extractParameters(section *goquery.Selection) []*parser.Parameter {
-	var parameters []*parser.Parameter
-
-	// Look for "Parameters:" text first, then find the table after it
-	parametersFound := false
-	current := section
-	for i := 0; i < 25; i++ { // Search next 25 siblings
-		current = current.Next()
-		if current.Length() == 0 {
-			break
+	doc.Find("tr").Each(func(i int, row *goquery.Selection) {
+		if i == 0 { // Skip header row
+			return
 		}
 
-		text := strings.TrimSpace(current.Text())
-
-		// Check if we found "Parameters:" section
-		if strings.HasPrefix(strings.ToLower(text), "parameters:") {
-			parametersFound = true
-			// Check if parameters are NONE
-			if strings.Contains(strings.ToUpper(text), "NONE") {
-				return parameters // No parameters for this method
-			}
-			continue
+		cells := row.Find("td")
+		if cells.Length() < 3 {
+			return
 		}
 
-		// Only look for tables after we've found the Parameters section
-		if parametersFound {
-			// Check if this element contains a table
-			table := current.Find("table").First()
-			if table.Length() == 0 {
-				table = current.Filter("table").First()
-			}
+		name := cleanText(cells.Eq(0).Text())
+		paramType := cleanText(cells.Eq(1).Text())
+		mandatory := cleanText(cells.Eq(2).Text())
+		description := ""
 
-			if table.Length() > 0 {
-				// Found a table after Parameters section, parse it
-				table.Find("tr").Each(func(i int, row *goquery.Selection) {
-					if i == 0 { // Skip header row
-						return
-					}
-
-					param := p.parseParameterFromTableRow(row)
-					if param != nil {
-						parameters = append(parameters, param)
-					}
-				})
-				break // Stop after finding first table
-			}
-
-			// If we hit another section (like "Data Source:"), stop looking
-			if strings.Contains(strings.ToLower(text), "data source:") ||
-				strings.Contains(strings.ToLower(text), "response:") ||
-				strings.Contains(strings.ToLower(text), "weight:") {
-				break
-			}
+		if cells.Length() > 3 {
+			description = cleanText(cells.Eq(3).Text())
 		}
-	}
 
-	return parameters
-}
+		if name == "" || name == "Name" {
+			return
+		}
 
-// parseParameterFromTableRow parses parameter information from a table row
-func (p *DocumentParser) parseParameterFromTableRow(row *goquery.Selection) *parser.Parameter {
-	cells := row.Find("td")
-	if cells.Length() < 3 {
-		return nil
-	}
-
-	name := strings.TrimSpace(cells.Eq(0).Text())
-	paramType := strings.TrimSpace(cells.Eq(1).Text())
-	mandatory := strings.TrimSpace(cells.Eq(2).Text())
-	description := ""
-
-	if cells.Length() > 3 {
-		description = strings.TrimSpace(cells.Eq(3).Text())
-	}
-
-	if name == "" || name == "Name" { // Skip header or empty rows
-		return nil
-	}
-
-	param := &parser.Parameter{
-		Name:        name,
-		Description: description,
-		Location:    "body", // WebSocket API parameters are in JSON body
-		Required:    strings.ToLower(mandatory) != "no" && mandatory != "",
-		Schema: &parser.Schema{
-			Type:        p.convertTypeToJSONSchema(paramType),
+		param := &parser.Parameter{
+			Name:        name,
 			Description: description,
-		},
-	}
+			Location:    "body",
+			Required:    strings.ToLower(mandatory) != "no" && mandatory != "",
+			Schema: &parser.Schema{
+				Type:        p.convertTypeToJSONSchema(paramType),
+				Description: description,
+			},
+		}
 
-	return param
+		channel.Parameters = append(channel.Parameters, param)
+	})
+
+	return nil
 }
 
 // convertTypeToJSONSchema converts parameter type to JSON Schema type
@@ -362,12 +442,11 @@ func (p *DocumentParser) convertTypeToJSONSchema(paramType string) string {
 	}
 }
 
-// parseJSONSchema parses JSON code and creates a basic schema
+// parseJSONSchema parses JSON code and creates a schema
 func (p *DocumentParser) parseJSONSchema(jsonCode, schemaType string) *parser.Schema {
 	var data interface{}
 
 	if err := json.Unmarshal([]byte(jsonCode), &data); err != nil {
-		// If parsing fails, return a basic object schema
 		return &parser.Schema{
 			Type:        "object",
 			Description: fmt.Sprintf("JSON %s data", schemaType),
@@ -432,6 +511,11 @@ func (p *DocumentParser) convertToSchema(data interface{}, description string) *
 			Description: description,
 		}
 	}
+}
+
+// processMethod processes the method and adds authentication information
+func (p *DocumentParser) processMethod(channel *parser.Channel, protectedMethods []string) {
+	channel.Protected = p.isProtectedMethod(channel.Name, protectedMethods)
 }
 
 // isProtectedMethod checks if a method requires authentication
