@@ -7,7 +7,7 @@ import (
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/openxapi/openxapi/internal/config"
-	"github.com/openxapi/openxapi/internal/parser"
+	parser "github.com/openxapi/openxapi/internal/parser/rest"
 )
 
 type MarginDocumentParser struct {

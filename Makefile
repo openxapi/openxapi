@@ -102,7 +102,7 @@ release:
 		echo "Usage: make release EXCHANGE=<exchange> VERSION=<version> BASE_OUTPUT_DIR=<base_output_dir>"; \
 		exit 1; \
 	fi
-	@sed -i '' 's/version: .*/version: ${VERSION}/' configs/exchanges/${EXCHANGE}/restapi.yaml
+	@sed -i '' 's/version: .*/version: ${VERSION}/' configs/exchanges/${EXCHANGE}/rest.yaml
 	@sed -i '' 's/packageVersion: .*/packageVersion: ${VERSION}/' generator-configs/${EXCHANGE}/openapi/go/*.yaml
 	@sed -i '' 's/packageVersion: .*/packageVersion: ${VERSION}/' generator-configs/${EXCHANGE}/openapi/python/*.yaml
 	@make generate-spec EXCHANGE=${EXCHANGE}

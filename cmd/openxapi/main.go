@@ -5,13 +5,17 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/openxapi/openxapi/internal/config"
-	"github.com/openxapi/openxapi/internal/exchange/binance"
-	"github.com/openxapi/openxapi/internal/exchange/okx"
+	binanceRest "github.com/openxapi/openxapi/internal/exchange/binance/rest"
+	binanceWs "github.com/openxapi/openxapi/internal/exchange/binance/websocket"
+	okxRest "github.com/openxapi/openxapi/internal/exchange/okx/rest"
+	okxWs "github.com/openxapi/openxapi/internal/exchange/okx/websocket"
 	"github.com/openxapi/openxapi/internal/generator"
-	"github.com/openxapi/openxapi/internal/parser"
+	restParser "github.com/openxapi/openxapi/internal/parser/rest"
+	wsParser "github.com/openxapi/openxapi/internal/parser/websocket"
 	"github.com/sirupsen/logrus"
 )
 
@@ -45,7 +49,7 @@ func init() {
 	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/<exchange>)")
 	flag.StringVar(&exchange, "exchange", "", "Filter by exchange name")
 	flag.StringVar(&docType, "doc-type", "", "Filter by documentation type")
-	flag.Var(&specTypes, "spec-types", "Filter by specification types")
+	flag.Var(&specTypes, "spec-types", "Filter by specification types (rest, ws)")
 	flag.StringVar(&outputDir, "output-dir", "./specs", "Output directory")
 	flag.BoolVar(&showHelp, "h,help", false, "Show help")
 }
@@ -85,75 +89,151 @@ func main() {
 
 	// Process each exchange
 	ctx := context.Background()
-	for exchangeName, restConfig := range config.RestConfigs {
-		// Skip if exchange filter is set and doesn't match
-		if exchange != "" && exchange != exchangeName {
-			continue
-		}
-
-		logrus.Infof("Processing exchange: %s", exchangeName)
-
-		exchangeSamplesDir := samplesDir
-		if exchangeSamplesDir == "" {
-			exchangeSamplesDir = fmt.Sprintf("samples/%s", exchangeName)
-		}
-
-		// Create exchange-specific parser
-		var p parser.Parser
-		switch exchangeName {
-		case "binance":
-			if useSamples {
-				p = binance.NewParser(binance.WithSamples(useSamples), binance.WithSamplesDir(exchangeSamplesDir))
-				logrus.Infof("Using sample files from %s", exchangeSamplesDir)
-			} else {
-				p = binance.NewParser()
-			}
-		case "okx":
-			if useSamples {
-				p = okx.NewParser(okx.WithSamples(useSamples), okx.WithSamplesDir(exchangeSamplesDir))
-				logrus.Infof("Using sample files from %s", exchangeSamplesDir)
-			} else {
-				p = okx.NewParser()
-			}
-		default:
-			logrus.Warnf("Unsupported exchange: %s", exchangeName)
-			continue
-		}
-
-		// Process each API type
-		for _, doc := range restConfig.Docs {
-			// Skip if doc type filter is set and doesn't match
-			if docType != "" && docType != doc.Type {
+	if specTypes == nil || slices.Contains(specTypes, "rest") {
+		for exchangeName, restConfig := range config.RestConfigs {
+			// Skip if exchange filter is set and doesn't match
+			if exchange != "" && exchange != exchangeName {
 				continue
 			}
 
-			logrus.Infof("Processing API type: %s", doc.Type)
+			logrus.Infof("Processing exchange: %s", exchangeName)
 
-			// Convert config Documentation to parser.Documentation
-			parserDoc := parser.Documentation{
-				Documentation: doc,
+			exchangeSamplesDir := samplesDir
+			if exchangeSamplesDir == "" {
+				exchangeSamplesDir = fmt.Sprintf("samples/%s", exchangeName)
 			}
 
-			// Parse endpoints
-			endpoints, err := p.Parse(ctx, parserDoc)
-			if err != nil {
-				logrus.Errorf("Failed to parse %s %s API: %v", exchangeName, doc.Type, err)
-				os.Exit(1)
+			// Create exchange-specific parser
+			var p restParser.Parser
+			switch exchangeName {
+			case "binance":
+				if useSamples {
+					p = binanceRest.NewParser(binanceRest.WithSamples(useSamples), binanceRest.WithSamplesDir(exchangeSamplesDir))
+					logrus.Infof("Using sample files from %s", exchangeSamplesDir)
+				} else {
+					p = binanceRest.NewParser()
+				}
+			case "okx":
+				if useSamples {
+					p = okxRest.NewParser(okxRest.WithSamples(useSamples), okxRest.WithSamplesDir(exchangeSamplesDir))
+					logrus.Infof("Using sample files from %s", exchangeSamplesDir)
+				} else {
+					p = okxRest.NewParser()
+				}
+			default:
+				logrus.Warnf("Unsupported exchange: %s", exchangeName)
+				continue
 			}
 
-			// Generate OpenAPI specification for each endpoint
-			if err := gen.GenerateEndpoints(exchangeName, restConfig.Version, doc.Type, endpoints); err != nil {
-				logrus.Errorf("Failed to generate OpenAPI endpoint specs for %s %s API: %v", exchangeName, doc.Type, err)
-				os.Exit(1)
+			// Process each API type
+			for _, doc := range restConfig.Docs {
+				// Skip if doc type filter is set and doesn't match
+				if docType != "" && docType != doc.Type {
+					continue
+				}
+
+				logrus.Infof("Processing API type: %s", doc.Type)
+
+				// Convert config Documentation to parser.Documentation
+				parserDoc := restParser.Documentation{
+					Documentation: doc,
+				}
+
+				// Parse endpoints
+				endpoints, err := p.Parse(ctx, parserDoc)
+				if err != nil {
+					logrus.Errorf("Failed to parse %s %s API: %v", exchangeName, doc.Type, err)
+					os.Exit(1)
+				}
+
+				// Generate OpenAPI specification for each endpoint
+				if err := gen.GenerateEndpoints(exchangeName, restConfig.Version, doc.Type, endpoints); err != nil {
+					logrus.Errorf("Failed to generate OpenAPI endpoint specs for %s %s API: %v", exchangeName, doc.Type, err)
+					os.Exit(1)
+				}
+
+				// Generate OpenAPI specification
+				if err := gen.Generate(exchangeName, restConfig.Version, doc.Description, doc.Type, doc.Servers); err != nil {
+					logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
+					os.Exit(1)
+				}
+
+				logrus.Infof("Successfully generated OpenAPI spec for %s %s API", exchangeName, doc.Type)
+			}
+		}
+	}
+
+	if specTypes == nil || slices.Contains(specTypes, "ws") {
+		for exchangeName, asyncConfig := range config.AsyncConfigs {
+			// Skip if exchange filter is set and doesn't match
+			if exchange != "" && exchange != exchangeName {
+				continue
 			}
 
-			// Generate OpenAPI specification
-			if err := gen.Generate(exchangeName, restConfig.Version, doc.Description, doc.Type, doc.Servers); err != nil {
-				logrus.Errorf("Failed to generate OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
-				os.Exit(1)
+			logrus.Infof("Processing WebSocket exchange: %s", exchangeName)
+
+			exchangeSamplesDir := samplesDir
+			if exchangeSamplesDir == "" {
+				exchangeSamplesDir = fmt.Sprintf("samples/%s", exchangeName)
 			}
 
-			logrus.Infof("Successfully generated OpenAPI spec for %s %s API", exchangeName, doc.Type)
+			// Create exchange-specific WebSocket parser
+			var wsP wsParser.Parser
+			switch exchangeName {
+			case "binance":
+				if useSamples {
+					wsP = binanceWs.NewParser(binanceWs.WithSamples(useSamples), binanceWs.WithSamplesDir(exchangeSamplesDir))
+					logrus.Infof("Using WebSocket sample files from %s", exchangeSamplesDir)
+				} else {
+					wsP = binanceWs.NewParser()
+				}
+			case "okx":
+				if useSamples {
+					wsP = okxWs.NewParser(okxWs.WithSamples(useSamples), okxWs.WithSamplesDir(exchangeSamplesDir))
+					logrus.Infof("Using WebSocket sample files from %s", exchangeSamplesDir)
+				} else {
+					wsP = okxWs.NewParser()
+				}
+			default:
+				logrus.Warnf("Unsupported WebSocket exchange: %s", exchangeName)
+				continue
+			}
+
+			// Process each WebSocket API type
+			for _, doc := range asyncConfig.Docs {
+				// Skip if doc type filter is set and doesn't match
+				if docType != "" && docType != doc.Type {
+					continue
+				}
+
+				logrus.Infof("Processing WebSocket API type: %s", doc.Type)
+
+				// Convert config Documentation to parser.Documentation
+				parserDoc := wsParser.Documentation{
+					AsyncDocumentation: doc,
+				}
+
+				// Parse WebSocket endpoints
+				endpoints, err := wsP.Parse(ctx, parserDoc)
+				if err != nil {
+					logrus.Errorf("Failed to parse %s %s WebSocket API: %v", exchangeName, doc.Type, err)
+					os.Exit(1)
+				}
+
+				// Generate WebSocket OpenAPI specification for each endpoint
+				if err := gen.GenerateWebSocketEndpoints(exchangeName, asyncConfig.Version, doc.Type, endpoints); err != nil {
+					logrus.Errorf("Failed to generate WebSocket OpenAPI endpoint specs for %s %s API: %v", exchangeName, doc.Type, err)
+					os.Exit(1)
+				}
+
+				// Generate WebSocket OpenAPI specification
+				if err := gen.GenerateWebSocket(exchangeName, asyncConfig.Version, doc.Description, doc.Type, doc.Servers); err != nil {
+					logrus.Errorf("Failed to generate WebSocket OpenAPI spec for %s %s API: %v", exchangeName, doc.Type, err)
+					os.Exit(1)
+				}
+
+				logrus.Infof("Successfully generated WebSocket OpenAPI spec for %s %s API", exchangeName, doc.Type)
+			}
 		}
 	}
 

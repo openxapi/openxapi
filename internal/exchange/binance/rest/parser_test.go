@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/openxapi/openxapi/internal/config"
-	"github.com/openxapi/openxapi/internal/parser"
+	parser "github.com/openxapi/openxapi/internal/parser/rest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

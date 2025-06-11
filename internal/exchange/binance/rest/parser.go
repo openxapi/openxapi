@@ -1,4 +1,4 @@
-package okx
+package binance
 
 import (
 	"context"
@@ -6,17 +6,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/openxapi/openxapi/internal/parser"
+	parser "github.com/openxapi/openxapi/internal/parser/rest"
 )
 
-// Parser implements the parser.Parser interface for OKX
+// Parser implements the parser.Parser interface for Binance
 type Parser struct {
 	parser.HTTPParser
 }
 
-// NewParser creates a new OKX parser
+// NewParser creates a new Binance parser
 func NewParser(opts ...func(*Parser)) *Parser {
-	name := "okx"
+	name := "binance"
 	p := &Parser{
 		HTTPParser: parser.HTTPParser{
 			Name:       name,
@@ -44,7 +44,7 @@ func WithSamplesDir(samplesDir string) func(*Parser) {
 	}
 }
 
-// TODO: Implement CheckVersion for OKX
+// TODO: Implement CheckVersion for Binance
 func (p *Parser) CheckVersion(ctx context.Context, doc parser.Documentation) (bool, time.Time, error) {
 	// If using samples, return false to indicate no change
 	if p.HTTPParser.UseSamples {
@@ -52,7 +52,7 @@ func (p *Parser) CheckVersion(ctx context.Context, doc parser.Documentation) (bo
 	}
 
 	// Check if the documentation has been updated
-	// For OKX, we'll make a HEAD request to check for Last-Modified header
+	// For Binance, we'll make a HEAD request to check for Last-Modified header
 	var lastModified time.Time
 	hasChanged := false
 

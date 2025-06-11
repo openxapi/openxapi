@@ -1,4 +1,5 @@
 package main
+
 import (
 	"context"
 	"encoding/json"
@@ -148,8 +149,6 @@ func (c *Client) HandleSubscribeCombinedStream(handler func(data []byte) error) 
 	return c.subscribe(path, handler)
 }
 
-
-
 // AggregateTrade represents the aggregateTrade message payload
 type AggregateTrade struct {
 	// Event type
@@ -214,10 +213,7 @@ type CombinedMessage struct {
 	Data interface{} `json:"data"`
 }
 
-
-
 // ParseMessage parses a JSON message into the specified struct
 func ParseMessage[T any](data []byte, target *T) error {
 	return json.Unmarshal(data, target)
 }
-

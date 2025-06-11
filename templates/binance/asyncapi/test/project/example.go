@@ -1,4 +1,5 @@
 package main
+
 import (
 	"context"
 	"encoding/json"
@@ -27,14 +28,14 @@ func main() {
 	// Handle aggregate trade messages
 	err := client.HandleSubscribeSingleStream(func(data []byte) error {
 		fmt.Printf("Received single stream data: %s\n", string(data))
-		
+
 		// Parse as aggregate trade message
 		var aggTrade AggregateTrade
 		if err := ParseMessage(data, &aggTrade); err == nil {
-			fmt.Printf("Aggregate Trade - Symbol: %s, Price: %s, Quantity: %s\n", 
+			fmt.Printf("Aggregate Trade - Symbol: %s, Price: %s, Quantity: %s\n",
 				aggTrade.S, aggTrade.P, aggTrade.Q)
 		}
-		
+
 		return nil
 	})
 	if err != nil {
@@ -44,23 +45,23 @@ func main() {
 	// Handle combined stream messages
 	err = client.HandleSubscribeCombinedStream(func(data []byte) error {
 		fmt.Printf("Received combined stream data: %s\n", string(data))
-		
+
 		// Parse as combined message
 		var combined CombinedMessage
 		if err := ParseMessage(data, &combined); err == nil {
 			fmt.Printf("Combined Stream - Stream: %s\n", combined.Stream)
-			
+
 			// Parse the nested data based on stream type
 			dataBytes, _ := json.Marshal(combined.Data)
 			if contains(combined.Stream, "aggTrade") {
 				var aggTrade AggregateTrade
 				if err := json.Unmarshal(dataBytes, &aggTrade); err == nil {
-					fmt.Printf("  -> Aggregate Trade - Symbol: %s, Price: %s\n", 
+					fmt.Printf("  -> Aggregate Trade - Symbol: %s, Price: %s\n",
 						aggTrade.S, aggTrade.P)
 				}
 			}
 		}
-		
+
 		return nil
 	})
 	if err != nil {
@@ -80,7 +81,6 @@ func main() {
 // contains checks if a string contains a substring
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && s[len(s)-len(substr):] == substr ||
-		   len(s) > len(substr) && s[:len(substr)] == substr ||
-		   len(s) > len(substr) && s[len(s)/2-len(substr)/2:len(s)/2+len(substr)/2] == substr
+		len(s) > len(substr) && s[:len(substr)] == substr ||
+		len(s) > len(substr) && s[len(s)/2-len(substr)/2:len(s)/2+len(substr)/2] == substr
 }
-

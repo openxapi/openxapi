@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
-	"github.com/openxapi/openxapi/internal/parser"
+	parser "github.com/openxapi/openxapi/internal/parser/rest"
 	"github.com/stretchr/testify/assert"
 )
 
