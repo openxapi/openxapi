@@ -49,7 +49,7 @@ func init() {
 	flag.StringVar(&samplesDir, "samples-dir", "", "Directory for sample files (default: samples/<exchange>)")
 	flag.StringVar(&exchange, "exchange", "", "Filter by exchange name")
 	flag.StringVar(&docType, "doc-type", "", "Filter by documentation type")
-	flag.Var(&specTypes, "spec-types", "Filter by specification types (rest, ws)")
+	flag.Var(&specTypes, "spec-type", "Filter by specification types (rest, ws)")
 	flag.StringVar(&outputDir, "output-dir", "./specs", "Output directory")
 	flag.BoolVar(&showHelp, "h,help", false, "Show help")
 }
@@ -102,6 +102,7 @@ func main() {
 			if exchangeSamplesDir == "" {
 				exchangeSamplesDir = fmt.Sprintf("samples/%s", exchangeName)
 			}
+			exchangeSamplesDir = fmt.Sprintf("%s/rest", exchangeSamplesDir)
 
 			// Create exchange-specific parser
 			var p restParser.Parser
@@ -176,6 +177,7 @@ func main() {
 			if exchangeSamplesDir == "" {
 				exchangeSamplesDir = fmt.Sprintf("samples/%s", exchangeName)
 			}
+			exchangeSamplesDir = fmt.Sprintf("%s/websocket", exchangeSamplesDir)
 
 			// Create exchange-specific WebSocket parser
 			var wsP wsParser.Parser

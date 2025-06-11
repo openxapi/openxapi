@@ -15,7 +15,7 @@ import (
 
 func TestParser_Parse(t *testing.T) {
 	// Set up the documentation with the local HTML file
-	sampleFile, err := filepath.Abs("../../../samples/binance/spot/https_developers.binance.com_docs_binance-spot-api-docs_rest-api_general-endpoints.html")
+	sampleFile, err := filepath.Abs("../../../samples/binance/rest/spot/https_developers.binance.com_docs_binance-spot-api-docs_rest-api_general-endpoints.html")
 	if err != nil {
 		t.Fatalf("Failed to get absolute path: %v", err)
 	}

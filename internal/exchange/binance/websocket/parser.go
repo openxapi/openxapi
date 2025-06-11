@@ -22,7 +22,7 @@ func NewParser(opts ...func(*Parser)) *Parser {
 			Name:       name,
 			Client:     &http.Client{},
 			UseSamples: false,
-			SamplesDir: fmt.Sprintf("samples/%s", name),
+			SamplesDir: fmt.Sprintf("samples/%s/websocket", name),
 			DocParser:  &DocumentParser{},
 		},
 	}
