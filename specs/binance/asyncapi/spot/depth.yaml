@@ -1,0 +1,142 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    depth:
+        address: depth
+        title: Channel depth
+        description: |-
+            Get current order book.
+            Note that this request returns limited market depth.
+            If you need to continuously monitor order book updates, please consider using WebSocket Streams:
+            - <symbol>@depth<levels>
+            - <symbol>@depth
+            You can use depth request together with <symbol>@depth streams to maintain a local order book.
+            Parameters:
+        messages:
+            receiveMessage:
+                name: Order book Response
+                title: Order book Response
+                description: Receive response from depth
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 51e2affb-0aba-4821-ba75-f2625006eb43
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 2
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                            properties:
+                                asks:
+                                    type: array
+                                    description: asks property
+                                    items:
+                                        type: array
+                                        description: array item
+                                        items:
+                                            type: string
+                                            description: array item
+                                            example: "0.01380000"
+                                bids:
+                                    type: array
+                                    description: bids property
+                                    items:
+                                        type: array
+                                        description: array item
+                                        items:
+                                            type: string
+                                            description: array item
+                                            example: "0.01379900"
+                                lastUpdateId:
+                                    type: number
+                                    description: lastUpdateId property
+                                    example: 2.731179239e+09
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Order book Request
+                title: Order book Request
+                description: Send a depth request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 51e2affb-0aba-4821-ba75-f2625006eb43
+                        method:
+                            type: string
+                            description: method property
+                            example: depth
+                            enum:
+                                - depth
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                limit:
+                                    type: number
+                                    description: limit property
+                                    example: 5
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            limit:
+                description: 'Default: 100; Maximum: 5000'
+                location: body
+            symbol:
+                location: body
+operations:
+    receive_depth:
+        title: Receive from depth
+        description: Receive response from depth
+        action: receive
+        channel:
+            $ref: '#/channels/depth'
+        messages:
+            - $ref: '#/channels/depth/messages/receiveMessage'
+    send_depth:
+        title: Send to depth
+        description: Send a depth request
+        action: send
+        channel:
+            $ref: '#/channels/depth'
+        messages:
+            - $ref: '#/channels/depth/messages/sendMessage'
+components: {}

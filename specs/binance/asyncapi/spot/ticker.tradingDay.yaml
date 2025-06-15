@@ -1,0 +1,188 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    ticker_tradingDay:
+        address: ticker.tradingDay
+        title: Channel ticker.tradingDay
+        description: |-
+            Price change statistics for a trading day.
+            4 for each requested symbol.  The weight for this request will cap at 200 once the number of symbols in the request is more than 50.
+            Parameters:
+            Notes:
+            - Supported values for timeZone:
+
+            Hours and minutes (e.g. -1:00, 05:45)
+            Only hours (e.g. 0, 8, 4)
+        messages:
+            receiveMessage:
+                name: Trading Day Ticker Response
+                title: Trading Day Ticker Response
+                description: Receive response from ticker.tradingDay
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 4
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                            properties:
+                                closeTime:
+                                    type: number
+                                    description: closeTime property
+                                    example: 1.695772799999e+12
+                                count:
+                                    type: number
+                                    description: count property
+                                    example: 697727
+                                firstId:
+                                    type: number
+                                    description: firstId property
+                                    example: 3.220151555e+09
+                                highPrice:
+                                    type: string
+                                    description: highPrice property
+                                    example: "26397.46000000"
+                                lastId:
+                                    type: number
+                                    description: lastId property
+                                    example: 3.220849281e+09
+                                lastPrice:
+                                    type: string
+                                    description: lastPrice property
+                                    example: "26221.67000000"
+                                lowPrice:
+                                    type: string
+                                    description: lowPrice property
+                                    example: "26088.34000000"
+                                openPrice:
+                                    type: string
+                                    description: openPrice property
+                                    example: "26304.80000000"
+                                openTime:
+                                    type: number
+                                    description: openTime property
+                                    example: 1.6956864e+12
+                                priceChange:
+                                    type: string
+                                    description: priceChange property
+                                    example: "-83.13000000"
+                                priceChangePercent:
+                                    type: string
+                                    description: priceChangePercent property
+                                    example: "-0.317"
+                                quoteVolume:
+                                    type: string
+                                    description: quoteVolume property
+                                    example: "485217905.04210480"
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BTCUSDT
+                                volume:
+                                    type: string
+                                    description: volume property
+                                    example: "18495.35066000"
+                                weightedAvgPrice:
+                                    type: string
+                                    description: weightedAvgPrice property
+                                    example: "26234.58803036"
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Trading Day Ticker Request
+                title: Trading Day Ticker Request
+                description: Send a ticker.tradingDay request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
+                        method:
+                            type: string
+                            description: method property
+                            example: ticker.tradingDay
+                            enum:
+                                - ticker.tradingDay
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbols:
+                                    type: array
+                                    description: symbols property
+                                    items:
+                                        type: string
+                                        description: array item
+                                        example: BNBBTC
+                                timeZone:
+                                    type: string
+                                    description: timeZone property
+                                    example: "00:00"
+        parameters:
+            symbol:
+                description: Query ticker of a single symbol
+                location: body
+            symbols:
+                location: body
+            timeZone:
+                description: 'Default: 0 (UTC)'
+                location: body
+            type:
+                description: 'Supported values: FULL or MINI. If none provided, the default is FULL'
+                location: body
+operations:
+    receive_ticker_tradingDay:
+        title: Receive from ticker.tradingDay
+        description: Receive response from ticker.tradingDay
+        action: receive
+        channel:
+            $ref: '#/channels/ticker_tradingDay'
+        messages:
+            - $ref: '#/channels/ticker_tradingDay/messages/receiveMessage'
+    send_ticker_tradingDay:
+        title: Send to ticker.tradingDay
+        description: Send a ticker.tradingDay request
+        action: send
+        channel:
+            $ref: '#/channels/ticker_tradingDay'
+        messages:
+            - $ref: '#/channels/ticker_tradingDay/messages/sendMessage'
+components: {}

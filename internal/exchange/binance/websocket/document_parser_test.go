@@ -110,7 +110,7 @@ func TestDocumentParser_MethodEnumConstraints(t *testing.T) {
 			methodField := sendMsg.Payload.Properties["method"]
 			require.NotNil(t, methodField, "Method field should exist for %s", tc.methodName)
 			assert.Equal(t, "string", methodField.Type, "Method field should be string for %s", tc.methodName)
-			
+
 			// CRITICAL: Check that method field has enum constraint
 			require.NotNil(t, methodField.Enum, "Method field should have enum constraint for %s", tc.methodName)
 			require.Len(t, methodField.Enum, 1, "Method field should have exactly one enum value for %s", tc.methodName)
@@ -142,27 +142,27 @@ func TestDocumentParser_RequestResponseStructure(t *testing.T) {
 
 	// Test each method for proper request/response structure
 	testCases := []struct {
-		methodName           string
-		shouldHaveParams     bool
-		expectedRequestFields []string
+		methodName             string
+		shouldHaveParams       bool
+		expectedRequestFields  []string
 		expectedResponseFields []string
 	}{
 		{
-			methodName:           "ping",
-			shouldHaveParams:     false,
-			expectedRequestFields: []string{"id", "method"},
+			methodName:             "ping",
+			shouldHaveParams:       false,
+			expectedRequestFields:  []string{"id", "method"},
 			expectedResponseFields: []string{"id", "status", "result", "rateLimits"},
 		},
 		{
-			methodName:           "time", 
-			shouldHaveParams:     false,
-			expectedRequestFields: []string{"id", "method"},
+			methodName:             "time",
+			shouldHaveParams:       false,
+			expectedRequestFields:  []string{"id", "method"},
 			expectedResponseFields: []string{"id", "status", "result", "rateLimits"},
 		},
 		{
-			methodName:           "exchangeInfo",
-			shouldHaveParams:     true,
-			expectedRequestFields: []string{"id", "method", "params"},
+			methodName:             "exchangeInfo",
+			shouldHaveParams:       true,
+			expectedRequestFields:  []string{"id", "method", "params"},
 			expectedResponseFields: []string{"id", "status", "result", "rateLimits"},
 		},
 	}
@@ -185,7 +185,7 @@ func TestDocumentParser_RequestResponseStructure(t *testing.T) {
 			require.NotNil(t, sendMsg.Payload, "Should have request payload for %s", tc.methodName)
 
 			assert.Equal(t, "object", sendMsg.Payload.Type, "Request should be object for %s", tc.methodName)
-			
+
 			// Check expected request fields
 			for _, field := range tc.expectedRequestFields {
 				assert.Contains(t, sendMsg.Payload.Properties, field, "Request should have %s field for %s", field, tc.methodName)
@@ -206,7 +206,7 @@ func TestDocumentParser_RequestResponseStructure(t *testing.T) {
 			// CRITICAL: Check that response has proper structure (not request fields)
 			// Response should NOT have method field (that's a request field)
 			assert.NotContains(t, receiveMsg.Payload.Properties, "method", "Response should NOT have method field for %s", tc.methodName)
-			
+
 			// Response should have standard response fields
 			for _, field := range tc.expectedResponseFields {
 				assert.Contains(t, receiveMsg.Payload.Properties, field, "Response should have %s field for %s", field, tc.methodName)
@@ -269,7 +269,7 @@ func TestDocumentParser_ResponseFieldDetails(t *testing.T) {
 	resultField := receiveMsg.Payload.Properties["result"]
 	require.NotNil(t, resultField, "Should have result field")
 	assert.Equal(t, "object", resultField.Type, "Result should be object")
-	
+
 	if resultField.Properties != nil {
 		assert.Contains(t, resultField.Properties, "serverTime", "Result should have serverTime field")
 		if serverTimeField := resultField.Properties["serverTime"]; serverTimeField != nil {

@@ -123,30 +123,64 @@ func cleanText(text string) string {
 
 // collectElementContent extracts content from HTML elements (adapted from REST implementation)
 func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]string) {
-	// Extract WebSocket method from code blocks
+	// Extract response examples from code blocks (REST implementation approach - try this first)
+	if s.HasClass("language-javascript") || s.HasClass("language-json") {
+		var lines []string
+		code := s.Find("code")
+		// for each child of code, get the text
+		code.Children().Each(func(i int, child *goquery.Selection) {
+			text := cleanResponseLine(child.Text())
+			if text != "" {
+				lines = append(lines, text)
+			}
+		})
+		responseText := strings.Join(lines, " ")
+		if responseText != "" {
+			// Check if this follows a "Response:" paragraph
+			isResponse := p.isResponseCodeBlock(s)
+
+			if isResponse {
+				*content = append(*content, "JSON:"+responseText)
+			} else {
+				*content = append(*content, "CODE:"+responseText)
+			}
+			return // Exit early to avoid double processing
+		}
+	}
+
+	// Extract WebSocket method from code blocks (fallback approach)
 	if s.Is(".theme-code-block") {
-		codeText := s.Find(".prism-code").Text()
+		var codeText string
+		code := s.Find(".prism-code")
+
+		// First try to get the complete text directly
+		fullText := code.Text()
+		if fullText != "" {
+			// Clean the full text
+			codeText = cleanResponseLine(fullText)
+		}
+
+		// If that didn't work or result is too short, try child element approach
+		if codeText == "" || len(codeText) < 50 {
+			var lines []string
+			// Process each child element to clean comments, similar to language-javascript path
+			code.Children().Each(func(i int, child *goquery.Selection) {
+				text := cleanResponseLine(child.Text())
+				if text != "" {
+					lines = append(lines, text)
+				}
+			})
+			if len(lines) > 0 {
+				codeText = strings.Join(lines, " ")
+			}
+		}
+
 		codeText = strings.TrimSpace(codeText)
+
 		if codeText != "" {
 			// Check if this code block follows a "Response:" paragraph
-			isResponse := false
-			
-			// Look for "Response:" in the immediately preceding elements
-			prev := s.Prev()
-			for i := 0; i < 5 && prev.Length() > 0; i++ { // Check up to 5 previous siblings
-				if prev.Is("p") {
-					prevText := strings.ToLower(cleanText(prev.Text()))
-					if strings.HasPrefix(prevText, "response:") {
-						isResponse = true
-						break
-					}
-				} else if prev.Is("h1, h2, h3, h4, h5, h6") {
-					// If we hit a header before finding Response:, this is likely a request
-					break
-				}
-				prev = prev.Prev()
-			}
-			
+			isResponse := p.isResponseCodeBlock(s)
+
 			if isResponse {
 				*content = append(*content, "JSON:"+codeText)
 			} else {
@@ -201,6 +235,25 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 			}
 		})
 	}
+}
+
+// isResponseCodeBlock checks if a code block follows a "Response:" paragraph
+func (p *DocumentParser) isResponseCodeBlock(s *goquery.Selection) bool {
+	// Look for "Response:" in the immediately preceding elements
+	prev := s.Prev()
+	for prev.Length() > 0 {
+		if prev.Is("p") {
+			prevText := strings.ToLower(cleanText(prev.Text()))
+			if strings.HasPrefix(prevText, "response:") {
+				return true
+			}
+		} else if prev.Is("h1, h2, h3, h4, h5, h6") {
+			// If we hit a header before finding Response:, this is likely a request
+			break
+		}
+		prev = prev.Prev()
+	}
+	return false
 }
 
 func min(a, b int) int {
@@ -352,6 +405,15 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 	return foundMethod, requestSchema, responseSchema
 }
 
+// Helper function to get map keys
+func getMapKeys(m map[string]*parser.Schema) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
 // extractMethodNameFromJSON extracts method name from JSON content
 func (p *DocumentParser) extractMethodNameFromJSON(jsonCode string) string {
 	var requestJSON map[string]interface{}
@@ -467,6 +529,12 @@ func (p *DocumentParser) parseJSONSchema(jsonCode, schemaType string) *parser.Sc
 	return p.convertToSchema(data, fmt.Sprintf("%s schema", schemaType))
 }
 
+// cleanJSONResponse cleans JSON response by removing comments and invalid syntax
+func (p *DocumentParser) cleanJSONResponse(jsonStr string) string {
+	// Since we now clean at the source level, this function is simplified
+	return strings.TrimSpace(jsonStr)
+}
+
 // convertToSchema recursively converts parsed JSON to Schema
 func (p *DocumentParser) convertToSchema(data interface{}, description string) *parser.Schema {
 	switch v := data.(type) {
@@ -479,7 +547,7 @@ func (p *DocumentParser) convertToSchema(data interface{}, description string) *
 
 		for key, value := range v {
 			schema.Properties[key] = p.convertToSchema(value, fmt.Sprintf("%s property", key))
-			
+
 			// Special handling for method field - if it has a string value, make it an enum
 			if key == "method" {
 				if methodValue, ok := value.(string); ok && methodValue != "" {
