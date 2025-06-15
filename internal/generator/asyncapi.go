@@ -127,13 +127,23 @@ type AsyncAPICorrelationId struct {
 	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
-// AsyncAPIParameter represents a parameter in AsyncAPI 3.0.0 (simplified)
+// AsyncAPIParameter represents a parameter in AsyncAPI 3.0.0
 type AsyncAPIParameter struct {
-	Description string        `json:"description,omitempty" yaml:"description,omitempty"`
-	Default     interface{}   `json:"default,omitempty" yaml:"default,omitempty"`
-	Enum        []interface{} `json:"enum,omitempty" yaml:"enum,omitempty"`
-	Examples    []interface{} `json:"examples,omitempty" yaml:"examples,omitempty"`
-	Location    string        `json:"location,omitempty" yaml:"location,omitempty"`
+	Description string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Schema      *AsyncAPIParameterSchema `json:"schema,omitempty" yaml:"schema,omitempty"`
+	Default     interface{}              `json:"default,omitempty" yaml:"default,omitempty"`
+	Enum        []interface{}            `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Examples    []interface{}            `json:"examples,omitempty" yaml:"examples,omitempty"`
+	Location    string                   `json:"location,omitempty" yaml:"location,omitempty"`
+}
+
+// AsyncAPIParameterSchema represents a parameter schema
+type AsyncAPIParameterSchema struct {
+	Type     string        `json:"type,omitempty" yaml:"type,omitempty"`
+	Required bool          `json:"required,omitempty" yaml:"required,omitempty"`
+	Enum     []interface{} `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Default  interface{}   `json:"default,omitempty" yaml:"default,omitempty"`
+	Example  interface{}   `json:"example,omitempty" yaml:"example,omitempty"`
 }
 
 // AsyncAPISchema represents a schema
@@ -440,27 +450,42 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 		Parameters:  make(map[string]*AsyncAPIParameter),
 	}
 
-	// Convert parameters using the simplified 3.0.0 format
+	// Convert parameters using the AsyncAPI 3.0.0 format
 	for _, param := range channel.Parameters {
-		asyncChannel.Parameters[param.Name] = &AsyncAPIParameter{
+		asyncParam := &AsyncAPIParameter{
 			Description: param.Description,
 			Location:    param.Location,
-			// Note: In AsyncAPI 3.0.0, parameters are simplified and only support string type
-			// We extract enum, default, examples from the schema if available
 		}
 
-		// Extract simple properties from schema if available
+		// Create parameter schema with required information
 		if param.Schema != nil {
+			asyncParam.Schema = &AsyncAPIParameterSchema{
+				Type:     param.Schema.Type,
+				Required: param.Required,
+			}
+
+			// Extract properties from schema
 			if param.Schema.Default != nil {
-				asyncChannel.Parameters[param.Name].Default = param.Schema.Default
+				asyncParam.Schema.Default = param.Schema.Default
+				asyncParam.Default = param.Schema.Default
 			}
 			if param.Schema.Enum != nil {
-				asyncChannel.Parameters[param.Name].Enum = param.Schema.Enum
+				asyncParam.Schema.Enum = param.Schema.Enum
+				asyncParam.Enum = param.Schema.Enum
 			}
 			if param.Schema.Example != nil {
-				asyncChannel.Parameters[param.Name].Examples = []interface{}{param.Schema.Example}
+				asyncParam.Schema.Example = param.Schema.Example
+				asyncParam.Examples = []interface{}{param.Schema.Example}
+			}
+		} else {
+			// Fallback for parameters without schema
+			asyncParam.Schema = &AsyncAPIParameterSchema{
+				Type:     "string",
+				Required: param.Required,
 			}
 		}
+
+		asyncChannel.Parameters[param.Name] = asyncParam
 	}
 
 	// Convert messages to the new 3.0.0 format

@@ -483,7 +483,7 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 			Name:        name,
 			Description: description,
 			Location:    "body",
-			Required:    strings.ToLower(mandatory) != "no" && mandatory != "",
+			Required:    p.isMandatoryParameter(mandatory),
 			Schema: &parser.Schema{
 				Type:        p.convertTypeToJSONSchema(paramType),
 				Description: description,
@@ -494,6 +494,29 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 	})
 
 	return nil
+}
+
+// isMandatoryParameter determines if a parameter is mandatory based on the mandatory field value
+func (p *DocumentParser) isMandatoryParameter(mandatory string) bool {
+	mandatory = strings.TrimSpace(strings.ToLower(mandatory))
+
+	// Check for explicit "yes" or "true" indicators
+	if mandatory == "yes" || mandatory == "true" || mandatory == "1" || mandatory == "required" {
+		return true
+	}
+
+	// Check for explicit "no" or "false" indicators
+	if mandatory == "no" || mandatory == "false" || mandatory == "0" || mandatory == "optional" || mandatory == "" {
+		return false
+	}
+
+	// For any other value, check if it contains positive indicators
+	if strings.Contains(mandatory, "yes") || strings.Contains(mandatory, "required") || strings.Contains(mandatory, "true") {
+		return true
+	}
+
+	// Default to false for ambiguous cases
+	return false
 }
 
 // convertTypeToJSONSchema converts parameter type to JSON Schema type

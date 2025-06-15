@@ -359,3 +359,155 @@ func TestDocumentParser_ParseExchangeInfoMethod(t *testing.T) {
 	// Response should be an object
 	assert.Equal(t, "object", receiveMsg.Payload.Type)
 }
+
+// TestDocumentParser_IsMandatoryParameter tests the isMandatoryParameter function
+func TestDocumentParser_IsMandatoryParameter(t *testing.T) {
+	parser := &DocumentParser{}
+
+	testCases := []struct {
+		name     string
+		input    string
+		expected bool
+	}{
+		// Test explicit "yes" cases
+		{"Yes uppercase", "YES", true},
+		{"Yes lowercase", "yes", true},
+		{"Yes mixed case", "Yes", true},
+		{"Yes with spaces", " YES ", true},
+
+		// Test explicit "no" cases
+		{"No uppercase", "NO", false},
+		{"No lowercase", "no", false},
+		{"No mixed case", "No", false},
+		{"No with spaces", " NO ", false},
+
+		// Test other positive indicators
+		{"True uppercase", "TRUE", true},
+		{"True lowercase", "true", true},
+		{"Required uppercase", "REQUIRED", true},
+		{"Required lowercase", "required", true},
+		{"Number 1", "1", true},
+
+		// Test other negative indicators
+		{"False uppercase", "FALSE", false},
+		{"False lowercase", "false", false},
+		{"Optional uppercase", "OPTIONAL", false},
+		{"Optional lowercase", "optional", false},
+		{"Number 0", "0", false},
+		{"Empty string", "", false},
+
+		// Test partial matches
+		{"Contains yes", "yes, but conditional", true},
+		{"Contains required", "required in some cases", true},
+		{"Contains true", "true if authenticated", true},
+
+		// Test ambiguous cases (should default to false)
+		{"Maybe", "maybe", false},
+		{"Sometimes", "sometimes", false},
+		{"Unknown text", "xyz", false},
+		{"Question mark", "?", false},
+
+		// Test edge cases
+		{"Only whitespace", "   ", false},
+		{"Tab characters", "\t\n", false},
+		{"Mixed whitespace and yes", " \t YES \n ", true},
+		{"Mixed whitespace and no", " \t NO \n ", false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := parser.isMandatoryParameter(tc.input)
+			assert.Equal(t, tc.expected, result, "isMandatoryParameter(%q) should return %v", tc.input, tc.expected)
+		})
+	}
+}
+
+// TestDocumentParser_ParseParameterTable_MandatoryHandling tests that parameter table parsing correctly handles mandatory flags
+func TestDocumentParser_ParseParameterTable_MandatoryHandling(t *testing.T) {
+	parser := &DocumentParser{}
+
+	// Create a mock HTML table with various mandatory values
+	tableContent := `
+	<tr>
+		<th>Name</th>
+		<th>Type</th>
+		<th>Mandatory</th>
+		<th>Description</th>
+	</tr>
+	<tr>
+		<td>symbol</td>
+		<td>STRING</td>
+		<td>YES</td>
+		<td>Trading symbol</td>
+	</tr>
+	<tr>
+		<td>limit</td>
+		<td>INT</td>
+		<td>NO</td>
+		<td>Default: 100; Maximum: 5000</td>
+	</tr>
+	<tr>
+		<td>interval</td>
+		<td>STRING</td>
+		<td>REQUIRED</td>
+		<td>Time interval</td>
+	</tr>
+	<tr>
+		<td>startTime</td>
+		<td>LONG</td>
+		<td>OPTIONAL</td>
+		<td>Start time</td>
+	</tr>
+	<tr>
+		<td>endTime</td>
+		<td>LONG</td>
+		<td></td>
+		<td>End time</td>
+	</tr>
+	`
+
+	channel := &wsparser.Channel{
+		Parameters: []*wsparser.Parameter{},
+	}
+
+	err := parser.parseParameterTable(channel, tableContent)
+	require.NoError(t, err, "Should parse parameter table without error")
+
+	// Verify we got the expected number of parameters
+	assert.Len(t, channel.Parameters, 5, "Should find 5 parameters")
+
+	// Create a map for easier testing
+	paramMap := make(map[string]*wsparser.Parameter)
+	for i := range channel.Parameters {
+		paramMap[channel.Parameters[i].Name] = channel.Parameters[i]
+	}
+
+	// Test each parameter's Required field
+	testCases := []struct {
+		paramName string
+		expected  bool
+	}{
+		{"symbol", true},     // YES -> true
+		{"limit", false},     // NO -> false
+		{"interval", true},   // REQUIRED -> true
+		{"startTime", false}, // OPTIONAL -> false
+		{"endTime", false},   // empty -> false
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.paramName, func(t *testing.T) {
+			param, exists := paramMap[tc.paramName]
+			require.True(t, exists, "Parameter %s should exist", tc.paramName)
+			assert.Equal(t, tc.expected, param.Required, "Parameter %s Required should be %v", tc.paramName, tc.expected)
+		})
+	}
+
+	// Additional checks for specific parameters
+	symbolParam := paramMap["symbol"]
+	assert.Equal(t, "string", symbolParam.Schema.Type, "symbol should be string type")
+	assert.Equal(t, "Trading symbol", symbolParam.Description, "symbol should have correct description")
+
+	limitParam := paramMap["limit"]
+	assert.Equal(t, "integer", limitParam.Schema.Type, "limit should be integer type")
+	assert.Equal(t, "Default: 100; Maximum: 5000", limitParam.Description, "limit should have correct description")
+}
