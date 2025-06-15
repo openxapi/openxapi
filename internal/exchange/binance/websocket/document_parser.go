@@ -387,7 +387,8 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 
 		// Collect description
 		if !foundWeight && !foundDataSource && !strings.HasPrefix(line, "TABLE:") &&
-			!strings.HasPrefix(line, "CODE:") && !strings.HasPrefix(line, "JSON:") {
+			!strings.HasPrefix(line, "CODE:") && !strings.HasPrefix(line, "JSON:") &&
+			!strings.HasPrefix(strings.ToLower(line), "parameters:") {
 			description.WriteString(line)
 			description.WriteString("\n")
 		}
