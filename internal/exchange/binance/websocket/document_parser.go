@@ -128,7 +128,30 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 		codeText := s.Find(".prism-code").Text()
 		codeText = strings.TrimSpace(codeText)
 		if codeText != "" {
-			*content = append(*content, "CODE:"+codeText)
+			// Check if this code block follows a "Response:" paragraph
+			isResponse := false
+			
+			// Look for "Response:" in the immediately preceding elements
+			prev := s.Prev()
+			for i := 0; i < 5 && prev.Length() > 0; i++ { // Check up to 5 previous siblings
+				if prev.Is("p") {
+					prevText := strings.ToLower(cleanText(prev.Text()))
+					if strings.HasPrefix(prevText, "response:") {
+						isResponse = true
+						break
+					}
+				} else if prev.Is("h1, h2, h3, h4, h5, h6") {
+					// If we hit a header before finding Response:, this is likely a request
+					break
+				}
+				prev = prev.Prev()
+			}
+			
+			if isResponse {
+				*content = append(*content, "JSON:"+codeText)
+			} else {
+				*content = append(*content, "CODE:"+codeText)
+			}
 		}
 	}
 
@@ -137,22 +160,6 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 		text := cleanText(s.Text())
 		if text != "" {
 			*content = append(*content, text)
-		}
-	}
-
-	// Extract JSON examples from code blocks
-	if s.HasClass("language-javascript") || s.HasClass("language-json") {
-		var lines []string
-		code := s.Find("code")
-		code.Children().Each(func(i int, child *goquery.Selection) {
-			text := cleanResponseLine(child.Text())
-			if text != "" {
-				lines = append(lines, text)
-			}
-		})
-		jsonText := strings.Join(lines, " ")
-		if jsonText != "" {
-			*content = append(*content, "JSON:"+jsonText)
 		}
 	}
 
@@ -196,6 +203,13 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 	}
 }
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // cleanResponseLine cleans response JSON lines (borrowed from REST implementation)
 func cleanResponseLine(text string) string {
 	commentRegex := regexp.MustCompile(`(\s+|,)(//|#).*`)
@@ -214,10 +228,6 @@ func cleanResponseLine(text string) string {
 
 // extractMethod processes the content following a method header to extract method information
 func (p *DocumentParser) extractMethod(content []string, category string) (*parser.Channel, bool) {
-	for i, line := range content {
-		logrus.Debugf("line %d: %s", i, line)
-	}
-
 	channel := &parser.Channel{
 		Tags:     []string{category},
 		Messages: make(map[string]*parser.Message),
@@ -323,7 +333,8 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 		}
 
 		// Collect description
-		if !foundWeight && !foundDataSource && !strings.HasPrefix(line, "TABLE:") {
+		if !foundWeight && !foundDataSource && !strings.HasPrefix(line, "TABLE:") &&
+			!strings.HasPrefix(line, "CODE:") && !strings.HasPrefix(line, "JSON:") {
 			description.WriteString(line)
 			description.WriteString("\n")
 		}
@@ -468,6 +479,13 @@ func (p *DocumentParser) convertToSchema(data interface{}, description string) *
 
 		for key, value := range v {
 			schema.Properties[key] = p.convertToSchema(value, fmt.Sprintf("%s property", key))
+			
+			// Special handling for method field - if it has a string value, make it an enum
+			if key == "method" {
+				if methodValue, ok := value.(string); ok && methodValue != "" {
+					schema.Properties[key].Enum = []interface{}{methodValue}
+				}
+			}
 		}
 
 		return schema

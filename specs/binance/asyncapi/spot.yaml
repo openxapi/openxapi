@@ -1,555 +1,1417 @@
 asyncapi: 3.0.0
 info:
-  title: Binance Spot WebSocket API
-  version: 0.1.0
-  description: |
-    AsyncAPI specification for Binance Spot WebSocket streams.
-    This specification describes the WebSocket API for Binance Spot market data.
-  license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
-  contact:
-    name: Binance
-    url: https://www.binance.com
-    email: api@binance.com
-
+    title: Binance Spot WebSocket API
+    version: 0.1.0
+    description: AsyncAPI specification for Binance exchange - Spot WebSocket API
 servers:
-  production:
-    host: stream.binance.com:9443
-    protocol: wss
-    description: Main production WebSocket server
-  production2:
-    host: stream.binance.com:443
-    protocol: wss
-    description: Alternative production WebSocket server
-  dataStream:
-    host: data-stream.binance.vision
-    protocol: wss
-    description: Market data only WebSocket server
-
+    production:
+        host: stream.binance.com:9443
+        protocol: ws
+        title: Binance Server
+        summary: Binance Spot WebSocket API Server
+        description: WebSocket server for binance exchange spot API
 channels:
-  singleStream:
-    address: '/ws/{streamName}'
-    parameters:
-      streamName:
-        description: |
-          Name of the stream. Format: <symbol>@<streamType>[_<parameter>]
-          Examples: bnbbtc@aggTrade, bnbbtc@kline_1m, bnbbtc@depth
-    description: Channel for single stream data
-    messages:
-      aggregateTrade:
-        $ref: '#/components/messages/aggregateTrade'
-      trade:
-        $ref: '#/components/messages/trade'
-      kline:
-        $ref: '#/components/messages/kline'
-      miniTicker:
-        $ref: '#/components/messages/miniTicker'
-      ticker:
-        $ref: '#/components/messages/ticker'
-      bookTicker:
-        $ref: '#/components/messages/bookTicker'
-      depth:
-        $ref: '#/components/messages/depth'
-
-  combinedStream:
-    address: '/stream'
-    description: Channel for combined stream data
-    messages:
-      combinedMessage:
-        $ref: '#/components/messages/combinedMessage'
-
-operations:
-  subscribeSingleStream:
-    action: receive
-    channel:
-      $ref: '#/channels/singleStream'
-    messages:
-      - $ref: '#/channels/singleStream/messages/aggregateTrade'
-      - $ref: '#/channels/singleStream/messages/trade'
-      - $ref: '#/channels/singleStream/messages/kline'
-      - $ref: '#/channels/singleStream/messages/miniTicker'
-      - $ref: '#/channels/singleStream/messages/ticker'
-      - $ref: '#/channels/singleStream/messages/bookTicker'
-      - $ref: '#/channels/singleStream/messages/depth'
-    summary: Receive data from a single stream
-    description: |
-      Connect to a single WebSocket stream to receive real-time market data.
-      The stream name is specified in the URL path.
-
-  subscribeCombinedStream:
-    action: receive
-    channel:
-      $ref: '#/channels/combinedStream'
-    messages:
-      - $ref: '#/channels/combinedStream/messages/combinedMessage'
-    summary: Receive data from multiple streams combined
-    description: |
-      Connect to a combined WebSocket stream to receive real-time market data from multiple streams.
-      The streams are specified in the subscription message sent after connection.
-
-components:
-  messages:
-    aggregateTrade:
-      name: aggregateTrade
-      title: Aggregate Trade Streams
-      summary: Aggregated trade information for a single taker order
-      contentType: application/json
-      payload:
-        type: object
-        required:
-          - e
-          - E
-          - s
-          - a
-          - p
-          - q
-          - f
-          - l
-          - T
-          - m
-        properties:
-          e:
-            type: string
-            description: Event type
-            example: "aggTrade"
-          E:
-            type: integer
-            description: Event time
-            example: 1672515782136
-          s:
-            type: string
-            description: Symbol
-            example: "BNBBTC"
-          a:
-            type: integer
-            description: Aggregate trade ID
-            example: 12345
-          p:
-            type: string
-            description: Price
-            example: "0.001"
-          q:
-            type: string
-            description: Quantity
-            example: "100"
-          f:
-            type: integer
-            description: First trade ID
-            example: 100
-          l:
-            type: integer
-            description: Last trade ID
-            example: 105
-          T:
-            type: integer
-            description: Trade time
-            example: 1672515782136
-          m:
-            type: boolean
-            description: Is the buyer the market maker?
-            example: true
-
-    trade:
-      name: trade
-      title: Trade Streams
-      summary: Raw trade information with unique buyer and seller
-      contentType: application/json
-      payload:
-        type: object
-        required:
-          - e
-          - E
-          - s
-          - t
-          - p
-          - q
-          - T
-          - m
-        properties:
-          e:
-            type: string
-            description: Event type
-            example: "trade"
-          E:
-            type: integer
-            description: Event time
-            example: 1672515782136
-          s:
-            type: string
-            description: Symbol
-            example: "BNBBTC"
-          t:
-            type: integer
-            description: Trade ID
-            example: 12345
-          p:
-            type: string
-            description: Price
-            example: "0.001"
-          q:
-            type: string
-            description: Quantity
-            example: "100"
-          T:
-            type: integer
-            description: Trade time
-            example: 1672515782136
-          m:
-            type: boolean
-            description: Is the buyer the market maker?
-            example: true
-
-    kline:
-      name: kline
-      title: Kline/Candlestick Streams
-      summary: Updates to current klines/candlestick every second
-      contentType: application/json
-      payload:
-        type: object
-        required:
-          - e
-          - E
-          - s
-          - k
-        properties:
-          e:
-            type: string
-            description: Event type
-            example: "kline"
-          E:
-            type: integer
-            description: Event time
-            example: 1672515782136
-          s:
-            type: string
-            description: Symbol
-            example: "BNBBTC"
-          k:
-            type: object
-            description: Kline data
-            required:
-              - t
-              - T
-              - s
-              - i
-              - o
-              - c
-              - h
-              - l
-              - v
-              - q
-            properties:
-              t:
-                type: integer
-                description: Kline start time
-                example: 1672515780000
-              T:
-                type: integer
-                description: Kline close time
-                example: 1672515839999
-              s:
-                type: string
-                description: Symbol
-                example: "BNBBTC"
-              i:
-                type: string
-                description: Interval
-                example: "1m"
-              o:
-                type: string
-                description: Open price
-                example: "0.0010"
-              c:
-                type: string
-                description: Close price
-                example: "0.0020"
-              h:
-                type: string
-                description: High price
-                example: "0.0025"
-              l:
-                type: string
-                description: Low price
-                example: "0.0015"
-              v:
-                type: string
-                description: Base asset volume
-                example: "1000"
-              q:
-                type: string
-                description: Quote asset volume
-                example: "1.0000"
-              n:
-                type: integer
-                description: Number of trades
-                example: 100
-              V:
-                type: string
-                description: Taker buy base asset volume
-                example: "500"
-              Q:
-                type: string
-                description: Taker buy quote asset volume
-                example: "0.5000"
-              B:
-                type: string
-                description: Ignore
-                example: "0"
-
-    miniTicker:
-      name: miniTicker
-      title: Mini Ticker Stream
-      summary: 24hr rolling window mini-ticker statistics
-      contentType: application/json
-      payload:
-        type: object
-        required:
-          - e
-          - E
-          - s
-          - c
-          - o
-          - h
-          - l
-          - v
-          - q
-        properties:
-          e:
-            type: string
-            description: Event type
-            example: "24hrMiniTicker"
-          E:
-            type: integer
-            description: Event time
-            example: 1672515782136
-          s:
-            type: string
-            description: Symbol
-            example: "BNBBTC"
-          c:
-            type: string
-            description: Close price
-            example: "0.0025"
-          o:
-            type: string
-            description: Open price
-            example: "0.0010"
-          h:
-            type: string
-            description: High price
-            example: "0.0025"
-          l:
-            type: string
-            description: Low price
-            example: "0.0010"
-          v:
-            type: string
-            description: Total traded base asset volume
-            example: "10000"
-          q:
-            type: string
-            description: Total traded quote asset volume
-            example: "18"
-
-    ticker:
-      name: ticker
-      title: Ticker Streams
-      summary: 24hr ticker statistics for a symbol
-      contentType: application/json
-      payload:
-        type: object
-        required:
-          - e
-          - E
-          - s
-        properties:
-          e:
-            type: string
-            description: Event type
-            example: "24hrTicker"
-          E:
-            type: integer
-            description: Event time
-            example: 1672515782136
-          s:
-            type: string
-            description: Symbol
-            example: "BNBBTC"
-          p:
-            type: string
-            description: Price change
-            example: "0.0015"
-          P:
-            type: string
-            description: Price change percent
-            example: "250.00"
-          w:
-            type: string
-            description: Weighted average price
-            example: "0.0018"
-          c:
-            type: string
-            description: Last price
-            example: "0.0025"
-          Q:
-            type: string
-            description: Last quantity
-            example: "10"
-          o:
-            type: string
-            description: Open price
-            example: "0.0010"
-          h:
-            type: string
-            description: High price
-            example: "0.0025"
-          l:
-            type: string
-            description: Low price
-            example: "0.0010"
-          v:
-            type: string
-            description: Total traded base asset volume
-            example: "10000"
-          q:
-            type: string
-            description: Total traded quote asset volume
-            example: "18"
-          O:
-            type: integer
-            description: Statistics open time
-            example: 1672429382136
-          C:
-            type: integer
-            description: Statistics close time
-            example: 1672515782136
-          F:
-            type: integer
-            description: First trade ID
-            example: 1000
-          L:
-            type: integer
-            description: Last trade ID
-            example: 1500
-          n:
-            type: integer
-            description: Total number of trades
-            example: 500
-
-    bookTicker:
-      name: bookTicker
-      title: Book Ticker Stream
-      summary: Best bid/ask price and quantity updates
-      contentType: application/json
-      payload:
-        type: object
-        required:
-          - u
-          - s
-          - b
-          - B
-          - a
-          - A
-        properties:
-          u:
-            type: integer
-            description: Order book updateId
-            example: 400900217
-          s:
-            type: string
-            description: Symbol
-            example: "BNBUSDT"
-          b:
-            type: string
-            description: Best bid price
-            example: "25.35190000"
-          B:
-            type: string
-            description: Best bid qty
-            example: "31.21000000"
-          a:
-            type: string
-            description: Best ask price
-            example: "25.36520000"
-          A:
-            type: string
-            description: Best ask qty
-            example: "40.66000000"
-
+    avgPrice:
+        address: avgPrice
+        title: Channel avgPrice
+        description: Get current average price for a symbol.
+        messages:
+            receiveMessage:
+                name: Current average price Response
+                title: Current average price Response
+                description: Receive response from avgPrice
+                payload:
+                    type: object
+                    description: JSON response data
+            sendMessage:
+                name: Current average price Request
+                title: Current average price Request
+                description: Send a avgPrice request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: ddbfb65f-9ebf-42ec-8240-8f0f91de0867
+                        method:
+                            type: string
+                            description: method property
+                            example: avgPrice
+                            enum:
+                                - avgPrice
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            symbol:
+                location: body
     depth:
-      name: depth
-      title: Depth Streams
-      summary: Order book price and quantity depth updates
-      contentType: application/json
-      payload:
-        type: object
-        required:
-          - e
-          - E
-          - s
-          - U
-          - u
-          - b
-          - a
-        properties:
-          e:
-            type: string
-            description: Event type
-            example: "depthUpdate"
-          E:
-            type: integer
-            description: Event time
-            example: 1672515782136
-          s:
-            type: string
-            description: Symbol
-            example: "BNBBTC"
-          U:
-            type: integer
-            description: First update ID
-            example: 157
-          u:
-            type: integer
-            description: Final update ID
-            example: 160
-          b:
-            type: array
-            description: Bids to be updated [price, quantity]
-            items:
-              type: array
-              minItems: 2
-              maxItems: 2
-              items:
-                type: string
-            example: [["0.0024", "10"], ["0.0023", "15"]]
-          a:
-            type: array
-            description: Asks to be updated [price, quantity]
-            items:
-              type: array
-              minItems: 2
-              maxItems: 2
-              items:
-                type: string
-            example: [["0.0026", "5"], ["0.0027", "20"]]
+        address: depth
+        title: Channel depth
+        description: |-
+            Get current order book.
+            Note that this request returns limited market depth.
+            If you need to continuously monitor order book updates, please consider using WebSocket Streams:
+            - <symbol>@depth<levels>
+            - <symbol>@depth
+            You can use depth request together with <symbol>@depth streams to maintain a local order book.
+            Parameters:
+        messages:
+            receiveMessage:
+                name: Order book Response
+                title: Order book Response
+                description: Receive response from depth
+                payload:
+                    type: object
+                    description: JSON response data
+            sendMessage:
+                name: Order book Request
+                title: Order book Request
+                description: Send a depth request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 51e2affb-0aba-4821-ba75-f2625006eb43
+                        method:
+                            type: string
+                            description: method property
+                            example: depth
+                            enum:
+                                - depth
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                limit:
+                                    type: number
+                                    description: limit property
+                                    example: 5
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            limit:
+                description: 'Default: 100; Maximum: 5000'
+                location: body
+            symbol:
+                location: body
+    exchangeInfo:
+        address: exchangeInfo
+        title: Channel exchangeInfo
+        description: Query current exchange trading rules, rate limits, and symbol information.
+        messages:
+            receiveMessage:
+                name: Exchange information Response
+                title: Exchange information Response
+                description: Receive response from exchangeInfo
+                payload:
+                    type: object
+                    description: JSON response data
+            sendMessage:
+                name: Exchange information Request
+                title: Exchange information Request
+                description: Send a exchangeInfo request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 5494febb-d167-46a2-996d-70533eb4d976
+                        method:
+                            type: string
+                            description: method property
+                            example: exchangeInfo
+                            enum:
+                                - exchangeInfo
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbols:
+                                    type: array
+                                    description: symbols property
+                                    items:
+                                        type: string
+                                        description: array item
+                                        example: BNBBTC
+        parameters:
+            permissions:
+                location: body
+            showPermissionSets:
+                location: body
+            symbol:
+                description: Describe a single symbol
+                location: body
+            symbolStatus:
+                location: body
+            symbols:
+                location: body
+    klines:
+        address: klines
+        title: Channel klines
+        description: |-
+            Get klines (candlestick bars).
+            Klines are uniquely identified by their open & close time.
+            If you need access to real-time kline updates, please consider using WebSocket Streams:
+            - <symbol>@kline_<interval>
+            If you need historical kline data,
+            please consider using data.binance.vision.
+        messages:
+            receiveMessage:
+                name: Klines Response
+                title: Klines Response
+                description: Receive response from klines
+                payload:
+                    type: object
+                    description: JSON response data
+            sendMessage:
+                name: Klines Request
+                title: Klines Request
+                description: Send a klines request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
+                        method:
+                            type: string
+                            description: method property
+                            example: klines
+                            enum:
+                                - klines
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: 1h
+                                limit:
+                                    type: number
+                                    description: limit property
+                                    example: 1
+                                startTime:
+                                    type: number
+                                    description: startTime property
+                                    example: 1.65596928e+12
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            endTime:
+                location: body
+            interval:
+                location: body
+            limit:
+                description: 'Default: 500; Maximum: 1000'
+                location: body
+            startTime:
+                location: body
+            symbol:
+                location: body
+            timeZone:
+                description: 'Default: 0 (UTC)'
+                location: body
+    myAllocations:
+        address: myAllocations
+        title: Channel myAllocations
+        description: Retrieves allocations resulting from SOR order placement.
+        messages:
+            receiveMessage:
+                name: Account allocations (USER_DATA) Response
+                title: Account allocations (USER_DATA) Response
+                description: Receive response from myAllocations
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 20
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: array
+                            description: result property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    allocationId:
+                                        type: number
+                                        description: allocationId property
+                                        example: 0
+                                    allocationType:
+                                        type: string
+                                        description: allocationType property
+                                        example: SOR
+                                    commission:
+                                        type: string
+                                        description: commission property
+                                        example: "0.00000000"
+                                    commissionAsset:
+                                        type: string
+                                        description: commissionAsset property
+                                        example: BTC
+                                    isAllocator:
+                                        type: boolean
+                                        description: isAllocator property
+                                        example: false
+                                    isBuyer:
+                                        type: boolean
+                                        description: isBuyer property
+                                        example: false
+                                    isMaker:
+                                        type: boolean
+                                        description: isMaker property
+                                        example: false
+                                    orderId:
+                                        type: number
+                                        description: orderId property
+                                        example: 500
+                                    orderListId:
+                                        type: number
+                                        description: orderListId property
+                                        example: -1
+                                    price:
+                                        type: string
+                                        description: price property
+                                        example: "1.00000000"
+                                    qty:
+                                        type: string
+                                        description: qty property
+                                        example: "0.10000000"
+                                    quoteQty:
+                                        type: string
+                                        description: quoteQty property
+                                        example: "0.10000000"
+                                    symbol:
+                                        type: string
+                                        description: symbol property
+                                        example: BTCUSDT
+                                    time:
+                                        type: number
+                                        description: time property
+                                        example: 1.687319487614e+12
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Account allocations (USER_DATA) Request
+                title: Account allocations (USER_DATA) Request
+                description: Send a myAllocations request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                        method:
+                            type: string
+                            description: method property
+                            example: myAllocations
+                            enum:
+                                - myAllocations
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                apiKey:
+                                    type: string
+                                    description: apiKey property
+                                    example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                                orderId:
+                                    type: number
+                                    description: orderId property
+                                    example: 500
+                                signature:
+                                    type: string
+                                    description: signature property
+                                    example: c5a5ffb79fd4f2e10a92f895d488943a57954edf5933bde3338dfb6ea6d6eefc
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BTCUSDT
+                                timestamp:
+                                    type: number
+                                    description: timestamp property
+                                    example: 1.673923281052e+12
+        parameters:
+            endTime:
+                location: body
+            fromAllocationId:
+                location: body
+            limit:
+                description: 'Default: 500; Maximum: 1000'
+                location: body
+            orderId:
+                location: body
+            recvWindow:
+                description: The value cannot be greater than 60000
+                location: body
+            startTime:
+                location: body
+            symbol:
+                location: body
+            timestamp:
+                location: body
+    myPreventedMatches:
+        address: myPreventedMatches
+        title: Channel myPreventedMatches
+        description: |-
+            Displays the list of orders that were expired due to STP.
+            These are the combinations supported:
+            - symbol + preventedMatchId
+            - symbol + orderId
+            - symbol + orderId + fromPreventedMatchId (limit will default to 500)
+            - symbol + orderId + fromPreventedMatchId + limit
+            Parameters:
+        messages:
+            receiveMessage:
+                name: Account prevented matches (USER_DATA) Response
+                title: Account prevented matches (USER_DATA) Response
+                description: Receive response from myPreventedMatches
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 20
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: array
+                            description: result property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    makerOrderId:
+                                        type: number
+                                        description: makerOrderId property
+                                        example: 3
+                                    makerPreventedQuantity:
+                                        type: string
+                                        description: makerPreventedQuantity property
+                                        example: "1.300000"
+                                    makerSymbol:
+                                        type: string
+                                        description: makerSymbol property
+                                        example: BTCUSDT
+                                    preventedMatchId:
+                                        type: number
+                                        description: preventedMatchId property
+                                        example: 1
+                                    price:
+                                        type: string
+                                        description: price property
+                                        example: "1.100000"
+                                    selfTradePreventionMode:
+                                        type: string
+                                        description: selfTradePreventionMode property
+                                        example: EXPIRE_MAKER
+                                    symbol:
+                                        type: string
+                                        description: symbol property
+                                        example: BTCUSDT
+                                    takerOrderId:
+                                        type: number
+                                        description: takerOrderId property
+                                        example: 5
+                                    tradeGroupId:
+                                        type: number
+                                        description: tradeGroupId property
+                                        example: 1
+                                    transactTime:
+                                        type: number
+                                        description: transactTime property
+                                        example: 1.669101687094e+12
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Account prevented matches (USER_DATA) Request
+                title: Account prevented matches (USER_DATA) Request
+                description: Send a myPreventedMatches request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                        method:
+                            type: string
+                            description: method property
+                            example: myPreventedMatches
+                            enum:
+                                - myPreventedMatches
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                apiKey:
+                                    type: string
+                                    description: apiKey property
+                                    example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                                orderId:
+                                    type: number
+                                    description: orderId property
+                                    example: 35
+                                signature:
+                                    type: string
+                                    description: signature property
+                                    example: c5a5ffb79fd4f2e10a92f895d488943a57954edf5933bde3338dfb6ea6d6eefc
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BTCUSDT
+                                timestamp:
+                                    type: number
+                                    description: timestamp property
+                                    example: 1.673923281052e+12
+        parameters:
+            fromPreventedMatchId:
+                location: body
+            limit:
+                description: 'Default: 500; Maximum: 1000'
+                location: body
+            orderId:
+                location: body
+            preventedMatchId:
+                location: body
+            recvWindow:
+                description: The value cannot be greater than 60000
+                location: body
+            symbol:
+                location: body
+            timestamp:
+                location: body
+    ping:
+        address: ping
+        title: Channel ping
+        description: |-
+            Test connectivity to the WebSocket API.
+            Note:
+            You can use regular WebSocket ping frames to test connectivity as well,
+            WebSocket API will respond with pong frames as soon as possible.
+            ping request along with time is a safe way to test request-response handling in your application.
+        messages:
+            receiveMessage:
+                name: Test connectivity Response
+                title: Test connectivity Response
+                description: Receive response from ping
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 922bcc6e-9de8-440d-9e84-7c80933a8d0d
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 1
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Test connectivity Request
+                title: Test connectivity Request
+                description: Send a ping request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 922bcc6e-9de8-440d-9e84-7c80933a8d0d
+                        method:
+                            type: string
+                            description: method property
+                            example: ping
+                            enum:
+                                - ping
+    ticker:
+        address: ticker
+        title: Channel ticker
+        description: |-
+            Get rolling window price change statistics with a custom window.
+            This request is similar to ticker.24hr,
+            but statistics are computed on demand using the arbitrary window you specify.
+            Note: Window size precision is limited to 1 minute.
+            While the closeTime is the current time of the request, openTime always start on a minute boundary.
+            As such, the effective window might be up to 59999 ms wider than the requested windowSize.
+            If you need to continuously monitor trading statistics, please consider using WebSocket Streams:
+            - <symbol>@ticker_<window_size> or !ticker_<window-size>@arr
+            Parameters:
+            Supported window sizes:
+            Notes:
+            - Either symbol or symbols must be specified.
+            - Maximum number of symbols in one request: 200.
+            - Window size units cannot be combined.
+            E.g., 1d 2h is not supported.
+        messages:
+            receiveMessage:
+                name: Rolling window price change statistics Response
+                title: Rolling window price change statistics Response
+                description: Receive response from ticker
+                payload:
+                    type: object
+                    description: JSON response data
+            sendMessage:
+                name: Rolling window price change statistics Request
+                title: Rolling window price change statistics Request
+                description: Send a ticker request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
+                        method:
+                            type: string
+                            description: method property
+                            example: ticker
+                            enum:
+                                - ticker
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbols:
+                                    type: array
+                                    description: symbols property
+                                    items:
+                                        type: string
+                                        description: array item
+                                        example: BNBBTC
+                                windowSize:
+                                    type: string
+                                    description: windowSize property
+                                    example: 7d
+        parameters:
+            symbol:
+                description: Query ticker of a single symbol
+                location: body
+            symbols:
+                location: body
+            type:
+                description: 'Ticker type: FULL (default) or MINI'
+                location: body
+            windowSize:
+                description: Default 1d
+                location: body
+    ticker_24hr:
+        address: ticker.24hr
+        title: Channel ticker.24hr
+        description: |-
+            Get 24-hour rolling window price change statistics.
+            If you need to continuously monitor trading statistics, please consider using WebSocket Streams:
+            - <symbol>@ticker or !ticker@arr
+            - <symbol>@miniTicker or !miniTicker@arr
+            If you need different window sizes,
+            use the ticker request.
+            Parameters:
+            Notes:
+            - symbol and symbols cannot be used together.
+            - If no symbol is specified, returns information about all symbols currently trading on the exchange.
+        messages:
+            receiveMessage:
+                name: 24hr ticker price change statistics Response
+                title: 24hr ticker price change statistics Response
+                description: Receive response from ticker.24hr
+                payload:
+                    type: object
+                    description: JSON response data
+            sendMessage:
+                name: 24hr ticker price change statistics Request
+                title: 24hr ticker price change statistics Request
+                description: Send a ticker.24hr request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 93fb61ef-89f8-4d6e-b022-4f035a3fadad
+                        method:
+                            type: string
+                            description: method property
+                            example: ticker.24hr
+                            enum:
+                                - ticker.24hr
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            symbol:
+                description: Query ticker for a single symbol
+                location: body
+            symbols:
+                location: body
+            type:
+                description: 'Ticker type: FULL (default) or MINI'
+                location: body
+    ticker_book:
+        address: ticker.book
+        title: Channel ticker.book
+        description: |-
+            Get the current best price and quantity on the order book.
+            If you need access to real-time order book ticker updates, please consider using WebSocket Streams:
+            - <symbol>@bookTicker
+            Parameters:
+            Notes:
+            - symbol and symbols cannot be used together.
+            - If no symbol is specified, returns information about all symbols currently trading on the exchange.
+        messages:
+            receiveMessage:
+                name: Symbol order book ticker Response
+                title: Symbol order book ticker Response
+                description: Receive response from ticker.book
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 9d32157c-a556-4d27-9866-66760a174b57
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 2
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                            properties:
+                                askPrice:
+                                    type: string
+                                    description: askPrice property
+                                    example: "0.01358100"
+                                askQty:
+                                    type: string
+                                    description: askQty property
+                                    example: "17.83700000"
+                                bidPrice:
+                                    type: string
+                                    description: bidPrice property
+                                    example: "0.01358000"
+                                bidQty:
+                                    type: string
+                                    description: bidQty property
+                                    example: "12.53400000"
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Symbol order book ticker Request
+                title: Symbol order book ticker Request
+                description: Send a ticker.book request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 057deb3a-2990-41d1-b58b-98ea0f09e1b4
+                        method:
+                            type: string
+                            description: method property
+                            example: ticker.book
+                            enum:
+                                - ticker.book
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbols:
+                                    type: array
+                                    description: symbols property
+                                    items:
+                                        type: string
+                                        description: array item
+                                        example: BNBBTC
+        parameters:
+            symbol:
+                description: Query ticker for a single symbol
+                location: body
+            symbols:
+                location: body
+    ticker_price:
+        address: ticker.price
+        title: Channel ticker.price
+        description: |-
+            Get the latest market price for a symbol.
+            If you need access to real-time price updates, please consider using WebSocket Streams:
+            - <symbol>@aggTrade
+            - <symbol>@trade
+            Parameters:
+            Notes:
+            - symbol and symbols cannot be used together.
+            - If no symbol is specified, returns information about all symbols currently trading on the exchange.
+        messages:
+            receiveMessage:
+                name: Symbol price ticker Response
+                title: Symbol price ticker Response
+                description: Receive response from ticker.price
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 2
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                            properties:
+                                price:
+                                    type: string
+                                    description: price property
+                                    example: "0.01361900"
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Symbol price ticker Request
+                title: Symbol price ticker Request
+                description: Send a ticker.price request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
+                        method:
+                            type: string
+                            description: method property
+                            example: ticker.price
+                            enum:
+                                - ticker.price
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            symbol:
+                description: Query price for a single symbol
+                location: body
+            symbols:
+                location: body
+    ticker_tradingDay:
+        address: ticker.tradingDay
+        title: Channel ticker.tradingDay
+        description: |-
+            Price change statistics for a trading day.
+            4 for each requested symbol.  The weight for this request will cap at 200 once the number of symbols in the request is more than 50.
+            Parameters:
+            Notes:
+            - Supported values for timeZone:
 
-    combinedMessage:
-      name: combinedMessage
-      title: Combined Stream Message
-      summary: Message from a combined stream
-      contentType: application/json
-      payload:
-        type: object
-        required:
-          - stream
-          - data
-        properties:
-          stream:
-            type: string
-            description: Stream name
-            example: "btcusdt@aggTrade"
-          data:
-            type: object
-            description: Original payload data
-            additionalProperties: true 
+            Hours and minutes (e.g. -1:00, 05:45)
+            Only hours (e.g. 0, 8, 4)
+        messages:
+            receiveMessage:
+                name: Trading Day Ticker Response
+                title: Trading Day Ticker Response
+                description: Receive response from ticker.tradingDay
+                payload:
+                    type: object
+                    description: JSON response data
+            sendMessage:
+                name: Trading Day Ticker Request
+                title: Trading Day Ticker Request
+                description: Send a ticker.tradingDay request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
+                        method:
+                            type: string
+                            description: method property
+                            example: ticker.tradingDay
+                            enum:
+                                - ticker.tradingDay
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbols:
+                                    type: array
+                                    description: symbols property
+                                    items:
+                                        type: string
+                                        description: array item
+                                        example: BNBBTC
+                                timeZone:
+                                    type: string
+                                    description: timeZone property
+                                    example: "00:00"
+        parameters:
+            symbol:
+                description: Query ticker of a single symbol
+                location: body
+            symbols:
+                location: body
+            timeZone:
+                description: 'Default: 0 (UTC)'
+                location: body
+            type:
+                description: 'Supported values: FULL or MINI. If none provided, the default is FULL'
+                location: body
+    time:
+        address: time
+        title: Channel time
+        description: Test connectivity to the WebSocket API and get the current server time.
+        messages:
+            receiveMessage:
+                name: Check server time Response
+                title: Check server time Response
+                description: Receive response from time
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 187d3cb2-942d-484c-8271-4e2141bbadb1
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 1
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                            properties:
+                                serverTime:
+                                    type: number
+                                    description: serverTime property
+                                    example: 1.65640052626e+12
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Check server time Request
+                title: Check server time Request
+                description: Send a time request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 187d3cb2-942d-484c-8271-4e2141bbadb1
+                        method:
+                            type: string
+                            description: method property
+                            example: time
+                            enum:
+                                - time
+    uiKlines:
+        address: uiKlines
+        title: Channel uiKlines
+        description: |-
+            Get klines (candlestick bars) optimized for presentation.
+            This request is similar to klines, having the same parameters and response.
+            uiKlines return modified kline data, optimized for presentation of candlestick charts.
+        messages:
+            receiveMessage:
+                name: UI Klines Response
+                title: UI Klines Response
+                description: Receive response from uiKlines
+                payload:
+                    type: object
+                    description: JSON response data
+            sendMessage:
+                name: UI Klines Request
+                title: UI Klines Request
+                description: Send a uiKlines request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: b137468a-fb20-4c06-bd6b-625148eec958
+                        method:
+                            type: string
+                            description: method property
+                            example: uiKlines
+                            enum:
+                                - uiKlines
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: 1h
+                                limit:
+                                    type: number
+                                    description: limit property
+                                    example: 1
+                                startTime:
+                                    type: number
+                                    description: startTime property
+                                    example: 1.65596928e+12
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            endTime:
+                location: body
+            interval:
+                description: See klines
+                location: body
+            limit:
+                description: 'Default: 500; Maximum: 1000'
+                location: body
+            startTime:
+                location: body
+            symbol:
+                location: body
+            timeZone:
+                description: 'Default: 0 (UTC)'
+                location: body
+operations:
+    receive_avgPrice:
+        title: Receive from avgPrice
+        description: Receive response from avgPrice
+        action: receive
+        channel:
+            $ref: '#/channels/avgPrice'
+        messages:
+            - $ref: '#/channels/avgPrice/messages/receiveMessage'
+    receive_depth:
+        title: Receive from depth
+        description: Receive response from depth
+        action: receive
+        channel:
+            $ref: '#/channels/depth'
+        messages:
+            - $ref: '#/channels/depth/messages/receiveMessage'
+    receive_exchangeInfo:
+        title: Receive from exchangeInfo
+        description: Receive response from exchangeInfo
+        action: receive
+        channel:
+            $ref: '#/channels/exchangeInfo'
+        messages:
+            - $ref: '#/channels/exchangeInfo/messages/receiveMessage'
+    receive_klines:
+        title: Receive from klines
+        description: Receive response from klines
+        action: receive
+        channel:
+            $ref: '#/channels/klines'
+        messages:
+            - $ref: '#/channels/klines/messages/receiveMessage'
+    receive_myAllocations:
+        title: Receive from myAllocations
+        description: Receive response from myAllocations
+        action: receive
+        channel:
+            $ref: '#/channels/myAllocations'
+        messages:
+            - $ref: '#/channels/myAllocations/messages/receiveMessage'
+    receive_myPreventedMatches:
+        title: Receive from myPreventedMatches
+        description: Receive response from myPreventedMatches
+        action: receive
+        channel:
+            $ref: '#/channels/myPreventedMatches'
+        messages:
+            - $ref: '#/channels/myPreventedMatches/messages/receiveMessage'
+    receive_ping:
+        title: Receive from ping
+        description: Receive response from ping
+        action: receive
+        channel:
+            $ref: '#/channels/ping'
+        messages:
+            - $ref: '#/channels/ping/messages/receiveMessage'
+    receive_ticker:
+        title: Receive from ticker
+        description: Receive response from ticker
+        action: receive
+        channel:
+            $ref: '#/channels/ticker'
+        messages:
+            - $ref: '#/channels/ticker/messages/receiveMessage'
+    receive_ticker_24hr:
+        title: Receive from ticker.24hr
+        description: Receive response from ticker.24hr
+        action: receive
+        channel:
+            $ref: '#/channels/ticker_24hr'
+        messages:
+            - $ref: '#/channels/ticker_24hr/messages/receiveMessage'
+    receive_ticker_book:
+        title: Receive from ticker.book
+        description: Receive response from ticker.book
+        action: receive
+        channel:
+            $ref: '#/channels/ticker_book'
+        messages:
+            - $ref: '#/channels/ticker_book/messages/receiveMessage'
+    receive_ticker_price:
+        title: Receive from ticker.price
+        description: Receive response from ticker.price
+        action: receive
+        channel:
+            $ref: '#/channels/ticker_price'
+        messages:
+            - $ref: '#/channels/ticker_price/messages/receiveMessage'
+    receive_ticker_tradingDay:
+        title: Receive from ticker.tradingDay
+        description: Receive response from ticker.tradingDay
+        action: receive
+        channel:
+            $ref: '#/channels/ticker_tradingDay'
+        messages:
+            - $ref: '#/channels/ticker_tradingDay/messages/receiveMessage'
+    receive_time:
+        title: Receive from time
+        description: Receive response from time
+        action: receive
+        channel:
+            $ref: '#/channels/time'
+        messages:
+            - $ref: '#/channels/time/messages/receiveMessage'
+    receive_uiKlines:
+        title: Receive from uiKlines
+        description: Receive response from uiKlines
+        action: receive
+        channel:
+            $ref: '#/channels/uiKlines'
+        messages:
+            - $ref: '#/channels/uiKlines/messages/receiveMessage'
+    send_avgPrice:
+        title: Send to avgPrice
+        description: Send a avgPrice request
+        action: send
+        channel:
+            $ref: '#/channels/avgPrice'
+        messages:
+            - $ref: '#/channels/avgPrice/messages/sendMessage'
+    send_depth:
+        title: Send to depth
+        description: Send a depth request
+        action: send
+        channel:
+            $ref: '#/channels/depth'
+        messages:
+            - $ref: '#/channels/depth/messages/sendMessage'
+    send_exchangeInfo:
+        title: Send to exchangeInfo
+        description: Send a exchangeInfo request
+        action: send
+        channel:
+            $ref: '#/channels/exchangeInfo'
+        messages:
+            - $ref: '#/channels/exchangeInfo/messages/sendMessage'
+    send_klines:
+        title: Send to klines
+        description: Send a klines request
+        action: send
+        channel:
+            $ref: '#/channels/klines'
+        messages:
+            - $ref: '#/channels/klines/messages/sendMessage'
+    send_myAllocations:
+        title: Send to myAllocations
+        description: Send a myAllocations request
+        action: send
+        channel:
+            $ref: '#/channels/myAllocations'
+        messages:
+            - $ref: '#/channels/myAllocations/messages/sendMessage'
+    send_myPreventedMatches:
+        title: Send to myPreventedMatches
+        description: Send a myPreventedMatches request
+        action: send
+        channel:
+            $ref: '#/channels/myPreventedMatches'
+        messages:
+            - $ref: '#/channels/myPreventedMatches/messages/sendMessage'
+    send_ping:
+        title: Send to ping
+        description: Send a ping request
+        action: send
+        channel:
+            $ref: '#/channels/ping'
+        messages:
+            - $ref: '#/channels/ping/messages/sendMessage'
+    send_ticker:
+        title: Send to ticker
+        description: Send a ticker request
+        action: send
+        channel:
+            $ref: '#/channels/ticker'
+        messages:
+            - $ref: '#/channels/ticker/messages/sendMessage'
+    send_ticker_24hr:
+        title: Send to ticker.24hr
+        description: Send a ticker.24hr request
+        action: send
+        channel:
+            $ref: '#/channels/ticker_24hr'
+        messages:
+            - $ref: '#/channels/ticker_24hr/messages/sendMessage'
+    send_ticker_book:
+        title: Send to ticker.book
+        description: Send a ticker.book request
+        action: send
+        channel:
+            $ref: '#/channels/ticker_book'
+        messages:
+            - $ref: '#/channels/ticker_book/messages/sendMessage'
+    send_ticker_price:
+        title: Send to ticker.price
+        description: Send a ticker.price request
+        action: send
+        channel:
+            $ref: '#/channels/ticker_price'
+        messages:
+            - $ref: '#/channels/ticker_price/messages/sendMessage'
+    send_ticker_tradingDay:
+        title: Send to ticker.tradingDay
+        description: Send a ticker.tradingDay request
+        action: send
+        channel:
+            $ref: '#/channels/ticker_tradingDay'
+        messages:
+            - $ref: '#/channels/ticker_tradingDay/messages/sendMessage'
+    send_time:
+        title: Send to time
+        description: Send a time request
+        action: send
+        channel:
+            $ref: '#/channels/time'
+        messages:
+            - $ref: '#/channels/time/messages/sendMessage'
+    send_uiKlines:
+        title: Send to uiKlines
+        description: Send a uiKlines request
+        action: send
+        channel:
+            $ref: '#/channels/uiKlines'
+        messages:
+            - $ref: '#/channels/uiKlines/messages/sendMessage'
+components: {}

@@ -13,19 +13,18 @@ import (
 	yaml "gopkg.in/yaml.v3"
 )
 
-// AsyncAPISpec represents an AsyncAPI specification
+// AsyncAPISpec represents an AsyncAPI 3.0.0 specification
 type AsyncAPISpec struct {
-	AsyncAPI     string                      `json:"asyncapi" yaml:"asyncapi"`
-	ID           string                      `json:"id,omitempty" yaml:"id,omitempty"`
-	Info         *AsyncAPIInfo               `json:"info" yaml:"info"`
-	Servers      map[string]*AsyncAPIServer  `json:"servers,omitempty" yaml:"servers,omitempty"`
-	Channels     map[string]*AsyncAPIChannel `json:"channels,omitempty" yaml:"channels,omitempty"`
-	Components   *AsyncAPIComponents         `json:"components,omitempty" yaml:"components,omitempty"`
-	Tags         []*AsyncAPITag              `json:"tags,omitempty" yaml:"tags,omitempty"`
-	ExternalDocs *AsyncAPIExternalDocs       `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+	AsyncAPI   string                        `json:"asyncapi" yaml:"asyncapi"`
+	ID         string                        `json:"id,omitempty" yaml:"id,omitempty"`
+	Info       *AsyncAPIInfo                 `json:"info" yaml:"info"`
+	Servers    map[string]*AsyncAPIServer    `json:"servers,omitempty" yaml:"servers,omitempty"`
+	Channels   map[string]*AsyncAPIChannel   `json:"channels,omitempty" yaml:"channels,omitempty"`
+	Operations map[string]*AsyncAPIOperation `json:"operations,omitempty" yaml:"operations,omitempty"`
+	Components *AsyncAPIComponents           `json:"components,omitempty" yaml:"components,omitempty"`
 }
 
-// AsyncAPIInfo represents the info object in AsyncAPI
+// AsyncAPIInfo represents the info object in AsyncAPI 3.0.0
 type AsyncAPIInfo struct {
 	Title          string                `json:"title" yaml:"title"`
 	Version        string                `json:"version" yaml:"version"`
@@ -50,54 +49,91 @@ type AsyncAPILicense struct {
 	URL  string `json:"url,omitempty" yaml:"url,omitempty"`
 }
 
-// AsyncAPIServer represents a server
+// AsyncAPIServer represents a server in AsyncAPI 3.0.0
 type AsyncAPIServer struct {
-	URL         string                 `json:"url" yaml:"url"`
-	Description string                 `json:"description,omitempty" yaml:"description,omitempty"`
-	Protocol    string                 `json:"protocol" yaml:"protocol"`
-	Variables   map[string]interface{} `json:"variables,omitempty" yaml:"variables,omitempty"`
-	Security    []map[string][]string  `json:"security,omitempty" yaml:"security,omitempty"`
-	Bindings    map[string]interface{} `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Host         string                 `json:"host" yaml:"host"`
+	Pathname     string                 `json:"pathname,omitempty" yaml:"pathname,omitempty"`
+	Protocol     string                 `json:"protocol" yaml:"protocol"`
+	Title        string                 `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string                 `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Variables    map[string]interface{} `json:"variables,omitempty" yaml:"variables,omitempty"`
+	Security     []map[string][]string  `json:"security,omitempty" yaml:"security,omitempty"`
+	Bindings     map[string]interface{} `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	ExternalDocs *AsyncAPIExternalDocs  `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 }
 
-// AsyncAPIChannel represents a channel
+// AsyncAPIChannel represents a channel in AsyncAPI 3.0.0
 type AsyncAPIChannel struct {
-	Description string                        `json:"description,omitempty" yaml:"description,omitempty"`
-	Subscribe   *AsyncAPIOperation            `json:"subscribe,omitempty" yaml:"subscribe,omitempty"`
-	Publish     *AsyncAPIOperation            `json:"publish,omitempty" yaml:"publish,omitempty"`
-	Parameters  map[string]*AsyncAPIParameter `json:"parameters,omitempty" yaml:"parameters,omitempty"`
-	Bindings    map[string]interface{}        `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Address      string                        `json:"address,omitempty" yaml:"address,omitempty"`
+	Title        string                        `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string                        `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                        `json:"description,omitempty" yaml:"description,omitempty"`
+	Messages     map[string]*AsyncAPIMessage   `json:"messages,omitempty" yaml:"messages,omitempty"`
+	Parameters   map[string]*AsyncAPIParameter `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Servers      []map[string]string           `json:"servers,omitempty" yaml:"servers,omitempty"`
+	Bindings     map[string]interface{}        `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Tags         []*AsyncAPITag                `json:"tags,omitempty" yaml:"tags,omitempty"`
+	ExternalDocs *AsyncAPIExternalDocs         `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 }
 
-// AsyncAPIOperation represents an operation
+// AsyncAPIOperation represents an operation in AsyncAPI 3.0.0
 type AsyncAPIOperation struct {
-	OperationID string                 `json:"operationId,omitempty" yaml:"operationId,omitempty"`
-	Summary     string                 `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string                 `json:"description,omitempty" yaml:"description,omitempty"`
-	Tags        []*AsyncAPITag         `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Message     *AsyncAPIMessage       `json:"message,omitempty" yaml:"message,omitempty"`
-	Traits      []interface{}          `json:"traits,omitempty" yaml:"traits,omitempty"`
-	Bindings    map[string]interface{} `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Title        string                  `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string                  `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                  `json:"description,omitempty" yaml:"description,omitempty"`
+	Action       string                  `json:"action" yaml:"action"`   // "send" or "receive"
+	Channel      map[string]string       `json:"channel" yaml:"channel"` // $ref to channel
+	Messages     []map[string]string     `json:"messages,omitempty" yaml:"messages,omitempty"`
+	Reply        *AsyncAPIOperationReply `json:"reply,omitempty" yaml:"reply,omitempty"`
+	Tags         []*AsyncAPITag          `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Bindings     map[string]interface{}  `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Traits       []interface{}           `json:"traits,omitempty" yaml:"traits,omitempty"`
+	Security     []map[string][]string   `json:"security,omitempty" yaml:"security,omitempty"`
+	ExternalDocs *AsyncAPIExternalDocs   `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+}
+
+// AsyncAPIOperationReply represents the reply object for request-reply pattern
+type AsyncAPIOperationReply struct {
+	Address  *AsyncAPIReplyAddress `json:"address,omitempty" yaml:"address,omitempty"`
+	Channel  map[string]string     `json:"channel,omitempty" yaml:"channel,omitempty"`
+	Messages []map[string]string   `json:"messages,omitempty" yaml:"messages,omitempty"`
+}
+
+// AsyncAPIReplyAddress represents the reply address
+type AsyncAPIReplyAddress struct {
+	Location    string `json:"location,omitempty" yaml:"location,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
 // AsyncAPIMessage represents a message
 type AsyncAPIMessage struct {
-	Name        string                 `json:"name,omitempty" yaml:"name,omitempty"`
-	Title       string                 `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary     string                 `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description string                 `json:"description,omitempty" yaml:"description,omitempty"`
-	Tags        []*AsyncAPITag         `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Headers     *AsyncAPISchema        `json:"headers,omitempty" yaml:"headers,omitempty"`
-	Payload     *AsyncAPISchema        `json:"payload,omitempty" yaml:"payload,omitempty"`
-	Examples    []interface{}          `json:"examples,omitempty" yaml:"examples,omitempty"`
-	Bindings    map[string]interface{} `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Name          string                 `json:"name,omitempty" yaml:"name,omitempty"`
+	Title         string                 `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary       string                 `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description   string                 `json:"description,omitempty" yaml:"description,omitempty"`
+	Tags          []*AsyncAPITag         `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Headers       *AsyncAPISchema        `json:"headers,omitempty" yaml:"headers,omitempty"`
+	Payload       *AsyncAPISchema        `json:"payload,omitempty" yaml:"payload,omitempty"`
+	Examples      []interface{}          `json:"examples,omitempty" yaml:"examples,omitempty"`
+	Bindings      map[string]interface{} `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Traits        []interface{}          `json:"traits,omitempty" yaml:"traits,omitempty"`
+	CorrelationId *AsyncAPICorrelationId `json:"correlationId,omitempty" yaml:"correlationId,omitempty"`
 }
 
-// AsyncAPIParameter represents a parameter
+// AsyncAPICorrelationId represents correlation ID for request-reply
+type AsyncAPICorrelationId struct {
+	Location    string `json:"location,omitempty" yaml:"location,omitempty"`
+	Description string `json:"description,omitempty" yaml:"description,omitempty"`
+}
+
+// AsyncAPIParameter represents a parameter in AsyncAPI 3.0.0 (simplified)
 type AsyncAPIParameter struct {
-	Description string          `json:"description,omitempty" yaml:"description,omitempty"`
-	Schema      *AsyncAPISchema `json:"schema,omitempty" yaml:"schema,omitempty"`
-	Location    string          `json:"location,omitempty" yaml:"location,omitempty"`
+	Description string        `json:"description,omitempty" yaml:"description,omitempty"`
+	Default     interface{}   `json:"default,omitempty" yaml:"default,omitempty"`
+	Enum        []interface{} `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Examples    []interface{} `json:"examples,omitempty" yaml:"examples,omitempty"`
+	Location    string        `json:"location,omitempty" yaml:"location,omitempty"`
 }
 
 // AsyncAPISchema represents a schema
@@ -116,12 +152,18 @@ type AsyncAPISchema struct {
 	Ref                  string                     `json:"$ref,omitempty" yaml:"$ref,omitempty"`
 }
 
-// AsyncAPIComponents represents the components section
+// AsyncAPIComponents represents the components section in AsyncAPI 3.0.0
 type AsyncAPIComponents struct {
 	Schemas         map[string]*AsyncAPISchema         `json:"schemas,omitempty" yaml:"schemas,omitempty"`
 	Messages        map[string]*AsyncAPIMessage        `json:"messages,omitempty" yaml:"messages,omitempty"`
 	SecuritySchemes map[string]*AsyncAPISecurityScheme `json:"securitySchemes,omitempty" yaml:"securitySchemes,omitempty"`
 	Parameters      map[string]*AsyncAPIParameter      `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Channels        map[string]*AsyncAPIChannel        `json:"channels,omitempty" yaml:"channels,omitempty"`
+	Operations      map[string]*AsyncAPIOperation      `json:"operations,omitempty" yaml:"operations,omitempty"`
+	Replies         map[string]*AsyncAPIOperationReply `json:"replies,omitempty" yaml:"replies,omitempty"`
+	ReplyAddresses  map[string]*AsyncAPIReplyAddress   `json:"replyAddresses,omitempty" yaml:"replyAddresses,omitempty"`
+	Tags            map[string]*AsyncAPITag            `json:"tags,omitempty" yaml:"tags,omitempty"`
+	ExternalDocs    map[string]*AsyncAPIExternalDocs   `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
 }
 
 // AsyncAPISecurityScheme represents a security scheme
@@ -146,7 +188,7 @@ type AsyncAPIExternalDocs struct {
 	URL         string `json:"url" yaml:"url"`
 }
 
-// GenerateWebSocketEndpoints generates AsyncAPI specification for each WebSocket channel
+// GenerateWebSocketEndpoints generates AsyncAPI 3.0.0 specification for each WebSocket channel
 func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string, channels []wsParser.Channel) error {
 	baseDir := filepath.Join(g.outputDir, exchange, "asyncapi", apiType)
 	if err := os.MkdirAll(baseDir, 0755); err != nil {
@@ -158,25 +200,33 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 			continue
 		}
 		channelPath := filepath.Join(baseDir, fmt.Sprintf("%s.yaml", strings.ReplaceAll(channel.Name, "/", "_")))
+
+		// Convert channel to AsyncAPI 3.0.0 format
 		asyncChannel := g.convertChannelToAsyncAPIChannel(&channel)
+
+		// Create operations for this channel
+		operations := g.createOperationsFromChannel(&channel)
 
 		// Write channel spec to file
 		channelSpec := &AsyncAPISpec{
-			AsyncAPI: "2.6.0",
+			AsyncAPI: "3.0.0",
 			Info:     &AsyncAPIInfo{},
 			Channels: map[string]*AsyncAPIChannel{
-				channel.Name: asyncChannel,
+				g.sanitizeChannelName(channel.Name): asyncChannel,
 			},
+			Operations: operations,
 			Components: &AsyncAPIComponents{
 				Schemas:         make(map[string]*AsyncAPISchema),
 				SecuritySchemes: make(map[string]*AsyncAPISecurityScheme),
 			},
 		}
 
+		// Add schemas
 		for _, schema := range channel.Schemas {
 			channelSpec.Components.Schemas[schema.Title] = g.convertToAsyncAPISchema(schema)
 		}
 
+		// Add security schemes
 		if channel.SecuritySchemas != nil {
 			for name, schema := range channel.SecuritySchemas {
 				channelSpec.Components.SecuritySchemes[name] = g.convertToAsyncAPISecurityScheme(schema)
@@ -191,34 +241,41 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 	return nil
 }
 
-// GenerateWebSocket creates an AsyncAPI specification from parsed WebSocket channels
+// GenerateWebSocket creates an AsyncAPI 3.0.0 specification from parsed WebSocket channels
 func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, servers []string) error {
 	if len(servers) == 0 {
 		return fmt.Errorf("no servers found for %s %s WebSocket API", exchange, apiType)
 	}
 
+	// Create servers using AsyncAPI 3.0.0 format
 	asyncServers := make(map[string]*AsyncAPIServer)
 	for i, server := range servers {
 		serverName := fmt.Sprintf("server%d", i+1)
 		if i == 0 {
 			serverName = "production"
 		}
+
+		host, pathname := g.parseServerURL(server)
 		asyncServers[serverName] = &AsyncAPIServer{
-			URL:         server,
-			Description: fmt.Sprintf("%s %s WebSocket API Server", strings.Title(exchange), strings.Title(apiType)),
+			Host:        host,
+			Pathname:    pathname,
 			Protocol:    "ws",
+			Title:       fmt.Sprintf("%s Server", strings.Title(exchange)),
+			Summary:     fmt.Sprintf("%s %s WebSocket API Server", strings.Title(exchange), strings.Title(apiType)),
+			Description: fmt.Sprintf("WebSocket server for %s exchange %s API", exchange, apiType),
 		}
 	}
 
 	spec := &AsyncAPISpec{
-		AsyncAPI: "2.6.0",
+		AsyncAPI: "3.0.0",
 		Info: &AsyncAPIInfo{
 			Title:       title,
 			Description: fmt.Sprintf("AsyncAPI specification for %s exchange - %s WebSocket API", strings.Title(exchange), strings.Title(apiType)),
 			Version:     version,
 		},
-		Servers:  asyncServers,
-		Channels: make(map[string]*AsyncAPIChannel),
+		Servers:    asyncServers,
+		Channels:   make(map[string]*AsyncAPIChannel),
+		Operations: make(map[string]*AsyncAPIOperation),
 		Components: &AsyncAPIComponents{
 			Schemas:         make(map[string]*AsyncAPISchema),
 			Messages:        make(map[string]*AsyncAPIMessage),
@@ -259,6 +316,14 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 			spec.Channels[k] = v
 		}
 
+		// Merge operations
+		for k, v := range channelSpec.Operations {
+			if _, exists := spec.Operations[k]; exists {
+				return fmt.Errorf("duplicate operation: %s", k)
+			}
+			spec.Operations[k] = v
+		}
+
 		// Merge schemas
 		var schemas []string
 		for k, v := range channelSpec.Components.Schemas {
@@ -296,48 +361,126 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 	return nil
 }
 
-// convertChannelToAsyncAPIChannel converts a WebSocket channel to AsyncAPI channel
-func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *AsyncAPIChannel {
-	asyncChannel := &AsyncAPIChannel{
-		Description: channel.Description,
-		Parameters:  make(map[string]*AsyncAPIParameter),
+// parseServerURL splits a server URL into host and pathname components
+func (g *Generator) parseServerURL(serverURL string) (host, pathname string) {
+	// Remove protocol if present (e.g., "ws://", "wss://")
+	cleanURL := serverURL
+	if strings.HasPrefix(serverURL, "ws://") {
+		cleanURL = strings.TrimPrefix(serverURL, "ws://")
+	} else if strings.HasPrefix(serverURL, "wss://") {
+		cleanURL = strings.TrimPrefix(serverURL, "wss://")
 	}
 
-	// Convert parameters
-	for _, param := range channel.Parameters {
-		asyncChannel.Parameters[param.Name] = &AsyncAPIParameter{
-			Description: param.Description,
-			Schema:      g.convertToAsyncAPISchema(param.Schema),
-			Location:    param.Location,
-		}
+	// Split host and path
+	parts := strings.SplitN(cleanURL, "/", 2)
+	host = parts[0]
+
+	if len(parts) > 1 && parts[1] != "" {
+		pathname = "/" + parts[1]
 	}
 
-	// Convert messages
+	return host, pathname
+}
+
+// sanitizeChannelName creates a valid channel key from a channel name
+func (g *Generator) sanitizeChannelName(channelName string) string {
+	// Replace invalid characters with underscores and ensure it starts with a letter
+	sanitized := strings.ReplaceAll(channelName, "/", "_")
+	sanitized = strings.ReplaceAll(sanitized, ".", "_")
+	sanitized = strings.ReplaceAll(sanitized, "-", "_")
+
+	// Ensure it starts with a letter
+	if len(sanitized) > 0 && !((sanitized[0] >= 'a' && sanitized[0] <= 'z') || (sanitized[0] >= 'A' && sanitized[0] <= 'Z')) {
+		sanitized = "Channel_" + sanitized
+	}
+
+	return sanitized
+}
+
+// createOperationsFromChannel creates AsyncAPI 3.0.0 operations from a WebSocket channel
+func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel) map[string]*AsyncAPIOperation {
+	operations := make(map[string]*AsyncAPIOperation)
+	channelRef := fmt.Sprintf("#/channels/%s", g.sanitizeChannelName(channel.Name))
+
+	// Create operations based on the messages in the channel
 	if sendMsg, exists := channel.Messages["send"]; exists {
-		asyncChannel.Publish = &AsyncAPIOperation{
-			OperationID: fmt.Sprintf("send_%s", channel.Name),
+		operationID := fmt.Sprintf("send_%s", g.sanitizeChannelName(channel.Name))
+		operations[operationID] = &AsyncAPIOperation{
+			Title:       fmt.Sprintf("Send to %s", channel.Name),
 			Summary:     sendMsg.Summary,
 			Description: sendMsg.Description,
-			Message: &AsyncAPIMessage{
-				Name:        sendMsg.Title,
-				Title:       sendMsg.Title,
-				Description: sendMsg.Description,
-				Payload:     g.convertToAsyncAPISchema(sendMsg.Payload),
-			},
+			Action:      "send",
+			Channel:     map[string]string{"$ref": channelRef},
+			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", g.sanitizeChannelName(channel.Name), "sendMessage")}},
 		}
 	}
 
 	if receiveMsg, exists := channel.Messages["receive"]; exists {
-		asyncChannel.Subscribe = &AsyncAPIOperation{
-			OperationID: fmt.Sprintf("receive_%s", channel.Name),
+		operationID := fmt.Sprintf("receive_%s", g.sanitizeChannelName(channel.Name))
+		operations[operationID] = &AsyncAPIOperation{
+			Title:       fmt.Sprintf("Receive from %s", channel.Name),
 			Summary:     receiveMsg.Summary,
 			Description: receiveMsg.Description,
-			Message: &AsyncAPIMessage{
-				Name:        receiveMsg.Title,
-				Title:       receiveMsg.Title,
-				Description: receiveMsg.Description,
-				Payload:     g.convertToAsyncAPISchema(receiveMsg.Payload),
-			},
+			Action:      "receive",
+			Channel:     map[string]string{"$ref": channelRef},
+			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", g.sanitizeChannelName(channel.Name), "receiveMessage")}},
+		}
+	}
+
+	return operations
+}
+
+// convertChannelToAsyncAPIChannel converts a WebSocket channel to AsyncAPI 3.0.0 channel
+func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *AsyncAPIChannel {
+	asyncChannel := &AsyncAPIChannel{
+		Address:     channel.Name,
+		Title:       fmt.Sprintf("Channel %s", channel.Name),
+		Description: channel.Description,
+		Messages:    make(map[string]*AsyncAPIMessage),
+		Parameters:  make(map[string]*AsyncAPIParameter),
+	}
+
+	// Convert parameters using the simplified 3.0.0 format
+	for _, param := range channel.Parameters {
+		asyncChannel.Parameters[param.Name] = &AsyncAPIParameter{
+			Description: param.Description,
+			Location:    param.Location,
+			// Note: In AsyncAPI 3.0.0, parameters are simplified and only support string type
+			// We extract enum, default, examples from the schema if available
+		}
+
+		// Extract simple properties from schema if available
+		if param.Schema != nil {
+			if param.Schema.Default != nil {
+				asyncChannel.Parameters[param.Name].Default = param.Schema.Default
+			}
+			if param.Schema.Enum != nil {
+				asyncChannel.Parameters[param.Name].Enum = param.Schema.Enum
+			}
+			if param.Schema.Example != nil {
+				asyncChannel.Parameters[param.Name].Examples = []interface{}{param.Schema.Example}
+			}
+		}
+	}
+
+	// Convert messages to the new 3.0.0 format
+	if sendMsg, exists := channel.Messages["send"]; exists {
+		asyncChannel.Messages["sendMessage"] = &AsyncAPIMessage{
+			Name:        sendMsg.Title,
+			Title:       sendMsg.Title,
+			Summary:     sendMsg.Summary,
+			Description: sendMsg.Description,
+			Payload:     g.convertToAsyncAPISchema(sendMsg.Payload),
+		}
+	}
+
+	if receiveMsg, exists := channel.Messages["receive"]; exists {
+		asyncChannel.Messages["receiveMessage"] = &AsyncAPIMessage{
+			Name:        receiveMsg.Title,
+			Title:       receiveMsg.Title,
+			Summary:     receiveMsg.Summary,
+			Description: receiveMsg.Description,
+			Payload:     g.convertToAsyncAPISchema(receiveMsg.Payload),
 		}
 	}
 
