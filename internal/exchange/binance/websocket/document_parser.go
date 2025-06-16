@@ -69,6 +69,7 @@ func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protect
 
 			// Only add valid methods
 			if valid && channelData.Name != "" {
+				logrus.Debugf("method: %s", channelData.Name)
 				p.processMethod(channelData, protectedMethods)
 				channels = append(channels, *channelData)
 			}
@@ -364,13 +365,26 @@ func (p *DocumentParser) mergeBodyParametersIntoRequestSchema(channel *parser.Ch
 	// Add each body parameter to the params object
 	for _, param := range bodyParams {
 		if param.Schema != nil {
-			paramsSchema.Properties[param.Name] = &parser.Schema{
+			// Create a deep copy of the parameter schema
+			paramSchema := &parser.Schema{
 				Type:        param.Schema.Type,
 				Required:    param.Schema.Required,
 				Description: param.Description,
 				Example:     param.Schema.Example,
 				Enum:        param.Schema.Enum,
 			}
+			
+			// Handle array types - copy Items field
+			if param.Schema.Type == "array" && param.Schema.Items != nil {
+				paramSchema.Items = &parser.Schema{
+					Type:        param.Schema.Items.Type,
+					Description: param.Schema.Items.Description,
+					Example:     param.Schema.Items.Example,
+					Enum:        param.Schema.Items.Enum,
+				}
+			}
+			
+			paramsSchema.Properties[param.Name] = paramSchema
 		}
 	}
 
@@ -512,6 +526,7 @@ func (p *DocumentParser) extractParameters(channel *parser.Channel, content []st
 
 // parseParameterTable parses parameter information from HTML table
 func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableContent string) error {
+	logrus.Debugf("parseParameterTable: %s", tableContent)
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader("<table>" + tableContent + "</table>"))
 	if err != nil {
 		return fmt.Errorf("creating document from reader: %w", err)
@@ -545,10 +560,7 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 			Description: description,
 			Location:    "body",
 			Required:    p.isMandatoryParameter(mandatory),
-			Schema: &parser.Schema{
-				Type:        p.convertTypeToJSONSchema(paramType),
-				Description: description,
-			},
+			Schema:      p.convertTypeToJSONSchema(paramType, description),
 		}
 
 		channel.Parameters = append(channel.Parameters, param)
@@ -581,22 +593,67 @@ func (p *DocumentParser) isMandatoryParameter(mandatory string) bool {
 }
 
 // convertTypeToJSONSchema converts parameter type to JSON Schema type
-func (p *DocumentParser) convertTypeToJSONSchema(paramType string) string {
+func (p *DocumentParser) convertTypeToJSONSchema(paramType, description string) *parser.Schema {
 	paramType = strings.ToLower(paramType)
 
 	switch {
-	case strings.Contains(paramType, "string"):
-		return "string"
 	case strings.Contains(paramType, "array"):
-		return "array"
+		// Handle array types
+		schema := &parser.Schema{
+			Type:        "array",
+			Description: description,
+		}
+		
+		// Determine the item type
+		if strings.Contains(paramType, "string") {
+			schema.Items = &parser.Schema{
+				Type:        "string",
+				Description: "array item",
+			}
+		} else if strings.Contains(paramType, "number") || strings.Contains(paramType, "integer") || strings.Contains(paramType, "int") {
+			schema.Items = &parser.Schema{
+				Type:        "integer",
+				Description: "array item",
+			}
+		} else if strings.Contains(paramType, "boolean") {
+			schema.Items = &parser.Schema{
+				Type:        "boolean",
+				Description: "array item",
+			}
+		} else {
+			// Default to string for unknown array item types
+			schema.Items = &parser.Schema{
+				Type:        "string",
+				Description: "array item",
+			}
+		}
+		
+		return schema
+	case strings.Contains(paramType, "string"):
+		return &parser.Schema{
+			Type:        "string",
+			Description: description,
+		}
 	case strings.Contains(paramType, "boolean"):
-		return "boolean"
+		return &parser.Schema{
+			Type:        "boolean",
+			Description: description,
+		}
 	case strings.Contains(paramType, "number") || strings.Contains(paramType, "integer") || strings.Contains(paramType, "int"):
-		return "integer"
+		return &parser.Schema{
+			Type:        "integer",
+			Description: description,
+		}
 	case strings.Contains(paramType, "enum"):
-		return "string"
+		return &parser.Schema{
+			Type:        "string",
+			Description: description,
+		}
 	default:
-		return "string"
+		return &parser.Schema{
+			Type:        "string",
+			Description: description,
+		}
 	}
 }
 
