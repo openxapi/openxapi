@@ -29,6 +29,7 @@ var (
 	specTypes  stringsFlag
 	showHelp   bool
 	outputDir  string
+	logLevelExplicit bool // Track if log-level was explicitly set via command line
 )
 
 type stringsFlag []string
@@ -57,24 +58,38 @@ func init() {
 func main() {
 	flag.Parse()
 
+	// Track if log-level was explicitly set
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "log-level" {
+			logLevelExplicit = true
+		}
+	})
+
 	if showHelp {
 		flag.Usage()
 		os.Exit(0)
 	}
 
-	// Setup logging
-	level, err := logrus.ParseLevel(logLevel)
+	// Read configuration first to get default settings
+	config, err := config.LoadConfig(configFile)
+	if err != nil {
+		logrus.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Setup logging - use command line argument if explicitly provided, otherwise use config file setting
+	effectiveLogLevel := logLevel
+
+	// If log-level was not explicitly set via command line and config has a setting, use config
+	if !logLevelExplicit && config.Settings.LogLevel != "" {
+		effectiveLogLevel = config.Settings.LogLevel
+	}
+
+	level, err := logrus.ParseLevel(effectiveLogLevel)
 	if err != nil {
 		fmt.Printf("Invalid log level: %v\n", err)
 		os.Exit(1)
 	}
 	logrus.SetLevel(level)
-
-	// Read configuration
-	config, err := config.LoadConfig(configFile)
-	if err != nil {
-		logrus.Fatalf("Failed to load configuration: %v", err)
-	}
 
 	// Create necessary directories
 	if err := createDirectories(config.Settings); err != nil {
