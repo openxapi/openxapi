@@ -139,11 +139,12 @@ type AsyncAPIParameter struct {
 
 // AsyncAPIParameterSchema represents a parameter schema
 type AsyncAPIParameterSchema struct {
-	Type     string        `json:"type,omitempty" yaml:"type,omitempty"`
-	Required bool          `json:"required,omitempty" yaml:"required,omitempty"`
-	Enum     []interface{} `json:"enum,omitempty" yaml:"enum,omitempty"`
-	Default  interface{}   `json:"default,omitempty" yaml:"default,omitempty"`
-	Example  interface{}   `json:"example,omitempty" yaml:"example,omitempty"`
+	Type     string                   `json:"type,omitempty" yaml:"type,omitempty"`
+	Items    *AsyncAPIParameterSchema `json:"items,omitempty" yaml:"items,omitempty"`
+	Required bool                     `json:"required,omitempty" yaml:"required,omitempty"`
+	Enum     []interface{}            `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Default  interface{}              `json:"default,omitempty" yaml:"default,omitempty"`
+	Example  interface{}              `json:"example,omitempty" yaml:"example,omitempty"`
 }
 
 // AsyncAPISchema represents a schema
@@ -459,22 +460,16 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 
 		// Create parameter schema with required information
 		if param.Schema != nil {
-			asyncParam.Schema = &AsyncAPIParameterSchema{
-				Type:     param.Schema.Type,
-				Required: param.Required,
-			}
+			asyncParam.Schema = g.convertParamSchemaToAsyncAPIParameterSchema(param.Schema, param.Required)
 
 			// Extract properties from schema
 			if param.Schema.Default != nil {
-				asyncParam.Schema.Default = param.Schema.Default
 				asyncParam.Default = param.Schema.Default
 			}
 			if param.Schema.Enum != nil {
-				asyncParam.Schema.Enum = param.Schema.Enum
 				asyncParam.Enum = param.Schema.Enum
 			}
 			if param.Schema.Example != nil {
-				asyncParam.Schema.Example = param.Schema.Example
 				asyncParam.Examples = []interface{}{param.Schema.Example}
 			}
 		} else {
@@ -601,4 +596,37 @@ func (g *Generator) writeAsyncAPISpec(spec *AsyncAPISpec, path string) error {
 	}
 
 	return nil
+}
+
+// convertParamSchemaToAsyncAPIParameterSchema converts a WebSocket parameter schema to AsyncAPI parameter schema
+func (g *Generator) convertParamSchemaToAsyncAPIParameterSchema(schema *wsParser.Schema, required bool) *AsyncAPIParameterSchema {
+	if schema == nil {
+		return &AsyncAPIParameterSchema{
+			Type:     "string",
+			Required: required,
+		}
+	}
+
+	result := &AsyncAPIParameterSchema{
+		Type:     schema.Type,
+		Required: required,
+	}
+
+	// Handle arrays
+	if schema.Type == "array" && schema.Items != nil {
+		result.Items = g.convertParamSchemaToAsyncAPIParameterSchema(schema.Items, false)
+	}
+
+	// Copy other properties
+	if schema.Default != nil {
+		result.Default = schema.Default
+	}
+	if schema.Enum != nil {
+		result.Enum = schema.Enum
+	}
+	if schema.Example != nil {
+		result.Example = schema.Example
+	}
+
+	return result
 }

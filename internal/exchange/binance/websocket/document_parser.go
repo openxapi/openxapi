@@ -373,7 +373,7 @@ func (p *DocumentParser) mergeBodyParametersIntoRequestSchema(channel *parser.Ch
 				Example:     param.Schema.Example,
 				Enum:        param.Schema.Enum,
 			}
-			
+
 			// Handle array types - copy Items field
 			if param.Schema.Type == "array" && param.Schema.Items != nil {
 				paramSchema.Items = &parser.Schema{
@@ -383,7 +383,7 @@ func (p *DocumentParser) mergeBodyParametersIntoRequestSchema(channel *parser.Ch
 					Enum:        param.Schema.Items.Enum,
 				}
 			}
-			
+
 			paramsSchema.Properties[param.Name] = paramSchema
 		}
 	}
@@ -532,23 +532,49 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 		return fmt.Errorf("creating document from reader: %w", err)
 	}
 
+	var mandatoryFromRowspan string
+	var isFirstDataRow bool = true
+
 	doc.Find("tr").Each(func(i int, row *goquery.Selection) {
 		if i == 0 { // Skip header row
 			return
 		}
 
 		cells := row.Find("td")
-		if cells.Length() < 3 {
+		if cells.Length() < 2 {
 			return
 		}
 
 		name := cleanText(cells.Eq(0).Text())
 		paramType := cleanText(cells.Eq(1).Text())
-		mandatory := cleanText(cells.Eq(2).Text())
-		description := ""
 
-		if cells.Length() > 3 {
-			description = cleanText(cells.Eq(3).Text())
+		var mandatory string
+		var description string
+
+		// Handle rowspan: if this is the first data row, it might have all columns
+		// If subsequent rows have fewer columns, it means some cells are spanned from previous rows
+		if isFirstDataRow && cells.Length() >= 3 {
+			mandatory = cleanText(cells.Eq(2).Text())
+			// Check if this cell has rowspan by looking for the rowspan attribute
+			if rowspanAttr, exists := cells.Eq(2).Attr("rowspan"); exists && rowspanAttr != "" {
+				mandatoryFromRowspan = mandatory
+			}
+			if cells.Length() > 3 {
+				description = cleanText(cells.Eq(3).Text())
+			}
+			isFirstDataRow = false
+		} else {
+			// For subsequent rows, use the rowspan value if available, otherwise try to get from current row
+			if mandatoryFromRowspan != "" {
+				mandatory = mandatoryFromRowspan
+			} else if cells.Length() >= 3 {
+				mandatory = cleanText(cells.Eq(2).Text())
+			}
+
+			// Description is in the last cell
+			if cells.Length() > 2 {
+				description = cleanText(cells.Eq(cells.Length() - 1).Text())
+			}
 		}
 
 		if name == "" || name == "Name" {
@@ -603,7 +629,7 @@ func (p *DocumentParser) convertTypeToJSONSchema(paramType, description string) 
 			Type:        "array",
 			Description: description,
 		}
-		
+
 		// Determine the item type
 		if strings.Contains(paramType, "string") {
 			schema.Items = &parser.Schema{
@@ -627,7 +653,7 @@ func (p *DocumentParser) convertTypeToJSONSchema(paramType, description string) 
 				Description: "array item",
 			}
 		}
-		
+
 		return schema
 	case strings.Contains(paramType, "string"):
 		return &parser.Schema{
