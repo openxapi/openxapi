@@ -490,12 +490,16 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 
 	// Convert messages to the new 3.0.0 format
 	if sendMsg, exists := channel.Messages["send"]; exists {
+		// Convert the payload and ensure params object has required fields populated
+		payload := g.convertToAsyncAPISchema(sendMsg.Payload)
+		g.populateParamsRequired(payload, channel.Parameters)
+
 		asyncChannel.Messages["sendMessage"] = &AsyncAPIMessage{
 			Name:        sendMsg.Title,
 			Title:       sendMsg.Title,
 			Summary:     sendMsg.Summary,
 			Description: sendMsg.Description,
-			Payload:     g.convertToAsyncAPISchema(sendMsg.Payload),
+			Payload:     payload,
 		}
 	}
 
@@ -510,6 +514,29 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 	}
 
 	return asyncChannel
+}
+
+// populateParamsRequired ensures that the params object in the payload has the required field populated
+func (g *Generator) populateParamsRequired(schema *AsyncAPISchema, parameters []*wsParser.Parameter) {
+	if schema == nil || schema.Properties == nil {
+		return
+	}
+
+	// Look for params property in the payload
+	if paramsProperty, exists := schema.Properties["params"]; exists && paramsProperty != nil {
+		// Collect required parameter names
+		var requiredParams []string
+		for _, param := range parameters {
+			if param.Required {
+				requiredParams = append(requiredParams, param.Name)
+			}
+		}
+
+		// Set the required field on the params property
+		if len(requiredParams) > 0 {
+			paramsProperty.Required = requiredParams
+		}
+	}
 }
 
 // convertToAsyncAPISchema converts a WebSocket schema to AsyncAPI schema

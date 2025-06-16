@@ -296,6 +296,9 @@ func (p *DocumentParser) extractMethod(content []string, category string) (*pars
 		logrus.Debugf("extractParameters error: %s", err)
 	}
 
+	// Merge body parameters into request schema
+	requestSchema = p.mergeBodyParametersIntoRequestSchema(channel, requestSchema)
+
 	// Add request and response messages
 	if requestSchema != nil {
 		channel.Messages["send"] = &parser.Message{
@@ -314,6 +317,64 @@ func (p *DocumentParser) extractMethod(content []string, category string) (*pars
 	}
 
 	return channel, foundMethod
+}
+
+// mergeBodyParametersIntoRequestSchema merges body parameters into the request schema's params property
+func (p *DocumentParser) mergeBodyParametersIntoRequestSchema(channel *parser.Channel, requestSchema *parser.Schema) *parser.Schema {
+	// Collect all body parameters
+	var bodyParams []*parser.Parameter
+	for _, param := range channel.Parameters {
+		if param.Location == "body" {
+			bodyParams = append(bodyParams, param)
+		}
+	}
+
+	// If no body parameters, return original schema
+	if len(bodyParams) == 0 {
+		return requestSchema
+	}
+
+	// If no request schema exists, create a basic one
+	if requestSchema == nil {
+		requestSchema = &parser.Schema{
+			Type:        "object",
+			Description: "request schema",
+			Properties:  make(map[string]*parser.Schema),
+		}
+	}
+
+	// Ensure the request schema has properties
+	if requestSchema.Properties == nil {
+		requestSchema.Properties = make(map[string]*parser.Schema)
+	}
+
+	// Create or get the params property
+	paramsSchema := &parser.Schema{
+		Type:        "object",
+		Description: "params property",
+		Properties:  make(map[string]*parser.Schema),
+	}
+	requestSchema.Properties["params"] = paramsSchema
+
+	// Ensure params has properties
+	if paramsSchema.Properties == nil {
+		paramsSchema.Properties = make(map[string]*parser.Schema)
+	}
+
+	// Add each body parameter to the params object
+	for _, param := range bodyParams {
+		if param.Schema != nil {
+			paramsSchema.Properties[param.Name] = &parser.Schema{
+				Type:        param.Schema.Type,
+				Required:    param.Schema.Required,
+				Description: param.Description,
+				Example:     param.Schema.Example,
+				Enum:        param.Schema.Enum,
+			}
+		}
+	}
+
+	return requestSchema
 }
 
 // extractContent extracts method information from content lines
