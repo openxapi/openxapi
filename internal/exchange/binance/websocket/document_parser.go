@@ -368,6 +368,7 @@ func (p *DocumentParser) mergeBodyParametersIntoRequestSchema(channel *parser.Ch
 			// Create a deep copy of the parameter schema
 			paramSchema := &parser.Schema{
 				Type:        param.Schema.Type,
+				Format:      param.Schema.Format,
 				Required:    param.Schema.Required,
 				Description: param.Description,
 				Example:     param.Schema.Example,
@@ -586,7 +587,7 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 			Description: description,
 			Location:    "body",
 			Required:    p.isMandatoryParameter(mandatory),
-			Schema:      p.convertTypeToJSONSchema(paramType, description),
+			Schema:      p.convertTypeToJSONSchema(name, paramType, description),
 		}
 
 		channel.Parameters = append(channel.Parameters, param)
@@ -619,7 +620,7 @@ func (p *DocumentParser) isMandatoryParameter(mandatory string) bool {
 }
 
 // convertTypeToJSONSchema converts parameter type to JSON Schema type
-func (p *DocumentParser) convertTypeToJSONSchema(paramType, description string) *parser.Schema {
+func (p *DocumentParser) convertTypeToJSONSchema(name, paramType, description string) *parser.Schema {
 	paramType = strings.ToLower(paramType)
 
 	switch {
@@ -666,10 +667,18 @@ func (p *DocumentParser) convertTypeToJSONSchema(paramType, description string) 
 			Description: description,
 		}
 	case strings.Contains(paramType, "number") || strings.Contains(paramType, "integer") || strings.Contains(paramType, "int"):
-		return &parser.Schema{
+		logrus.Debugf("convertTypeToJSONSchema: %s, %s, %s", name, paramType, description)
+		schema := &parser.Schema{
 			Type:        "integer",
 			Description: description,
 		}
+		if name == "timestamp" || strings.HasSuffix(name, "Time") || strings.HasSuffix(name, "Id") || name == "id" {
+			logrus.Debugf("Setting format int64 for parameter: %s", name)
+			schema.Format = "int64"
+		} else {
+			logrus.Debugf("No format int64 for parameter: %s (suffix checks: Id=%v, id=%v)", name, strings.HasSuffix(name, "Id"), strings.HasSuffix(name, "id"))
+		}
+		return schema
 	case strings.Contains(paramType, "enum"):
 		return &parser.Schema{
 			Type:        "string",
@@ -747,6 +756,7 @@ func (p *DocumentParser) convertToSchema(key string, data interface{}, descripti
 
 	case float64:
 		if v == float64(int(v)) {
+			logrus.Debugf("schema key: %s, v: %f, int(v): %d", key, v, int(v))
 			schema := &parser.Schema{
 				Type:        "integer",
 				Description: description,
