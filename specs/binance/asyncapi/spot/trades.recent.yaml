@@ -1,0 +1,150 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    trades_recent:
+        address: trades.recent
+        title: Channel trades.recent
+        description: |-
+            Get recent trades.
+            If you need access to real-time trading activity, please consider using WebSocket Streams:
+            - <symbol>@trade
+        messages:
+            receiveMessage:
+                name: Recent trades Response
+                title: Recent trades Response
+                description: Receive response from trades.recent
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 409a20bd-253d-41db-a6dd-687862a5882f
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 2
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: array
+                            description: result property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    id:
+                                        type: number
+                                        description: id property
+                                        example: 1.94686783e+08
+                                    isBestMatch:
+                                        type: boolean
+                                        description: isBestMatch property
+                                        example: true
+                                    isBuyerMaker:
+                                        type: boolean
+                                        description: isBuyerMaker property
+                                        example: true
+                                    price:
+                                        type: string
+                                        description: price property
+                                        example: "0.01361000"
+                                    qty:
+                                        type: string
+                                        description: qty property
+                                        example: "0.01400000"
+                                    quoteQty:
+                                        type: string
+                                        description: quoteQty property
+                                        example: "0.00019054"
+                                    time:
+                                        type: number
+                                        description: time property
+                                        example: 1.660009530807e+12
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Recent trades Request
+                title: Recent trades Request
+                description: Send a trades.recent request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 409a20bd-253d-41db-a6dd-687862a5882f
+                        method:
+                            type: string
+                            description: method property
+                            example: trades.recent
+                            enum:
+                                - trades.recent
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                limit:
+                                    type: number
+                                    description: limit property
+                                    example: 1
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            limit:
+                description: 'Default: 500; Maximum: 1000'
+                schema:
+                    type: integer
+                location: body
+            symbol:
+                schema:
+                    type: string
+                    required: true
+                location: body
+operations:
+    receive_trades_recent:
+        title: Receive from trades.recent
+        description: Receive response from trades.recent
+        action: receive
+        channel:
+            $ref: '#/channels/trades_recent'
+        messages:
+            - $ref: '#/channels/trades_recent/messages/receiveMessage'
+    send_trades_recent:
+        title: Send to trades.recent
+        description: Send a trades.recent request
+        action: send
+        channel:
+            $ref: '#/channels/trades_recent'
+        messages:
+            - $ref: '#/channels/trades_recent/messages/sendMessage'
+components: {}

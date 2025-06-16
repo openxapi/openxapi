@@ -1,0 +1,176 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    trades_aggregate:
+        address: trades.aggregate
+        title: Channel trades.aggregate
+        description: |-
+            Get aggregate trades.
+            An aggregate trade (aggtrade) represents one or more individual trades.
+            Trades that fill at the same time, from the same taker order, with the same price –
+            those trades are collected into an aggregate trade with total quantity of the individual trades.
+            If you need access to real-time trading activity, please consider using WebSocket Streams:
+            - <symbol>@aggTrade
+            If you need historical aggregate trade data,
+            please consider using data.binance.vision.
+        messages:
+            receiveMessage:
+                name: Aggregate trades Response
+                title: Aggregate trades Response
+                description: Receive response from trades.aggregate
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 189da436-d4bd-48ca-9f95-9f613d621717
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: number
+                                        description: count property
+                                        example: 2
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: number
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: number
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: array
+                            description: result property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    M:
+                                        type: boolean
+                                        description: M property
+                                        example: true
+                                    T:
+                                        type: number
+                                        description: T property
+                                        example: 1.565877971222e+12
+                                    a:
+                                        type: number
+                                        description: a property
+                                        example: 5e+07
+                                    f:
+                                        type: number
+                                        description: f property
+                                        example: 5.9120167e+07
+                                    l:
+                                        type: number
+                                        description: l property
+                                        example: 5.912017e+07
+                                    m:
+                                        type: boolean
+                                        description: m property
+                                        example: true
+                                    p:
+                                        type: string
+                                        description: p property
+                                        example: "0.00274100"
+                                    q:
+                                        type: string
+                                        description: q property
+                                        example: "57.19000000"
+                        status:
+                            type: number
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Aggregate trades Request
+                title: Aggregate trades Request
+                description: Send a trades.aggregate request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 189da436-d4bd-48ca-9f95-9f613d621717
+                        method:
+                            type: string
+                            description: method property
+                            example: trades.aggregate
+                            enum:
+                                - trades.aggregate
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                fromId:
+                                    type: number
+                                    description: fromId property
+                                    example: 5e+07
+                                limit:
+                                    type: number
+                                    description: limit property
+                                    example: 1
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+        parameters:
+            endTime:
+                schema:
+                    type: string
+                location: body
+            fromId:
+                description: Aggregate trade ID to begin at
+                schema:
+                    type: integer
+                location: body
+            limit:
+                description: 'Default: 500; Maximum: 1000'
+                schema:
+                    type: integer
+                location: body
+            startTime:
+                schema:
+                    type: string
+                location: body
+            symbol:
+                schema:
+                    type: string
+                    required: true
+                location: body
+operations:
+    receive_trades_aggregate:
+        title: Receive from trades.aggregate
+        description: Receive response from trades.aggregate
+        action: receive
+        channel:
+            $ref: '#/channels/trades_aggregate'
+        messages:
+            - $ref: '#/channels/trades_aggregate/messages/receiveMessage'
+    send_trades_aggregate:
+        title: Send to trades.aggregate
+        description: Send a trades.aggregate request
+        action: send
+        channel:
+            $ref: '#/channels/trades_aggregate'
+        messages:
+            - $ref: '#/channels/trades_aggregate/messages/sendMessage'
+components: {}

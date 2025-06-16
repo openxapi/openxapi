@@ -638,23 +638,5 @@ func (p *DocumentParser) isProtectedMethod(methodName string, protectedMethods [
 		}
 	}
 
-	// Common patterns for protected methods
-	protectedPatterns := []string{
-		"account",
-		"order",
-		"balance",
-		"trade",
-		"user",
-		"private",
-		"auth",
-		"session",
-	}
-
-	for _, pattern := range protectedPatterns {
-		if strings.Contains(methodLower, pattern) {
-			return true
-		}
-	}
-
 	return false
 }
