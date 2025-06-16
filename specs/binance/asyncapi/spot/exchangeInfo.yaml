@@ -28,7 +28,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 20
                                     interval:
@@ -36,11 +36,11 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
                                         example: 6000
                                     rateLimitType:
@@ -68,11 +68,11 @@ channels:
                                                 description: interval property
                                                 example: MINUTE
                                             intervalNum:
-                                                type: number
+                                                type: integer
                                                 description: intervalNum property
                                                 example: 1
                                             limit:
-                                                type: number
+                                                type: integer
                                                 description: limit property
                                                 example: 6000
                                             rateLimitType:
@@ -80,9 +80,10 @@ channels:
                                                 description: rateLimitType property
                                                 example: REQUEST_WEIGHT
                                 serverTime:
-                                    type: number
+                                    type: integer
+                                    format: int64
                                     description: serverTime property
-                                    example: 1.655969291181e+12
+                                    example: 1655969291181
                                 sors:
                                     type: array
                                     description: sors property
@@ -128,11 +129,11 @@ channels:
                                                 description: baseAsset property
                                                 example: BNB
                                             baseAssetPrecision:
-                                                type: number
+                                                type: integer
                                                 description: baseAssetPrecision property
                                                 example: 8
                                             baseCommissionPrecision:
-                                                type: number
+                                                type: integer
                                                 description: baseCommissionPrecision property
                                                 example: 8
                                             cancelReplaceAllowed:
@@ -213,11 +214,11 @@ channels:
                                                 description: quoteAsset property
                                                 example: BTC
                                             quoteAssetPrecision:
-                                                type: number
+                                                type: integer
                                                 description: quoteAssetPrecision property
                                                 example: 8
                                             quoteCommissionPrecision:
-                                                type: number
+                                                type: integer
                                                 description: quoteCommissionPrecision property
                                                 example: 8
                                             quoteOrderQtyMarketAllowed:
@@ -225,7 +226,7 @@ channels:
                                                 description: quoteOrderQtyMarketAllowed property
                                                 example: true
                                             quotePrecision:
-                                                type: number
+                                                type: integer
                                                 description: quotePrecision property
                                                 example: 8
                                             status:
@@ -241,7 +242,7 @@ channels:
                                     description: timezone property
                                     example: UTC
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -266,36 +267,43 @@ channels:
                             type: object
                             description: params property
                             properties:
-                                symbols:
+                                permissions:
                                     type: array
-                                    description: symbols property
+                                    description: Filter symbols by permissions
                                     items:
                                         type: string
                                         description: array item
-                                        example: BNBBTC
+                                showPermissionSets:
+                                    type: boolean
+                                    description: Controls whether the content of the permissionSets field is populated or not. Defaults to true.
+                                symbol:
+                                    type: string
+                                    description: Describe a single symbol
+                                symbolStatus:
+                                    type: string
+                                    description: 'Filters symbols that have this tradingStatus. Valid values: TRADING, HALT, BREAK  Cannot be used in combination with symbol or symbols'
+                                symbols:
+                                    type: array
+                                    description: Describe multiple symbols
+                                    items:
+                                        type: string
+                                        description: array item
         parameters:
             permissions:
-                schema:
-                    type: string
-                location: body
+                description: Filter symbols by permissions
+                location: $message.payload#/params/permissions
             showPermissionSets:
-                schema:
-                    type: boolean
-                    required: true
-                location: body
+                description: Controls whether the content of the permissionSets field is populated or not. Defaults to true.
+                location: $message.payload#/params/showPermissionSets
             symbol:
                 description: Describe a single symbol
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/symbol
             symbolStatus:
-                schema:
-                    type: string
-                location: body
+                description: 'Filters symbols that have this tradingStatus. Valid values: TRADING, HALT, BREAK  Cannot be used in combination with symbol or symbols'
+                location: $message.payload#/params/symbolStatus
             symbols:
-                schema:
-                    type: string
-                location: body
+                description: Describe multiple symbols
+                location: $message.payload#/params/symbols
 operations:
     receive_exchangeInfo:
         title: Receive from exchangeInfo

@@ -32,7 +32,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 6
                                     interval:
@@ -40,11 +40,11 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
                                         example: 6000
                                     rateLimitType:
@@ -79,11 +79,13 @@ channels:
                                         description: isWorking property
                                         example: true
                                     orderId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: orderId property
-                                        example: 1.2569099453e+10
+                                        example: 12569099453
                                     orderListId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: orderListId property
                                         example: -1
                                     origQty:
@@ -119,9 +121,10 @@ channels:
                                         description: symbol property
                                         example: BTCUSDT
                                     time:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: time property
-                                        example: 1.660801715639e+12
+                                        example: 1660801715639
                                     timeInForce:
                                         type: string
                                         description: timeInForce property
@@ -131,15 +134,17 @@ channels:
                                         description: type property
                                         example: LIMIT
                                     updateTime:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: updateTime property
-                                        example: 1.660801717945e+12
+                                        example: 1660801717945
                                     workingTime:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: workingTime property
-                                        example: 1.660801715639e+12
+                                        example: 1660801715639
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -166,46 +171,33 @@ channels:
                             properties:
                                 apiKey:
                                     type: string
-                                    description: apiKey property
-                                    example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                                recvWindow:
+                                    type: string
+                                    description: The value cannot be greater than 60000
                                 signature:
                                     type: string
-                                    description: signature property
-                                    example: d632b3fdb8a81dd44f82c7c901833309dd714fe508772a89b0a35b0ee0c48b89
                                 symbol:
                                     type: string
-                                    description: symbol property
-                                    example: BTCUSDT
+                                    description: If omitted, open orders for all symbols are returned
                                 timestamp:
-                                    type: number
-                                    description: timestamp property
-                                    example: 1.660813156812e+12
+                                    type: string
+                            required:
+                                - apiKey
+                                - signature
+                                - timestamp
         parameters:
             apiKey:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/apiKey
             recvWindow:
                 description: The value cannot be greater than 60000
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/recvWindow
             signature:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/signature
             symbol:
                 description: If omitted, open orders for all symbols are returned
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/symbol
             timestamp:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/timestamp
 operations:
     receive_openOrders_status:
         title: Receive from openOrders.status

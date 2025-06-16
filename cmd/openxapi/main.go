@@ -20,15 +20,15 @@ import (
 )
 
 var (
-	configFile string
-	logLevel   string
-	useSamples bool
-	samplesDir string
-	exchange   string
-	docType    string
-	specTypes  stringsFlag
-	showHelp   bool
-	outputDir  string
+	configFile       string
+	logLevel         string
+	useSamples       bool
+	samplesDir       string
+	exchange         string
+	docType          string
+	specTypes        stringsFlag
+	showHelp         bool
+	outputDir        string
 	logLevelExplicit bool // Track if log-level was explicitly set via command line
 )
 

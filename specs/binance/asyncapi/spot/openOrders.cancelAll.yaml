@@ -30,7 +30,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 1
                                     interval:
@@ -38,11 +38,11 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
                                         example: 6000
                                     rateLimitType:
@@ -73,11 +73,13 @@ channels:
                                         description: icebergQty property
                                         example: "0.00000000"
                                     orderId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: orderId property
-                                        example: 1.2569099453e+10
+                                        example: 12569099453
                                     orderListId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: orderListId property
                                         example: -1
                                     origClientOrderId:
@@ -113,13 +115,14 @@ channels:
                                         description: stopPrice property
                                         example: "0.00000000"
                                     strategyId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: strategyId property
-                                        example: 3.746372e+07
+                                        example: 37463720
                                     strategyType:
-                                        type: number
+                                        type: integer
                                         description: strategyType property
-                                        example: 1e+06
+                                        example: 1000000
                                     symbol:
                                         type: string
                                         description: symbol property
@@ -129,23 +132,25 @@ channels:
                                         description: timeInForce property
                                         example: GTC
                                     trailingDelta:
-                                        type: number
+                                        type: integer
                                         description: trailingDelta property
                                         example: 0
                                     trailingTime:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: trailingTime property
                                         example: -1
                                     transactTime:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: transactTime property
-                                        example: 1.684804350068e+12
+                                        example: 1684804350068
                                     type:
                                         type: string
                                         description: type property
                                         example: LIMIT
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -172,46 +177,32 @@ channels:
                             properties:
                                 apiKey:
                                     type: string
-                                    description: apiKey property
-                                    example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                                recvWindow:
+                                    type: string
+                                    description: The value cannot be greater than 60000
                                 signature:
                                     type: string
-                                    description: signature property
-                                    example: 773f01b6e3c2c9e0c1d217bc043ce383c1ddd6f0e25f8d6070f2b66a6ceaf3a5
                                 symbol:
                                     type: string
-                                    description: symbol property
-                                    example: BTCUSDT
                                 timestamp:
-                                    type: number
-                                    description: timestamp property
-                                    example: 1.6608055572e+12
+                                    type: string
+                            required:
+                                - symbol
+                                - apiKey
+                                - signature
+                                - timestamp
         parameters:
             apiKey:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/apiKey
             recvWindow:
                 description: The value cannot be greater than 60000
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/recvWindow
             signature:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/signature
             symbol:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/symbol
             timestamp:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/timestamp
 operations:
     receive_openOrders_cancelAll:
         title: Receive from openOrders.cancelAll

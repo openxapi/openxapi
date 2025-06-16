@@ -214,7 +214,7 @@ func TestDocumentParser_RequestResponseStructure(t *testing.T) {
 
 			// Verify specific response field types
 			if statusField, exists := receiveMsg.Payload.Properties["status"]; exists {
-				assert.Equal(t, "number", statusField.Type, "Status field should be number for %s", tc.methodName)
+				assert.Equal(t, "integer", statusField.Type, "Status field should be integer for %s", tc.methodName)
 			}
 
 			if resultField, exists := receiveMsg.Payload.Properties["result"]; exists {
@@ -273,7 +273,7 @@ func TestDocumentParser_ResponseFieldDetails(t *testing.T) {
 	if resultField.Properties != nil {
 		assert.Contains(t, resultField.Properties, "serverTime", "Result should have serverTime field")
 		if serverTimeField := resultField.Properties["serverTime"]; serverTimeField != nil {
-			assert.Equal(t, "number", serverTimeField.Type, "ServerTime should be number")
+			assert.Equal(t, "integer", serverTimeField.Type, "ServerTime should be integer")
 		}
 	}
 

@@ -31,7 +31,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 1
                                     interval:
@@ -39,11 +39,11 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
                                         example: 6000
                                     rateLimitType:
@@ -77,7 +77,8 @@ channels:
                                             description: array item
                                             properties:
                                                 allocId:
-                                                    type: number
+                                                    type: integer
+                                                    format: int64
                                                     description: allocId property
                                                     example: 0
                                                 commission:
@@ -101,15 +102,18 @@ channels:
                                                     description: qty property
                                                     example: "0.50000000"
                                                 tradeId:
-                                                    type: number
+                                                    type: integer
+                                                    format: int64
                                                     description: tradeId property
                                                     example: -1
                                     orderId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: orderId property
                                         example: 2
                                     orderListId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: orderListId property
                                         example: -1
                                     origQty:
@@ -145,9 +149,10 @@ channels:
                                         description: timeInForce property
                                         example: GTC
                                     transactTime:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: transactTime property
-                                        example: 1.689149087774e+12
+                                        example: 1689149087774
                                     type:
                                         type: string
                                         description: type property
@@ -161,11 +166,12 @@ channels:
                                         description: workingFloor property
                                         example: SOR
                                     workingTime:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: workingTime property
-                                        example: 1.689149087774e+12
+                                        example: 1689149087774
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -192,121 +198,95 @@ channels:
                             properties:
                                 apiKey:
                                     type: string
-                                    description: apiKey property
-                                    example: u5lgqJb97QWXWfgeV4cROuHbReSJM9rgQL0IvYcYc7BVeA5lpAqqc3a5p2OARIFk
+                                icebergQty:
+                                    type: string
+                                newClientOrderId:
+                                    type: string
+                                    description: Arbitrary unique ID among open orders. Automatically generated if not sent
+                                newOrderRespType:
+                                    type: string
+                                    description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default.'
                                 price:
-                                    type: number
-                                    description: price property
-                                    example: 31000
+                                    type: string
+                                    description: Applicable only to LIMIT order type
                                 quantity:
-                                    type: number
-                                    description: quantity property
-                                    example: 0.5
+                                    type: string
+                                recvWindow:
+                                    type: string
+                                    description: The value cannot be greater than 60000
+                                selfTradePreventionMode:
+                                    type: string
+                                    description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
                                 side:
                                     type: string
-                                    description: side property
-                                    example: BUY
+                                    description: BUY or SELL
                                 signature:
                                     type: string
-                                    description: signature property
-                                    example: fd301899567bc9472ce023392160cdc265ad8fcbbb67e0ea1b2af70a4b0cd9c7
+                                strategyId:
+                                    type: string
+                                    description: Arbitrary numeric value identifying the order within an order strategy.
+                                strategyType:
+                                    type: integer
+                                    description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
                                 symbol:
                                     type: string
-                                    description: symbol property
-                                    example: BTCUSDT
                                 timeInForce:
                                     type: string
-                                    description: timeInForce property
-                                    example: GTC
+                                    description: Applicable only to LIMIT order type
                                 timestamp:
-                                    type: number
-                                    description: timestamp property
-                                    example: 1.687485436575e+12
+                                    type: string
                                 type:
                                     type: string
-                                    description: type property
-                                    example: LIMIT
+                            required:
+                                - symbol
+                                - side
+                                - type
+                                - quantity
+                                - apiKey
+                                - timestamp
+                                - signature
         parameters:
             apiKey:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/apiKey
             icebergQty:
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/icebergQty
             newClientOrderId:
                 description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/newClientOrderId
             newOrderRespType:
                 description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default.'
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/newOrderRespType
             price:
                 description: Applicable only to LIMIT order type
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/price
             quantity:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/quantity
             recvWindow:
                 description: The value cannot be greater than 60000
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/recvWindow
             selfTradePreventionMode:
                 description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/selfTradePreventionMode
             side:
                 description: BUY or SELL
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/side
             signature:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/signature
             strategyId:
                 description: Arbitrary numeric value identifying the order within an order strategy.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/strategyId
             strategyType:
                 description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                schema:
-                    type: integer
-                location: body
+                location: $message.payload#/params/strategyType
             symbol:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/symbol
             timeInForce:
                 description: Applicable only to LIMIT order type
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/timeInForce
             timestamp:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/timestamp
             type:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/type
 operations:
     receive_sor_order_place:
         title: Receive from sor.order.place

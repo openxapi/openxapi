@@ -34,7 +34,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 20
                                     interval:
@@ -42,11 +42,11 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
                                         example: 6000
                                     rateLimitType:
@@ -61,7 +61,8 @@ channels:
                                 description: array item
                                 properties:
                                     makerOrderId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: makerOrderId property
                                         example: 3
                                     makerPreventedQuantity:
@@ -73,7 +74,8 @@ channels:
                                         description: makerSymbol property
                                         example: BTCUSDT
                                     preventedMatchId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: preventedMatchId property
                                         example: 1
                                     price:
@@ -89,19 +91,22 @@ channels:
                                         description: symbol property
                                         example: BTCUSDT
                                     takerOrderId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: takerOrderId property
                                         example: 5
                                     tradeGroupId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: tradeGroupId property
                                         example: 1
                                     transactTime:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: transactTime property
-                                        example: 1.669101687094e+12
+                                        example: 1669101687094
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -126,59 +131,42 @@ channels:
                             type: object
                             description: params property
                             properties:
-                                apiKey:
+                                fromPreventedMatchId:
                                     type: string
-                                    description: apiKey property
-                                    example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                                limit:
+                                    type: integer
+                                    description: 'Default: 500; Maximum: 1000'
                                 orderId:
-                                    type: number
-                                    description: orderId property
-                                    example: 35
-                                signature:
                                     type: string
-                                    description: signature property
-                                    example: c5a5ffb79fd4f2e10a92f895d488943a57954edf5933bde3338dfb6ea6d6eefc
+                                preventedMatchId:
+                                    type: string
+                                recvWindow:
+                                    type: string
+                                    description: The value cannot be greater than 60000
                                 symbol:
                                     type: string
-                                    description: symbol property
-                                    example: BTCUSDT
                                 timestamp:
-                                    type: number
-                                    description: timestamp property
-                                    example: 1.673923281052e+12
+                                    type: string
+                            required:
+                                - symbol
+                                - timestamp
         parameters:
             fromPreventedMatchId:
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/fromPreventedMatchId
             limit:
                 description: 'Default: 500; Maximum: 1000'
-                schema:
-                    type: integer
-                location: body
+                location: $message.payload#/params/limit
             orderId:
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/orderId
             preventedMatchId:
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/preventedMatchId
             recvWindow:
                 description: The value cannot be greater than 60000
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/recvWindow
             symbol:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/symbol
             timestamp:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/timestamp
 operations:
     receive_myPreventedMatches:
         title: Receive from myPreventedMatches

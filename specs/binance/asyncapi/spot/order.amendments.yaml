@@ -28,7 +28,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 4
                                     interval:
@@ -36,11 +36,11 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
                                         example: 6000
                                     rateLimitType:
@@ -55,7 +55,8 @@ channels:
                                 description: array item
                                 properties:
                                     executionId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: executionId property
                                         example: 60
                                     newClientOrderId:
@@ -67,7 +68,8 @@ channels:
                                         description: newQty property
                                         example: "5.00000000"
                                     orderId:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: orderId property
                                         example: 23
                                     origClientOrderId:
@@ -83,11 +85,12 @@ channels:
                                         description: symbol property
                                         example: BTCUSDT
                                     time:
-                                        type: number
+                                        type: integer
+                                        format: int64
                                         description: time property
-                                        example: 1.741924229819e+12
+                                        example: 1741924229819
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -112,60 +115,39 @@ channels:
                             type: object
                             description: params property
                             properties:
-                                apiKey:
+                                fromExecutionId:
                                     type: string
-                                    description: apiKey property
-                                    example: N3Swv7WaBF7S2rzA12UkPunM3udJiDddbgv1W7CzFGnsQXH9H62zzSCST0CndjeE
+                                limit:
+                                    type: integer
+                                    description: 'Default:500; Maximum: 1000'
                                 orderId:
                                     type: string
-                                    description: orderId property
-                                    example: "23"
                                 recvWindow:
-                                    type: number
-                                    description: recvWindow property
-                                    example: 5000
-                                signature:
                                     type: string
-                                    description: signature property
-                                    example: 0eed2e9d95b6868ea5ec21da0d14538192ef344c30ecf9fe83d58631699334dc
+                                    description: The value cannot be greater than 60000.
                                 symbol:
                                     type: string
-                                    description: symbol property
-                                    example: BTCUSDT
                                 timestamp:
-                                    type: number
-                                    description: timestamp property
-                                    example: 1.741925524887e+12
+                                    type: string
+                            required:
+                                - symbol
+                                - orderId
+                                - timestamp
         parameters:
             fromExecutionId:
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/fromExecutionId
             limit:
                 description: 'Default:500; Maximum: 1000'
-                schema:
-                    type: integer
-                location: body
+                location: $message.payload#/params/limit
             orderId:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/orderId
             recvWindow:
                 description: The value cannot be greater than 60000.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/recvWindow
             symbol:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/symbol
             timestamp:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/timestamp
 operations:
     receive_order_amendments:
         title: Receive from order.amendments

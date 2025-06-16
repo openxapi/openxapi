@@ -37,7 +37,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 18
                                     interval:
@@ -45,13 +45,13 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
-                                        example: 1e+07
+                                        example: 10000000
                                     rateLimitType:
                                         type: string
                                         description: rateLimitType property
@@ -77,7 +77,8 @@ channels:
                                     description: listStatusType property
                                     example: EXEC_STARTED
                                 orderListId:
-                                    type: number
+                                    type: integer
+                                    format: int64
                                     description: orderListId property
                                     example: 629
                                 orderReports:
@@ -100,11 +101,13 @@ channels:
                                                 description: executedQty property
                                                 example: "0.000000"
                                             orderId:
-                                                type: number
+                                                type: integer
+                                                format: int64
                                                 description: orderId property
                                                 example: 23
                                             orderListId:
-                                                type: number
+                                                type: integer
+                                                format: int64
                                                 description: orderListId property
                                                 example: 629
                                             origQty:
@@ -140,17 +143,19 @@ channels:
                                                 description: timeInForce property
                                                 example: GTC
                                             transactTime:
-                                                type: number
+                                                type: integer
+                                                format: int64
                                                 description: transactTime property
-                                                example: 1.712544408537e+12
+                                                example: 1712544408537
                                             type:
                                                 type: string
                                                 description: type property
                                                 example: LIMIT
                                             workingTime:
-                                                type: number
+                                                type: integer
+                                                format: int64
                                                 description: workingTime property
-                                                example: 1.712544408537e+12
+                                                example: 1712544408537
                                 orders:
                                     type: array
                                     description: orders property
@@ -163,7 +168,8 @@ channels:
                                                 description: clientOrderId property
                                                 example: OVQOpKwfmPCfaBTD0n7e7H
                                             orderId:
-                                                type: number
+                                                type: integer
+                                                format: int64
                                                 description: orderId property
                                                 example: 23
                                             symbol:
@@ -175,11 +181,12 @@ channels:
                                     description: symbol property
                                     example: "1712544378871"
                                 transactionTime:
-                                    type: number
+                                    type: integer
+                                    format: int64
                                     description: transactionTime property
-                                    example: 1.712544408537e+12
+                                    example: 1712544408537
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -204,253 +211,218 @@ channels:
                             type: object
                             description: params property
                             properties:
-                                apiKey:
+                                listClientOrderId:
                                     type: string
-                                    description: apiKey property
-                                    example: Rf07JlnL9PHVxjs27O5CvKNyOsV4qJ5gXdrRfpvlOdvMZbGZbPO5Ce2nIwfRP0iA
+                                    description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId, pendingAboveClientOrderId, and the pendingBelowClientOrderId.
+                                newOrderRespType:
+                                    type: string
+                                    description: 'Format of the JSON response. Supported values: Order Response Type'
+                                pendingAboveClientOrderId:
+                                    type: string
+                                    description: Arbitrary unique ID among open orders for the pending above order. Automatically generated if not sent.
+                                pendingAboveIcebergQty:
+                                    type: string
+                                    description: This can only be used if pendingAboveTimeInForce is GTC or if pendingAboveType is LIMIT_MAKER.
+                                pendingAbovePrice:
+                                    type: string
+                                    description: Can be used if pendingAboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
                                 pendingAboveStopPrice:
-                                    type: number
-                                    description: pendingAboveStopPrice property
-                                    example: 0.5
+                                    type: string
+                                    description: Can be used if pendingAboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT
+                                pendingAboveStrategyId:
+                                    type: string
+                                    description: Arbitrary numeric value identifying the pending above order within an order strategy.
+                                pendingAboveStrategyType:
+                                    type: integer
+                                    description: Arbitrary numeric value identifying the pending above order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                                pendingAboveTimeInForce:
+                                    type: string
+                                pendingAboveTrailingDelta:
+                                    type: string
+                                    description: See Trailing Stop FAQ
                                 pendingAboveType:
                                     type: string
-                                    description: pendingAboveType property
-                                    example: STOP_LOSS
+                                    description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
+                                pendingBelowClientOrderId:
+                                    type: string
+                                    description: Arbitrary unique ID among open orders for the pending below order. Automatically generated if not sent.
+                                pendingBelowIcebergQty:
+                                    type: string
+                                    description: This can only be used if pendingBelowTimeInForce is GTC, or if pendingBelowType is LIMIT_MAKER.
                                 pendingBelowPrice:
-                                    type: number
-                                    description: pendingBelowPrice property
-                                    example: 5
+                                    type: string
+                                    description: Can be used if pendingBelowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT to specify the limit price.
+                                pendingBelowStopPrice:
+                                    type: string
+                                    description: Can be used if pendingBelowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either pendingBelowStopPrice or pendingBelowTrailingDelta or both, must be specified.
+                                pendingBelowStrategyId:
+                                    type: string
+                                    description: Arbitrary numeric value identifying the pending below order within an order strategy.
+                                pendingBelowStrategyType:
+                                    type: integer
+                                    description: Arbitrary numeric value identifying the pending below order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                                pendingBelowTimeInForce:
+                                    type: string
+                                    description: 'Supported values: Time In Force'
+                                pendingBelowTrailingDelta:
+                                    type: string
                                 pendingBelowType:
                                     type: string
-                                    description: pendingBelowType property
-                                    example: LIMIT_MAKER
+                                    description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
                                 pendingQuantity:
-                                    type: number
-                                    description: pendingQuantity property
-                                    example: 5
+                                    type: string
                                 pendingSide:
                                     type: string
-                                    description: pendingSide property
-                                    example: SELL
+                                    description: 'Supported values: Order Side'
                                 recvWindow:
                                     type: string
-                                    description: recvWindow property
-                                    example: "5000"
+                                    description: The value cannot be greater than 60000.
+                                selfTradePreventionMode:
+                                    type: string
+                                    description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
                                 signature:
                                     type: string
-                                    description: signature property
-                                    example: c094473304374e1b9c5f7e2558358066cfa99df69f50f63d09cfee755136cb07
                                 symbol:
                                     type: string
-                                    description: symbol property
-                                    example: LTCBNB
                                 timestamp:
                                     type: string
-                                    description: timestamp property
-                                    example: "1712544408509"
+                                workingClientOrderId:
+                                    type: string
+                                    description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
+                                workingIcebergQty:
+                                    type: string
+                                    description: This can only be used if workingTimeInForce is GTC.
                                 workingPrice:
-                                    type: number
-                                    description: workingPrice property
-                                    example: 1.5
+                                    type: string
                                 workingQuantity:
-                                    type: number
-                                    description: workingQuantity property
-                                    example: 1
+                                    type: string
                                 workingSide:
                                     type: string
-                                    description: workingSide property
-                                    example: BUY
+                                    description: 'Supported values: Order Side'
+                                workingStrategyId:
+                                    type: string
+                                    description: Arbitrary numeric value identifying the working order within an order strategy.
+                                workingStrategyType:
+                                    type: integer
+                                    description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
                                 workingTimeInForce:
                                     type: string
-                                    description: workingTimeInForce property
-                                    example: GTC
+                                    description: 'Supported values: Time In Force'
                                 workingType:
                                     type: string
-                                    description: workingType property
-                                    example: LIMIT
+                                    description: 'Supported values: LIMIT, LIMIT_MAKER'
+                            required:
+                                - symbol
+                                - workingType
+                                - workingSide
+                                - workingPrice
+                                - workingQuantity
+                                - pendingSide
+                                - pendingQuantity
+                                - pendingAboveType
+                                - timestamp
+                                - signature
         parameters:
             listClientOrderId:
                 description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId, pendingAboveClientOrderId, and the pendingBelowClientOrderId.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/listClientOrderId
             newOrderRespType:
                 description: 'Format of the JSON response. Supported values: Order Response Type'
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/newOrderRespType
             pendingAboveClientOrderId:
                 description: Arbitrary unique ID among open orders for the pending above order. Automatically generated if not sent.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingAboveClientOrderId
             pendingAboveIcebergQty:
                 description: This can only be used if pendingAboveTimeInForce is GTC or if pendingAboveType is LIMIT_MAKER.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingAboveIcebergQty
             pendingAbovePrice:
                 description: Can be used if pendingAboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingAbovePrice
             pendingAboveStopPrice:
                 description: Can be used if pendingAboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingAboveStopPrice
             pendingAboveStrategyId:
                 description: Arbitrary numeric value identifying the pending above order within an order strategy.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingAboveStrategyId
             pendingAboveStrategyType:
                 description: Arbitrary numeric value identifying the pending above order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                schema:
-                    type: integer
-                location: body
+                location: $message.payload#/params/pendingAboveStrategyType
             pendingAboveTimeInForce:
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingAboveTimeInForce
             pendingAboveTrailingDelta:
                 description: See Trailing Stop FAQ
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingAboveTrailingDelta
             pendingAboveType:
                 description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/pendingAboveType
             pendingBelowClientOrderId:
                 description: Arbitrary unique ID among open orders for the pending below order. Automatically generated if not sent.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingBelowClientOrderId
             pendingBelowIcebergQty:
                 description: This can only be used if pendingBelowTimeInForce is GTC, or if pendingBelowType is LIMIT_MAKER.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingBelowIcebergQty
             pendingBelowPrice:
                 description: Can be used if pendingBelowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT to specify the limit price.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingBelowPrice
             pendingBelowStopPrice:
                 description: Can be used if pendingBelowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either pendingBelowStopPrice or pendingBelowTrailingDelta or both, must be specified.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingBelowStopPrice
             pendingBelowStrategyId:
                 description: Arbitrary numeric value identifying the pending below order within an order strategy.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingBelowStrategyId
             pendingBelowStrategyType:
                 description: Arbitrary numeric value identifying the pending below order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                schema:
-                    type: integer
-                location: body
+                location: $message.payload#/params/pendingBelowStrategyType
             pendingBelowTimeInForce:
                 description: 'Supported values: Time In Force'
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingBelowTimeInForce
             pendingBelowTrailingDelta:
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingBelowTrailingDelta
             pendingBelowType:
                 description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/pendingBelowType
             pendingQuantity:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/pendingQuantity
             pendingSide:
                 description: 'Supported values: Order Side'
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/pendingSide
             recvWindow:
                 description: The value cannot be greater than 60000.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/recvWindow
             selfTradePreventionMode:
                 description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/selfTradePreventionMode
             signature:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/signature
             symbol:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/symbol
             timestamp:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/timestamp
             workingClientOrderId:
                 description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/workingClientOrderId
             workingIcebergQty:
                 description: This can only be used if workingTimeInForce is GTC.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/workingIcebergQty
             workingPrice:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/workingPrice
             workingQuantity:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/workingQuantity
             workingSide:
                 description: 'Supported values: Order Side'
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/workingSide
             workingStrategyId:
                 description: Arbitrary numeric value identifying the working order within an order strategy.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/workingStrategyId
             workingStrategyType:
                 description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                schema:
-                    type: integer
-                location: body
+                location: $message.payload#/params/workingStrategyType
             workingTimeInForce:
                 description: 'Supported values: Time In Force'
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/workingTimeInForce
             workingType:
                 description: 'Supported values: LIMIT, LIMIT_MAKER'
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/workingType
 operations:
     receive_orderList_place_otoco:
         title: Receive from orderList.place.otoco

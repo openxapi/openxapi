@@ -34,7 +34,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 2
                                     interval:
@@ -42,11 +42,11 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
                                         example: 6000
                                     rateLimitType:
@@ -78,11 +78,12 @@ channels:
                                             description: array item
                                             example: "0.01379900"
                                 lastUpdateId:
-                                    type: number
+                                    type: integer
+                                    format: int64
                                     description: lastUpdateId property
-                                    example: 2.731179239e+09
+                                    example: 2731179239
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -108,24 +109,18 @@ channels:
                             description: params property
                             properties:
                                 limit:
-                                    type: number
-                                    description: limit property
-                                    example: 5
+                                    type: integer
+                                    description: 'Default: 100; Maximum: 5000'
                                 symbol:
                                     type: string
-                                    description: symbol property
-                                    example: BNBBTC
+                            required:
+                                - symbol
         parameters:
             limit:
                 description: 'Default: 100; Maximum: 5000'
-                schema:
-                    type: integer
-                location: body
+                location: $message.payload#/params/limit
             symbol:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/symbol
 operations:
     receive_depth:
         title: Receive from depth

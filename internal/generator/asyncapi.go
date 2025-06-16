@@ -129,25 +129,14 @@ type AsyncAPICorrelationId struct {
 
 // AsyncAPIParameter represents a parameter in AsyncAPI 3.0.0
 type AsyncAPIParameter struct {
-	Description string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Schema      *AsyncAPIParameterSchema `json:"schema,omitempty" yaml:"schema,omitempty"`
-	Default     interface{}              `json:"default,omitempty" yaml:"default,omitempty"`
-	Enum        []interface{}            `json:"enum,omitempty" yaml:"enum,omitempty"`
-	Examples    []interface{}            `json:"examples,omitempty" yaml:"examples,omitempty"`
-	Location    string                   `json:"location,omitempty" yaml:"location,omitempty"`
+	Description string        `json:"description,omitempty" yaml:"description,omitempty"`
+	Default     interface{}   `json:"default,omitempty" yaml:"default,omitempty"`
+	Enum        []interface{} `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Examples    []interface{} `json:"examples,omitempty" yaml:"examples,omitempty"`
+	Location    string        `json:"location,omitempty" yaml:"location,omitempty"`
 }
 
-// AsyncAPIParameterSchema represents a parameter schema
-type AsyncAPIParameterSchema struct {
-	Type     string                   `json:"type,omitempty" yaml:"type,omitempty"`
-	Items    *AsyncAPIParameterSchema `json:"items,omitempty" yaml:"items,omitempty"`
-	Required bool                     `json:"required,omitempty" yaml:"required,omitempty"`
-	Enum     []interface{}            `json:"enum,omitempty" yaml:"enum,omitempty"`
-	Default  interface{}              `json:"default,omitempty" yaml:"default,omitempty"`
-	Example  interface{}              `json:"example,omitempty" yaml:"example,omitempty"`
-}
-
-// AsyncAPISchema represents a schema
+// AsyncAPISchema represents a schema in AsyncAPI 3.0.0
 type AsyncAPISchema struct {
 	Type                 string                     `json:"type,omitempty" yaml:"type,omitempty"`
 	Format               string                     `json:"format,omitempty" yaml:"format,omitempty"`
@@ -453,16 +442,19 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 
 	// Convert parameters using the AsyncAPI 3.0.0 format
 	for _, param := range channel.Parameters {
-		asyncParam := &AsyncAPIParameter{
-			Description: param.Description,
-			Location:    param.Location,
+		// Create proper location using runtime expression format
+		location := "$message.payload#/params/" + param.Name
+		if param.Location == "header" {
+			location = "$message.header#/" + param.Name
 		}
 
-		// Create parameter schema with required information
-		if param.Schema != nil {
-			asyncParam.Schema = g.convertParamSchemaToAsyncAPIParameterSchema(param.Schema, param.Required)
+		asyncParam := &AsyncAPIParameter{
+			Description: param.Description,
+			Location:    location,
+		}
 
-			// Extract properties from schema
+		// Extract properties from schema if available
+		if param.Schema != nil {
 			if param.Schema.Default != nil {
 				asyncParam.Default = param.Schema.Default
 			}
@@ -471,12 +463,6 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 			}
 			if param.Schema.Example != nil {
 				asyncParam.Examples = []interface{}{param.Schema.Example}
-			}
-		} else {
-			// Fallback for parameters without schema
-			asyncParam.Schema = &AsyncAPIParameterSchema{
-				Type:     "string",
-				Required: param.Required,
 			}
 		}
 
@@ -596,37 +582,4 @@ func (g *Generator) writeAsyncAPISpec(spec *AsyncAPISpec, path string) error {
 	}
 
 	return nil
-}
-
-// convertParamSchemaToAsyncAPIParameterSchema converts a WebSocket parameter schema to AsyncAPI parameter schema
-func (g *Generator) convertParamSchemaToAsyncAPIParameterSchema(schema *wsParser.Schema, required bool) *AsyncAPIParameterSchema {
-	if schema == nil {
-		return &AsyncAPIParameterSchema{
-			Type:     "string",
-			Required: required,
-		}
-	}
-
-	result := &AsyncAPIParameterSchema{
-		Type:     schema.Type,
-		Required: required,
-	}
-
-	// Handle arrays
-	if schema.Type == "array" && schema.Items != nil {
-		result.Items = g.convertParamSchemaToAsyncAPIParameterSchema(schema.Items, false)
-	}
-
-	// Copy other properties
-	if schema.Default != nil {
-		result.Default = schema.Default
-	}
-	if schema.Enum != nil {
-		result.Enum = schema.Enum
-	}
-	if schema.Example != nil {
-		result.Example = schema.Example
-	}
-
-	return result
 }

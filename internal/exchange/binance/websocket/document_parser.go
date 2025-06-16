@@ -694,7 +694,7 @@ func (p *DocumentParser) parseJSONSchema(jsonCode, schemaType string) *parser.Sc
 		}
 	}
 
-	return p.convertToSchema(data, fmt.Sprintf("%s schema", schemaType))
+	return p.convertToSchema("", data, fmt.Sprintf("%s schema", schemaType))
 }
 
 // cleanJSONResponse cleans JSON response by removing comments and invalid syntax
@@ -704,7 +704,7 @@ func (p *DocumentParser) cleanJSONResponse(jsonStr string) string {
 }
 
 // convertToSchema recursively converts parsed JSON to Schema
-func (p *DocumentParser) convertToSchema(data interface{}, description string) *parser.Schema {
+func (p *DocumentParser) convertToSchema(key string, data interface{}, description string) *parser.Schema {
 	switch v := data.(type) {
 	case map[string]interface{}:
 		schema := &parser.Schema{
@@ -714,7 +714,7 @@ func (p *DocumentParser) convertToSchema(data interface{}, description string) *
 		}
 
 		for key, value := range v {
-			schema.Properties[key] = p.convertToSchema(value, fmt.Sprintf("%s property", key))
+			schema.Properties[key] = p.convertToSchema(key, value, fmt.Sprintf("%s property", key))
 
 			// Special handling for method field - if it has a string value, make it an enum
 			if key == "method" {
@@ -729,7 +729,7 @@ func (p *DocumentParser) convertToSchema(data interface{}, description string) *
 	case []interface{}:
 		itemSchema := &parser.Schema{Type: "object"}
 		if len(v) > 0 {
-			itemSchema = p.convertToSchema(v[0], "array item")
+			itemSchema = p.convertToSchema(key, v[0], "array item")
 		}
 
 		return &parser.Schema{
@@ -746,6 +746,17 @@ func (p *DocumentParser) convertToSchema(data interface{}, description string) *
 		}
 
 	case float64:
+		if v == float64(int(v)) {
+			schema := &parser.Schema{
+				Type:        "integer",
+				Description: description,
+				Example:     int(v),
+			}
+			if key == "id" || strings.HasSuffix(key, "Id") || key == "time" || key == "timestamp" || strings.HasSuffix(key, "Time") {
+				schema.Format = "int64"
+			}
+			return schema
+		}
 		return &parser.Schema{
 			Type:        "number",
 			Description: description,

@@ -31,7 +31,7 @@ channels:
                                 description: array item
                                 properties:
                                     count:
-                                        type: number
+                                        type: integer
                                         description: count property
                                         example: 1
                                     interval:
@@ -39,11 +39,11 @@ channels:
                                         description: interval property
                                         example: MINUTE
                                     intervalNum:
-                                        type: number
+                                        type: integer
                                         description: intervalNum property
                                         example: 1
                                     limit:
-                                        type: number
+                                        type: integer
                                         description: limit property
                                         example: 6000
                                     rateLimitType:
@@ -71,11 +71,13 @@ channels:
                                             description: executedQty property
                                             example: "0.00000000"
                                         orderId:
-                                            type: number
+                                            type: integer
+                                            format: int64
                                             description: orderId property
                                             example: 12
                                         orderListId:
-                                            type: number
+                                            type: integer
+                                            format: int64
                                             description: orderListId property
                                             example: -1
                                         origClientOrderId:
@@ -123,19 +125,22 @@ channels:
                                             description: type property
                                             example: LIMIT
                                         workingTime:
-                                            type: number
+                                            type: integer
+                                            format: int64
                                             description: workingTime property
-                                            example: 1.741923284364e+12
+                                            example: 1741923284364
                                 executionId:
-                                    type: number
+                                    type: integer
+                                    format: int64
                                     description: executionId property
                                     example: 16
                                 transactTime:
-                                    type: number
+                                    type: integer
+                                    format: int64
                                     description: transactTime property
-                                    example: 1.741923284382e+12
+                                    example: 1741923284382
                         status:
-                            type: number
+                            type: integer
                             description: status property
                             example: 200
             sendMessage:
@@ -160,71 +165,49 @@ channels:
                             type: object
                             description: params property
                             properties:
-                                apiKey:
+                                newClientOrderId:
                                     type: string
-                                    description: apiKey property
-                                    example: Rl1KOMDCpSg6xviMYOkNk9ENUB5QOTnufXukVe0Ijd40yduAlpHn78at3rJyJN4F
+                                    description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
                                 newQty:
                                     type: string
-                                    description: newQty property
-                                    example: "5"
+                                    description: newQty must be greater than 0 and less than the order's quantity.
+                                orderId:
+                                    type: string
+                                    description: orderId or origClientOrderId must be sent
                                 origClientOrderId:
                                     type: string
-                                    description: origClientOrderId property
-                                    example: my_test_order1
+                                    description: orderId or origClientOrderId must be sent
                                 recvWindow:
-                                    type: number
-                                    description: recvWindow property
-                                    example: 5000
-                                signature:
                                     type: string
-                                    description: signature property
-                                    example: fa49c0c4ebc331c6ebd3fcb20deb387f60081ea858eebe6e35aa6fcdf2a82e08
+                                    description: The value cannot be greater than 60000.
                                 symbol:
                                     type: string
-                                    description: symbol property
-                                    example: BTCUSDT
                                 timestamp:
-                                    type: number
-                                    description: timestamp property
-                                    example: 1.741922620419e+12
+                                    type: string
+                            required:
+                                - symbol
+                                - newQty
+                                - timestamp
         parameters:
             newClientOrderId:
                 description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/newClientOrderId
             newQty:
                 description: newQty must be greater than 0 and less than the order's quantity.
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/newQty
             orderId:
                 description: orderId or origClientOrderId must be sent
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/orderId
             origClientOrderId:
                 description: orderId or origClientOrderId must be sent
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/origClientOrderId
             recvWindow:
                 description: The value cannot be greater than 60000.
-                schema:
-                    type: string
-                location: body
+                location: $message.payload#/params/recvWindow
             symbol:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/symbol
             timestamp:
-                schema:
-                    type: string
-                    required: true
-                location: body
+                location: $message.payload#/params/timestamp
 operations:
     receive_order_amend_keepPriority:
         title: Receive from order.amend.keepPriority
