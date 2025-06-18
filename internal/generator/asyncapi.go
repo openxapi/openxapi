@@ -196,10 +196,16 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 	}
 
 	for _, channel := range channels {
-		if channel.Protected {
-			continue
-		}
 		channelPath := filepath.Join(baseDir, fmt.Sprintf("%s.yaml", strings.ReplaceAll(channel.Name, "/", "_")))
+		
+		// For protected methods, skip if file already exists to avoid overwriting
+		if channel.Protected {
+			if _, err := os.Stat(channelPath); err == nil {
+				logrus.Debugf("Skipping protected method %s - file already exists: %s", channel.Name, channelPath)
+				continue
+			}
+			logrus.Debugf("Generating protected method %s - file does not exist: %s", channel.Name, channelPath)
+		}
 
 		// Convert channel to AsyncAPI 3.0.0 format
 		asyncChannel := g.convertChannelToAsyncAPIChannel(&channel)
