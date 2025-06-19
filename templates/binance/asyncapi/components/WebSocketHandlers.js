@@ -1,7 +1,7 @@
 /*
  * This component generates WebSocket handler methods for channels
  * As input it requires the AsyncAPI document
- * Now supports oneOf response types and async response handling
+ * Now uses typed structs from models package for type safety
  */
 export function WebSocketHandlers({ asyncapi }) {
   const operations = asyncapi.operations();
@@ -9,7 +9,7 @@ export function WebSocketHandlers({ asyncapi }) {
 
   operations.forEach((operation) => {
     if (operation.action() === 'send') {
-      handlers += generateRequestMethod(operation);
+      handlers += generateTypedRequestMethod(operation);
       handlers += '\n';
     }
   });
@@ -24,234 +24,265 @@ export function WebSocketHandlers({ asyncapi }) {
 }
 
 /*
- * Generate a request method for an operation that sends messages
+ * Generate a typed request method for an operation that sends messages
  */
-function generateRequestMethod(operation) {
+function generateTypedRequestMethod(operation) {
   const operationId = operation.id();
-  const methodName = capitalizeFirst(operationId);
+  // Clean the method name - remove 'send_' prefix if present
+  const cleanedOperationId = operationId.replace(/^send_?/, '');
+  const methodName = capitalizeFirst(toPascalCase(cleanedOperationId));
   const channel = operation.channels()[0];
   const channelAddress = channel.address();
   
-  // Get the sendMessage to understand the request structure
   const sendMessage = channel.messages().get('sendMessage');
+  const receiveMessage = channel.messages().get('receiveMessage');
+  
   if (!sendMessage || !sendMessage.payload()) {
     return `// Error: No sendMessage found for ${operationId}\n`;
   }
   
-  const payload = sendMessage.payload();
-  const properties = payload.properties;
+  // Generate struct names based on the actual model naming convention
+  // The actual models use pattern like: AccountCommissionAccountCommissionRatesRequest
+  const requestStructName = getModelStructName(channelAddress, sendMessage.title() || 'Request');
+  const responseStructName = receiveMessage ? getModelStructName(channelAddress, receiveMessage.title() || 'Response') : 'interface{}';
   
-  // Extract parameters from the params object if it exists
-  let paramsList = [];
-  let paramsStructFields = [];
-  let requiredParams = [];
+  let handler = '';
   
-  if (properties && properties.params) {
-    const paramsProperties = properties.params.properties;
-    if (paramsProperties) {
-      Object.keys(paramsProperties).forEach(paramName => {
-        const paramProp = paramsProperties[paramName];
-        const goType = getGoType(paramProp.type);
-        paramsList.push(`${paramName} ${goType}`);
-        paramsStructFields.push(`\t\t${capitalizeFirst(paramName)} ${goType} \`json:"${paramName}"\``);
-      });
-      
-      // Get required parameters
-      if (properties.params.required && Array.isArray(properties.params.required)) {
-        requiredParams = properties.params.required;
-      }
-    }
+  // Generate basic method that takes request struct and returns response struct
+  handler += generateBasicTypedMethod(methodName, channelAddress, requestStructName, responseStructName);
+  
+  // Generate convenience method with individual parameters
+  handler += generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName);
+  
+  // Generate oneOf handler method if response has oneOf
+  if (receiveMessage && hasOneOfInResponse(receiveMessage)) {
+    handler += generateOneOfHandlerMethod(methodName, channelAddress, requestStructName);
   }
-  
-  let handler = `// ${methodName} sends a ${channelAddress} request with enhanced response handling\n`;
-  handler += `func (c *Client) ${methodName}(`;
-  
-  // Add parameters to function signature
-  if (paramsList.length > 0) {
-    handler += paramsList.join(', ') + ', ';
-  }
-  
-  handler += `responseHandler func(data []byte) error) error {\n`;
-  
-  // Generate request ID
-  handler += `\treqID := c.generateRequestID()\n`;
-  
-  // Build request structure
-  handler += `\trequest := map[string]interface{}{\n`;
-  handler += `\t\t"id":     reqID,\n`;
-  handler += `\t\t"method": "${channelAddress}",\n`;
-  
-      if (paramsList.length > 0) {
-      handler += `\t\t"params": map[string]interface{}{\n`;
-      Object.keys(properties.params.properties).forEach(paramName => {
-        handler += `\t\t\t"${paramName}": ${paramName},\n`;
-      });
-      handler += `\t\t},\n`;
-    }
-  
-  handler += `\t}\n\n`;
-  
-  // Register response handler
-  handler += `\t// Register response handler\n`;
-  handler += `\tc.registerResponseHandler(reqID, responseHandler)\n\n`;
-  
-  // Send request
-  handler += `\t// Send request\n`;
-  handler += `\treturn c.sendRequest(request)\n`;
-  handler += '}\n\n';
-
-  // Generate a convenience method that handles oneOf responses automatically
-  handler += generateOneOfConvenienceMethod(operation, methodName, channelAddress, paramsList);
 
   return handler;
 }
 
 /*
- * Generate convenience method that automatically handles oneOf responses
+ * Generate model struct name based on channel address and message title
  */
-function generateOneOfConvenienceMethod(operation, methodName, channelAddress, paramsList) {
-  const channel = operation.channels()[0];
-  const receiveMessage = channel.messages().get('receiveMessage');
+function getModelStructName(channelAddress, messageTitle) {
+  // Convert channel address like "account.commission" to "AccountCommission"
+  const channelPart = channelAddress.split('.').map(part => capitalizeFirst(part)).join('');
   
-  if (!receiveMessage || !receiveMessage.payload()) {
-    return '';
-  }
+  // Clean and format the message title
+  // Remove common patterns and clean up the title
+  const cleanTitle = messageTitle
+    .replace(/\s*\([^)]*\)\s*/g, '') // Remove parentheses and content
+    .replace(/[^\w\s]/g, '') // Remove special characters
+    .replace(/\s+/g, ' ') // Normalize whitespace
+    .trim();
+  
+  // Convert to PascalCase
+  const titlePart = cleanTitle
+    .split(/\s+/)
+    .map(word => capitalizeFirst(word.toLowerCase()))
+    .join('');
+  
+  // Ensure proper capitalization for Request/Response suffixes
+  let finalName = `${channelPart}${titlePart}`;
+  
+  // Fix common patterns - ensure Request and Response are properly capitalized
+  finalName = finalName.replace(/request$/i, 'Request');
+  finalName = finalName.replace(/response$/i, 'Response');
+  
+  return finalName;
+}
 
+/*
+ * Generate basic typed method that takes request struct
+ */
+function generateBasicTypedMethod(methodName, channelAddress, requestStructName, responseStructName) {
+  let method = `// Send${methodName} sends a ${channelAddress} request using typed request/response structs\n`;
+  method += `// If request.Id is empty, a new request ID will be generated automatically\n`;
+  method += `func (c *Client) Send${methodName}(request *models.${requestStructName}, responseHandler func(*models.${responseStructName}, error) error) error {\n`;
+  method += `\t// Use existing request ID or generate a new one\n`;
+  method += `\tvar reqID string\n`;
+  method += `\tif request.Id != "" {\n`;
+  method += `\t\treqID = request.Id\n`;
+  method += `\t} else {\n`;
+  method += `\t\treqID = c.generateRequestID()\n`;
+  method += `\t\trequest.Id = reqID\n`;
+  method += `\t}\n`;
+  method += `\trequest.Method = "${channelAddress}"\n\n`;
+  
+  method += `\t// Convert struct to map for WebSocket sending\n`;
+  method += `\trequestMap, err := structToMap(request)\n`;
+  method += `\tif err != nil {\n`;
+  method += `\t\treturn fmt.Errorf("failed to convert request to map: %w", err)\n`;
+  method += `\t}\n\n`;
+  
+  method += `\t// Register typed response handler\n`;
+  method += `\tc.registerResponseHandler(reqID, func(data []byte) error {\n`;
+  method += `\t\tvar response models.${responseStructName}\n`;
+  method += `\t\tif err := json.Unmarshal(data, &response); err != nil {\n`;
+  method += `\t\t\treturn responseHandler(nil, fmt.Errorf("failed to unmarshal response: %w", err))\n`;
+  method += `\t\t}\n`;
+  method += `\t\treturn responseHandler(&response, nil)\n`;
+  method += `\t})\n\n`;
+  
+  method += `\t// Send request\n`;
+  method += `\treturn c.sendRequest(requestMap)\n`;
+  method += `}\n\n`;
+  
+  return method;
+}
+
+/*
+ * Generate convenience method with default parameters
+ */
+function generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName) {
+  let method = `// Send${methodName}Default sends a ${channelAddress} request with default parameters\n`;
+  method += `func (c *Client) Send${methodName}Default(responseHandler func(*models.${responseStructName}, error) error) error {\n`;
+  
+  // Build request struct with default ID and Method
+  method += `\trequest := &models.${requestStructName}{\n`;
+  method += `\t\tId:     c.generateRequestID(),\n`;
+  method += `\t\tMethod: "${channelAddress}",\n`;
+  method += `\t}\n\n`;
+  
+  method += `\treturn c.Send${methodName}(request, responseHandler)\n`;
+  method += `}\n\n`;
+  
+  return method;
+}
+
+/*
+ * Generate oneOf handler method for responses with oneOf types
+ */
+function generateOneOfHandlerMethod(methodName, channelAddress, requestStructName) {
+  let method = `// Send${methodName}WithOneOfHandler sends a ${channelAddress} request with automatic oneOf response parsing\n`;
+  method += `// If request.Id is empty, a new request ID will be generated automatically\n`;
+  method += `func (c *Client) Send${methodName}WithOneOfHandler(request *models.${requestStructName}, oneOfHandler func(result interface{}, responseType string, err error) error) error {\n`;
+  method += `\t// Use existing request ID or generate a new one\n`;
+  method += `\tvar reqID string\n`;
+  method += `\tif request.Id != "" {\n`;
+  method += `\t\treqID = request.Id\n`;
+  method += `\t} else {\n`;
+  method += `\t\treqID = c.generateRequestID()\n`;
+  method += `\t\trequest.Id = reqID\n`;
+  method += `\t}\n`;
+  method += `\trequest.Method = "${channelAddress}"\n\n`;
+  
+  method += `\t// Convert struct to map for WebSocket sending\n`;
+  method += `\trequestMap, err := structToMap(request)\n`;
+  method += `\tif err != nil {\n`;
+  method += `\t\treturn fmt.Errorf("failed to convert request to map: %w", err)\n`;
+  method += `\t}\n\n`;
+  
+  method += `\t// Register oneOf response handler\n`;
+  method += `\tc.registerResponseHandler(reqID, func(data []byte) error {\n`;
+  method += `\t\t// Parse the oneOf response\n`;
+  method += `\t\tresult, responseType, err := ParseOneOfMessage(data)\n`;
+  method += `\t\treturn oneOfHandler(result, responseType, err)\n`;
+  method += `\t})\n\n`;
+  
+  method += `\t// Send request\n`;
+  method += `\treturn c.sendRequest(requestMap)\n`;
+  method += `}\n\n`;
+  
+  return method;
+}
+
+/*
+ * Check if response message has oneOf types
+ */
+function hasOneOfInResponse(receiveMessage) {
+  if (!receiveMessage || !receiveMessage.payload()) {
+    return false;
+  }
+  
   const payload = receiveMessage.payload();
   const properties = payload.properties;
   
-  // Check if result has oneOf
-  const hasOneOf = properties && properties.result && properties.result.oneOf && Array.isArray(properties.result.oneOf);
-  
-  if (!hasOneOf) {
-    return '';
-  }
-
-  let method = `// ${methodName}WithOneOfHandler sends a ${channelAddress} request with automatic oneOf response parsing\n`;
-  method += `func (c *Client) ${methodName}WithOneOfHandler(`;
-  
-  if (paramsList.length > 0) {
-    method += paramsList.join(', ') + ', ';
-  }
-  
-  method += `oneOfHandler func(result interface{}, responseType string) error) error {\n`;
-  method += `\treturn c.${methodName}(`;
-  
-  if (paramsList.length > 0) {
-    // Extract parameter names for the call
-    const paramNames = paramsList.map(param => param.split(' ')[0]);
-    method += paramNames.join(', ') + ', ';
-  }
-  
-  method += `func(data []byte) error {\n`;
-  method += `\t\t// Parse the oneOf response\n`;
-  method += `\t\tresult, responseType, err := ParseOneOfMessage(data)\n`;
-  method += `\t\tif err != nil {\n`;
-  method += `\t\t\treturn err\n`;
-  method += `\t\t}\n`;
-  method += `\t\treturn oneOfHandler(result, responseType)\n`;
-  method += `\t})\n`;
-  method += '}\n\n';
-
-  return method;
+  return properties && properties.result && properties.result.oneOf && Array.isArray(properties.result.oneOf);
 }
 
 /*
  * Generate helper methods for oneOf response handling
  */
 function generateOneOfHelperMethods(asyncapi) {
-  let helpers = '';
-  
-  helpers += `// HandleUserDataStreamResponse is a helper to handle user data stream responses with oneOf types\n`;
-  helpers += `func (c *Client) HandleUserDataStreamResponse(data []byte, handlers map[string]func(interface{}) error) error {\n`;
-  helpers += `\tresult, responseType, err := ParseOneOfMessage(data)\n`;
-  helpers += `\tif err != nil {\n`;
-  helpers += `\t\treturn err\n`;
-  helpers += `\t}\n\n`;
-  helpers += `\tif handler, exists := handlers[responseType]; exists {\n`;
-  helpers += `\t\treturn handler(result)\n`;
-  helpers += `\t}\n\n`;
-  helpers += `\treturn nil // No specific handler, but not an error\n`;
-  helpers += `}\n\n`;
+  let methods = `// HandleUserDataStreamResponse is a helper to handle user data stream responses with oneOf types
+func (c *Client) HandleUserDataStreamResponse(data []byte, handlers map[string]func(interface{}) error) error {
+	result, responseType, err := ParseOneOfMessage(data)
+	if err != nil {
+		return err
+	}
 
-  helpers += `// SetupDefaultUserDataStreamHandlers sets up default handlers for all user data stream event types\n`;
-  helpers += `func (c *Client) SetupDefaultUserDataStreamHandlers() {\n`;
-  helpers += `\t// Register global handlers for each event type\n`;
-  helpers += `\tc.RegisterGlobalHandler("OutboundAccountPositionEvent", func(data interface{}) error {\n`;
-  helpers += `\t\tlog.Printf("Received OutboundAccountPositionEvent: %+v", data)\n`;
-  helpers += `\t\treturn nil\n`;
-  helpers += `\t})\n\n`;
-  
-  helpers += `\tc.RegisterGlobalHandler("BalanceUpdateEvent", func(data interface{}) error {\n`;
-  helpers += `\t\tlog.Printf("Received BalanceUpdateEvent: %+v", data)\n`;
-  helpers += `\t\treturn nil\n`;
-  helpers += `\t})\n\n`;
-  
-  helpers += `\tc.RegisterGlobalHandler("ExecutionReportEvent", func(data interface{}) error {\n`;
-  helpers += `\t\tlog.Printf("Received ExecutionReportEvent: %+v", data)\n`;
-  helpers += `\t\treturn nil\n`;
-  helpers += `\t})\n\n`;
-  
-  helpers += `\tc.RegisterGlobalHandler("ListStatusEvent", func(data interface{}) error {\n`;
-  helpers += `\t\tlog.Printf("Received ListStatusEvent: %+v", data)\n`;
-  helpers += `\t\treturn nil\n`;
-  helpers += `\t})\n\n`;
-  
-  helpers += `\tc.RegisterGlobalHandler("ListenKeyExpiredEvent", func(data interface{}) error {\n`;
-  helpers += `\t\tlog.Printf("Received ListenKeyExpiredEvent: %+v", data)\n`;
-  helpers += `\t\treturn nil\n`;
-  helpers += `\t})\n\n`;
-  
-  helpers += `\tc.RegisterGlobalHandler("ExternalLockUpdateEvent", func(data interface{}) error {\n`;
-  helpers += `\t\tlog.Printf("Received ExternalLockUpdateEvent: %+v", data)\n`;
-  helpers += `\t\treturn nil\n`;
-  helpers += `\t})\n\n`;
-  
-  helpers += `\tc.RegisterGlobalHandler("EventStreamTerminatedEvent", func(data interface{}) error {\n`;
-  helpers += `\t\tlog.Printf("Received EventStreamTerminatedEvent: %+v", data)\n`;
-  helpers += `\t\treturn nil\n`;
-  helpers += `\t})\n`;
-  helpers += `}\n\n`;
+	if handler, exists := handlers[responseType]; exists {
+		return handler(result)
+	}
 
-  return helpers;
+	return nil // No specific handler, but not an error
 }
 
-/*
- * Generate UserDataStream specific convenience methods
- */
-function generateUserDataStreamConvenienceMethods() {
-  let methods = '';
-  
-  // UserDataStreamSubscribe method
-  methods += `// UserDataStreamSubscribe is a convenience method for userDataStream.subscribe\n`;
-  methods += `func (c *Client) UserDataStreamSubscribe(responseHandler func(data []byte) error) error {\n`;
-  methods += `\treturn c.SendUserdatastreamSubscribe(responseHandler)\n`;
-  methods += `}\n\n`;
-  
-  // UserDataStreamSubscribeWithOneOfHandler method
-  methods += `// UserDataStreamSubscribeWithOneOfHandler subscribes to user data stream with automatic oneOf parsing\n`;
-  methods += `func (c *Client) UserDataStreamSubscribeWithOneOfHandler(oneOfHandler func(result interface{}, responseType string) error) error {\n`;
-  methods += `\treturn c.SendUserdatastreamSubscribe(func(data []byte) error {\n`;
-  methods += `\t\t// Parse the oneOf response\n`;
-  methods += `\t\tresult, responseType, err := ParseOneOfMessage(data)\n`;
-  methods += `\t\tif err != nil {\n`;
-  methods += `\t\t\treturn err\n`;
-  methods += `\t\t}\n`;
-  methods += `\t\treturn oneOfHandler(result, responseType)\n`;
-  methods += `\t})\n`;
-  methods += `}\n\n`;
-  
-  // UserDataStreamUnsubscribe method
-  methods += `// UserDataStreamUnsubscribe is a convenience method for userDataStream.unsubscribe\n`;
-  methods += `func (c *Client) UserDataStreamUnsubscribe(responseHandler func(data []byte) error) error {\n`;
-  methods += `\treturn c.SendUserdatastreamUnsubscribe(responseHandler)\n`;
-  methods += `}\n\n`;
-  
+// SetupDefaultUserDataStreamHandlers sets up default handlers for all user data stream event types
+func (c *Client) SetupDefaultUserDataStreamHandlers() {
+	// Register global handlers for each event type
+	c.RegisterGlobalHandler("OutboundAccountPositionEvent", func(data interface{}) error {
+		log.Printf("Received OutboundAccountPositionEvent: %+v", data)
+		return nil
+	})
+
+	c.RegisterGlobalHandler("BalanceUpdateEvent", func(data interface{}) error {
+		log.Printf("Received BalanceUpdateEvent: %+v", data)
+		return nil
+	})
+
+	c.RegisterGlobalHandler("ExecutionReportEvent", func(data interface{}) error {
+		log.Printf("Received ExecutionReportEvent: %+v", data)
+		return nil
+	})
+
+	c.RegisterGlobalHandler("ListStatusEvent", func(data interface{}) error {
+		log.Printf("Received ListStatusEvent: %+v", data)
+		return nil
+	})
+
+	c.RegisterGlobalHandler("ListenKeyExpiredEvent", func(data interface{}) error {
+		log.Printf("Received ListenKeyExpiredEvent: %+v", data)
+		return nil
+	})
+
+	c.RegisterGlobalHandler("ExternalLockUpdateEvent", func(data interface{}) error {
+		log.Printf("Received ExternalLockUpdateEvent: %+v", data)
+		return nil
+	})
+
+	c.RegisterGlobalHandler("EventStreamTerminatedEvent", func(data interface{}) error {
+		log.Printf("Received EventStreamTerminatedEvent: %+v", data)
+		return nil
+	})
+}
+
+`;
+
   return methods;
 }
 
 /*
- * Convert AsyncAPI type to Go type
+ * Generate UserDataStream convenience methods
+ */
+function generateUserDataStreamConvenienceMethods() {
+  return `// UserDataStreamSubscribe is a convenience method for userDataStream.subscribe with typed response
+func (c *Client) UserDataStreamSubscribe(request *models.UserDataStreamSubscribeSubscribeToUserDataStreamRequest, responseHandler func(*models.UserDataStreamSubscribeSubscribeToUserDataStreamResponse, error) error) error {
+	return c.SendUserDataStreamSubscribe(request, responseHandler)
+}
+
+// UserDataStreamUnsubscribe is a convenience method for userDataStream.unsubscribe with typed response
+func (c *Client) UserDataStreamUnsubscribe(request *models.UserDataStreamUnsubscribeUnsubscribeFromUserDataStreamRequest, responseHandler func(*models.UserDataStreamUnsubscribeUnsubscribeFromUserDataStreamResponse, error) error) error {
+	return c.SendUserDataStreamUnsubscribe(request, responseHandler)
+}
+
+`;
+}
+
+/*
+ * Get Go type from JSON schema type
  */
 function getGoType(type) {
   switch (type) {
@@ -266,26 +297,24 @@ function getGoType(type) {
     case 'array':
       return '[]interface{}';
     case 'object':
-      return 'map[string]interface{}';
+      return 'interface{}';
     default:
       return 'interface{}';
   }
 }
 
 /*
- * Convert string to CamelCase, handling underscores and dots
- * Examples: user_data_stream -> UserDataStream, account.commission -> AccountCommission
- * Remove parentheses and content inside them: method(param) -> Method
+ * Convert string to PascalCase
+ */
+function toPascalCase(str) {
+  return str
+    .replace(/[-_\s.]+(.)?/g, (_, char) => char ? char.toUpperCase() : '')
+    .replace(/^(.)/, (_, char) => char.toUpperCase());
+}
+
+/*
+ * Capitalize first letter
  */
 function capitalizeFirst(str) {
-  if (!str) return '';
-  
-  // Remove parentheses and their content
-  const cleanStr = str.replace(/\([^)]*\)/g, '');
-  
-  // Split by underscore and dots, then capitalize each word
-  return cleanStr
-    .split(/[._]/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
+  return str.charAt(0).toUpperCase() + str.slice(1);
 } 

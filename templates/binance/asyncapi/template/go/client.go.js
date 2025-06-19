@@ -130,11 +130,16 @@ func (c *Client) Disconnect() error {
       </Text>
 
       <Text newLines={2}>
-        {`// generateRequestID generates a unique request ID
+        {`// generateRequestID generates a unique request ID (internal use)
 func (c *Client) generateRequestID() string {
 	bytes := make([]byte, 16)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
+}
+
+// GenerateRequestID generates a unique request ID for public use
+func (c *Client) GenerateRequestID() string {
+	return c.generateRequestID()
 }`}
       </Text>
 
@@ -196,6 +201,20 @@ func (c *Client) sendRequest(request map[string]interface{}) error {
 	}
 
 	return c.conn.WriteMessage(websocket.TextMessage, data)
+}`}
+      </Text>
+
+      <Text newLines={2}>
+        {`// structToMap converts a struct to map[string]interface{} for JSON marshaling
+func structToMap(v interface{}) (map[string]interface{}, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	var result map[string]interface{}
+	err = json.Unmarshal(data, &result)
+	return result, err
 }`}
       </Text>
 
@@ -321,6 +340,30 @@ func (c *Client) mapEventTypeToStructType(eventType string) string {
 
       <Text newLines={2}>
         <WebSocketHandlers asyncapi={asyncapi} />
+      </Text>
+
+      <Text newLines={2}>
+        {`// Usage Examples:
+//
+// 1. Using auto-generated request ID (ID and Method will be set automatically):
+//    request := &models.AccountCommissionAccountCommissionRatesRequest{}
+//    client.SendAccountCommission(request, responseHandler)
+//
+// 2. Using custom request ID:
+//    request := &models.AccountCommissionAccountCommissionRatesRequest{
+//        Id: "my-custom-id-123",
+//    }
+//    client.SendAccountCommission(request, responseHandler)
+//
+// 3. Using default parameters (ID and Method are pre-filled):
+//    client.SendAccountCommissionDefault(responseHandler)
+//
+// 4. Generating request ID for later use:
+//    customID := client.GenerateRequestID()
+//    request := &models.AccountCommissionAccountCommissionRatesRequest{
+//        Id: customID,
+//    }
+//    client.SendAccountCommission(request, responseHandler)`}
       </Text>
 
       <Text newLines={2}>

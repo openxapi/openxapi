@@ -149,19 +149,51 @@ function generateNestedStructs(schema, parentName) {
   }
   
   if (properties) {
-    Object.keys(properties).forEach((propName) => {
-      const prop = properties[propName];
+    // Handle AsyncAPI Map-like objects
+    let propertiesToIterate;
+    if (typeof properties.all === 'function') {
+      // AsyncAPI Map-like object
+      propertiesToIterate = properties.all();
+    } else if (properties instanceof Map) {
+      // Convert Map to regular object
+      propertiesToIterate = {};
+      for (const [key, value] of properties) {
+        propertiesToIterate[key] = value;
+      }
+    } else {
+      // Regular object
+      propertiesToIterate = properties;
+    }
+    
+    Object.keys(propertiesToIterate).forEach((propName) => {
+      const prop = propertiesToIterate[propName];
+      
+      // Handle AsyncAPI objects - type might be a function
+      const propType = (typeof prop.type === 'function') ? prop.type() : prop.type;
       
       // Handle nested objects
       let propProperties;
-      if (prop.type === 'object') {
+      if (propType === 'object') {
         if (typeof prop.properties === 'function') {
           propProperties = prop.properties();
         } else {
           propProperties = prop.properties;
         }
         
-        if (propProperties && Object.keys(propProperties).length > 0) {
+        // Check if propProperties has content using same logic as in mapJsonTypeToGo
+        let propertyKeys = [];
+        if (propProperties) {
+          if (typeof propProperties.all === 'function') {
+            const allProps = propProperties.all();
+            propertyKeys = Object.keys(allProps);
+          } else if (propProperties instanceof Map) {
+            propertyKeys = Array.from(propProperties.keys());
+          } else if (typeof propProperties === 'object') {
+            propertyKeys = Object.keys(propProperties);
+          }
+        }
+        
+        if (propertyKeys && propertyKeys.length > 0) {
           const nestedStructName = `${parentName}${toPascalCase(propName)}`;
           nestedStructs += generateStructWithDocs(nestedStructName, prop, null, true);
           nestedStructs += '\n';
@@ -169,24 +201,42 @@ function generateNestedStructs(schema, parentName) {
           // Recursively generate nested structs for deeper levels
           nestedStructs += generateNestedStructs(prop, nestedStructName);
         }
-      } else if (prop.type === 'array' && prop.items) {
-        // Handle array items that are objects
-        const items = prop.items;
-        let itemsProperties;
-        if (items.type === 'object') {
-          if (typeof items.properties === 'function') {
-            itemsProperties = items.properties();
-          } else {
-            itemsProperties = items.properties;
-          }
+      } else if (propType === 'array') {
+        // Handle AsyncAPI objects - items might be a function
+        const items = (typeof prop.items === 'function') ? prop.items() : prop.items;
+        if (items) {
+          // Get the items type properly
+          const itemsType = (typeof items.type === 'function') ? items.type() : items.type;
           
-          if (itemsProperties && Object.keys(itemsProperties).length > 0) {
-            const nestedStructName = `${parentName}${toPascalCase(propName)}`;
-            nestedStructs += generateStructWithDocs(nestedStructName, items, null, true);
-            nestedStructs += '\n';
+          let itemsProperties;
+          if (itemsType === 'object') {
+            if (typeof items.properties === 'function') {
+              itemsProperties = items.properties();
+            } else {
+              itemsProperties = items.properties;
+            }
             
-            // Recursively generate nested structs for array item objects
-            nestedStructs += generateNestedStructs(items, nestedStructName);
+            // Check if itemsProperties has content using same logic as above
+            let itemsPropertyKeys = [];
+            if (itemsProperties) {
+              if (typeof itemsProperties.all === 'function') {
+                const allProps = itemsProperties.all();
+                itemsPropertyKeys = Object.keys(allProps);
+              } else if (itemsProperties instanceof Map) {
+                itemsPropertyKeys = Array.from(itemsProperties.keys());
+              } else if (typeof itemsProperties === 'object') {
+                itemsPropertyKeys = Object.keys(itemsProperties);
+              }
+            }
+            
+            if (itemsPropertyKeys && itemsPropertyKeys.length > 0) {
+              const nestedStructName = `${parentName}${toPascalCase(propName)}`;
+              nestedStructs += generateStructWithDocs(nestedStructName, items, null, true);
+              nestedStructs += '\n';
+              
+              // Recursively generate nested structs for array item objects
+              nestedStructs += generateNestedStructs(items, nestedStructName);
+            }
           }
         }
       }
@@ -305,8 +355,24 @@ function generateStructWithDocs(name, schema, message, isNested = false) {
   const usedFieldNames = new Set();
   
   if (properties) {
-    Object.keys(properties).forEach((propName) => {
-      const prop = properties[propName];
+    // Handle AsyncAPI Map-like objects
+    let propertiesToIterate;
+    if (typeof properties.all === 'function') {
+      // AsyncAPI Map-like object
+      propertiesToIterate = properties.all();
+    } else if (properties instanceof Map) {
+      // Convert Map to regular object
+      propertiesToIterate = {};
+      for (const [key, value] of properties) {
+        propertiesToIterate[key] = value;
+      }
+    } else {
+      // Regular object
+      propertiesToIterate = properties;
+    }
+    
+    Object.keys(propertiesToIterate).forEach((propName) => {
+      const prop = propertiesToIterate[propName];
       let goType = '';
       
       // Handle oneOf types specially
@@ -327,10 +393,10 @@ function generateStructWithDocs(name, schema, message, isNested = false) {
       const isRequired = requiredFields.includes(propName);
       const jsonTag = `\`json:"${propName}${getJsonTagOptions(prop, isRequired)}"\``;
       
-      if (prop.description) {
-        // Handle multi-line descriptions by splitting and prefixing each line with //
-        const propDescription = (typeof prop.description === 'function') ? prop.description() : prop.description;
-        if (propDescription && typeof propDescription === 'string') {
+      // Handle property description - AsyncAPI objects might have description as function
+      const propDescription = (typeof prop.description === 'function') ? prop.description() : prop.description;
+      if (propDescription) {
+        if (typeof propDescription === 'string') {
           const description = propDescription.trim();
           const lines = description.split('\n');
           lines.forEach(line => {
@@ -341,8 +407,11 @@ function generateStructWithDocs(name, schema, message, isNested = false) {
           });
         }
       }
-      if (prop.examples && prop.examples.length > 0) {
-        structDef += `\t// Example: ${prop.examples[0]}\n`;
+      
+      // Handle examples - AsyncAPI objects might have examples as function
+      const propExamples = (typeof prop.examples === 'function') ? prop.examples() : prop.examples;
+      if (propExamples && Array.isArray(propExamples) && propExamples.length > 0) {
+        structDef += `\t// Example: ${propExamples[0]}\n`;
       }
       structDef += `\t${fieldName} ${goType} ${jsonTag}\n`;
     });
@@ -379,14 +448,11 @@ func (m *${structName}) String() string {
  * Map JSON schema types to Go types with more precision
  */
 function mapJsonTypeToGo(property, propName, parentStructName) {
-  const type = property.type;
+  // Handle AsyncAPI objects - type is a function
+  const type = (typeof property.type === 'function') ? property.type() : property.type;
   
   switch (type) {
     case 'string':
-      // Check if it's a timestamp field
-      if (propName && (propName.includes('time') || propName.includes('Time') || propName.includes('timestamp'))) {
-        return 'int64'; // Unix timestamp
-      }
       return 'string';
     case 'integer':
       return 'int64';
@@ -395,17 +461,70 @@ function mapJsonTypeToGo(property, propName, parentStructName) {
     case 'boolean':
       return 'bool';
     case 'object':
-      if (property.properties && Object.keys(property.properties).length > 0) {
+      // Handle both AsyncAPI objects and plain objects for properties
+      let objProperties;
+      if (typeof property.properties === 'function') {
+        objProperties = property.properties();
+      } else {
+        objProperties = property.properties;
+      }
+      
+      // For AsyncAPI objects, objProperties might be a Map or have .all() method
+      let propertyKeys = [];
+      if (objProperties) {
+        if (typeof objProperties.all === 'function') {
+          // AsyncAPI Map-like object
+          const allProps = objProperties.all();
+          propertyKeys = Object.keys(allProps);
+        } else if (objProperties instanceof Map) {
+          // Map object
+          propertyKeys = Array.from(objProperties.keys());
+        } else if (typeof objProperties === 'object') {
+          // Regular object
+          propertyKeys = Object.keys(objProperties);
+        }
+      }
+      
+      if (propertyKeys && propertyKeys.length > 0) {
         // Generate a specific struct type for nested objects
         return `${parentStructName}${toPascalCase(propName)}`;
       }
       return 'interface{}';
     case 'array':
-      const items = property.items;
+      // Handle AsyncAPI objects - items might be a function
+      const items = (typeof property.items === 'function') ? property.items() : property.items;
       if (items) {
-        if (items.type === 'object' && items.properties && Object.keys(items.properties).length > 0) {
-          // For array of objects, use the nested struct name
-          return `[]${parentStructName}${toPascalCase(propName)}`;
+        // Get the items type properly
+        const itemsType = (typeof items.type === 'function') ? items.type() : items.type;
+        
+        // Handle both AsyncAPI objects and plain objects for array items
+        let itemsProperties;
+        if (itemsType === 'object') {
+          if (typeof items.properties === 'function') {
+            itemsProperties = items.properties();
+          } else {
+            itemsProperties = items.properties;
+          }
+          
+          // Check if itemsProperties has content using same logic as above
+          let itemsPropertyKeys = [];
+          if (itemsProperties) {
+            if (typeof itemsProperties.all === 'function') {
+              const allProps = itemsProperties.all();
+              itemsPropertyKeys = Object.keys(allProps);
+            } else if (itemsProperties instanceof Map) {
+              itemsPropertyKeys = Array.from(itemsProperties.keys());
+            } else if (typeof itemsProperties === 'object') {
+              itemsPropertyKeys = Object.keys(itemsProperties);
+            }
+          }
+          
+          if (itemsPropertyKeys && itemsPropertyKeys.length > 0) {
+            // For array of objects, use the nested struct name
+            return `[]${parentStructName}${toPascalCase(propName)}`;
+          } else {
+            return '[]interface{}';
+          }
         } else {
           return `[]${mapJsonTypeToGo(items, propName, parentStructName)}`;
         }
