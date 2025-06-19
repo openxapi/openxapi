@@ -372,7 +372,7 @@ func (g *Generator) parseServerURL(serverURL string) (host, pathname, protocol s
 	// Determine protocol
 	protocol = "ws" // default
 	cleanURL := serverURL
-	
+
 	if strings.HasPrefix(serverURL, "ws://") {
 		cleanURL = strings.TrimPrefix(serverURL, "ws://")
 		protocol = "ws"
