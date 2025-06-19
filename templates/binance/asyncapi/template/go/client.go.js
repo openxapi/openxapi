@@ -77,6 +77,7 @@ type Client struct {
 	responseHandlers      map[string]func([]byte) error
 	globalResponseHandler *GlobalResponseHandler
 	responseList          []interface{} // Global list of all received responses
+	auth                  *Auth // Authentication configuration
 	mu                    sync.RWMutex
 	done                  chan struct{}
 }`}
@@ -93,6 +94,18 @@ func NewClient() *Client {
 		responseList:          make([]interface{}, 0),
 		done:                  make(chan struct{}),
 	}
+}
+
+// NewClientWithAuth creates a new WebSocket client with authentication
+func NewClientWithAuth(auth *Auth) *Client {
+	client := NewClient()
+	client.auth = auth
+	return client
+}
+
+// SetAuth sets authentication for the client
+func (c *Client) SetAuth(auth *Auth) {
+	c.auth = auth
 }`}
       </Text>
 
@@ -204,19 +217,7 @@ func (c *Client) sendRequest(request map[string]interface{}) error {
 }`}
       </Text>
 
-      <Text newLines={2}>
-        {`// structToMap converts a struct to map[string]interface{} for JSON marshaling
-func structToMap(v interface{}) (map[string]interface{}, error) {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return nil, err
-	}
 
-	var result map[string]interface{}
-	err = json.Unmarshal(data, &result)
-	return result, err
-}`}
-      </Text>
 
       <Text newLines={2}>
         {`// readMessages reads messages from the WebSocket connection
@@ -375,6 +376,21 @@ func ParseMessage[T any](data []byte, target *T) error {
 // ParseDynamicMessage is a convenience wrapper around models.ParseDynamicMessage
 func ParseDynamicMessage(messageID string, data []byte) (interface{}, error) {
 	return models.ParseDynamicMessage(messageID, data)
+}
+
+// structToMap converts a struct to a map[string]interface{} for JSON marshaling
+func structToMap(v interface{}) (map[string]interface{}, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+	
+	return result, nil
 }
 
 // ParseOneOfMessage attempts to parse a oneOf message based on distinctive fields

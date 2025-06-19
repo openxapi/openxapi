@@ -49,14 +49,14 @@ function generateTypedRequestMethod(operation) {
   let handler = '';
   
   // Generate basic method that takes request struct and returns response struct
-  handler += generateBasicTypedMethod(methodName, channelAddress, requestStructName, responseStructName);
+  handler += generateBasicTypedMethod(methodName, channelAddress, requestStructName, responseStructName, sendMessage);
   
   // Generate convenience method with individual parameters
-  handler += generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName);
+  handler += generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName, sendMessage);
   
   // Generate oneOf handler method if response has oneOf
   if (receiveMessage && hasOneOfInResponse(receiveMessage)) {
-    handler += generateOneOfHandlerMethod(methodName, channelAddress, requestStructName);
+    handler += generateOneOfHandlerMethod(methodName, channelAddress, requestStructName, sendMessage);
   }
 
   return handler;
@@ -96,8 +96,12 @@ function getModelStructName(channelAddress, messageTitle) {
 /*
  * Generate basic typed method that takes request struct
  */
-function generateBasicTypedMethod(methodName, channelAddress, requestStructName, responseStructName) {
+function generateBasicTypedMethod(methodName, channelAddress, requestStructName, responseStructName, sendMessage) {
+  // Extract authentication type from the send message name
+  const authType = extractAuthTypeFromMessage(sendMessage);
+  
   let method = `// Send${methodName} sends a ${channelAddress} request using typed request/response structs\n`;
+  method += `// Authentication required: ${authType}\n`;
   method += `// If request.Id is empty, a new request ID will be generated automatically\n`;
   method += `func (c *Client) Send${methodName}(request *models.${requestStructName}, responseHandler func(*models.${responseStructName}, error) error) error {\n`;
   method += `\t// Use existing request ID or generate a new one\n`;
@@ -116,6 +120,30 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   method += `\t\treturn fmt.Errorf("failed to convert request to map: %w", err)\n`;
   method += `\t}\n\n`;
   
+  // Add authentication logic
+  if (authType !== 'NONE') {
+    method += `\t// Apply authentication for ${authType} request\n`;
+    method += `\tif c.auth == nil {\n`;
+    method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth set")\n`;
+    method += `\t}\n\n`;
+    
+    method += `\t// Create signer and sign the request parameters\n`;
+    method += `\tsigner := NewRequestSigner(c.auth)\n`;
+    method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
+    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+    method += `\t\t}\n`;
+    method += `\t\trequestMap["params"] = params\n`;
+    method += `\t} else {\n`;
+    method += `\t\t// Create params if it doesn't exist\n`;
+    method += `\t\tparams := make(map[string]interface{})\n`;
+    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+    method += `\t\t}\n`;
+    method += `\t\trequestMap["params"] = params\n`;
+    method += `\t}\n\n`;
+  }
+  
   method += `\t// Register typed response handler\n`;
   method += `\tc.registerResponseHandler(reqID, func(data []byte) error {\n`;
   method += `\t\tvar response models.${responseStructName}\n`;
@@ -133,9 +161,50 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
 }
 
 /*
+ * Extract authentication type from send message name
+ */
+function extractAuthTypeFromMessage(sendMessage) {
+  if (!sendMessage || !sendMessage.name()) {
+    return 'NONE';
+  }
+  
+  const messageName = sendMessage.name();
+  
+  // Extract content from parentheses
+  if (messageName.includes('(USER_DATA)')) {
+    return 'USER_DATA';
+  }
+  if (messageName.includes('(TRADE)')) {
+    return 'TRADE';
+  }
+  if (messageName.includes('(USER_STREAM)')) {
+    return 'USER_STREAM';
+  }
+  
+  return 'NONE';
+}
+
+/*
+ * Transform auth type to Go constant name
+ */
+function transformAuthTypeToGoConstant(authType) {
+  switch (authType) {
+    case 'USER_DATA':
+      return 'AuthTypeUserData';
+    case 'TRADE':
+      return 'AuthTypeTrade';
+    case 'USER_STREAM':
+      return 'AuthTypeUserStream';
+    case 'NONE':
+    default:
+      return 'AuthTypeNone';
+  }
+}
+
+/*
  * Generate convenience method with default parameters
  */
-function generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName) {
+function generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName, sendMessage) {
   let method = `// Send${methodName}Default sends a ${channelAddress} request with default parameters\n`;
   method += `func (c *Client) Send${methodName}Default(responseHandler func(*models.${responseStructName}, error) error) error {\n`;
   
@@ -154,8 +223,11 @@ function generateConvenienceMethod(operation, methodName, channelAddress, reques
 /*
  * Generate oneOf handler method for responses with oneOf types
  */
-function generateOneOfHandlerMethod(methodName, channelAddress, requestStructName) {
+function generateOneOfHandlerMethod(methodName, channelAddress, requestStructName, sendMessage) {
+  // Extract authentication type from the send message name
+  const authType = extractAuthTypeFromMessage(sendMessage);
   let method = `// Send${methodName}WithOneOfHandler sends a ${channelAddress} request with automatic oneOf response parsing\n`;
+  method += `// Authentication required: ${authType}\n`;
   method += `// If request.Id is empty, a new request ID will be generated automatically\n`;
   method += `func (c *Client) Send${methodName}WithOneOfHandler(request *models.${requestStructName}, oneOfHandler func(result interface{}, responseType string, err error) error) error {\n`;
   method += `\t// Use existing request ID or generate a new one\n`;
@@ -173,6 +245,30 @@ function generateOneOfHandlerMethod(methodName, channelAddress, requestStructNam
   method += `\tif err != nil {\n`;
   method += `\t\treturn fmt.Errorf("failed to convert request to map: %w", err)\n`;
   method += `\t}\n\n`;
+  
+  // Add authentication logic
+  if (authType !== 'NONE') {
+    method += `\t// Apply authentication for ${authType} request\n`;
+    method += `\tif c.auth == nil {\n`;
+    method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth set")\n`;
+    method += `\t}\n\n`;
+    
+    method += `\t// Create signer and sign the request parameters\n`;
+    method += `\tsigner := NewRequestSigner(c.auth)\n`;
+    method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
+    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+    method += `\t\t}\n`;
+    method += `\t\trequestMap["params"] = params\n`;
+    method += `\t} else {\n`;
+    method += `\t\t// Create params if it doesn't exist\n`;
+    method += `\t\tparams := make(map[string]interface{})\n`;
+    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+    method += `\t\t}\n`;
+    method += `\t\trequestMap["params"] = params\n`;
+    method += `\t}\n\n`;
+  }
   
   method += `\t// Register oneOf response handler\n`;
   method += `\tc.registerResponseHandler(reqID, func(data []byte) error {\n`;
