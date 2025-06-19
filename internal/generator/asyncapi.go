@@ -197,7 +197,7 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 
 	for _, channel := range channels {
 		channelPath := filepath.Join(baseDir, fmt.Sprintf("%s.yaml", strings.ReplaceAll(channel.Name, "/", "_")))
-		
+
 		// For protected methods, skip if file already exists to avoid overwriting
 		if channel.Protected {
 			if _, err := os.Stat(channelPath); err == nil {

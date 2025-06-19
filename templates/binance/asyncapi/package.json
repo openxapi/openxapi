@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "description": "A template that generates WebSocket clients for AsyncAPI v3 specifications in multiple programming languages (Go, JavaScript, Python, Rust).",
   "scripts": {
-    "test:clean": "rimraf test/project/client.* test/project/go.* test/project/package.json test/project/requirements.txt test/project/Cargo.toml test/project/target",
-    "test:generate": "asyncapi generate fromTemplate test/fixtures/asyncapi.yml ./ --output test/project --force-write --param server=production --param language=go --param moduleName=binance-websocket-client",
+    "test": "npm run test:clean && npm run test:generate && npm run test:build",
+    "test:clean": "rimraf test/project/client.* test/project/go.* test/project/package.json test/project/requirements.txt test/project/Cargo.toml test/project/target test/project/models",
+    "test:generate": "asyncapi generate fromTemplate ../../../specs/binance/asyncapi/spot.yaml ./ --output test/project --force-write --param server=production --param language=go --param moduleName=binance-websocket-client",
     "test:build": "cd test/project && npm run build:$(cat .language 2>/dev/null || echo go)",
-    "test:build:go": "cd test/project && go mod tidy && go build -o client .",
-    "test:build:js": "cd test/project && npm install && npm run build",
-    "test:build:python": "cd test/project && pip install -r requirements.txt && python -m py_compile *.py",
-    "test:build:rust": "cd test/project && cargo build",
-    "test": "npm run test:clean && npm run test:generate && npm run test:build"
+    "build:go": "cd test/project/go && go mod tidy && go build -o client .",
+    "build:javascript": "npm install && npm run build",
+    "build:python": "pip install -r requirements.txt",
+    "build:rust": "cargo build"
   },
   "generator": {
     "renderer": "react",
