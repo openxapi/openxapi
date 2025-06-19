@@ -103,7 +103,7 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   let method = `// Send${methodName} sends a ${channelAddress} request using typed request/response structs\n`;
   method += `// Authentication required: ${authType}\n`;
   method += `// If request.Id is empty, a new request ID will be generated automatically\n`;
-  method += `func (c *Client) Send${methodName}(request *models.${requestStructName}, responseHandler func(*models.${responseStructName}, error) error) error {\n`;
+  method += `func (c *Client) Send${methodName}(ctx context.Context, request *models.${requestStructName}, responseHandler func(*models.${responseStructName}, error) error) error {\n`;
   method += `\t// Use existing request ID or generate a new one\n`;
   method += `\tvar reqID string\n`;
   method += `\tif request.Id != "" {\n`;
@@ -120,15 +120,20 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   method += `\t\treturn fmt.Errorf("failed to convert request to map: %w", err)\n`;
   method += `\t}\n\n`;
   
-  // Add authentication logic
+  // Add authentication logic using context
   if (authType !== 'NONE') {
-    method += `\t// Apply authentication for ${authType} request\n`;
-    method += `\tif c.auth == nil {\n`;
-    method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth set")\n`;
+    method += `\t// Get authentication from context or fall back to client auth\n`;
+    method += `\tvar auth *Auth\n`;
+    method += `\tif contextAuth, ok := ctx.Value(ContextBinanceAuth).(Auth); ok {\n`;
+    method += `\t\tauth = &contextAuth\n`;
+    method += `\t} else if c.auth != nil {\n`;
+    method += `\t\tauth = c.auth\n`;
+    method += `\t} else {\n`;
+    method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth provided in context or client")\n`;
     method += `\t}\n\n`;
     
     method += `\t// Create signer and sign the request parameters\n`;
-    method += `\tsigner := NewRequestSigner(c.auth)\n`;
+    method += `\tsigner := NewRequestSigner(auth)\n`;
     method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
     method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
     method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
@@ -206,7 +211,7 @@ function transformAuthTypeToGoConstant(authType) {
  */
 function generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName, sendMessage) {
   let method = `// Send${methodName}Default sends a ${channelAddress} request with default parameters\n`;
-  method += `func (c *Client) Send${methodName}Default(responseHandler func(*models.${responseStructName}, error) error) error {\n`;
+  method += `func (c *Client) Send${methodName}Default(ctx context.Context, responseHandler func(*models.${responseStructName}, error) error) error {\n`;
   
   // Build request struct with default ID and Method
   method += `\trequest := &models.${requestStructName}{\n`;
@@ -214,7 +219,7 @@ function generateConvenienceMethod(operation, methodName, channelAddress, reques
   method += `\t\tMethod: "${channelAddress}",\n`;
   method += `\t}\n\n`;
   
-  method += `\treturn c.Send${methodName}(request, responseHandler)\n`;
+  method += `\treturn c.Send${methodName}(ctx, request, responseHandler)\n`;
   method += `}\n\n`;
   
   return method;
@@ -229,7 +234,7 @@ function generateOneOfHandlerMethod(methodName, channelAddress, requestStructNam
   let method = `// Send${methodName}WithOneOfHandler sends a ${channelAddress} request with automatic oneOf response parsing\n`;
   method += `// Authentication required: ${authType}\n`;
   method += `// If request.Id is empty, a new request ID will be generated automatically\n`;
-  method += `func (c *Client) Send${methodName}WithOneOfHandler(request *models.${requestStructName}, oneOfHandler func(result interface{}, responseType string, err error) error) error {\n`;
+  method += `func (c *Client) Send${methodName}WithOneOfHandler(ctx context.Context, request *models.${requestStructName}, oneOfHandler func(result interface{}, responseType string, err error) error) error {\n`;
   method += `\t// Use existing request ID or generate a new one\n`;
   method += `\tvar reqID string\n`;
   method += `\tif request.Id != "" {\n`;
@@ -246,15 +251,20 @@ function generateOneOfHandlerMethod(methodName, channelAddress, requestStructNam
   method += `\t\treturn fmt.Errorf("failed to convert request to map: %w", err)\n`;
   method += `\t}\n\n`;
   
-  // Add authentication logic
+  // Add authentication logic using context
   if (authType !== 'NONE') {
-    method += `\t// Apply authentication for ${authType} request\n`;
-    method += `\tif c.auth == nil {\n`;
-    method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth set")\n`;
+    method += `\t// Get authentication from context or fall back to client auth\n`;
+    method += `\tvar auth *Auth\n`;
+    method += `\tif contextAuth, ok := ctx.Value(ContextBinanceAuth).(Auth); ok {\n`;
+    method += `\t\tauth = &contextAuth\n`;
+    method += `\t} else if c.auth != nil {\n`;
+    method += `\t\tauth = c.auth\n`;
+    method += `\t} else {\n`;
+    method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth provided in context or client")\n`;
     method += `\t}\n\n`;
     
     method += `\t// Create signer and sign the request parameters\n`;
-    method += `\tsigner := NewRequestSigner(c.auth)\n`;
+    method += `\tsigner := NewRequestSigner(auth)\n`;
     method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
     method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
     method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
@@ -365,13 +375,13 @@ func (c *Client) SetupDefaultUserDataStreamHandlers() {
  */
 function generateUserDataStreamConvenienceMethods() {
   return `// UserDataStreamSubscribe is a convenience method for userDataStream.subscribe with typed response
-func (c *Client) UserDataStreamSubscribe(request *models.UserDataStreamSubscribeSubscribeToUserDataStreamRequest, responseHandler func(*models.UserDataStreamSubscribeSubscribeToUserDataStreamResponse, error) error) error {
-	return c.SendUserDataStreamSubscribe(request, responseHandler)
+func (c *Client) UserDataStreamSubscribe(ctx context.Context, request *models.UserDataStreamSubscribeSubscribeToUserDataStreamRequest, responseHandler func(*models.UserDataStreamSubscribeSubscribeToUserDataStreamResponse, error) error) error {
+	return c.SendUserDataStreamSubscribe(ctx, request, responseHandler)
 }
 
 // UserDataStreamUnsubscribe is a convenience method for userDataStream.unsubscribe with typed response
-func (c *Client) UserDataStreamUnsubscribe(request *models.UserDataStreamUnsubscribeUnsubscribeFromUserDataStreamRequest, responseHandler func(*models.UserDataStreamUnsubscribeUnsubscribeFromUserDataStreamResponse, error) error) error {
-	return c.SendUserDataStreamUnsubscribe(request, responseHandler)
+func (c *Client) UserDataStreamUnsubscribe(ctx context.Context, request *models.UserDataStreamUnsubscribeUnsubscribeFromUserDataStreamRequest, responseHandler func(*models.UserDataStreamUnsubscribeUnsubscribeFromUserDataStreamResponse, error) error) error {
+	return c.SendUserDataStreamUnsubscribe(ctx, request, responseHandler)
 }
 
 `;
