@@ -261,11 +261,11 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 			serverName = "production"
 		}
 
-		host, pathname := g.parseServerURL(server)
+		host, pathname, protocol := g.parseServerURL(server)
 		asyncServers[serverName] = &AsyncAPIServer{
 			Host:        host,
 			Pathname:    pathname,
-			Protocol:    "ws",
+			Protocol:    protocol,
 			Title:       fmt.Sprintf("%s Server", strings.Title(exchange)),
 			Summary:     fmt.Sprintf("%s %s WebSocket API Server", strings.Title(exchange), strings.Title(apiType)),
 			Description: fmt.Sprintf("WebSocket server for %s exchange %s API", exchange, apiType),
@@ -367,14 +367,18 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 	return nil
 }
 
-// parseServerURL splits a server URL into host and pathname components
-func (g *Generator) parseServerURL(serverURL string) (host, pathname string) {
-	// Remove protocol if present (e.g., "ws://", "wss://")
+// parseServerURL splits a server URL into host, pathname, and protocol components
+func (g *Generator) parseServerURL(serverURL string) (host, pathname, protocol string) {
+	// Determine protocol
+	protocol = "ws" // default
 	cleanURL := serverURL
+	
 	if strings.HasPrefix(serverURL, "ws://") {
 		cleanURL = strings.TrimPrefix(serverURL, "ws://")
+		protocol = "ws"
 	} else if strings.HasPrefix(serverURL, "wss://") {
 		cleanURL = strings.TrimPrefix(serverURL, "wss://")
+		protocol = "wss"
 	}
 
 	// Split host and path
@@ -385,7 +389,7 @@ func (g *Generator) parseServerURL(serverURL string) (host, pathname string) {
 		pathname = "/" + parts[1]
 	}
 
-	return host, pathname
+	return host, pathname, protocol
 }
 
 // sanitizeChannelName creates a valid channel key from a channel name

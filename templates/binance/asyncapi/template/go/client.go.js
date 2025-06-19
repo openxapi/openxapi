@@ -85,7 +85,7 @@ type Client struct {
       <Text newLines={2}>
         {`// NewClient creates a new WebSocket client
 func NewClient() *Client {
-	baseURL := "${serverUrl.protocol()}://${serverUrl.host()}"
+	baseURL := "${serverUrl.protocol()}://${serverUrl.host()}${serverUrl.pathname()}"
 	return &Client{
 		url:                   baseURL,
 		responseHandlers:      make(map[string]func([]byte) error),
