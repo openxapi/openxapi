@@ -1,4 +1,4 @@
-package okx
+package binance
 
 import (
 	"context"
@@ -6,46 +6,45 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/openxapi/openxapi/internal/parser"
+	"github.com/openxapi/openxapi/internal/parser/websocket"
 )
 
-// Parser implements the parser.Parser interface for OKX
+// Parser implements the websocket parser.Parser interface for Binance WebSocket API
 type Parser struct {
 	parser.HTTPParser
 }
 
-// NewParser creates a new OKX parser
-func NewParser() *Parser {
-	name := "okx"
-	return &Parser{
+// NewParser creates a new Binance WebSocket parser
+func NewParser(opts ...func(*Parser)) *Parser {
+	name := "binance"
+	p := &Parser{
 		HTTPParser: parser.HTTPParser{
 			Name:       name,
 			Client:     &http.Client{},
 			UseSamples: false,
-			SamplesDir: fmt.Sprintf("samples/%s", name),
+			SamplesDir: fmt.Sprintf("samples/%s/websocket", name),
 			DocParser:  &DocumentParser{},
 		},
 	}
+	for _, opt := range opts {
+		opt(p)
+	}
+	return p
 }
 
-// NewParserWithOptions creates a new OKX parser with options
-func NewParserWithOptions(useSamples bool, samplesDir string) *Parser {
-	name := "okx"
-	if samplesDir == "" {
-		samplesDir = fmt.Sprintf("samples/%s", name)
-	}
-	return &Parser{
-		HTTPParser: parser.HTTPParser{
-			Name:       name,
-			Client:     &http.Client{},
-			UseSamples: useSamples,
-			SamplesDir: samplesDir,
-			DocParser:  &DocumentParser{},
-		},
+func WithSamples(useSamples bool) func(*Parser) {
+	return func(p *Parser) {
+		p.HTTPParser.UseSamples = useSamples
 	}
 }
 
-// TODO: Implement CheckVersion for OKX
+func WithSamplesDir(samplesDir string) func(*Parser) {
+	return func(p *Parser) {
+		p.HTTPParser.SamplesDir = samplesDir
+	}
+}
+
+// CheckVersion checks if the WebSocket documentation has been updated
 func (p *Parser) CheckVersion(ctx context.Context, doc parser.Documentation) (bool, time.Time, error) {
 	// If using samples, return false to indicate no change
 	if p.HTTPParser.UseSamples {
@@ -53,7 +52,7 @@ func (p *Parser) CheckVersion(ctx context.Context, doc parser.Documentation) (bo
 	}
 
 	// Check if the documentation has been updated
-	// For OKX, we'll make a HEAD request to check for Last-Modified header
+	// For Binance WebSocket, we'll make a HEAD request to check for Last-Modified header
 	var lastModified time.Time
 	hasChanged := false
 

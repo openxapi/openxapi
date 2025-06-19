@@ -1,0 +1,208 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    ticker:
+        address: ticker
+        title: Channel ticker
+        description: |-
+            Get rolling window price change statistics with a custom window.
+            This request is similar to ticker.24hr,
+            but statistics are computed on demand using the arbitrary window you specify.
+            Note: Window size precision is limited to 1 minute.
+            While the closeTime is the current time of the request, openTime always start on a minute boundary.
+            As such, the effective window might be up to 59999 ms wider than the requested windowSize.
+            If you need to continuously monitor trading statistics, please consider using WebSocket Streams:
+            - <symbol>@ticker_<window_size> or !ticker_<window-size>@arr
+            Supported window sizes:
+            Notes:
+            - Either symbol or symbols must be specified.
+            - Maximum number of symbols in one request: 200.
+            - Window size units cannot be combined.
+            E.g., 1d 2h is not supported.
+        messages:
+            receiveMessage:
+                name: Rolling window price change statistics Response
+                title: Rolling window price change statistics Response
+                description: Receive response from ticker
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: integer
+                                        description: count property
+                                        example: 4
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: integer
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: integer
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                            properties:
+                                closeTime:
+                                    type: integer
+                                    format: int64
+                                    description: closeTime property
+                                    example: 1660184865291
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 2387994
+                                firstId:
+                                    type: integer
+                                    format: int64
+                                    description: firstId property
+                                    example: 192977765
+                                highPrice:
+                                    type: string
+                                    description: highPrice property
+                                    example: "0.01418800"
+                                lastId:
+                                    type: integer
+                                    format: int64
+                                    description: lastId property
+                                    example: 195365758
+                                lastPrice:
+                                    type: string
+                                    description: lastPrice property
+                                    example: "0.01360400"
+                                lowPrice:
+                                    type: string
+                                    description: lowPrice property
+                                    example: "0.01296000"
+                                openPrice:
+                                    type: string
+                                    description: openPrice property
+                                    example: "0.01298900"
+                                openTime:
+                                    type: integer
+                                    format: int64
+                                    description: openTime property
+                                    example: 1659580020000
+                                priceChange:
+                                    type: string
+                                    description: priceChange property
+                                    example: "0.00061500"
+                                priceChangePercent:
+                                    type: string
+                                    description: priceChangePercent property
+                                    example: "4.735"
+                                quoteVolume:
+                                    type: string
+                                    description: quoteVolume property
+                                    example: "8034.03382165"
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+                                volume:
+                                    type: string
+                                    description: volume property
+                                    example: "587179.23900000"
+                                weightedAvgPrice:
+                                    type: string
+                                    description: weightedAvgPrice property
+                                    example: "0.01368242"
+                        status:
+                            type: integer
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Rolling window price change statistics Request
+                title: Rolling window price change statistics Request
+                description: Send a ticker request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
+                        method:
+                            type: string
+                            description: method property
+                            example: ticker
+                            enum:
+                                - ticker
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbol:
+                                    type: string
+                                    description: Query ticker of a single symbol
+                                symbols:
+                                    type: array
+                                    description: Query ticker for multiple symbols
+                                    items:
+                                        type: string
+                                        description: array item
+                                type:
+                                    type: string
+                                    description: 'Ticker type: FULL (default) or MINI'
+                                windowSize:
+                                    type: string
+                                    description: Default 1d
+                            required:
+                                - symbol
+                                - symbols
+                                - type
+                                - windowSize
+        parameters:
+            symbol:
+                description: Query ticker of a single symbol
+                location: $message.payload#/params/symbol
+            symbols:
+                description: Query ticker for multiple symbols
+                location: $message.payload#/params/symbols
+            type:
+                description: 'Ticker type: FULL (default) or MINI'
+                location: $message.payload#/params/type
+            windowSize:
+                description: Default 1d
+                location: $message.payload#/params/windowSize
+operations:
+    receive_ticker:
+        title: Receive from ticker
+        description: Receive response from ticker
+        action: receive
+        channel:
+            $ref: '#/channels/ticker'
+        messages:
+            - $ref: '#/channels/ticker/messages/receiveMessage'
+    send_ticker:
+        title: Send to ticker
+        description: Send a ticker request
+        action: send
+        channel:
+            $ref: '#/channels/ticker'
+        messages:
+            - $ref: '#/channels/ticker/messages/sendMessage'
+components: {}

@@ -150,7 +150,7 @@ If you find there are some issues on the generated OpenAPI specification, please
 Please follow the steps below to mannually update the OpenAPI specification:
 
 1. Find the OpenAPI specification for an exchange in `specs/` directory, for example, `specs/binance/openapi/spot/delete_api_v3_openOrders.yaml`.
-2. Add the endpoint to the `protected_endpoints` section in `configs/exchanges/binance/restapi.yaml`, this will make sure the endpoint will be ignored by the automatic generation.
+2. Add the endpoint to the `protected_endpoints` section in `configs/exchanges/binance/rest.yaml`, this will make sure the endpoint will be ignored by the automatic generation.
 3. Update the OpenAPI specification in `specs/binance/openapi/spot/delete_api_v3_openOrders.yaml`.
 4. Regenerate the OpenAPI specification by the steps in [Generate OpenAPI Specification](#generate-openapi-specification) section.
 

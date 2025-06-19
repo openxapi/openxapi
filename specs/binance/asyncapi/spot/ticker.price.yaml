@@ -1,0 +1,128 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    ticker_price:
+        address: ticker.price
+        title: Channel ticker.price
+        description: |-
+            Get the latest market price for a symbol.
+            If you need access to real-time price updates, please consider using WebSocket Streams:
+            - <symbol>@aggTrade
+            - <symbol>@trade
+            Notes:
+            - symbol and symbols cannot be used together.
+            - If no symbol is specified, returns information about all symbols currently trading on the exchange.
+        messages:
+            receiveMessage:
+                name: Symbol price ticker Response
+                title: Symbol price ticker Response
+                description: Receive response from ticker.price
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: integer
+                                        description: count property
+                                        example: 2
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: integer
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: integer
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                            properties:
+                                price:
+                                    type: string
+                                    description: price property
+                                    example: "0.01361900"
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BNBBTC
+                        status:
+                            type: integer
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Symbol price ticker Request
+                title: Symbol price ticker Request
+                description: Send a ticker.price request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
+                        method:
+                            type: string
+                            description: method property
+                            example: ticker.price
+                            enum:
+                                - ticker.price
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                symbol:
+                                    type: string
+                                    description: Query price for a single symbol
+                                symbols:
+                                    type: array
+                                    description: Query price for multiple symbols
+                                    items:
+                                        type: string
+                                        description: array item
+        parameters:
+            symbol:
+                description: Query price for a single symbol
+                location: $message.payload#/params/symbol
+            symbols:
+                description: Query price for multiple symbols
+                location: $message.payload#/params/symbols
+operations:
+    receive_ticker_price:
+        title: Receive from ticker.price
+        description: Receive response from ticker.price
+        action: receive
+        channel:
+            $ref: '#/channels/ticker_price'
+        messages:
+            - $ref: '#/channels/ticker_price/messages/receiveMessage'
+    send_ticker_price:
+        title: Send to ticker.price
+        description: Send a ticker.price request
+        action: send
+        channel:
+            $ref: '#/channels/ticker_price'
+        messages:
+            - $ref: '#/channels/ticker_price/messages/sendMessage'
+components: {}

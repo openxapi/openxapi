@@ -1,0 +1,225 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    account_status:
+        address: account.status
+        title: Channel account.status
+        description: Query information about your account.
+        messages:
+            receiveMessage:
+                name: Account information (USER_DATA) Response
+                title: Account information (USER_DATA) Response
+                description: Receive response from account.status
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: integer
+                                        description: count property
+                                        example: 20
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: integer
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: integer
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                            properties:
+                                accountType:
+                                    type: string
+                                    description: accountType property
+                                    example: SPOT
+                                balances:
+                                    type: array
+                                    description: balances property
+                                    items:
+                                        type: object
+                                        description: array item
+                                        properties:
+                                            asset:
+                                                type: string
+                                                description: asset property
+                                                example: BNB
+                                            free:
+                                                type: string
+                                                description: free property
+                                                example: "0.00000000"
+                                            locked:
+                                                type: string
+                                                description: locked property
+                                                example: "0.00000000"
+                                brokered:
+                                    type: boolean
+                                    description: brokered property
+                                    example: false
+                                buyerCommission:
+                                    type: integer
+                                    description: buyerCommission property
+                                    example: 0
+                                canDeposit:
+                                    type: boolean
+                                    description: canDeposit property
+                                    example: true
+                                canTrade:
+                                    type: boolean
+                                    description: canTrade property
+                                    example: true
+                                canWithdraw:
+                                    type: boolean
+                                    description: canWithdraw property
+                                    example: true
+                                commissionRates:
+                                    type: object
+                                    description: commissionRates property
+                                    properties:
+                                        buyer:
+                                            type: string
+                                            description: buyer property
+                                            example: "0.00000000"
+                                        maker:
+                                            type: string
+                                            description: maker property
+                                            example: "0.00150000"
+                                        seller:
+                                            type: string
+                                            description: seller property
+                                            example: "0.00000000"
+                                        taker:
+                                            type: string
+                                            description: taker property
+                                            example: "0.00150000"
+                                makerCommission:
+                                    type: integer
+                                    description: makerCommission property
+                                    example: 15
+                                permissions:
+                                    type: array
+                                    description: permissions property
+                                    items:
+                                        type: string
+                                        description: array item
+                                        example: SPOT
+                                preventSor:
+                                    type: boolean
+                                    description: preventSor property
+                                    example: false
+                                requireSelfTradePrevention:
+                                    type: boolean
+                                    description: requireSelfTradePrevention property
+                                    example: false
+                                sellerCommission:
+                                    type: integer
+                                    description: sellerCommission property
+                                    example: 0
+                                takerCommission:
+                                    type: integer
+                                    description: takerCommission property
+                                    example: 15
+                                uid:
+                                    type: integer
+                                    description: uid property
+                                    example: 354937868
+                                updateTime:
+                                    type: integer
+                                    format: int64
+                                    description: updateTime property
+                                    example: 1660801833000
+                        status:
+                            type: integer
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Account information (USER_DATA) Request
+                title: Account information (USER_DATA) Request
+                description: Send a account.status request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
+                        method:
+                            type: string
+                            description: method property
+                            example: account.status
+                            enum:
+                                - account.status
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                apiKey:
+                                    type: string
+                                omitZeroBalances:
+                                    type: boolean
+                                    description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
+                                recvWindow:
+                                    type: string
+                                    description: The value cannot be greater than 60000
+                                signature:
+                                    type: string
+                                timestamp:
+                                    type: string
+                            required:
+                                - apiKey
+                                - signature
+                                - timestamp
+        parameters:
+            apiKey:
+                location: $message.payload#/params/apiKey
+            omitZeroBalances:
+                description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
+                location: $message.payload#/params/omitZeroBalances
+            recvWindow:
+                description: The value cannot be greater than 60000
+                location: $message.payload#/params/recvWindow
+            signature:
+                location: $message.payload#/params/signature
+            timestamp:
+                location: $message.payload#/params/timestamp
+operations:
+    receive_account_status:
+        title: Receive from account.status
+        description: Receive response from account.status
+        action: receive
+        channel:
+            $ref: '#/channels/account_status'
+        messages:
+            - $ref: '#/channels/account_status/messages/receiveMessage'
+    send_account_status:
+        title: Send to account.status
+        description: Send a account.status request
+        action: send
+        channel:
+            $ref: '#/channels/account_status'
+        messages:
+            - $ref: '#/channels/account_status/messages/sendMessage'
+components: {}

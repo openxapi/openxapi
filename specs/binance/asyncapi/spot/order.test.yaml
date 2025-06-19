@@ -1,0 +1,138 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    order_test:
+        address: order.test
+        title: Channel order.test
+        description: |-
+            Test order placement.
+            Validates new order parameters and verifies your signature
+            but does not send the order into the matching engine.
+            In addition to all parameters accepted by order.place,
+            the following optional parameters are also accepted:
+        messages:
+            receiveMessage:
+                name: Test new order (TRADE) Response
+                title: Test new order (TRADE) Response
+                description: Receive response from order.test
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 6ffebe91-01d9-43ac-be99-57cf062e0e30
+                        rateLimits:
+                            type: array
+                            description: rateLimits property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    count:
+                                        type: integer
+                                        description: count property
+                                        example: 1
+                                    interval:
+                                        type: string
+                                        description: interval property
+                                        example: MINUTE
+                                    intervalNum:
+                                        type: integer
+                                        description: intervalNum property
+                                        example: 1
+                                    limit:
+                                        type: integer
+                                        description: limit property
+                                        example: 6000
+                                    rateLimitType:
+                                        type: string
+                                        description: rateLimitType property
+                                        example: REQUEST_WEIGHT
+                        result:
+                            type: object
+                            description: result property
+                        status:
+                            type: integer
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Test new order (TRADE) Request
+                title: Test new order (TRADE) Request
+                description: Send a order.test request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: 6ffebe91-01d9-43ac-be99-57cf062e0e30
+                        method:
+                            type: string
+                            description: method property
+                            example: order.test
+                            enum:
+                                - order.test
+                        params:
+                            type: object
+                            description: params property
+                            properties:
+                                apiKey:
+                                    type: string
+                                    description: apiKey property
+                                    example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                                price:
+                                    type: string
+                                    description: price property
+                                    example: "23416.10000000"
+                                quantity:
+                                    type: string
+                                    description: quantity property
+                                    example: "0.00847000"
+                                side:
+                                    type: string
+                                    description: side property
+                                    example: SELL
+                                signature:
+                                    type: string
+                                    description: signature property
+                                    example: 15af09e41c36f3cc61378c2fbe2c33719a03dd5eba8d0f9206fbda44de717c88
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BTCUSDT
+                                timeInForce:
+                                    type: string
+                                    description: timeInForce property
+                                    example: GTC
+                                timestamp:
+                                    type: integer
+                                    format: int64
+                                    description: timestamp property
+                                    example: 1660801715431
+                                type:
+                                    type: string
+                                    description: type property
+                                    example: LIMIT
+operations:
+    receive_order_test:
+        title: Receive from order.test
+        description: Receive response from order.test
+        action: receive
+        channel:
+            $ref: '#/channels/order_test'
+        messages:
+            - $ref: '#/channels/order_test/messages/receiveMessage'
+    send_order_test:
+        title: Send to order.test
+        description: Send a order.test request
+        action: send
+        channel:
+            $ref: '#/channels/order_test'
+        messages:
+            - $ref: '#/channels/order_test/messages/sendMessage'
+components: {}

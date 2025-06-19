@@ -1,0 +1,82 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    userDataStream_unsubscribe:
+        address: userDataStream.unsubscribe
+        title: Channel userDataStream.unsubscribe
+        description: Stop listening to the User Data Stream in the current WebSocket connection.
+        messages:
+            receiveMessage:
+                name: Unsubscribe from User Data Stream (USER_STREAM) Response
+                title: Unsubscribe from User Data Stream (USER_STREAM) Response
+                description: Receive response from userDataStream.unsubscribe
+                payload:
+                    type: object
+                    description: response schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                        result:
+                            $ref: '#/components/schemas/EventStreamTerminatedEvent'
+                            description: Event Stream Terminated response
+                        status:
+                            type: integer
+                            description: status property
+                            example: 200
+            sendMessage:
+                name: Unsubscribe from User Data Stream (USER_STREAM) Request
+                title: Unsubscribe from User Data Stream (USER_STREAM) Request
+                description: Send a userDataStream.unsubscribe request
+                payload:
+                    type: object
+                    description: request schema
+                    properties:
+                        id:
+                            type: string
+                            description: id property
+                            example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                        method:
+                            type: string
+                            description: method property
+                            example: userDataStream.unsubscribe
+                            enum:
+                                - userDataStream.unsubscribe
+operations:
+    receive_userDataStream_unsubscribe:
+        title: Receive from userDataStream.unsubscribe
+        description: Receive response from userDataStream.unsubscribe
+        action: receive
+        channel:
+            $ref: '#/channels/userDataStream_unsubscribe'
+        messages:
+            - $ref: '#/channels/userDataStream_unsubscribe/messages/receiveMessage'
+    send_userDataStream_unsubscribe:
+        title: Send to userDataStream.unsubscribe
+        description: Send a userDataStream.unsubscribe request
+        action: send
+        channel:
+            $ref: '#/channels/userDataStream_unsubscribe'
+        messages:
+            - $ref: '#/channels/userDataStream_unsubscribe/messages/sendMessage'
+components:
+    schemas:
+        EventStreamTerminatedEvent:
+            type: object
+            description: Event Stream Terminated - sent when User Data Stream is stopped (WebSocket API only)
+            properties:
+                event:
+                    type: object
+                    properties:
+                        e:
+                            type: string
+                            description: Event Type
+                            example: eventStreamTerminated
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1728973001334

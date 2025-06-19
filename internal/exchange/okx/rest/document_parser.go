@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/openxapi/openxapi/internal/config"
-	"github.com/openxapi/openxapi/internal/parser"
+	parser "github.com/openxapi/openxapi/internal/parser/rest"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/sirupsen/logrus"
