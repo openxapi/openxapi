@@ -60,7 +60,7 @@ func main() {
 
 \t// Example 1: Using the ping API to test connectivity
 \tlog.Println("Example 1: Testing connectivity with ping")
-\terr := client.SendPingDefault(func(response *models.PingTestConnectivityResponse, err error) error {
+\terr := client.SendPingDefault(ctx, func(response *models.PingTestConnectivityResponse, err error) error {
 \t\tif err != nil {
 \t\t\tlog.Printf("Ping error: %v", err)
 \t\t\treturn err
@@ -74,7 +74,7 @@ func main() {
 
 \t// Example 2: Get server time
 \tlog.Println("Example 2: Getting server time")
-\terr = client.SendTimeDefault(func(response *models.TimeCheckServerTimeResponse, err error) error {
+\terr = client.SendTimeDefault(ctx, func(response *models.TimeCheckServerTimeResponse, err error) error {
 \t\tif err != nil {
 \t\t\tlog.Printf("Time error: %v", err)
 \t\t\treturn err
@@ -92,7 +92,7 @@ func main() {
 
 \t// Example 3: Get exchange information
 \tlog.Println("Example 3: Getting exchange information")
-\terr = client.SendExchangeInfoDefault(func(response *models.ExchangeInfoExchangeInformationResponse, err error) error {
+\terr = client.SendExchangeInfoDefault(ctx, func(response *models.ExchangeInfoExchangeInformationResponse, err error) error {
 \t\tif err != nil {
 \t\t\tlog.Printf("ExchangeInfo error: %v", err)
 \t\t\treturn err
@@ -115,7 +115,7 @@ func main() {
 \t\t\tLimit:  10,
 \t\t},
 \t}
-\terr = client.SendDepth(depthRequest, func(response *models.DepthOrderBookResponse, err error) error {
+\terr = client.SendDepth(ctx, depthRequest, func(response *models.DepthOrderBookResponse, err error) error {
 \t\tif err != nil {
 \t\t\tlog.Printf("Depth error: %v", err)
 \t\t\treturn err

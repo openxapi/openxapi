@@ -1,11 +1,14 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
-import { WebSocketHandlers } from '../../components/WebSocketHandlers';
+import { WebSocketHandlers } from './components/WebSocketHandlers';
 
 export default function ({ asyncapi, params }) {
-  const serverUrl = asyncapi.servers().get(params.server);
   const packageName = params.packageName || 'main';
   const moduleName = params.moduleName || 'binance-websocket-client';
-  const title = asyncapi.info().title().replace(/\s+/g, '');
+  
+  const serverUrl = asyncapi.servers().get(params.server) || asyncapi.servers().all()[0];
+
+  // Get all channels to generate handler methods
+  const channels = asyncapi.channels();
 
   return (
     <File name="client.go">
@@ -34,78 +37,7 @@ type contextKey string
 const (
 	// ContextBinanceAuth takes Auth as authentication for the request
 	ContextBinanceAuth = contextKey("binanceAuth")
-)
-
-// Auth types for different WebSocket authentication requirements
-type AuthType string
-
-const (
-	AuthTypeNone       AuthType = "NONE"
-	AuthTypeUserData   AuthType = "USER_DATA"
-	AuthTypeTrade      AuthType = "TRADE"
-	AuthTypeUserStream AuthType = "USER_STREAM"
-)
-
-// Auth provides Binance API key based authentication for WebSocket requests
-type Auth struct {
-	APIKey    string
-	SecretKey string
-}
-
-// NewAuth creates a new Auth instance with API key
-func NewAuth(apiKey string) *Auth {
-	return &Auth{
-		APIKey: apiKey,
-	}
-}
-
-// SetSecretKey sets the secret key for HMAC signing
-func (a *Auth) SetSecretKey(secretKey string) {
-	a.SecretKey = secretKey
-}
-
-// ContextWithValue validates the Auth configuration and returns a context
-// suitable for WebSocket authentication
-func (a *Auth) ContextWithValue(ctx context.Context) (context.Context, error) {
-	if a.APIKey == "" {
-		return nil, fmt.Errorf("API key must be specified")
-	}
-	return context.WithValue(ctx, ContextBinanceAuth, *a), nil
-}
-
-// RequestSigner handles signing of WebSocket request parameters
-type RequestSigner struct {
-	auth *Auth
-}
-
-// NewRequestSigner creates a new request signer
-func NewRequestSigner(auth *Auth) *RequestSigner {
-	return &RequestSigner{auth: auth}
-}
-
-// SignRequest signs request parameters based on auth type
-func (rs *RequestSigner) SignRequest(params map[string]interface{}, authType AuthType) error {
-	if authType == AuthTypeNone {
-		return nil
-	}
-	
-	// Add API key for all authenticated requests
-	params["apiKey"] = rs.auth.APIKey
-	
-	// Add timestamp for requests that require it
-	if authType == AuthTypeUserData || authType == AuthTypeTrade {
-		params["timestamp"] = time.Now().UnixMilli()
-		
-		// For requests requiring signature, add signature
-		if rs.auth.SecretKey != "" {
-			// Implementation would depend on Binance WebSocket signing requirements
-			// This is a placeholder for actual signing logic
-			params["signature"] = "placeholder_signature"
-		}
-	}
-	
-	return nil
-}`}
+)`}
       </Text>
 
       <Text newLines={2}>
@@ -297,8 +229,6 @@ func (c *Client) sendRequest(request map[string]interface{}) error {
 	return c.conn.WriteMessage(websocket.TextMessage, data)
 }`}
       </Text>
-
-
 
       <Text newLines={2}>
         {`// readMessages reads messages from the WebSocket connection

@@ -1,0 +1,50 @@
+{
+  "name": "binance-asyncapi-go-template",
+  "version": "0.1.0",
+  "description": "A template that generates Go WebSocket clients for Binance AsyncAPI v3 specifications.",
+  "scripts": {
+    "generate": "if [ -n \"${AUTHOR}\" ]; then AUTHOR_PARAM=\"--param author=\\\"${AUTHOR}\\\"\"; else AUTHOR_PARAM=\"\"; fi; ${ASYNCAPI_CLI:-asyncapi} generate fromTemplate ${SPEC_FILE:-../../../../specs/binance/asyncapi/spot.yaml} ./ --output ${OUTPUT_DIR:-./output} --force-write --param server=${SERVER:-production} --param packageName=${PACKAGE_NAME:-main} --param moduleName=${MODULE_NAME:-binance-websocket-client} --param version=${CLIENT_VERSION:-0.1.0} $AUTHOR_PARAM",
+    "test": "npm run test:clean && npm run test:generate && npm run test:build",
+    "test:clean": "rimraf test/project/client.* test/project/go.* test/project/package.json test/project/requirements.txt test/project/Cargo.toml test/project/target test/project/models test/project/*.go",
+    "test:generate": "${ASYNCAPI_CLI:-asyncapi} generate fromTemplate ../../../../specs/binance/asyncapi/spot.yaml ./ --output test/project --force-write --param server=production --param packageName=main --param moduleName=binance-websocket-client",
+    "test:build": "cd test/project && go mod tidy && go build -o client .",
+    "example": "npm run test:generate && cd test/project && go run *.go"
+  },
+  "generator": {
+    "renderer": "react",
+    "apiVersion": "v3",
+    "generator": ">=1.10.0 <2.0.0",
+    "supportedProtocols": ["ws", "wss"],
+    "parameters": {
+      "server": {
+        "description": "The server you want to use in the code.",
+        "required": true
+      },
+      "moduleName": {
+        "description": "The Go module name for the generated client.",
+        "required": true
+      },
+      "packageName": {
+        "description": "The Go package name for the generated client.",
+        "required": false,
+        "default": "main"
+      },
+      "version": {
+        "description": "The version of the generated client package.",
+        "required": false,
+        "default": "0.1.0"
+      },
+      "author": {
+        "description": "The author of the generated client package.",
+        "required": false,
+        "default": "openxapi"
+      }
+    }
+  },
+  "dependencies": {
+    "@asyncapi/generator-react-sdk": "^0.2.25"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.0"
+  }
+} 

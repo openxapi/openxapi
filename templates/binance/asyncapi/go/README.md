@@ -1,6 +1,64 @@
-# Binance AsyncAPI WebSocket Client Template
+# Binance AsyncAPI Go WebSocket Client Template
 
-This template generates a Go WebSocket client for Binance's WebSocket API based on AsyncAPI specifications. It provides comprehensive support for **oneOf response types** and **async response management**.
+This template generates **Go WebSocket clients** for Binance's WebSocket API based on AsyncAPI 3.0 specifications. It provides comprehensive support for **oneOf response types** and **async response management**.
+
+> **Note**: This template is specifically designed for Go language. For other languages, use the corresponding language-specific templates.
+
+## Quick Start
+
+### Basic Generation
+
+```bash
+npm run generate
+```
+
+This will generate the Go client using default parameters:
+- Spec file: `../../../../specs/binance/asyncapi/spot.yaml`
+- Output directory: `./output`
+- Server: `production`
+- Package name: `main`
+- Module name: `binance-websocket-client`
+
+### Custom Generation
+
+You can customize the generation using environment variables:
+
+```bash
+# Generate to custom output directory
+OUTPUT_DIR=/path/to/output npm run generate
+
+# Use custom spec file
+SPEC_FILE=/path/to/custom.yaml npm run generate
+
+# Custom module and package names
+MODULE_NAME=my-binance-client PACKAGE_NAME=client npm run generate
+
+# Use custom AsyncAPI CLI
+ASYNCAPI_CLI=/usr/local/bin/asyncapi npm run generate
+
+# Set author information
+AUTHOR="Your Name" npm run generate
+
+# Combine multiple parameters
+OUTPUT_DIR=./my-client \
+MODULE_NAME=binance-ws \
+PACKAGE_NAME=websocket \
+AUTHOR="Developer Name" \
+npm run generate
+```
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `ASYNCAPI_CLI` | AsyncAPI CLI command | `asyncapi` |
+| `SPEC_FILE` | Path to AsyncAPI specification | `../../../../specs/binance/asyncapi/spot.yaml` |
+| `OUTPUT_DIR` | Output directory for generated code | `./output` |
+| `SERVER` | Server environment to use | `production` |
+| `PACKAGE_NAME` | Go package name | `main` |
+| `MODULE_NAME` | Go module name | `binance-websocket-client` |
+| `CLIENT_VERSION` | Client version | `0.1.0` |
+| `AUTHOR` | Author name | (empty) |
 
 ## Features
 
@@ -12,8 +70,9 @@ This template generates a Go WebSocket client for Binance's WebSocket API based 
 - ✅ **Response History**: Track all received messages with queryable history
 - ✅ **Gorilla WebSocket**: Built on reliable WebSocket implementation
 - ✅ **Thread-Safe**: Concurrent-safe operations with proper locking
+- ✅ **Environment Variable Support**: Configurable via environment variables
 
-## New OneOf Features
+## OneOf Features
 
 ### What is OneOf?
 
@@ -93,20 +152,99 @@ if err == nil {
 }
 ```
 
-## Generated Files Structure
+### Using the Generated Client
+
+After generation, you can use the client in your Go project:
+
+```go
+package main
+
+import (
+    "log"
+    "github.com/your-org/binance-websocket-client"
+)
+
+func main() {
+    client := NewWebSocketClient("wss://stream.binance.com:443/ws")
+    
+    err := client.Connect()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+    
+    // Subscribe to user data stream
+    err = client.UserDataStreamSubscribe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // Keep the connection alive
+    select {}
+}
+```
+
+## Generated Client Structure
+
+The template generates the following structure:
 
 ```
-client.go           # Main WebSocket client with oneOf support
-models/
-├── models.go       # Common utilities and response registry
-├── execution_report_event.go
-├── balance_update_event.go
-├── outbound_account_position_event.go
-├── list_status_event.go
-├── listen_key_expired_event.go
-├── external_lock_update_event.go
-└── user_data_stream_subscribe_result.go  # OneOf wrapper type
+output/
+├── client.go              # Main WebSocket client with oneOf support
+├── go.mod                 # Go module file
+├── models/
+│   ├── models.go         # Common utilities and response registry
+│   ├── execution_report_event.go
+│   ├── balance_update_event.go
+│   ├── outbound_account_position_event.go
+│   ├── list_status_event.go
+│   ├── listen_key_expired_event.go
+│   ├── external_lock_update_event.go
+│   └── user_data_stream_subscribe_result.go  # OneOf wrapper type
+├── example.go            # Usage example
+├── signing.go            # Request signing utilities
+├── signing_test.go       # Signing tests
+└── README.md             # Generated client documentation
 ```
+
+## Development and Testing
+
+### Run Tests
+
+```bash
+npm run test
+```
+
+This will:
+1. Clean previous test artifacts
+2. Generate a test client
+3. Build the Go client
+
+### Clean Test Files
+
+```bash
+npm run test:clean
+```
+
+### Generate Test Client Only
+
+```bash
+npm run test:generate
+```
+
+### Build Test Client Only
+
+```bash
+npm run test:build
+```
+
+### Run Example
+
+```bash
+npm run example
+```
+
+This generates a test client and runs the example Go code.
 
 ## Key Components
 
@@ -204,6 +342,44 @@ The template provides comprehensive error handling:
 - JSON parsing errors with detailed messages
 - Type conversion errors with fallback handling
 - OneOf parsing errors with clear diagnostics
+
+## Troubleshooting
+
+### AsyncAPI CLI Not Found
+
+If you get "command not found" errors, install the AsyncAPI CLI:
+
+```bash
+npm install -g @asyncapi/cli
+```
+
+Or use a custom path:
+
+```bash
+ASYNCAPI_CLI=/path/to/asyncapi npm run generate
+```
+
+### Permission Errors
+
+Make sure the output directory is writable:
+
+```bash
+chmod 755 /path/to/output
+```
+
+### Build Errors
+
+Ensure Go is installed and in your PATH:
+
+```bash
+go version
+```
+
+For module path issues, update the module name:
+
+```bash
+MODULE_NAME=github.com/your-org/your-client npm run generate
+```
 
 ## Dependencies
 
