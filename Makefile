@@ -144,7 +144,13 @@ generate-ws-sdk:
 				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
 				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
 				rm -rf ${REAL_OUTPUT_DIR}/$$subdir; \
-				$(ASYNCAPI_CLI) generate -c $$file -g go -o ${OUTPUT_DIR}/$$subdir; \
+				if [ -f "generator-configs/${EXCHANGE}/asyncapi/${LANGUAGE}/$$subdir.json" ]; then \
+					echo "Using dedicated generator config for $$subdir module"; \
+					cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
+					MODULE=$$subdir \
+					OUTPUT_DIR=../../../../${OUTPUT_DIR}/$$subdir \
+					npm run generate:module; \
+				fi; \
 			done \
 		fi \
 	fi
