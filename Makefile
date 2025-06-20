@@ -1,4 +1,4 @@
-.PHONY: all build clean format lint vet test unit-test coverage help test-with-samples generate-spec generate-sdk
+.PHONY: all build clean format lint vet test unit-test coverage help test-with-samples generate-spec generate-sdk generate-rest-spec generate-ws-spec validate-rest-spec validate-ws-spec generate-rest-sdk
 
 # Go parameters
 GOCMD=go
@@ -23,9 +23,25 @@ generate-spec:
 		$(BINARY_NAME); \
 	fi
 
-validate-spec:
+generate-rest-spec:
+	@make build
+	@if [ -n "${EXCHANGE}" ]; then \
+		$(BINARY_NAME) -exchange ${EXCHANGE} -spec-type rest; \
+	else \
+		$(BINARY_NAME) -spec-type rest; \
+	fi
+
+generate-ws-spec:
+	@make build
+	@if [ -n "${EXCHANGE}" ]; then \
+		$(BINARY_NAME) -exchange ${EXCHANGE} -spec-type ws; \
+	else \
+		$(BINARY_NAME) -spec-type ws; \
+	fi
+
+validate-rest-spec:
 	@if [ -z "${EXCHANGE}" ]; then \
-		echo "Usage: make validate-spec EXCHANGE=<exchange>"; \
+		echo "Usage: make validate-rest-spec EXCHANGE=<exchange>"; \
 		exit 1; \
 	fi
 	@echo "Checking for invalid operationId in ${EXCHANGE} specs"
@@ -46,9 +62,24 @@ validate-spec:
 		$(OPENAPI_GENERATOR_CLI) validate -i $$file; \
 	done
 
-generate-sdk:
+validate-ws-spec:
+	@if [ -z "${EXCHANGE}" ]; then \
+		echo "Usage: make validate-ws-spec EXCHANGE=<exchange>"; \
+		exit 1; \
+	fi
+	@echo "Checking for AsyncAPI spec in ${EXCHANGE} specs"
+	@if [ -z "${ASYNCAPI_CLI}" ]; then \
+		echo "ASYNCAPI_CLI is not set. Please set it to the path of the asyncapi-cli executable."; \
+		exit 1; \
+	fi
+	@for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
+		echo "Validating ${EXCHANGE} spec for $$file"; \
+		$(ASYNCAPI_CLI) validate $$file; \
+	done
+
+generate-rest-sdk:
 	@if [ -z "${EXCHANGE}" -o -z "${LANGUAGE}" -o -z "${OUTPUT_DIR}" ]; then \
-		echo "Usage: make generate-sdk EXCHANGE=<exchange> LANGUAGE=<language> OUTPUT_DIR=<output_dir>"; \
+		echo "Usage: make generate-rest-sdk EXCHANGE=<exchange> LANGUAGE=<language> OUTPUT_DIR=<output_dir>"; \
 		exit 1; \
 	fi
 	@if [ -z "${OPENAPI_GENERATOR_CLI}" ]; then \
@@ -97,6 +128,27 @@ generate-sdk:
 		fi \
 	fi
 
+generate-ws-sdk:
+	@if [ -z "${EXCHANGE}" -o -z "${LANGUAGE}" -o -z "${OUTPUT_DIR}" ]; then \
+		echo "Usage: make generate-ws-sdk EXCHANGE=<exchange> LANGUAGE=<language> OUTPUT_DIR=<output_dir>"; \
+		exit 1; \
+	fi
+	@if [ -z "${ASYNCAPI_CLI}" ]; then \
+		echo "ASYNCAPI_CLI is not set. Please set it to the path of the asyncapi-cli executable."; \
+		exit 1; \
+	fi
+	@if [ "${EXCHANGE}" == "binance" ]; then \
+		if [ "${LANGUAGE}" == "go" ]; then \
+			for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
+				echo "Generating ${EXCHANGE} go ws SDK for $$file"; \
+				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
+				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
+				rm -rf ${REAL_OUTPUT_DIR}/$$subdir; \
+				$(ASYNCAPI_CLI) generate -c $$file -g go -o ${OUTPUT_DIR}/$$subdir; \
+			done \
+		fi \
+	fi
+	
 release:
 	@if [ -z "${EXCHANGE}" -o -z "${VERSION}" -o -z "${BASE_OUTPUT_DIR}" ]; then \
 		echo "Usage: make release EXCHANGE=<exchange> VERSION=<version> BASE_OUTPUT_DIR=<base_output_dir>"; \
