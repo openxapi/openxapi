@@ -28,6 +28,87 @@ export default function ({ asyncapi, params }) {
       </Text>
 
       <Text newLines={2}>
+        {`// Context keys for authentication and configuration
+type contextKey string
+
+const (
+	// ContextBinanceAuth takes Auth as authentication for the request
+	ContextBinanceAuth = contextKey("binanceAuth")
+)
+
+// Auth types for different WebSocket authentication requirements
+type AuthType string
+
+const (
+	AuthTypeNone       AuthType = "NONE"
+	AuthTypeUserData   AuthType = "USER_DATA"
+	AuthTypeTrade      AuthType = "TRADE"
+	AuthTypeUserStream AuthType = "USER_STREAM"
+)
+
+// Auth provides Binance API key based authentication for WebSocket requests
+type Auth struct {
+	APIKey    string
+	SecretKey string
+}
+
+// NewAuth creates a new Auth instance with API key
+func NewAuth(apiKey string) *Auth {
+	return &Auth{
+		APIKey: apiKey,
+	}
+}
+
+// SetSecretKey sets the secret key for HMAC signing
+func (a *Auth) SetSecretKey(secretKey string) {
+	a.SecretKey = secretKey
+}
+
+// ContextWithValue validates the Auth configuration and returns a context
+// suitable for WebSocket authentication
+func (a *Auth) ContextWithValue(ctx context.Context) (context.Context, error) {
+	if a.APIKey == "" {
+		return nil, fmt.Errorf("API key must be specified")
+	}
+	return context.WithValue(ctx, ContextBinanceAuth, *a), nil
+}
+
+// RequestSigner handles signing of WebSocket request parameters
+type RequestSigner struct {
+	auth *Auth
+}
+
+// NewRequestSigner creates a new request signer
+func NewRequestSigner(auth *Auth) *RequestSigner {
+	return &RequestSigner{auth: auth}
+}
+
+// SignRequest signs request parameters based on auth type
+func (rs *RequestSigner) SignRequest(params map[string]interface{}, authType AuthType) error {
+	if authType == AuthTypeNone {
+		return nil
+	}
+	
+	// Add API key for all authenticated requests
+	params["apiKey"] = rs.auth.APIKey
+	
+	// Add timestamp for requests that require it
+	if authType == AuthTypeUserData || authType == AuthTypeTrade {
+		params["timestamp"] = time.Now().UnixMilli()
+		
+		// For requests requiring signature, add signature
+		if rs.auth.SecretKey != "" {
+			// Implementation would depend on Binance WebSocket signing requirements
+			// This is a placeholder for actual signing logic
+			params["signature"] = "placeholder_signature"
+		}
+	}
+	
+	return nil
+}`}
+      </Text>
+
+      <Text newLines={2}>
         {`// ResponseHandler represents a handler for a specific response type
 type ResponseHandler struct {
 	RequestID string
@@ -77,6 +158,7 @@ type Client struct {
 	responseHandlers      map[string]func([]byte) error
 	globalResponseHandler *GlobalResponseHandler
 	responseList          []interface{} // Global list of all received responses
+	auth                  *Auth // Authentication configuration
 	mu                    sync.RWMutex
 	done                  chan struct{}
 }`}
@@ -93,6 +175,18 @@ func NewClient() *Client {
 		responseList:          make([]interface{}, 0),
 		done:                  make(chan struct{}),
 	}
+}
+
+// NewClientWithAuth creates a new WebSocket client with authentication
+func NewClientWithAuth(auth *Auth) *Client {
+	client := NewClient()
+	client.auth = auth
+	return client
+}
+
+// SetAuth sets authentication for the client
+func (c *Client) SetAuth(auth *Auth) {
+	c.auth = auth
 }`}
       </Text>
 
@@ -204,19 +298,7 @@ func (c *Client) sendRequest(request map[string]interface{}) error {
 }`}
       </Text>
 
-      <Text newLines={2}>
-        {`// structToMap converts a struct to map[string]interface{} for JSON marshaling
-func structToMap(v interface{}) (map[string]interface{}, error) {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return nil, err
-	}
 
-	var result map[string]interface{}
-	err = json.Unmarshal(data, &result)
-	return result, err
-}`}
-      </Text>
 
       <Text newLines={2}>
         {`// readMessages reads messages from the WebSocket connection
@@ -345,25 +427,36 @@ func (c *Client) mapEventTypeToStructType(eventType string) string {
       <Text newLines={2}>
         {`// Usage Examples:
 //
-// 1. Using auto-generated request ID (ID and Method will be set automatically):
+// 1. Using auto-generated request ID with context (ID and Method will be set automatically):
+//    ctx := context.Background()
 //    request := &models.AccountCommissionAccountCommissionRatesRequest{}
-//    client.SendAccountCommission(request, responseHandler)
+//    client.SendAccountCommission(ctx, request, responseHandler)
 //
-// 2. Using custom request ID:
+// 2. Using custom request ID with context:
+//    ctx := context.Background()
 //    request := &models.AccountCommissionAccountCommissionRatesRequest{
 //        Id: "my-custom-id-123",
 //    }
-//    client.SendAccountCommission(request, responseHandler)
+//    client.SendAccountCommission(ctx, request, responseHandler)
 //
-// 3. Using default parameters (ID and Method are pre-filled):
-//    client.SendAccountCommissionDefault(responseHandler)
+// 3. Using per-request authentication:
+//    auth := NewAuth("your-api-key")
+//    auth.SetSecretKey("your-secret-key")
+//    ctx, _ := auth.ContextWithValue(context.Background())
+//    request := &models.AccountCommissionAccountCommissionRatesRequest{}
+//    client.SendAccountCommission(ctx, request, responseHandler)
 //
-// 4. Generating request ID for later use:
+// 4. Using default parameters with context (ID and Method are pre-filled):
+//    ctx := context.Background()
+//    client.SendAccountCommissionDefault(ctx, responseHandler)
+//
+// 5. Generating request ID for later use:
 //    customID := client.GenerateRequestID()
 //    request := &models.AccountCommissionAccountCommissionRatesRequest{
 //        Id: customID,
 //    }
-//    client.SendAccountCommission(request, responseHandler)`}
+//    ctx := context.Background()
+//    client.SendAccountCommission(ctx, request, responseHandler)`}
       </Text>
 
       <Text newLines={2}>
@@ -375,6 +468,21 @@ func ParseMessage[T any](data []byte, target *T) error {
 // ParseDynamicMessage is a convenience wrapper around models.ParseDynamicMessage
 func ParseDynamicMessage(messageID string, data []byte) (interface{}, error) {
 	return models.ParseDynamicMessage(messageID, data)
+}
+
+// structToMap converts a struct to a map[string]interface{} for JSON marshaling
+func structToMap(v interface{}) (map[string]interface{}, error) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	
+	var result map[string]interface{}
+	if err := json.Unmarshal(data, &result); err != nil {
+		return nil, err
+	}
+	
+	return result, nil
 }
 
 // ParseOneOfMessage attempts to parse a oneOf message based on distinctive fields
