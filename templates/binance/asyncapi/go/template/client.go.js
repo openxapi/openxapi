@@ -22,9 +22,8 @@ export default function ({ asyncapi, params }) {
 	"net/url"
 	"sync"
 	"time"
-	"crypto/rand"
-	"encoding/hex"
 
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"${moduleName}/models"
 )`}
@@ -156,16 +155,9 @@ func (c *Client) Disconnect() error {
       </Text>
 
       <Text newLines={2}>
-        {`// generateRequestID generates a unique request ID (internal use)
-func (c *Client) generateRequestID() string {
-	bytes := make([]byte, 16)
-	rand.Read(bytes)
-	return hex.EncodeToString(bytes)
-}
-
-// GenerateRequestID generates a unique request ID for public use
-func (c *Client) GenerateRequestID() string {
-	return c.generateRequestID()
+        {`// GenerateRequestID generates a unique UUID v4 request ID (global function)
+func GenerateRequestID() string {
+	return uuid.New().String()
 }`}
       </Text>
 
@@ -381,7 +373,7 @@ func (c *Client) mapEventTypeToStructType(eventType string) string {
 //    client.SendAccountCommissionDefault(ctx, responseHandler)
 //
 // 5. Generating request ID for later use:
-//    customID := client.GenerateRequestID()
+//    customID := GenerateRequestID()
 //    request := &models.AccountCommissionAccountCommissionRatesRequest{
 //        Id: customID,
 //    }

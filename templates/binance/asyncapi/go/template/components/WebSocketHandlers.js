@@ -109,7 +109,7 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   method += `\tif request.Id != "" {\n`;
   method += `\t\treqID = request.Id\n`;
   method += `\t} else {\n`;
-  method += `\t\treqID = c.generateRequestID()\n`;
+  method += `\t\treqID = GenerateRequestID()\n`;
   method += `\t\trequest.Id = reqID\n`;
   method += `\t}\n`;
   method += `\trequest.Method = "${channelAddress}"\n\n`;
@@ -215,7 +215,7 @@ function generateConvenienceMethod(operation, methodName, channelAddress, reques
   
   // Build request struct with default ID and Method
   method += `\trequest := &models.${requestStructName}{\n`;
-  method += `\t\tId:     c.generateRequestID(),\n`;
+  method += `\t\tId:     GenerateRequestID(),\n`;
   method += `\t\tMethod: "${channelAddress}",\n`;
   method += `\t}\n\n`;
   
@@ -240,7 +240,7 @@ function generateOneOfHandlerMethod(methodName, channelAddress, requestStructNam
   method += `\tif request.Id != "" {\n`;
   method += `\t\treqID = request.Id\n`;
   method += `\t} else {\n`;
-  method += `\t\treqID = c.generateRequestID()\n`;
+  method += `\t\treqID = GenerateRequestID()\n`;
   method += `\t\trequest.Id = reqID\n`;
   method += `\t}\n`;
   method += `\trequest.Method = "${channelAddress}"\n\n`;

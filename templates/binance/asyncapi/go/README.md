@@ -160,27 +160,160 @@ After generation, you can use the client in your Go project:
 package main
 
 import (
-    "log"
-    "github.com/your-org/binance-websocket-client"
+	"context"
+	"log"
+	"time"
+	"encoding/json"
+
+	"binance-websocket-client/models"
 )
 
 func main() {
-    client := NewWebSocketClient("wss://stream.binance.com:443/ws")
-    
-    err := client.Connect()
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer client.Close()
-    
-    // Subscribe to user data stream
-    err = client.UserDataStreamSubscribe()
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    // Keep the connection alive
-    select {}
+	// Example 1: Create a client without authentication (for public endpoints)
+	client := NewClient()
+	
+	// Example 2: Create a client with HMAC authentication
+	// auth := NewAuth("your-api-key")
+	// auth.SetSecretKey("your-secret-key")
+	// client := NewClientWithAuth(auth)
+	
+	// Example 3: Create a client with RSA authentication
+	// auth := NewAuth("your-api-key")
+	// auth.SetPrivateKeyPath("path/to/your/rsa-key.pem")
+	// // Optional: auth.SetPassphrase("your-passphrase") if key is encrypted
+	// client := NewClientWithAuth(auth)
+	
+	// Example 4: Create a client with Ed25519 authentication
+	// auth := NewAuth("your-api-key")
+	// auth.SetPrivateKeyPath("path/to/your/ed25519-key.pem")
+	// // Optional: auth.SetPassphrase("your-passphrase") if key is encrypted
+	// client := NewClientWithAuth(auth)
+	
+	// Example 5: Create a client with private key from byte array
+	// pemData := []byte(`-----BEGIN RSA PRIVATE KEY-----
+	// ... your RSA private key here ...
+	// -----END RSA PRIVATE KEY-----`)
+	// auth := NewAuth("your-api-key")
+	// if err := auth.SetPrivateKey(pemData); err != nil {
+	// 	log.Fatalf("Error setting private key: %v", err)
+	// }
+	// client := NewClientWithAuth(auth)
+	
+	// Connect to the WebSocket server
+	ctx := context.Background()
+	if err := client.Connect(ctx); err != nil {
+		log.Fatalf("Failed to connect: %v", err)
+	}
+	defer client.Disconnect()
+
+	// Setup default handlers for all user data stream event types
+	client.SetupDefaultUserDataStreamHandlers()
+
+	// Example 1: Using the ping API to test connectivity
+	log.Println("Example 1: Testing connectivity with ping")
+	err := client.SendPingDefault(ctx, func(response *models.PingTestConnectivityResponse, err error) error {
+		if err != nil {
+			log.Printf("Ping error: %v", err)
+			return err
+		}
+		log.Printf("Ping response: ID=%s, Status=%d", response.Id, response.Status)
+		return nil
+	})
+	if err != nil {
+		log.Printf("Error sending ping: %v", err)
+	}
+
+	// Example 2: Get server time
+	log.Println("Example 2: Getting server time")
+	err = client.SendTimeDefault(ctx, func(response *models.TimeCheckServerTimeResponse, err error) error {
+		if err != nil {
+			log.Printf("Time error: %v", err)
+			return err
+		}
+		log.Printf("Time response: ID=%s, Status=%d", response.Id, response.Status)
+		if response.Result.ServerTime != 0 {
+			serverTime := time.UnixMilli(response.Result.ServerTime)
+			log.Printf("Server time: %s", serverTime.Format("2006-01-02 15:04:05"))
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("Error getting server time: %v", err)
+	}
+
+	// Example 3: Get exchange information
+	log.Println("Example 3: Getting exchange information")
+	err = client.SendExchangeInfoDefault(ctx, func(response *models.ExchangeInfoExchangeInformationResponse, err error) error {
+		if err != nil {
+			log.Printf("ExchangeInfo error: %v", err)
+			return err
+		}
+		log.Printf("ExchangeInfo response: ID=%s, Status=%d", response.Id, response.Status)
+		if len(response.Result.Symbols) > 0 {
+			log.Printf("Total symbols: %d", len(response.Result.Symbols))
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("Error getting exchange info: %v", err)
+	}
+
+	// Example 4: Get order book for BTCUSDT
+	log.Println("Example 4: Getting order book for BTCUSDT")
+	depthRequest := &models.DepthOrderBookRequest{
+		Params: models.DepthOrderBookRequestParams{
+			Symbol: "BTCUSDT",
+			Limit:  10,
+		},
+	}
+	err = client.SendDepth(ctx, depthRequest, func(response *models.DepthOrderBookResponse, err error) error {
+		if err != nil {
+			log.Printf("Depth error: %v", err)
+			return err
+		}
+		log.Printf("Depth response: ID=%s, Status=%d", response.Id, response.Status)
+		if response.Result.LastUpdateId != 0 {
+			log.Printf("Last update ID: %d", response.Result.LastUpdateId)
+		}
+		if len(response.Result.Bids) > 0 {
+			log.Printf("Number of bids: %d", len(response.Result.Bids))
+		}
+		if len(response.Result.Asks) > 0 {
+			log.Printf("Number of asks: %d", len(response.Result.Asks))
+		}
+		return nil
+	})
+	if err != nil {
+		log.Printf("Error getting depth: %v", err)
+	}
+
+	// Example 5: Working with the global response history
+	log.Println("Example 5: Response history")
+	time.Sleep(2 * time.Second)
+	history := client.GetResponseHistory()
+	log.Printf("Total responses received: %d", len(history))
+	
+	// Display last few responses
+	for i, response := range history {
+		if i >= len(history)-3 { // Show last 3 responses
+			if responseBytes, err := json.Marshal(response); err == nil {
+				responseStr := string(responseBytes)
+				if len(responseStr) > 200 {
+					responseStr = responseStr[:200] + "..."
+				}
+				log.Printf("Response %d: %s", i+1, responseStr)
+			}
+		}
+	}
+
+	// Clean up response history
+	client.ClearResponseHistory()
+	log.Println("Response history cleared")
+
+	// Keep the connection alive for a while to receive events
+	log.Println("Listening for events for 10 seconds...")
+	time.Sleep(10 * time.Second)
+	log.Println("Example completed")
 }
 ```
 
@@ -201,7 +334,6 @@ output/
 │   ├── listen_key_expired_event.go
 │   ├── external_lock_update_event.go
 │   └── user_data_stream_subscribe_result.go  # OneOf wrapper type
-├── example.go            # Usage example
 ├── signing.go            # Request signing utilities
 ├── signing_test.go       # Signing tests
 └── README.md             # Generated client documentation
@@ -238,13 +370,7 @@ npm run test:generate
 npm run test:build
 ```
 
-### Run Example
 
-```bash
-npm run example
-```
-
-This generates a test client and runs the example Go code.
 
 ## Key Components
 
