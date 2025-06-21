@@ -20,6 +20,7 @@ export default function ({ asyncapi, params }) {
 	"fmt"
 	"log"
 	"net/url"
+	"reflect"
 	"sync"
 	"time"
 
@@ -40,10 +41,37 @@ const (
       </Text>
 
       <Text newLines={2}>
-        {`// ResponseHandler represents a handler for a specific response type
+        {`// APIError represents an error returned by the Binance WebSocket API
+type APIError struct {
+	Status  int    \`json:"status"\`  // HTTP-like status code from the response
+	Code    int    \`json:"code"\`    // Binance-specific error code
+	Message string \`json:"msg"\`     // Error message
+	ID      string \`json:"id"\`      // Request ID that caused the error
+}
+
+// Error implements the error interface
+func (e APIError) Error() string {
+	return fmt.Sprintf("binance api error: status=%d, code=%d, message=%s, id=%s", e.Status, e.Code, e.Message, e.ID)
+}
+
+// IsAPIError checks if an error is an APIError
+func IsAPIError(err error) (*APIError, bool) {
+	if apiErr, ok := err.(APIError); ok {
+		return &apiErr, true
+	}
+	if apiErr, ok := err.(*APIError); ok {
+		return apiErr, true
+	}
+	return nil, false
+}`}
+      </Text>
+
+      <Text newLines={2}>
+        {`// ResponseHandler represents a handler for a specific response type with automatic JSON parsing
 type ResponseHandler struct {
-	RequestID string
-	Handler   func([]byte) error
+	RequestID    string
+	Handler      func([]byte, error) error // Internal handler that processes raw data
+	ParseAndCall func([]byte, error) error // Wrapper that parses JSON and calls user handler
 }
 
 // GlobalResponseHandler handles all possible response types
@@ -86,7 +114,7 @@ func (g *GlobalResponseHandler) HandleResponse(responseType string, data interfa
 type Client struct {
 	conn                  *websocket.Conn
 	url                   string
-	responseHandlers      map[string]func([]byte) error
+	responseHandlers      map[string]*ResponseHandler
 	globalResponseHandler *GlobalResponseHandler
 	responseList          []interface{} // Global list of all received responses
 	auth                  *Auth // Authentication configuration
@@ -101,7 +129,7 @@ func NewClient() *Client {
 	baseURL := "${serverUrl.protocol()}://${serverUrl.host()}${serverUrl.pathname()}"
 	return &Client{
 		url:                   baseURL,
-		responseHandlers:      make(map[string]func([]byte) error),
+		responseHandlers:      make(map[string]*ResponseHandler),
 		globalResponseHandler: NewGlobalResponseHandler(),
 		responseList:          make([]interface{}, 0),
 		done:                  make(chan struct{}),
@@ -163,10 +191,87 @@ func GenerateRequestID() string {
 
       <Text newLines={2}>
         {`// registerResponseHandler registers a response handler for a specific request ID
-func (c *Client) registerResponseHandler(requestID string, handler func([]byte) error) {
+func (c *Client) registerResponseHandler(requestID string, handler func([]byte, error) error) {
 	c.mu.Lock()
-	c.responseHandlers[requestID] = handler
+	c.responseHandlers[requestID] = &ResponseHandler{
+		RequestID:    requestID,
+		Handler:      handler,
+		ParseAndCall: handler, // For backward compatibility
+	}
 	c.mu.Unlock()
+}
+
+// registerTypedResponseHandler registers a typed response handler with automatic JSON parsing
+// This method uses reflection to handle the parsing since Go methods cannot have type parameters
+func (c *Client) registerTypedResponseHandler(requestID string, responseType interface{}, userHandler interface{}) error {
+	// Validate that userHandler is a function with the expected signature
+	handlerValue := reflect.ValueOf(userHandler)
+	handlerType := handlerValue.Type()
+	
+	if handlerType.Kind() != reflect.Func {
+		return fmt.Errorf("userHandler must be a function")
+	}
+	
+	if handlerType.NumIn() != 2 || handlerType.NumOut() != 1 {
+		return fmt.Errorf("userHandler must have signature func(*T, error) error")
+	}
+	
+	responseTypeReflect := reflect.TypeOf(responseType)
+	if responseTypeReflect.Kind() == reflect.Ptr {
+		responseTypeReflect = responseTypeReflect.Elem()
+	}
+	
+	wrapper := func(data []byte, err error) error {
+		if err != nil {
+			// If there's an API error, call the user handler with nil response and the error
+			args := []reflect.Value{
+				reflect.Zero(reflect.PtrTo(responseTypeReflect)), // nil pointer to response type
+				reflect.ValueOf(err),
+			}
+			results := handlerValue.Call(args)
+			if !results[0].IsNil() {
+				return results[0].Interface().(error)
+			}
+			return nil
+		}
+		
+		// Create a new instance of the response type
+		responsePtr := reflect.New(responseTypeReflect)
+		
+		// Parse the JSON response
+		if parseErr := json.Unmarshal(data, responsePtr.Interface()); parseErr != nil {
+			// If JSON parsing fails, pass the parse error to the user handler
+			args := []reflect.Value{
+				reflect.Zero(reflect.PtrTo(responseTypeReflect)), // nil pointer to response type
+				reflect.ValueOf(fmt.Errorf("failed to parse response: %w", parseErr)),
+			}
+			results := handlerValue.Call(args)
+			if !results[0].IsNil() {
+				return results[0].Interface().(error)
+			}
+			return nil
+		}
+		
+		// Call the user handler with the parsed response
+		args := []reflect.Value{
+			responsePtr,
+			reflect.Zero(reflect.TypeOf((*error)(nil)).Elem()), // nil error
+		}
+		results := handlerValue.Call(args)
+		if !results[0].IsNil() {
+			return results[0].Interface().(error)
+		}
+		return nil
+	}
+	
+	c.mu.Lock()
+	c.responseHandlers[requestID] = &ResponseHandler{
+		RequestID:    requestID,
+		Handler:      wrapper,
+		ParseAndCall: wrapper,
+	}
+	c.mu.Unlock()
+	return nil
 }`}
       </Text>
 
@@ -246,13 +351,17 @@ func (c *Client) readMessages() {
 
       <Text newLines={2}>
         {`// handleResponse routes responses to the appropriate handler based on request ID
-// and also handles oneOf response types
+// and also handles oneOf response types. Checks for API errors based on status code.
 func (c *Client) handleResponse(data []byte) {
-	// Parse the response to extract the request ID
+	// Parse the response to extract the request ID, status, and error
 	var response struct {
 		ID     interface{} \`json:"id"\`
 		Result interface{} \`json:"result,omitempty"\`
 		Status interface{} \`json:"status,omitempty"\`
+		Error  *struct {
+			Code    int    \`json:"code"\`
+			Message string \`json:"msg"\`
+		} \`json:"error,omitempty"\`
 	}
 	
 	if err := json.Unmarshal(data, &response); err != nil {
@@ -274,18 +383,42 @@ func (c *Client) handleResponse(data []byte) {
 	// Add to global response list
 	c.addToResponseList(response)
 
-	// Handle oneOf result types if present
-	if response.Result != nil {
+	// Check for API errors based on status code
+	var apiError error
+	if response.Status != nil {
+		var status int
+		switch s := response.Status.(type) {
+		case float64:
+			status = int(s)
+		case int:
+			status = s
+		default:
+			status = 0
+		}
+		
+		// If status is not 200, create an APIError
+		if status != 200 && response.Error != nil {
+			apiError = APIError{
+				Status:  status,
+				Code:    response.Error.Code,
+				Message: response.Error.Message,
+				ID:      requestID,
+			}
+		}
+	}
+
+	// Handle oneOf result types if present and no error
+	if response.Result != nil && apiError == nil {
 		c.handleOneOfResult(response.Result, data)
 	}
 
 	// Handle specific request ID handlers
 	c.mu.RLock()
-	handler, exists := c.responseHandlers[requestID]
+	responseHandler, exists := c.responseHandlers[requestID]
 	c.mu.RUnlock()
 
-	if exists && handler != nil {
-		if err := handler(data); err != nil {
+	if exists && responseHandler != nil && responseHandler.ParseAndCall != nil {
+		if err := responseHandler.ParseAndCall(data, apiError); err != nil {
 			log.Printf("Error handling response for request ID %s: %v", requestID, err)
 		}
 		
@@ -294,7 +427,11 @@ func (c *Client) handleResponse(data []byte) {
 		delete(c.responseHandlers, requestID)
 		c.mu.Unlock()
 	} else {
-		log.Printf("No specific handler found for request ID: %s", requestID)
+		if apiError != nil {
+			log.Printf("API error for request ID %s with no handler: %v", requestID, apiError)
+		} else {
+			log.Printf("No specific handler found for request ID: %s", requestID)
+		}
 	}
 }`}
       </Text>
@@ -349,10 +486,21 @@ func (c *Client) mapEventTypeToStructType(eventType string) string {
       <Text newLines={2}>
         {`// Usage Examples:
 //
-// 1. Using auto-generated request ID with context (ID and Method will be set automatically):
+// 1. Using auto-generated request ID with context and typed response handler:
 //    ctx := context.Background()
 //    request := &models.AccountCommissionAccountCommissionRatesRequest{}
-//    client.SendAccountCommission(ctx, request, responseHandler)
+//    client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+//        if err != nil {
+//            if apiErr, ok := IsAPIError(err); ok {
+//                log.Printf("API Error: Status=%d, Code=%d, Message=%s", apiErr.Status, apiErr.Code, apiErr.Message)
+//                return nil
+//            }
+//            return err
+//        }
+//        // Handle successful response - response is already parsed!
+//        log.Printf("Account commission: %+v", response)
+//        return nil
+//    })
 //
 // 2. Using custom request ID with context:
 //    ctx := context.Background()
@@ -370,7 +518,27 @@ func (c *Client) mapEventTypeToStructType(eventType string) string {
 //
 // 4. Using default parameters with context (ID and Method are pre-filled):
 //    ctx := context.Background()
-//    client.SendAccountCommissionDefault(ctx, responseHandler)
+//    client.SendAccountCommissionDefault(ctx, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+//        if err != nil {
+//            if apiErr, ok := IsAPIError(err); ok {
+//                switch apiErr.Status {
+//                case 400:
+//                    log.Printf("Bad request: %s", apiErr.Message)
+//                case 403:
+//                    log.Printf("Forbidden: %s", apiErr.Message)
+//                case 429:
+//                    log.Printf("Rate limit exceeded: %s", apiErr.Message)
+//                default:
+//                    log.Printf("API error: %s", apiErr.Error())
+//                }
+//                return nil // Error handled
+//            }
+//            return err // Other error types
+//        }
+//        // Response is automatically parsed - no need for json.Unmarshal!
+//        log.Printf("Account commission rates: %+v", response.Result)
+//        return nil
+//    })
 //
 // 5. Generating request ID for later use:
 //    customID := GenerateRequestID()
@@ -378,7 +546,22 @@ func (c *Client) mapEventTypeToStructType(eventType string) string {
 //        Id: customID,
 //    }
 //    ctx := context.Background()
-//    client.SendAccountCommission(ctx, request, responseHandler)`}
+//    client.SendAccountCommission(ctx, request, responseHandler)
+//
+// 6. Ping example with automatic parsing:
+//    ctx := context.Background()
+//    client.SendPingDefault(ctx, func(response *models.PingTestConnectivityResponse, err error) error {
+//        if err != nil {
+//            if apiErr, ok := IsAPIError(err); ok {
+//                log.Printf("Ping failed: %s", apiErr.Error())
+//                return nil
+//            }
+//            return err
+//        }
+//        // No JSON unmarshaling needed - response is ready to use!
+//        log.Printf("Ping successful: ID=%s, Status=%d", response.Id, response.Status)
+//        return nil
+//    })`}
       </Text>
 
       <Text newLines={2}>

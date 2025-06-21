@@ -1,6 +1,6 @@
 # Binance AsyncAPI Go WebSocket Client Template
 
-This template generates **Go WebSocket clients** for Binance's WebSocket API based on AsyncAPI 3.0 specifications. It provides comprehensive support for **oneOf response types** and **async response management**.
+This template generates **Go WebSocket clients** for Binance's WebSocket API based on AsyncAPI 3.0 specifications. It provides comprehensive support for **oneOf response types**, **async response management**, and **enhanced error handling**.
 
 > **Note**: This template is specifically designed for Go language. For other languages, use the corresponding language-specific templates.
 
@@ -65,12 +65,93 @@ npm run generate
 - ✅ **AsyncAPI 3.0 Compatible**: Full support for AsyncAPI 3.0 specifications
 - ✅ **OneOf Support**: Automatic handling of multiple response types in a single endpoint
 - ✅ **Async Response Management**: Global response list and type-safe handlers
+- ✅ **Enhanced Error Handling**: Comprehensive API error handling with status codes
+- ✅ **Automatic JSON Parsing**: Response handlers receive parsed objects, not raw bytes
 - ✅ **Type-Safe Go Client**: Generated Go structs with proper types
 - ✅ **Event-Driven Architecture**: Support for WebSocket event handling
 - ✅ **Response History**: Track all received messages with queryable history
 - ✅ **Gorilla WebSocket**: Built on reliable WebSocket implementation
 - ✅ **Thread-Safe**: Concurrent-safe operations with proper locking
 - ✅ **Environment Variable Support**: Configurable via environment variables
+
+## Error Handling
+
+### APIError Structure
+
+The client includes a comprehensive error handling system that automatically detects and processes API errors based on HTTP-like status codes:
+
+```go
+type APIError struct {
+    Status  int    `json:"status"`  // HTTP-like status code (400, 403, 429, etc.)
+    Code    int    `json:"code"`    // Binance-specific error code
+    Message string `json:"msg"`     // Error message
+    ID      string `json:"id"`      // Request ID that caused the error
+}
+```
+
+### Error Detection
+
+The client automatically detects API errors when:
+- Response `status` field is not `200` 
+- Response contains an `error` field with `code` and `msg`
+
+### Error Handling Examples
+
+```go
+// Example 1: Basic error handling with automatic JSON parsing
+responseHandler := func(response *models.PingTestConnectivityResponse, err error) error {
+    if err != nil {
+        if apiErr, ok := IsAPIError(err); ok {
+            log.Printf("API Error: Status=%d, Code=%d, Message=%s", 
+                apiErr.Status, apiErr.Code, apiErr.Message)
+            return nil // Error handled
+        }
+        return err // Other error types
+    }
+    
+    // Response is automatically parsed - no JSON unmarshaling needed!
+    log.Printf("Ping successful: ID=%s, Status=%d", response.Id, response.Status)
+    return nil
+}
+
+// Example 2: Handling specific error types
+responseHandler := func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+    if err != nil {
+        if apiErr, ok := IsAPIError(err); ok {
+            switch apiErr.Status {
+            case 400:
+                log.Printf("Bad request: %s", apiErr.Message)
+            case 403:
+                log.Printf("Forbidden - WAF blocked: %s", apiErr.Message)
+            case 409:
+                log.Printf("Partial failure: %s", apiErr.Message)
+            case 418:
+                log.Printf("Auto-banned for rate limit violation: %s", apiErr.Message)
+            case 429:
+                log.Printf("Rate limit exceeded: %s", apiErr.Message)
+            default:
+                log.Printf("API error: %s", apiErr.Error())
+            }
+            return nil // Error handled
+        }
+        return err // Other error types
+    }
+    
+    // Response is ready to use - already parsed!
+    log.Printf("Commission rates: %+v", response.Result)
+    return nil
+}
+```
+
+### Response Handler Signature
+
+All response handlers receive parsed response objects, not raw bytes:
+
+```go
+func(response *models.SomeResponseType, err error) error
+```
+
+This provides a user-friendly API where you can directly access response fields without manual JSON unmarshaling.
 
 ## OneOf Features
 
@@ -91,10 +172,10 @@ The client automatically detects the event type based on distinctive fields (lik
 
 ## Usage Examples
 
-### Basic OneOf Handling
+### Basic OneOf Handling with Error Support
 
 ```go
-// Subscribe to user data stream with automatic oneOf parsing
+// Subscribe to user data stream with automatic oneOf parsing and error handling
 err := client.UserDataStreamSubscribeWithOneOfHandler(func(result interface{}, responseType string) error {
     switch responseType {
     case "ExecutionReportEvent":
@@ -163,7 +244,6 @@ import (
 	"context"
 	"log"
 	"time"
-	"encoding/json"
 
 	"binance-websocket-client/models"
 )
@@ -209,13 +289,20 @@ func main() {
 	// Setup default handlers for all user data stream event types
 	client.SetupDefaultUserDataStreamHandlers()
 
-	// Example 1: Using the ping API to test connectivity
+	// Example 1: Using the ping API to test connectivity with error handling
 	log.Println("Example 1: Testing connectivity with ping")
 	err := client.SendPingDefault(ctx, func(response *models.PingTestConnectivityResponse, err error) error {
 		if err != nil {
+			if apiErr, ok := IsAPIError(err); ok {
+				log.Printf("Ping API error: Status=%d, Code=%d, Message=%s", 
+					apiErr.Status, apiErr.Code, apiErr.Message)
+				return nil
+			}
 			log.Printf("Ping error: %v", err)
 			return err
 		}
+		
+		// Response is already parsed - ready to use!
 		log.Printf("Ping response: ID=%s, Status=%d", response.Id, response.Status)
 		return nil
 	})
@@ -223,13 +310,26 @@ func main() {
 		log.Printf("Error sending ping: %v", err)
 	}
 
-	// Example 2: Get server time
+	// Example 2: Get server time with comprehensive error handling
 	log.Println("Example 2: Getting server time")
 	err = client.SendTimeDefault(ctx, func(response *models.TimeCheckServerTimeResponse, err error) error {
 		if err != nil {
+			if apiErr, ok := IsAPIError(err); ok {
+				switch apiErr.Status {
+				case 429:
+					log.Printf("Rate limit exceeded: %s", apiErr.Message)
+				case 403:
+					log.Printf("Access forbidden: %s", apiErr.Message)
+				default:
+					log.Printf("API error: %s", apiErr.Error())
+				}
+				return nil
+			}
 			log.Printf("Time error: %v", err)
 			return err
 		}
+		
+		// Response is automatically parsed
 		log.Printf("Time response: ID=%s, Status=%d", response.Id, response.Status)
 		if response.Result.ServerTime != 0 {
 			serverTime := time.UnixMilli(response.Result.ServerTime)
@@ -245,9 +345,15 @@ func main() {
 	log.Println("Example 3: Getting exchange information")
 	err = client.SendExchangeInfoDefault(ctx, func(response *models.ExchangeInfoExchangeInformationResponse, err error) error {
 		if err != nil {
+			if apiErr, ok := IsAPIError(err); ok {
+				log.Printf("ExchangeInfo API error: %s", apiErr.Error())
+				return nil
+			}
 			log.Printf("ExchangeInfo error: %v", err)
 			return err
 		}
+		
+		// Response is automatically parsed
 		log.Printf("ExchangeInfo response: ID=%s, Status=%d", response.Id, response.Status)
 		if len(response.Result.Symbols) > 0 {
 			log.Printf("Total symbols: %d", len(response.Result.Symbols))
@@ -258,7 +364,7 @@ func main() {
 		log.Printf("Error getting exchange info: %v", err)
 	}
 
-	// Example 4: Get order book for BTCUSDT
+	// Example 4: Get order book for BTCUSDT with error handling
 	log.Println("Example 4: Getting order book for BTCUSDT")
 	depthRequest := &models.DepthOrderBookRequest{
 		Params: models.DepthOrderBookRequestParams{
@@ -268,9 +374,15 @@ func main() {
 	}
 	err = client.SendDepth(ctx, depthRequest, func(response *models.DepthOrderBookResponse, err error) error {
 		if err != nil {
+			if apiErr, ok := IsAPIError(err); ok {
+				log.Printf("Depth API error: %s", apiErr.Error())
+				return nil
+			}
 			log.Printf("Depth error: %v", err)
 			return err
 		}
+		
+		// Response is automatically parsed
 		log.Printf("Depth response: ID=%s, Status=%d", response.Id, response.Status)
 		if response.Result.LastUpdateId != 0 {
 			log.Printf("Last update ID: %d", response.Result.LastUpdateId)
@@ -296,13 +408,7 @@ func main() {
 	// Display last few responses
 	for i, response := range history {
 		if i >= len(history)-3 { // Show last 3 responses
-			if responseBytes, err := json.Marshal(response); err == nil {
-				responseStr := string(responseBytes)
-				if len(responseStr) > 200 {
-					responseStr = responseStr[:200] + "..."
-				}
-				log.Printf("Response %d: %s", i+1, responseStr)
-			}
+			log.Printf("Response %d: %+v", i+1, response)
 		}
 	}
 
@@ -323,7 +429,7 @@ The template generates the following structure:
 
 ```
 output/
-├── client.go              # Main WebSocket client with oneOf support
+├── client.go              # Main WebSocket client with oneOf support and error handling
 ├── go.mod                 # Go module file
 ├── models/
 │   ├── models.go         # Common utilities and response registry
@@ -411,6 +517,40 @@ if event, ok := result.AsExecutionReportEvent(); ok {
 }
 ```
 
+### APIError Utilities
+
+Helper functions for working with API errors:
+
+```go
+// Check if an error is an APIError
+if apiErr, ok := IsAPIError(err); ok {
+    // Handle API-specific error
+    log.Printf("Status: %d, Code: %d, Message: %s", 
+        apiErr.Status, apiErr.Code, apiErr.Message)
+}
+
+// APIError implements the error interface
+fmt.Printf("Error: %s", apiErr.Error())
+```
+
+### Automatic JSON Parsing
+
+The client automatically handles JSON parsing for all response types:
+
+```go
+// No manual JSON unmarshaling needed
+func(response *models.PingTestConnectivityResponse, err error) error {
+    if err != nil {
+        // Handle error
+        return err
+    }
+    
+    // Response is ready to use
+    log.Printf("Ping ID: %s", response.Id)
+    return nil
+}
+```
+
 ## Configuration
 
 The template supports the following parameters:
@@ -464,10 +604,24 @@ All client operations are thread-safe:
 
 The template provides comprehensive error handling:
 
-- Connection errors with context support
-- JSON parsing errors with detailed messages
-- Type conversion errors with fallback handling
-- OneOf parsing errors with clear diagnostics
+- **API Errors**: Automatic detection and parsing of Binance API errors
+- **Status Code Handling**: Support for all HTTP-like status codes (400, 403, 409, 418, 429, 5xx)
+- **Type-Safe Error Checking**: `IsAPIError()` function for type-safe error handling
+- **Connection Errors**: Context support for timeouts and cancellation
+- **JSON Parsing Errors**: Automatic handling with error propagation
+- **OneOf Parsing Errors**: Clear diagnostics for type detection issues
+
+### Common Status Codes
+
+| Status | Description | Handling |
+|--------|-------------|----------|
+| 200 | Success | Normal response processing |
+| 400 | Bad Request | Check request parameters |
+| 403 | Forbidden | WAF blocked - check request format |
+| 409 | Conflict | Partial success - check error details |
+| 418 | I'm a teapot | Auto-banned for rate limit violations |
+| 429 | Too Many Requests | Rate limit exceeded - slow down |
+| 5xx | Server Error | Retry with exponential backoff |
 
 ## Troubleshooting
 
@@ -507,9 +661,26 @@ For module path issues, update the module name:
 MODULE_NAME=github.com/your-org/your-client npm run generate
 ```
 
+### API Error Troubleshooting
+
+```go
+// Debug API errors - response is already parsed
+responseHandler := func(response *models.SomeResponseType, err error) error {
+    if err != nil {
+        if apiErr, ok := IsAPIError(err); ok {
+            log.Printf("Debug - Full API Error: %+v", apiErr)
+        }
+    } else if response != nil {
+        log.Printf("Successful response: %+v", response)
+    }
+    return nil
+}
+```
+
 ## Dependencies
 
 - `github.com/gorilla/websocket`: WebSocket implementation
+- `github.com/google/uuid`: UUID generation for request IDs
 - Standard Go libraries: `encoding/json`, `sync`, `context`, etc.
 
 ## Contributing
