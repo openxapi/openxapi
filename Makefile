@@ -133,28 +133,21 @@ generate-ws-sdk:
 		echo "Usage: make generate-ws-sdk EXCHANGE=<exchange> LANGUAGE=<language> OUTPUT_DIR=<output_dir>"; \
 		exit 1; \
 	fi
-	@if [ -z "${ASYNCAPI_CLI}" ]; then \
-		echo "ASYNCAPI_CLI is not set. Please set it to the path of the asyncapi-cli executable."; \
-		exit 1; \
-	fi
 	@if [ "${EXCHANGE}" == "binance" ]; then \
 		if [ "${LANGUAGE}" == "go" ]; then \
 			for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
 				echo "Generating ${EXCHANGE} go ws SDK for $$file"; \
 				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
-				REAL_OUTPUT_DIR=${REAL_OUTPUT_DIR:-${OUTPUT_DIR}} \
-				rm -rf ${REAL_OUTPUT_DIR}/$$subdir; \
-				if [ -f "generator-configs/${EXCHANGE}/asyncapi/${LANGUAGE}/$$subdir.json" ]; then \
-					echo "Using dedicated generator config for $$subdir module"; \
-					cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
-					MODULE=$$subdir \
-					OUTPUT_DIR=../../../../${OUTPUT_DIR}/$$subdir \
-					npm run generate:module; \
-				fi; \
+				rm -rf ${OUTPUT_DIR}/$$subdir; \
+				cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
+				MODULE=$$subdir \
+				OUTPUT_DIR=${OUTPUT_DIR}/$$subdir \
+				ASYNCAPI_CLI=${ASYNCAPI_CLI:-asyncapi} \
+				npm run generate:module; \
 			done \
 		fi \
 	fi
-	
+
 release:
 	@if [ -z "${EXCHANGE}" -o -z "${VERSION}" -o -z "${BASE_OUTPUT_DIR}" ]; then \
 		echo "Usage: make release EXCHANGE=<exchange> VERSION=<version> BASE_OUTPUT_DIR=<base_output_dir>"; \
