@@ -31,6 +31,7 @@ export default function ({ asyncapi, params }) {
       <Text>package {packageName}</Text>
       <Text newLines={2}>
         {`import (
+	"context"
 	"crypto"
 	"crypto/ed25519"
 	"crypto/hmac"
@@ -128,6 +129,14 @@ func (a *Auth) SetPrivateKeyReader(reader io.Reader) {
         {`// SetPassphrase sets the passphrase for encrypted private keys
 func (a *Auth) SetPassphrase(passphrase string) {
 	a.Passphrase = passphrase
+}
+
+// ContextWithValue returns a context with the Auth value attached
+func (a *Auth) ContextWithValue(ctx context.Context) (context.Context, error) {
+	if a.APIKey == "" {
+		return nil, fmt.Errorf("API key is required")
+	}
+	return context.WithValue(ctx, ContextBinanceAuth, *a), nil
 }`}
       </Text>
 

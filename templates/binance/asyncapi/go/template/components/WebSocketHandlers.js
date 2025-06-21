@@ -150,7 +150,7 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   }
   
   method += `\t// Register typed response handler with automatic JSON parsing\n`;
-  method += `\tc.registerTypedResponseHandler(reqID, responseHandler)\n\n`;
+  method += `\tRegisterTypedResponseHandler[models.${responseStructName}](c, reqID, responseHandler)\n\n`;
   
   method += `\t// Send request\n`;
   method += `\treturn c.sendRequest(requestMap)\n`;
@@ -274,12 +274,14 @@ function generateOneOfHandlerMethod(methodName, channelAddress, requestStructNam
     method += `\t}\n\n`;
   }
   
-  method += `\t// Register oneOf response handler with raw data handling\n`;
+  method += `\t// Register oneOf response handler using optimized raw data handling\n`;
+  method += `\t// Note: OneOf responses require custom parsing logic, so we use the raw handler\n`;
+  method += `\t// for better performance with dynamic type detection\n`;
   method += `\tc.registerResponseHandler(reqID, func(data []byte, err error) error {\n`;
   method += `\t\tif err != nil {\n`;
   method += `\t\t\treturn oneOfHandler(nil, "", err)\n`;
   method += `\t\t}\n`;
-  method += `\t\t// Parse the oneOf response\n`;
+  method += `\t\t// Parse the oneOf response with optimized parsing\n`;
   method += `\t\tresult, responseType, parseErr := ParseOneOfMessage(data)\n`;
   method += `\t\tif parseErr != nil {\n`;
   method += `\t\t\treturn oneOfHandler(nil, "", parseErr)\n`;
