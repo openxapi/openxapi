@@ -460,48 +460,7 @@ func (c *Client) mapEventTypeToStructType(eventType string) string {
 	}
 }
 
-// registerTypedResponseHandler provides backward compatibility for the old method name
-// This method delegates to the new global function for better performance
-func (c *Client) registerTypedResponseHandler(requestID string, responseType interface{}, userHandler interface{}) error {
-	// This is a backward compatibility wrapper that tries to handle the old reflection-based calls
-	// However, the new approach is strongly recommended for better performance
-	log.Printf("Warning: registerTypedResponseHandler is deprecated. Use RegisterTypedResponseHandler[T] instead for better performance and type safety")
-	
-	// For backward compatibility, we'll create a basic handler that parses JSON generically
-	wrapper := func(data []byte, err error) error {
-		if err != nil {
-			// Try to call the user handler with error
-			if handlerFunc, ok := userHandler.(func(interface{}, error) error); ok {
-				return handlerFunc(nil, err)
-			}
-			log.Printf("Error in deprecated handler for request %s: %v", requestID, err)
-			return err
-		}
-		
-		// Parse JSON into generic interface
-		var result interface{}
-		if parseErr := json.Unmarshal(data, &result); parseErr != nil {
-			if handlerFunc, ok := userHandler.(func(interface{}, error) error); ok {
-				return handlerFunc(nil, fmt.Errorf("failed to parse response: %w", parseErr))
-			}
-			return parseErr
-		}
-		
-		// Try to call the user handler with parsed data
-		if handlerFunc, ok := userHandler.(func(interface{}, error) error); ok {
-			return handlerFunc(result, nil)
-		}
-		
-		log.Printf("Response received for request %s (using deprecated handler)", requestID)
-		return nil
-	}
-	
-	c.responseHandlers.Store(requestID, &ResponseHandler{
-		RequestID: requestID,
-		Handler:   wrapper,
-	})
-	return nil
-}`}
+`}
       </Text>
 
       <Text newLines={2}>
