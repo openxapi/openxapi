@@ -31,6 +31,7 @@ export default function ({ asyncapi, params }) {
       <Text>package {packageName}</Text>
       <Text newLines={2}>
         {`import (
+	"context"
 	"crypto"
 	"crypto/ed25519"
 	"crypto/hmac"
@@ -128,6 +129,14 @@ func (a *Auth) SetPrivateKeyReader(reader io.Reader) {
         {`// SetPassphrase sets the passphrase for encrypted private keys
 func (a *Auth) SetPassphrase(passphrase string) {
 	a.Passphrase = passphrase
+}
+
+// ContextWithValue returns a context with the Auth value attached
+func (a *Auth) ContextWithValue(ctx context.Context) (context.Context, error) {
+	if a.APIKey == "" {
+		return nil, fmt.Errorf("API key is required")
+	}
+	return context.WithValue(ctx, ContextBinanceAuth, *a), nil
 }`}
       </Text>
 
@@ -381,95 +390,7 @@ func (s *RequestSigner) generateEd25519Signature(payload string) (string, error)
 }`}
       </Text>
 
-      <Text newLines={2}>
-        {`// Example usage functions for different authentication methods
 
-// ExampleHMACUsage demonstrates how to use HMAC authentication
-func ExampleHMACUsage() {
-	// Create HMAC auth
-	auth := NewAuth("your-api-key")
-	auth.SetSecretKey("your-secret-key")
-	signer := NewRequestSigner(auth)
-
-	// Sign a request
-	params := map[string]interface{}{
-		"symbol":           "BTCUSDT",
-		"side":             "SELL",
-		"type":             "LIMIT",
-		"timeInForce":      "GTC",
-		"quantity":         "0.01000000",
-		"price":            "52000.00",
-		"newOrderRespType": "ACK",
-		"recvWindow":       100,
-	}
-
-	err := signer.SignRequest(params, AuthTypeTrade)
-	if err != nil {
-		fmt.Printf("Error signing request: %v\\n", err)
-		return
-	}
-
-	fmt.Printf("Signed request parameters: %+v\\n", params)
-}
-
-// ExampleRSAUsage demonstrates how to use RSA authentication
-func ExampleRSAUsage() {
-	// Create RSA auth with private key file
-	auth := NewAuth("your-api-key")
-	auth.SetPrivateKeyPath("path/to/your/rsa-key.pem")
-	// Optional: auth.SetPassphrase("your-passphrase") if key is encrypted
-	signer := NewRequestSigner(auth)
-
-	// Sign a request
-	params := map[string]interface{}{
-		"symbol":           "BTCUSDT",
-		"side":             "SELL",
-		"type":             "LIMIT",
-		"timeInForce":      "GTC",
-		"quantity":         "0.01000000",
-		"price":            "52000.00",
-		"newOrderRespType": "ACK",
-		"recvWindow":       100,
-	}
-
-	err := signer.SignRequest(params, AuthTypeTrade)
-	if err != nil {
-		fmt.Printf("Error signing request: %v\\n", err)
-		return
-	}
-
-	fmt.Printf("Signed request parameters: %+v\\n", params)
-}
-
-// ExampleEd25519Usage demonstrates how to use Ed25519 authentication
-func ExampleEd25519Usage() {
-	// Create Ed25519 auth with private key file
-	auth := NewAuth("your-api-key")
-	auth.SetPrivateKeyPath("path/to/your/ed25519-key.pem")
-	// Optional: auth.SetPassphrase("your-passphrase") if key is encrypted
-	signer := NewRequestSigner(auth)
-
-	// Sign a request
-	params := map[string]interface{}{
-		"symbol":           "BTCUSDT",
-		"side":             "SELL",
-		"type":             "LIMIT",
-		"timeInForce":      "GTC",
-		"quantity":         "0.01000000",
-		"price":            "52000.00",
-		"newOrderRespType": "ACK",
-		"recvWindow":       100,
-	}
-
-	err := signer.SignRequest(params, AuthTypeTrade)
-	if err != nil {
-		fmt.Printf("Error signing request: %v\\n", err)
-		return
-	}
-
-	fmt.Printf("Signed request parameters: %+v\\n", params)
-}`}
-      </Text>
     </File>
   );
 } 

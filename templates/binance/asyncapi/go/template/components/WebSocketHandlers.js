@@ -109,7 +109,7 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   method += `\tif request.Id != "" {\n`;
   method += `\t\treqID = request.Id\n`;
   method += `\t} else {\n`;
-  method += `\t\treqID = c.generateRequestID()\n`;
+  method += `\t\treqID = GenerateRequestID()\n`;
   method += `\t\trequest.Id = reqID\n`;
   method += `\t}\n`;
   method += `\trequest.Method = "${channelAddress}"\n\n`;
@@ -149,14 +149,8 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
     method += `\t}\n\n`;
   }
   
-  method += `\t// Register typed response handler\n`;
-  method += `\tc.registerResponseHandler(reqID, func(data []byte) error {\n`;
-  method += `\t\tvar response models.${responseStructName}\n`;
-  method += `\t\tif err := json.Unmarshal(data, &response); err != nil {\n`;
-  method += `\t\t\treturn responseHandler(nil, fmt.Errorf("failed to unmarshal response: %w", err))\n`;
-  method += `\t\t}\n`;
-  method += `\t\treturn responseHandler(&response, nil)\n`;
-  method += `\t})\n\n`;
+  method += `\t// Register typed response handler with automatic JSON parsing\n`;
+  method += `\tRegisterTypedResponseHandler[models.${responseStructName}](c, reqID, responseHandler)\n\n`;
   
   method += `\t// Send request\n`;
   method += `\treturn c.sendRequest(requestMap)\n`;
@@ -215,7 +209,7 @@ function generateConvenienceMethod(operation, methodName, channelAddress, reques
   
   // Build request struct with default ID and Method
   method += `\trequest := &models.${requestStructName}{\n`;
-  method += `\t\tId:     c.generateRequestID(),\n`;
+  method += `\t\tId:     GenerateRequestID(),\n`;
   method += `\t\tMethod: "${channelAddress}",\n`;
   method += `\t}\n\n`;
   
@@ -240,7 +234,7 @@ function generateOneOfHandlerMethod(methodName, channelAddress, requestStructNam
   method += `\tif request.Id != "" {\n`;
   method += `\t\treqID = request.Id\n`;
   method += `\t} else {\n`;
-  method += `\t\treqID = c.generateRequestID()\n`;
+  method += `\t\treqID = GenerateRequestID()\n`;
   method += `\t\trequest.Id = reqID\n`;
   method += `\t}\n`;
   method += `\trequest.Method = "${channelAddress}"\n\n`;
@@ -280,11 +274,19 @@ function generateOneOfHandlerMethod(methodName, channelAddress, requestStructNam
     method += `\t}\n\n`;
   }
   
-  method += `\t// Register oneOf response handler\n`;
-  method += `\tc.registerResponseHandler(reqID, func(data []byte) error {\n`;
-  method += `\t\t// Parse the oneOf response\n`;
-  method += `\t\tresult, responseType, err := ParseOneOfMessage(data)\n`;
-  method += `\t\treturn oneOfHandler(result, responseType, err)\n`;
+  method += `\t// Register oneOf response handler using optimized raw data handling\n`;
+  method += `\t// Note: OneOf responses require custom parsing logic, so we use the raw handler\n`;
+  method += `\t// for better performance with dynamic type detection\n`;
+  method += `\tc.registerResponseHandler(reqID, func(data []byte, err error) error {\n`;
+  method += `\t\tif err != nil {\n`;
+  method += `\t\t\treturn oneOfHandler(nil, "", err)\n`;
+  method += `\t\t}\n`;
+  method += `\t\t// Parse the oneOf response with optimized parsing\n`;
+  method += `\t\tresult, responseType, parseErr := ParseOneOfMessage(data)\n`;
+  method += `\t\tif parseErr != nil {\n`;
+  method += `\t\t\treturn oneOfHandler(nil, "", parseErr)\n`;
+  method += `\t\t}\n`;
+  method += `\t\treturn oneOfHandler(result, responseType, nil)\n`;
   method += `\t})\n\n`;
   
   method += `\t// Send request\n`;
@@ -358,11 +360,6 @@ func (c *Client) SetupDefaultUserDataStreamHandlers() {
 		log.Printf("Received ExternalLockUpdateEvent: %+v", data)
 		return nil
 	})
-
-	c.RegisterGlobalHandler("EventStreamTerminatedEvent", func(data interface{}) error {
-		log.Printf("Received EventStreamTerminatedEvent: %+v", data)
-		return nil
-	})
 }
 
 `;
@@ -371,24 +368,81 @@ func (c *Client) SetupDefaultUserDataStreamHandlers() {
 }
 
 /*
- * Generate UserDataStream convenience methods
+ * Generate UserDataStream convenience methods for easy setup
  */
 function generateUserDataStreamConvenienceMethods() {
-  return `// UserDataStreamSubscribe is a convenience method for userDataStream.subscribe with typed response
-func (c *Client) UserDataStreamSubscribe(ctx context.Context, request *models.UserDataStreamSubscribeSubscribeToUserDataStreamRequest, responseHandler func(*models.UserDataStreamSubscribeSubscribeToUserDataStreamResponse, error) error) error {
-	return c.SendUserDataStreamSubscribe(ctx, request, responseHandler)
+  return `// UserDataStreamConvenienceHandlers provides an easy way to set up handlers for user data stream events
+type UserDataStreamConvenienceHandlers struct {
+	OnExecutionReport          func(*models.ExecutionReportEvent) error
+	OnBalanceUpdate           func(*models.BalanceUpdateEvent) error
+	OnOutboundAccountPosition func(*models.OutboundAccountPositionEvent) error
+	OnListStatus              func(*models.ListStatusEvent) error
+	OnListenKeyExpired        func(*models.ListenKeyExpiredEvent) error
+	OnExternalLockUpdate      func(*models.ExternalLockUpdateEvent) error
 }
 
-// UserDataStreamUnsubscribe is a convenience method for userDataStream.unsubscribe with typed response
-func (c *Client) UserDataStreamUnsubscribe(ctx context.Context, request *models.UserDataStreamUnsubscribeUnsubscribeFromUserDataStreamRequest, responseHandler func(*models.UserDataStreamUnsubscribeUnsubscribeFromUserDataStreamResponse, error) error) error {
-	return c.SendUserDataStreamUnsubscribe(ctx, request, responseHandler)
+// SetupUserDataStreamHandlers sets up typed handlers for user data stream events
+func (c *Client) SetupUserDataStreamHandlers(handlers *UserDataStreamConvenienceHandlers) {
+	if handlers.OnExecutionReport != nil {
+		c.RegisterGlobalHandler("ExecutionReportEvent", func(data interface{}) error {
+			if event, ok := data.(*models.ExecutionReportEvent); ok {
+				return handlers.OnExecutionReport(event)
+			}
+			return nil
+		})
+	}
+
+	if handlers.OnBalanceUpdate != nil {
+		c.RegisterGlobalHandler("BalanceUpdateEvent", func(data interface{}) error {
+			if event, ok := data.(*models.BalanceUpdateEvent); ok {
+				return handlers.OnBalanceUpdate(event)
+			}
+			return nil
+		})
+	}
+
+	if handlers.OnOutboundAccountPosition != nil {
+		c.RegisterGlobalHandler("OutboundAccountPositionEvent", func(data interface{}) error {
+			if event, ok := data.(*models.OutboundAccountPositionEvent); ok {
+				return handlers.OnOutboundAccountPosition(event)
+			}
+			return nil
+		})
+	}
+
+	if handlers.OnListStatus != nil {
+		c.RegisterGlobalHandler("ListStatusEvent", func(data interface{}) error {
+			if event, ok := data.(*models.ListStatusEvent); ok {
+				return handlers.OnListStatus(event)
+			}
+			return nil
+		})
+	}
+
+	if handlers.OnListenKeyExpired != nil {
+		c.RegisterGlobalHandler("ListenKeyExpiredEvent", func(data interface{}) error {
+			if event, ok := data.(*models.ListenKeyExpiredEvent); ok {
+				return handlers.OnListenKeyExpired(event)
+			}
+			return nil
+		})
+	}
+
+	if handlers.OnExternalLockUpdate != nil {
+		c.RegisterGlobalHandler("ExternalLockUpdateEvent", func(data interface{}) error {
+			if event, ok := data.(*models.ExternalLockUpdateEvent); ok {
+				return handlers.OnExternalLockUpdate(event)
+			}
+			return nil
+		})
+	}
 }
 
 `;
 }
 
 /*
- * Get Go type from JSON schema type
+ * Get Go type based on property type
  */
 function getGoType(type) {
   switch (type) {
@@ -414,8 +468,10 @@ function getGoType(type) {
  */
 function toPascalCase(str) {
   return str
-    .replace(/[-_\s.]+(.)?/g, (_, char) => char ? char.toUpperCase() : '')
-    .replace(/^(.)/, (_, char) => char.toUpperCase());
+    .replace(/([a-z])([A-Z])/g, '$1_$2')
+    .split(/[^a-zA-Z0-9]/)
+    .map(word => capitalizeFirst(word.toLowerCase()))
+    .join('');
 }
 
 /*
