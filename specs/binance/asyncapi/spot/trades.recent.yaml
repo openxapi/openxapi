@@ -3,41 +3,35 @@ info:
     title: ""
     version: ""
 channels:
-    trades_recent:
-        address: trades.recent
+    spot:
+        address: /
         title: Channel trades.recent
         description: |-
             Get recent trades.
             If you need access to real-time trading activity, please consider using WebSocket Streams:
             - <symbol>@trade
         messages:
-            receiveMessage:
+            tradesRecentReceive:
                 $ref: '#/components/messages/tradesRecentReceive'
-            sendMessage:
+            tradesRecentSend:
                 $ref: '#/components/messages/tradesRecentSend'
-        parameters:
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            symbol:
-                location: $message.payload#/params/symbol
 operations:
     receiveTradesRecent:
         title: Receive from trades.recent
         description: Receive response from trades.recent
         action: receive
         channel:
-            $ref: '#/channels/trades_recent'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesRecentReceive'
+            - $ref: '#/channels/spot/messages/tradesRecentReceive'
     sendTradesRecent:
         title: Send to trades.recent
         description: Send a trades.recent request
         action: send
         channel:
-            $ref: '#/channels/trades_recent'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesRecentSend'
+            - $ref: '#/channels/spot/messages/tradesRecentSend'
 components:
     messages:
         tradesRecentReceive:

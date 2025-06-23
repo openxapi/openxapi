@@ -3,46 +3,34 @@ info:
     title: ""
     version: ""
 channels:
-    openOrders_cancelAll:
-        address: openOrders.cancelAll
+    spot:
+        address: /
         title: Channel openOrders.cancelAll
         description: |-
             Cancel all open orders on a symbol.
             This includes orders that are part of an order list.
         messages:
-            receiveMessage:
+            openOrdersCancelallReceive:
                 $ref: '#/components/messages/openOrdersCancelallReceive'
-            sendMessage:
+            openOrdersCancelallSend:
                 $ref: '#/components/messages/openOrdersCancelallSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveOpenordersCancelall:
         title: Receive from openOrders.cancelAll
         description: Receive response from openOrders.cancelAll
         action: receive
         channel:
-            $ref: '#/channels/openOrders_cancelAll'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrdersCancelallReceive'
+            - $ref: '#/channels/spot/messages/openOrdersCancelallReceive'
     sendOpenordersCancelall:
         title: Send to openOrders.cancelAll
         description: Send a openOrders.cancelAll request
         action: send
         channel:
-            $ref: '#/channels/openOrders_cancelAll'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrdersCancelallSend'
+            - $ref: '#/channels/spot/messages/openOrdersCancelallSend'
 components:
     messages:
         openOrdersCancelallReceive:

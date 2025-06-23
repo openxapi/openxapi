@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    session_logon:
-        address: session.logon
+    spot:
+        address: /
         title: Channel session.logon
         description: |-
             Authenticate WebSocket connection using the provided API key.
@@ -12,37 +12,27 @@ channels:
             Note that only one API key can be authenticated.
             Calling session.logon multiple times changes the current authenticated API key.
         messages:
-            receiveMessage:
+            sessionLogonReceive:
                 $ref: '#/components/messages/sessionLogonReceive'
-            sendMessage:
+            sessionLogonSend:
                 $ref: '#/components/messages/sessionLogonSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveSessionLogon:
         title: Receive from session.logon
         description: Receive response from session.logon
         action: receive
         channel:
-            $ref: '#/channels/session_logon'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sessionLogonReceive'
+            - $ref: '#/channels/spot/messages/sessionLogonReceive'
     sendSessionLogon:
         title: Send to session.logon
         description: Send a session.logon request
         action: send
         channel:
-            $ref: '#/channels/session_logon'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sessionLogonSend'
+            - $ref: '#/channels/spot/messages/sessionLogonSend'
 components:
     messages:
         sessionLogonReceive:

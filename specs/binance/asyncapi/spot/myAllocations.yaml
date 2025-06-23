@@ -3,51 +3,32 @@ info:
     title: ""
     version: ""
 channels:
-    myAllocations:
-        address: myAllocations
+    spot:
+        address: /
         title: Channel myAllocations
         description: Retrieves allocations resulting from SOR order placement.
         messages:
-            receiveMessage:
+            myAllocationsReceive:
                 $ref: '#/components/messages/myAllocationsReceive'
-            sendMessage:
+            myAllocationsSend:
                 $ref: '#/components/messages/myAllocationsSend'
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            fromAllocationId:
-                location: $message.payload#/params/fromAllocationId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                location: $message.payload#/params/orderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveMyallocations:
         title: Receive from myAllocations
         description: Receive response from myAllocations
         action: receive
         channel:
-            $ref: '#/channels/myAllocations'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myAllocationsReceive'
+            - $ref: '#/channels/spot/messages/myAllocationsReceive'
     sendMyallocations:
         title: Send to myAllocations
         description: Send a myAllocations request
         action: send
         channel:
-            $ref: '#/channels/myAllocations'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myAllocationsSend'
+            - $ref: '#/channels/spot/messages/myAllocationsSend'
 components:
     messages:
         myAllocationsReceive:

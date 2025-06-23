@@ -3,54 +3,32 @@ info:
     title: ""
     version: ""
 channels:
-    allOrders:
-        address: allOrders
+    spot:
+        address: /
         title: Channel allOrders
         description: Query information about all your orders – active, canceled, filled – filtered by time range.
         messages:
-            receiveMessage:
+            allOrdersReceive:
                 $ref: '#/components/messages/allOrdersReceive'
-            sendMessage:
+            allOrdersSend:
                 $ref: '#/components/messages/allOrdersSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            endTime:
-                location: $message.payload#/params/endTime
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                description: Order ID to begin at
-                location: $message.payload#/params/orderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveAllorders:
         title: Receive from allOrders
         description: Receive response from allOrders
         action: receive
         channel:
-            $ref: '#/channels/allOrders'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/allOrdersReceive'
+            - $ref: '#/channels/spot/messages/allOrdersReceive'
     sendAllorders:
         title: Send to allOrders
         description: Send a allOrders request
         action: send
         channel:
-            $ref: '#/channels/allOrders'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/allOrdersSend'
+            - $ref: '#/channels/spot/messages/allOrdersSend'
 components:
     messages:
         allOrdersReceive:

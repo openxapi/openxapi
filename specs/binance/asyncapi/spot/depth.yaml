@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    depth:
-        address: depth
+    spot:
+        address: /
         title: Channel depth
         description: |-
             Get current order book.
@@ -14,33 +14,27 @@ channels:
             - <symbol>@depth
             You can use depth request together with <symbol>@depth streams to maintain a local order book.
         messages:
-            receiveMessage:
+            depthReceive:
                 $ref: '#/components/messages/depthReceive'
-            sendMessage:
+            depthSend:
                 $ref: '#/components/messages/depthSend'
-        parameters:
-            limit:
-                description: 'Default: 100; Maximum: 5000'
-                location: $message.payload#/params/limit
-            symbol:
-                location: $message.payload#/params/symbol
 operations:
     receiveDepth:
         title: Receive from depth
         description: Receive response from depth
         action: receive
         channel:
-            $ref: '#/channels/depth'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/depthReceive'
+            - $ref: '#/channels/spot/messages/depthReceive'
     sendDepth:
         title: Send to depth
         description: Send a depth request
         action: send
         channel:
-            $ref: '#/channels/depth'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/depthSend'
+            - $ref: '#/channels/spot/messages/depthSend'
 components:
     messages:
         depthReceive:

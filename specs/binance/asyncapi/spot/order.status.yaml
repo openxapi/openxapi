@@ -3,50 +3,32 @@ info:
     title: ""
     version: ""
 channels:
-    order_status:
-        address: order.status
+    spot:
+        address: /
         title: Channel order.status
         description: Check execution status of an order.
         messages:
-            receiveMessage:
+            orderStatusReceive:
                 $ref: '#/components/messages/orderStatusReceive'
-            sendMessage:
+            orderStatusSend:
                 $ref: '#/components/messages/orderStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            orderId:
-                description: Lookup order by orderId
-                location: $message.payload#/params/orderId
-            origClientOrderId:
-                description: Lookup order by clientOrderId
-                location: $message.payload#/params/origClientOrderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveOrderStatus:
         title: Receive from order.status
         description: Receive response from order.status
         action: receive
         channel:
-            $ref: '#/channels/order_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderStatusReceive'
+            - $ref: '#/channels/spot/messages/orderStatusReceive'
     sendOrderStatus:
         title: Send to order.status
         description: Send a order.status request
         action: send
         channel:
-            $ref: '#/channels/order_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderStatusSend'
+            - $ref: '#/channels/spot/messages/orderStatusSend'
 components:
     messages:
         orderStatusReceive:

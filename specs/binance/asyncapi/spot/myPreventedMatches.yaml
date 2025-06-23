@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    myPreventedMatches:
-        address: myPreventedMatches
+    spot:
+        address: /
         title: Channel myPreventedMatches
         description: |-
             Displays the list of orders that were expired due to STP.
@@ -14,44 +14,27 @@ channels:
             - symbol + orderId + fromPreventedMatchId (limit will default to 500)
             - symbol + orderId + fromPreventedMatchId + limit
         messages:
-            receiveMessage:
+            myPreventedMatchesReceive:
                 $ref: '#/components/messages/myPreventedMatchesReceive'
-            sendMessage:
+            myPreventedMatchesSend:
                 $ref: '#/components/messages/myPreventedMatchesSend'
-        parameters:
-            fromPreventedMatchId:
-                location: $message.payload#/params/fromPreventedMatchId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                location: $message.payload#/params/orderId
-            preventedMatchId:
-                location: $message.payload#/params/preventedMatchId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveMypreventedmatches:
         title: Receive from myPreventedMatches
         description: Receive response from myPreventedMatches
         action: receive
         channel:
-            $ref: '#/channels/myPreventedMatches'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myPreventedMatchesReceive'
+            - $ref: '#/channels/spot/messages/myPreventedMatchesReceive'
     sendMypreventedmatches:
         title: Send to myPreventedMatches
         description: Send a myPreventedMatches request
         action: send
         channel:
-            $ref: '#/channels/myPreventedMatches'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myPreventedMatchesSend'
+            - $ref: '#/channels/spot/messages/myPreventedMatchesSend'
 components:
     messages:
         myPreventedMatchesReceive:

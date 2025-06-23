@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    klines:
-        address: klines
+    spot:
+        address: /
         title: Channel klines
         description: |-
             Get klines (candlestick bars).
@@ -14,42 +14,27 @@ channels:
             If you need historical kline data,
             please consider using data.binance.vision.
         messages:
-            receiveMessage:
+            klinesReceive:
                 $ref: '#/components/messages/klinesReceive'
-            sendMessage:
+            klinesSend:
                 $ref: '#/components/messages/klinesSend'
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            interval:
-                location: $message.payload#/params/interval
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timeZone:
-                description: 'Default: 0 (UTC)'
-                location: $message.payload#/params/timeZone
 operations:
     receiveKlines:
         title: Receive from klines
         description: Receive response from klines
         action: receive
         channel:
-            $ref: '#/channels/klines'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/klinesReceive'
+            - $ref: '#/channels/spot/messages/klinesReceive'
     sendKlines:
         title: Send to klines
         description: Send a klines request
         action: send
         channel:
-            $ref: '#/channels/klines'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/klinesSend'
+            - $ref: '#/channels/spot/messages/klinesSend'
 components:
     messages:
         klinesReceive:

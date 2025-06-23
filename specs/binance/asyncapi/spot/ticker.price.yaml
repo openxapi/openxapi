@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    ticker_price:
-        address: ticker.price
+    spot:
+        address: /
         title: Channel ticker.price
         description: |-
             Get the latest market price for a symbol.
@@ -15,34 +15,27 @@ channels:
             - symbol and symbols cannot be used together.
             - If no symbol is specified, returns information about all symbols currently trading on the exchange.
         messages:
-            receiveMessage:
+            tickerPriceReceive:
                 $ref: '#/components/messages/tickerPriceReceive'
-            sendMessage:
+            tickerPriceSend:
                 $ref: '#/components/messages/tickerPriceSend'
-        parameters:
-            symbol:
-                description: Query price for a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query price for multiple symbols
-                location: $message.payload#/params/symbols
 operations:
     receiveTickerPrice:
         title: Receive from ticker.price
         description: Receive response from ticker.price
         action: receive
         channel:
-            $ref: '#/channels/ticker_price'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerPriceReceive'
+            - $ref: '#/channels/spot/messages/tickerPriceReceive'
     sendTickerPrice:
         title: Send to ticker.price
         description: Send a ticker.price request
         action: send
         channel:
-            $ref: '#/channels/ticker_price'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerPriceSend'
+            - $ref: '#/channels/spot/messages/tickerPriceSend'
 components:
     messages:
         tickerPriceReceive:

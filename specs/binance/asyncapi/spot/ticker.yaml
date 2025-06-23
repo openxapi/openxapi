@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    ticker:
-        address: ticker
+    spot:
+        address: /
         title: Channel ticker
         description: |-
             Get rolling window price change statistics with a custom window.
@@ -22,40 +22,27 @@ channels:
             - Window size units cannot be combined.
             E.g., 1d 2h is not supported.
         messages:
-            receiveMessage:
+            tickerReceive:
                 $ref: '#/components/messages/tickerReceive'
-            sendMessage:
+            tickerSend:
                 $ref: '#/components/messages/tickerSend'
-        parameters:
-            symbol:
-                description: Query ticker of a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query ticker for multiple symbols
-                location: $message.payload#/params/symbols
-            type:
-                description: 'Ticker type: FULL (default) or MINI'
-                location: $message.payload#/params/type
-            windowSize:
-                description: Default 1d
-                location: $message.payload#/params/windowSize
 operations:
     receiveTicker:
         title: Receive from ticker
         description: Receive response from ticker
         action: receive
         channel:
-            $ref: '#/channels/ticker'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerReceive'
+            - $ref: '#/channels/spot/messages/tickerReceive'
     sendTicker:
         title: Send to ticker
         description: Send a ticker request
         action: send
         channel:
-            $ref: '#/channels/ticker'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerSend'
+            - $ref: '#/channels/spot/messages/tickerSend'
 components:
     messages:
         tickerReceive:

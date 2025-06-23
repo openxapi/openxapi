@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    openOrders_status:
-        address: openOrders.status
+    spot:
+        address: /
         title: Channel openOrders.status
         description: |-
             Query execution status of all open orders.
@@ -12,40 +12,27 @@ channels:
             - userDataStream.start request
             - executionReport user data stream event
         messages:
-            receiveMessage:
+            openOrdersStatusReceive:
                 $ref: '#/components/messages/openOrdersStatusReceive'
-            sendMessage:
+            openOrdersStatusSend:
                 $ref: '#/components/messages/openOrdersStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                description: If omitted, open orders for all symbols are returned
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveOpenordersStatus:
         title: Receive from openOrders.status
         description: Receive response from openOrders.status
         action: receive
         channel:
-            $ref: '#/channels/openOrders_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrdersStatusReceive'
+            - $ref: '#/channels/spot/messages/openOrdersStatusReceive'
     sendOpenordersStatus:
         title: Send to openOrders.status
         description: Send a openOrders.status request
         action: send
         channel:
-            $ref: '#/channels/openOrders_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrdersStatusSend'
+            - $ref: '#/channels/spot/messages/openOrdersStatusSend'
 components:
     messages:
         openOrdersStatusReceive:

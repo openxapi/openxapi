@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    openOrderLists_status:
-        address: openOrderLists.status
+    spot:
+        address: /
         title: Channel openOrderLists.status
         description: |-
             Query execution status of all open order lists.
@@ -12,37 +12,27 @@ channels:
             - userDataStream.start request
             - executionReport user data stream event
         messages:
-            receiveMessage:
+            openOrderListsStatusReceive:
                 $ref: '#/components/messages/openOrderListsStatusReceive'
-            sendMessage:
+            openOrderListsStatusSend:
                 $ref: '#/components/messages/openOrderListsStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveOpenorderlistsStatus:
         title: Receive from openOrderLists.status
         description: Receive response from openOrderLists.status
         action: receive
         channel:
-            $ref: '#/channels/openOrderLists_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrderListsStatusReceive'
+            - $ref: '#/channels/spot/messages/openOrderListsStatusReceive'
     sendOpenorderlistsStatus:
         title: Send to openOrderLists.status
         description: Send a openOrderLists.status request
         action: send
         channel:
-            $ref: '#/channels/openOrderLists_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrderListsStatusSend'
+            - $ref: '#/channels/spot/messages/openOrderListsStatusSend'
 components:
     messages:
         openOrderListsStatusReceive:

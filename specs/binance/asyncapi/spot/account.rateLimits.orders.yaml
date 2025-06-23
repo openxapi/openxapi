@@ -3,42 +3,32 @@ info:
     title: ""
     version: ""
 channels:
-    account_rateLimits_orders:
-        address: account.rateLimits.orders
+    spot:
+        address: /
         title: Channel account.rateLimits.orders
         description: Query your current unfilled order count for all intervals.
         messages:
-            receiveMessage:
+            accountRatelimitsOrdersReceive:
                 $ref: '#/components/messages/accountRatelimitsOrdersReceive'
-            sendMessage:
+            accountRatelimitsOrdersSend:
                 $ref: '#/components/messages/accountRatelimitsOrdersSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveAccountRatelimitsOrders:
         title: Receive from account.rateLimits.orders
         description: Receive response from account.rateLimits.orders
         action: receive
         channel:
-            $ref: '#/channels/account_rateLimits_orders'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountRatelimitsOrdersReceive'
+            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersReceive'
     sendAccountRatelimitsOrders:
         title: Send to account.rateLimits.orders
         description: Send a account.rateLimits.orders request
         action: send
         channel:
-            $ref: '#/channels/account_rateLimits_orders'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountRatelimitsOrdersSend'
+            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersSend'
 components:
     messages:
         accountRatelimitsOrdersReceive:

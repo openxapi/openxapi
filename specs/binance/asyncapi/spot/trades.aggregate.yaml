@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    trades_aggregate:
-        address: trades.aggregate
+    spot:
+        address: /
         title: Channel trades.aggregate
         description: |-
             Get aggregate trades.
@@ -16,40 +16,27 @@ channels:
             If you need historical aggregate trade data,
             please consider using data.binance.vision.
         messages:
-            receiveMessage:
+            tradesAggregateReceive:
                 $ref: '#/components/messages/tradesAggregateReceive'
-            sendMessage:
+            tradesAggregateSend:
                 $ref: '#/components/messages/tradesAggregateSend'
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            fromId:
-                description: Aggregate trade ID to begin at
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
 operations:
     receiveTradesAggregate:
         title: Receive from trades.aggregate
         description: Receive response from trades.aggregate
         action: receive
         channel:
-            $ref: '#/channels/trades_aggregate'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesAggregateReceive'
+            - $ref: '#/channels/spot/messages/tradesAggregateReceive'
     sendTradesAggregate:
         title: Send to trades.aggregate
         description: Send a trades.aggregate request
         action: send
         channel:
-            $ref: '#/channels/trades_aggregate'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesAggregateSend'
+            - $ref: '#/channels/spot/messages/tradesAggregateSend'
 components:
     messages:
         tradesAggregateReceive:

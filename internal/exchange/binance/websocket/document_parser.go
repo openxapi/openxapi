@@ -799,8 +799,8 @@ func (p *DocumentParser) isProtectedMethod(methodName string, protectedMethods [
 
 	for _, protected := range protectedMethods {
 		protectedLower := strings.ToLower(protected)
-		// Check for exact match or if the method name contains the protected method
-		if methodLower == protectedLower || strings.Contains(methodLower, protectedLower) {
+		// Check for exact match the protected method
+		if methodLower == protectedLower {
 			logrus.Debugf("Method %s marked as protected (matched: %s)", methodName, protected)
 			return true
 		}

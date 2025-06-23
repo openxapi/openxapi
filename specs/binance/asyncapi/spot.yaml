@@ -12,1538 +12,242 @@ servers:
         summary: Binance Spot WebSocket API Server
         description: WebSocket server for binance exchange spot API
 channels:
-    account_commission:
-        address: account.commission
-        title: Channel account.commission
-        description: Get current account commission rates.
+    spot:
+        address: /
+        title: Channel spot
+        description: Spot WebSocket API Channel
         messages:
-            receiveMessage:
+            accountCommissionReceive:
                 $ref: '#/components/messages/accountCommissionReceive'
-            sendMessage:
+            accountCommissionSend:
                 $ref: '#/components/messages/accountCommissionSend'
-        parameters:
-            symbol:
-                location: $message.payload#/params/symbol
-    account_rateLimits_orders:
-        address: account.rateLimits.orders
-        title: Channel account.rateLimits.orders
-        description: Query your current unfilled order count for all intervals.
-        messages:
-            receiveMessage:
+            accountRatelimitsOrdersReceive:
                 $ref: '#/components/messages/accountRatelimitsOrdersReceive'
-            sendMessage:
+            accountRatelimitsOrdersSend:
                 $ref: '#/components/messages/accountRatelimitsOrdersSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
-    account_status:
-        address: account.status
-        title: Channel account.status
-        description: Query information about your account.
-        messages:
-            receiveMessage:
+            accountStatusReceive:
                 $ref: '#/components/messages/accountStatusReceive'
-            sendMessage:
+            accountStatusSend:
                 $ref: '#/components/messages/accountStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            omitZeroBalances:
-                description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
-                location: $message.payload#/params/omitZeroBalances
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
-    allOrderLists:
-        address: allOrderLists
-        title: Channel allOrderLists
-        description: Query information about all your order lists, filtered by time range.
-        messages:
-            receiveMessage:
+            allOrderListsReceive:
                 $ref: '#/components/messages/allOrderListsReceive'
-            sendMessage:
+            allOrderListsSend:
                 $ref: '#/components/messages/allOrderListsSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            endTime:
-                location: $message.payload#/params/endTime
-            fromId:
-                description: Order list ID to begin at
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            startTime:
-                location: $message.payload#/params/startTime
-            timestamp:
-                location: $message.payload#/params/timestamp
-    allOrders:
-        address: allOrders
-        title: Channel allOrders
-        description: Query information about all your orders – active, canceled, filled – filtered by time range.
-        messages:
-            receiveMessage:
+            allOrdersReceive:
                 $ref: '#/components/messages/allOrdersReceive'
-            sendMessage:
+            allOrdersSend:
                 $ref: '#/components/messages/allOrdersSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            endTime:
-                location: $message.payload#/params/endTime
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                description: Order ID to begin at
-                location: $message.payload#/params/orderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    avgPrice:
-        address: avgPrice
-        title: Channel avgPrice
-        description: Get current average price for a symbol.
-        messages:
-            receiveMessage:
+            avgPriceReceive:
                 $ref: '#/components/messages/avgPriceReceive'
-            sendMessage:
+            avgPriceSend:
                 $ref: '#/components/messages/avgPriceSend'
-        parameters:
-            symbol:
-                location: $message.payload#/params/symbol
-    depth:
-        address: depth
-        title: Channel depth
-        description: |-
-            Get current order book.
-            Note that this request returns limited market depth.
-            If you need to continuously monitor order book updates, please consider using WebSocket Streams:
-            - <symbol>@depth<levels>
-            - <symbol>@depth
-            You can use depth request together with <symbol>@depth streams to maintain a local order book.
-        messages:
-            receiveMessage:
+            balanceUpdate:
+                name: Balance Update Event
+                title: Balance Update Event
+                description: Occurs during deposits, withdrawals, or transfers
+                payload:
+                    $ref: '#/components/schemas/BalanceUpdateEvent'
+            depthReceive:
                 $ref: '#/components/messages/depthReceive'
-            sendMessage:
+            depthSend:
                 $ref: '#/components/messages/depthSend'
-        parameters:
-            limit:
-                description: 'Default: 100; Maximum: 5000'
-                location: $message.payload#/params/limit
-            symbol:
-                location: $message.payload#/params/symbol
-    exchangeInfo:
-        address: exchangeInfo
-        title: Channel exchangeInfo
-        description: Query current exchange trading rules, rate limits, and symbol information.
-        messages:
-            receiveMessage:
+            exchangeInfoReceive:
                 $ref: '#/components/messages/exchangeInfoReceive'
-            sendMessage:
+            exchangeInfoSend:
                 $ref: '#/components/messages/exchangeInfoSend'
-        parameters:
-            permissions:
-                description: Filter symbols by permissions
-                location: $message.payload#/params/permissions
-            showPermissionSets:
-                description: Controls whether the content of the permissionSets field is populated or not. Defaults to true.
-                location: $message.payload#/params/showPermissionSets
-            symbol:
-                description: Describe a single symbol
-                location: $message.payload#/params/symbol
-            symbolStatus:
-                description: 'Filters symbols that have this tradingStatus. Valid values: TRADING, HALT, BREAK  Cannot be used in combination with symbol or symbols'
-                location: $message.payload#/params/symbolStatus
-            symbols:
-                description: Describe multiple symbols
-                location: $message.payload#/params/symbols
-    klines:
-        address: klines
-        title: Channel klines
-        description: |-
-            Get klines (candlestick bars).
-            Klines are uniquely identified by their open & close time.
-            If you need access to real-time kline updates, please consider using WebSocket Streams:
-            - <symbol>@kline_<interval>
-            If you need historical kline data,
-            please consider using data.binance.vision.
-        messages:
-            receiveMessage:
+            executionReport:
+                name: Execution Report Event
+                title: Order Update Event
+                description: Orders are updated with executionReport event
+                payload:
+                    $ref: '#/components/schemas/ExecutionReportEvent'
+            externalLockUpdate:
+                name: External Lock Update Event
+                title: External Lock Update Event
+                description: Sent when spot wallet balance is locked/unlocked by external system
+                payload:
+                    $ref: '#/components/schemas/ExternalLockUpdateEvent'
+            klinesReceive:
                 $ref: '#/components/messages/klinesReceive'
-            sendMessage:
+            klinesSend:
                 $ref: '#/components/messages/klinesSend'
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            interval:
-                location: $message.payload#/params/interval
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timeZone:
-                description: 'Default: 0 (UTC)'
-                location: $message.payload#/params/timeZone
-    myAllocations:
-        address: myAllocations
-        title: Channel myAllocations
-        description: Retrieves allocations resulting from SOR order placement.
-        messages:
-            receiveMessage:
+            listStatus:
+                name: List Status Event
+                title: List Status Event
+                description: Sent with executionReport for order lists (OCO orders)
+                payload:
+                    $ref: '#/components/schemas/ListStatusEvent'
+            listenKeyExpired:
+                name: Listen Key Expired Event
+                title: Listen Key Expired Event
+                description: Sent when the listen key expires
+                payload:
+                    $ref: '#/components/schemas/ListenKeyExpiredEvent'
+            myAllocationsReceive:
                 $ref: '#/components/messages/myAllocationsReceive'
-            sendMessage:
+            myAllocationsSend:
                 $ref: '#/components/messages/myAllocationsSend'
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            fromAllocationId:
-                location: $message.payload#/params/fromAllocationId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                location: $message.payload#/params/orderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    myPreventedMatches:
-        address: myPreventedMatches
-        title: Channel myPreventedMatches
-        description: |-
-            Displays the list of orders that were expired due to STP.
-            These are the combinations supported:
-            - symbol + preventedMatchId
-            - symbol + orderId
-            - symbol + orderId + fromPreventedMatchId (limit will default to 500)
-            - symbol + orderId + fromPreventedMatchId + limit
-        messages:
-            receiveMessage:
+            myPreventedMatchesReceive:
                 $ref: '#/components/messages/myPreventedMatchesReceive'
-            sendMessage:
+            myPreventedMatchesSend:
                 $ref: '#/components/messages/myPreventedMatchesSend'
-        parameters:
-            fromPreventedMatchId:
-                location: $message.payload#/params/fromPreventedMatchId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                location: $message.payload#/params/orderId
-            preventedMatchId:
-                location: $message.payload#/params/preventedMatchId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    myTrades:
-        address: myTrades
-        title: Channel myTrades
-        description: |-
-            Query information about all your trades, filtered by time range.
-            Notes:
-            - If fromId is specified, return trades with trade ID >= fromId.
-            - If startTime and/or endTime are specified, trades are filtered by execution time (time).
-            fromId cannot be used together with startTime and endTime.
-            - If orderId is specified, only trades related to that order are returned.
-            startTime and endTime cannot be used together with orderId.
-            - If no condition is specified, the most recent trades are returned.
-            - The time between startTime and endTime can't be longer than 24 hours.
-        messages:
-            receiveMessage:
+            myTradesReceive:
                 $ref: '#/components/messages/myTradesReceive'
-            sendMessage:
+            myTradesSend:
                 $ref: '#/components/messages/myTradesSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            endTime:
-                location: $message.payload#/params/endTime
-            fromId:
-                description: First trade ID to query
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                location: $message.payload#/params/orderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    openOrderLists_status:
-        address: openOrderLists.status
-        title: Channel openOrderLists.status
-        description: |-
-            Query execution status of all open order lists.
-            If you need to continuously monitor order status updates, please consider using WebSocket Streams:
-            - userDataStream.start request
-            - executionReport user data stream event
-        messages:
-            receiveMessage:
+            openOrderListsStatusReceive:
                 $ref: '#/components/messages/openOrderListsStatusReceive'
-            sendMessage:
+            openOrderListsStatusSend:
                 $ref: '#/components/messages/openOrderListsStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
-    openOrders_cancelAll:
-        address: openOrders.cancelAll
-        title: Channel openOrders.cancelAll
-        description: |-
-            Cancel all open orders on a symbol.
-            This includes orders that are part of an order list.
-        messages:
-            receiveMessage:
+            openOrdersCancelallReceive:
                 $ref: '#/components/messages/openOrdersCancelallReceive'
-            sendMessage:
+            openOrdersCancelallSend:
                 $ref: '#/components/messages/openOrdersCancelallSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    openOrders_status:
-        address: openOrders.status
-        title: Channel openOrders.status
-        description: |-
-            Query execution status of all open orders.
-            If you need to continuously monitor order status updates, please consider using WebSocket Streams:
-            - userDataStream.start request
-            - executionReport user data stream event
-        messages:
-            receiveMessage:
+            openOrdersStatusReceive:
                 $ref: '#/components/messages/openOrdersStatusReceive'
-            sendMessage:
+            openOrdersStatusSend:
                 $ref: '#/components/messages/openOrdersStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                description: If omitted, open orders for all symbols are returned
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    order_amend_keepPriority:
-        address: order.amend.keepPriority
-        title: Channel order.amend.keepPriority
-        description: |-
-            Reduce the quantity of an existing open order.
-            This adds 0 orders to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
-            Read Order Amend Keep Priority FAQ to learn more.
-        messages:
-            receiveMessage:
+            orderAmendKeeppriorityReceive:
                 $ref: '#/components/messages/orderAmendKeeppriorityReceive'
-            sendMessage:
+            orderAmendKeepprioritySend:
                 $ref: '#/components/messages/orderAmendKeepprioritySend'
-        parameters:
-            newClientOrderId:
-                description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
-                location: $message.payload#/params/newClientOrderId
-            newQty:
-                description: newQty must be greater than 0 and less than the order's quantity.
-                location: $message.payload#/params/newQty
-            orderId:
-                description: orderId or origClientOrderId must be sent
-                location: $message.payload#/params/orderId
-            origClientOrderId:
-                description: orderId or origClientOrderId must be sent
-                location: $message.payload#/params/origClientOrderId
-            recvWindow:
-                description: The value cannot be greater than 60000.
-                location: $message.payload#/params/recvWindow
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    order_amendments:
-        address: order.amendments
-        title: Channel order.amendments
-        description: Queries all amendments of a single order.
-        messages:
-            receiveMessage:
+            orderAmendmentsReceive:
                 $ref: '#/components/messages/orderAmendmentsReceive'
-            sendMessage:
+            orderAmendmentsSend:
                 $ref: '#/components/messages/orderAmendmentsSend'
-        parameters:
-            fromExecutionId:
-                location: $message.payload#/params/fromExecutionId
-            limit:
-                description: 'Default:500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                location: $message.payload#/params/orderId
-            recvWindow:
-                description: The value cannot be greater than 60000.
-                location: $message.payload#/params/recvWindow
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    order_cancel:
-        address: order.cancel
-        title: Channel order.cancel
-        description: Cancel an active order.
-        messages:
-            receiveMessage:
+            orderCancelReceive:
                 $ref: '#/components/messages/orderCancelReceive'
-            sendMessage:
+            orderCancelSend:
                 $ref: '#/components/messages/orderCancelSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            cancelRestrictions:
-                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED.'
-                location: $message.payload#/params/cancelRestrictions
-            newClientOrderId:
-                description: New ID for the canceled order. Automatically generated if not sent
-                location: $message.payload#/params/newClientOrderId
-            orderId:
-                description: Cancel order by orderId
-                location: $message.payload#/params/orderId
-            origClientOrderId:
-                description: Cancel order by clientOrderId
-                location: $message.payload#/params/origClientOrderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    order_cancelReplace:
-        address: order.cancelReplace
-        title: Channel order.cancelReplace
-        description: |-
-            Cancel an existing order and immediately place a new order instead of the canceled one.
-            A new order that was not attempted (i.e. when newOrderResult: NOT_ATTEMPTED), will still increase the unfilled order count by 1.
-        messages:
-            receiveMessage:
+            orderCancelreplaceReceive:
                 $ref: '#/components/messages/orderCancelreplaceReceive'
-            sendMessage:
+            orderCancelreplaceSend:
                 $ref: '#/components/messages/orderCancelreplaceSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            cancelNewClientOrderId:
-                description: New ID for the canceled order. Automatically generated if not sent
-                location: $message.payload#/params/cancelNewClientOrderId
-            cancelOrderId:
-                description: Cancel order by orderId
-                location: $message.payload#/params/cancelOrderId
-            cancelOrigClientOrderId:
-                description: Cancel order by clientOrderId
-                location: $message.payload#/params/cancelOrigClientOrderId
-            cancelReplaceMode:
-                location: $message.payload#/params/cancelReplaceMode
-            cancelRestrictions:
-                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED. For more information please refer to Regarding cancelRestrictions.'
-                location: $message.payload#/params/cancelRestrictions
-            icebergQty:
-                location: $message.payload#/params/icebergQty
-            newClientOrderId:
-                description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                location: $message.payload#/params/newClientOrderId
-            newOrderRespType:
-                description: "Select response format: ACK, RESULT, FULL.\n            \n                MARKET and LIMIT orders produce FULL response by default,\n                other order types default to ACK."
-                location: $message.payload#/params/newOrderRespType
-            orderRateLimitExceededMode:
-                description: 'Supported values:  DO_NOTHING (default)- will only attempt to cancel the order if account has not exceeded the unfilled order rate limit CANCEL_ONLY - will always cancel the order.'
-                location: $message.payload#/params/orderRateLimitExceededMode
-            price:
-                location: $message.payload#/params/price
-            quantity:
-                location: $message.payload#/params/quantity
-            quoteOrderQty:
-                location: $message.payload#/params/quoteOrderQty
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: |-
-                    The allowed enums is dependent on what is configured on the symbol.
-                                Supported values: STP Modes.
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            stopPrice:
-                location: $message.payload#/params/stopPrice
-            strategyId:
-                description: Arbitrary numeric value identifying the order within an order strategy.
-                location: $message.payload#/params/strategyId
-            strategyType:
-                description: |-
-                    Arbitrary numeric value identifying the order strategy.
-                                Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/strategyType
-            symbol:
-                location: $message.payload#/params/symbol
-            timeInForce:
-                location: $message.payload#/params/timeInForce
-            timestamp:
-                location: $message.payload#/params/timestamp
-            trailingDelta:
-                description: See Trailing Stop order FAQ
-                location: $message.payload#/params/trailingDelta
-            type:
-                location: $message.payload#/params/type
-    order_place:
-        address: order.place
-        title: Channel order.place
-        description: |-
-            Send in a new order.
-            This adds 1 order to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
-        messages:
-            receiveMessage:
-                $ref: '#/components/messages/orderPlaceReceive'
-            sendMessage:
-                $ref: '#/components/messages/orderPlaceSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            icebergQty:
-                location: $message.payload#/params/icebergQty
-            newClientOrderId:
-                description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                location: $message.payload#/params/newClientOrderId
-            newOrderRespType:
-                description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default, other order types default to ACK.'
-                location: $message.payload#/params/newOrderRespType
-            price:
-                location: $message.payload#/params/price
-            quantity:
-                location: $message.payload#/params/quantity
-            quoteOrderQty:
-                location: $message.payload#/params/quoteOrderQty
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed enums is dependent on what is configured on the symbol. Supported values: STP Modes'
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            stopPrice:
-                location: $message.payload#/params/stopPrice
-            strategyId:
-                description: Arbitrary numeric value identifying the order within an order strategy.
-                location: $message.payload#/params/strategyId
-            strategyType:
-                description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/strategyType
-            symbol:
-                location: $message.payload#/params/symbol
-            timeInForce:
-                location: $message.payload#/params/timeInForce
-            timestamp:
-                location: $message.payload#/params/timestamp
-            trailingDelta:
-                description: See Trailing Stop order FAQ
-                location: $message.payload#/params/trailingDelta
-            type:
-                location: $message.payload#/params/type
-    order_status:
-        address: order.status
-        title: Channel order.status
-        description: Check execution status of an order.
-        messages:
-            receiveMessage:
-                $ref: '#/components/messages/orderStatusReceive'
-            sendMessage:
-                $ref: '#/components/messages/orderStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            orderId:
-                description: Lookup order by orderId
-                location: $message.payload#/params/orderId
-            origClientOrderId:
-                description: Lookup order by clientOrderId
-                location: $message.payload#/params/origClientOrderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    order_test:
-        address: order.test
-        title: Channel order.test
-        description: |-
-            Test order placement.
-            Validates new order parameters and verifies your signature
-            but does not send the order into the matching engine.
-            In addition to all parameters accepted by order.place,
-            the following optional parameters are also accepted:
-        messages:
-            receiveMessage:
-                $ref: '#/components/messages/orderTestReceive'
-            sendMessage:
-                $ref: '#/components/messages/orderTestSend'
-    orderList_cancel:
-        address: orderList.cancel
-        title: Channel orderList.cancel
-        description: Cancel an active order list.
-        messages:
-            receiveMessage:
+            orderListCancelReceive:
                 $ref: '#/components/messages/orderListCancelReceive'
-            sendMessage:
+            orderListCancelSend:
                 $ref: '#/components/messages/orderListCancelSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            listClientOrderId:
-                description: Cancel order list by listClientId
-                location: $message.payload#/params/listClientOrderId
-            newClientOrderId:
-                description: New ID for the canceled order list. Automatically generated if not sent
-                location: $message.payload#/params/newClientOrderId
-            orderListId:
-                description: Cancel order list by orderListId
-                location: $message.payload#/params/orderListId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    orderList_place:
-        address: orderList.place
-        title: Channel orderList.place
-        description: |-
-            Send in a new one-cancels-the-other (OCO) pair:
-            LIMIT_MAKER + STOP_LOSS/STOP_LOSS_LIMIT orders (called legs),
-            where activation of one order immediately cancels the other.
-            This adds 1 order to EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter
-        messages:
-            receiveMessage:
-                $ref: '#/components/messages/orderListPlaceReceive'
-            sendMessage:
-                $ref: '#/components/messages/orderListPlaceSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            limitClientOrderId:
-                description: Arbitrary unique ID among open orders for the limit order. Automatically generated if not sent
-                location: $message.payload#/params/limitClientOrderId
-            limitIcebergQty:
-                location: $message.payload#/params/limitIcebergQty
-            limitStrategyId:
-                description: Arbitrary numeric value identifying the limit order within an order strategy.
-                location: $message.payload#/params/limitStrategyId
-            limitStrategyType:
-                description: Arbitrary numeric value identifying the limit order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/limitStrategyType
-            listClientOrderId:
-                description: Arbitrary unique ID among open order lists. Automatically generated if not sent
-                location: $message.payload#/params/listClientOrderId
-            newOrderRespType:
-                description: 'Select response format: ACK, RESULT, FULL (default)'
-                location: $message.payload#/params/newOrderRespType
-            price:
-                description: Price for the limit order
-                location: $message.payload#/params/price
-            quantity:
-                location: $message.payload#/params/quantity
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes'
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            stopClientOrderId:
-                description: Arbitrary unique ID among open orders for the stop order. Automatically generated if not sent
-                location: $message.payload#/params/stopClientOrderId
-            stopIcebergQty:
-                location: $message.payload#/params/stopIcebergQty
-            stopLimitPrice:
-                location: $message.payload#/params/stopLimitPrice
-            stopLimitTimeInForce:
-                description: See order.place for available options
-                location: $message.payload#/params/stopLimitTimeInForce
-            stopPrice:
-                description: Either stopPrice or trailingDelta, or both must be specified
-                location: $message.payload#/params/stopPrice
-            stopStrategyId:
-                description: Arbitrary numeric value identifying the stop order within an order strategy.
-                location: $message.payload#/params/stopStrategyId
-            stopStrategyType:
-                description: Arbitrary numeric value identifying the stop order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/stopStrategyType
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-            trailingDelta:
-                description: See Trailing Stop order FAQ
-                location: $message.payload#/params/trailingDelta
-    orderList_place_oco:
-        address: orderList.place.oco
-        title: Channel orderList.place.oco
-        description: |-
-            Send in an one-cancels-the-other (OCO) pair, where activation of one order immediately cancels the other.
-            - An OCO has 2 orders called the above order and below order.
-            - One of the orders must be a LIMIT_MAKER/TAKE_PROFIT/TAKE_PROFIT_LIMIT order and the other must be STOP_LOSS or STOP_LOSS_LIMIT order.
-            - Price restrictions:
-
-            If the OCO is on the SELL side:
-
-            LIMIT_MAKER/TAKE_PROFIT_LIMIT price > Last Traded Price > STOP_LOSS/STOP_LOSS_LIMIT stopPrice
-            TAKE_PROFIT stopPrice > Last Traded Price > STOP_LOSS/STOP_LOSS_LIMIT stopPrice
-
-
-            If the OCO is on the BUY side:
-
-            LIMIT_MAKER price < Last Traded Price < STOP_LOSS/STOP_LOSS_LIMIT stopPrice
-            TAKE_PROFIT stopPrice > Last Traded Price > STOP_LOSS/STOP_LOSS_LIMIT stopPrice
-            - OCOs add 2 orders to the EXCHANGE_MAX_ORDERS filter and MAX_NUM_ORDERS filter.
-        messages:
-            receiveMessage:
+            orderListPlaceOcoReceive:
                 $ref: '#/components/messages/orderListPlaceOcoReceive'
-            sendMessage:
+            orderListPlaceOcoSend:
                 $ref: '#/components/messages/orderListPlaceOcoSend'
-        parameters:
-            aboveClientOrderId:
-                description: Arbitrary unique ID among open orders for the above order. Automatically generated if not sent
-                location: $message.payload#/params/aboveClientOrderId
-            aboveIcebergQty:
-                description: Note that this can only be used if aboveTimeInForce is GTC.
-                location: $message.payload#/params/aboveIcebergQty
-            abovePrice:
-                description: Can be used if aboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                location: $message.payload#/params/abovePrice
-            aboveStopPrice:
-                description: Can be used if aboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT. Either aboveStopPrice or aboveTrailingDelta or both, must be specified.
-                location: $message.payload#/params/aboveStopPrice
-            aboveStrategyId:
-                description: Arbitrary numeric value identifying the above order within an order strategy.
-                location: $message.payload#/params/aboveStrategyId
-            aboveStrategyType:
-                description: Arbitrary numeric value identifying the above order strategy. Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/aboveStrategyType
-            aboveTimeInForce:
-                description: Required if aboveType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT.
-                location: $message.payload#/params/aboveTimeInForce
-            aboveTrailingDelta:
-                description: See Trailing Stop order FAQ.
-                location: $message.payload#/params/aboveTrailingDelta
-            aboveType:
-                description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
-                location: $message.payload#/params/aboveType
-            apiKey:
-                location: $message.payload#/params/apiKey
-            belowClientOrderId:
-                location: $message.payload#/params/belowClientOrderId
-            belowIcebergQty:
-                description: Note that this can only be used if belowTimeInForce is GTC.
-                location: $message.payload#/params/belowIcebergQty
-            belowPrice:
-                description: Can be used if belowType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                location: $message.payload#/params/belowPrice
-            belowStopPrice:
-                description: Can be used if belowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either belowStopPrice or belowTrailingDelta or both, must be specified.
-                location: $message.payload#/params/belowStopPrice
-            belowStrategyId:
-                description: Arbitrary numeric value identifying the below order within an order strategy.
-                location: $message.payload#/params/belowStrategyId
-            belowStrategyType:
-                description: Arbitrary numeric value identifying the below order strategy. Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/belowStrategyType
-            belowTimeInForce:
-                description: Required if belowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT
-                location: $message.payload#/params/belowTimeInForce
-            belowTrailingDelta:
-                description: See Trailing Stop order FAQ.
-                location: $message.payload#/params/belowTrailingDelta
-            belowType:
-                description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
-                location: $message.payload#/params/belowType
-            listClientOrderId:
-                description: Arbitrary unique ID among open order lists. Automatically generated if not sent.  A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the aboveClientOrderId and the belowCLientOrderId.
-                location: $message.payload#/params/listClientOrderId
-            newOrderRespType:
-                description: 'Select response format: ACK, RESULT, FULL'
-                location: $message.payload#/params/newOrderRespType
-            quantity:
-                description: Quantity for both orders of the order list.
-                location: $message.payload#/params/quantity
-            recvWindow:
-                description: The value cannot be greater than 60000.
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-    orderList_place_oto:
-        address: orderList.place.oto
-        title: Channel orderList.place.oto
-        description: |-
-            Places an OTO.
-            - An OTO (One-Triggers-the-Other) is an order list comprised of 2 orders.
-            - The first order is called the working order and must be LIMIT or LIMIT_MAKER. Initially, only the working order goes on the order book.
-            - The second order is called the pending order. It can be any order type except for MARKET orders using parameter quoteOrderQty. The pending order is only placed on the order book when the working order gets fully filled.
-            - If either the working order or the pending order is cancelled individually, the other order in the order list will also be canceled or expired.
-            - When the order list is placed, if the working order gets immediately fully filled, the placement response will show the working order as FILLED but the pending order will still appear as PENDING_NEW. You need to query the status of the pending order again to see its updated status.
-            - OTOs add 2 orders to the EXCHANGE_MAX_NUM_ORDERS filter and MAX_NUM_ORDERS filter.
-        messages:
-            receiveMessage:
+            orderListPlaceOtoReceive:
                 $ref: '#/components/messages/orderListPlaceOtoReceive'
-            sendMessage:
+            orderListPlaceOtoSend:
                 $ref: '#/components/messages/orderListPlaceOtoSend'
-        parameters:
-            listClientOrderId:
-                description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId and the pendingClientOrderId.
-                location: $message.payload#/params/listClientOrderId
-            newOrderRespType:
-                description: 'Format of the JSON response. Supported values: Order Response Type'
-                location: $message.payload#/params/newOrderRespType
-            pendingClientOrderId:
-                description: Arbitrary unique ID among open orders for the pending order. Automatically generated if not sent.
-                location: $message.payload#/params/pendingClientOrderId
-            pendingIcebergQty:
-                description: This can only be used if pendingTimeInForce is GTC, or if pendingType is LIMIT_MAKER.
-                location: $message.payload#/params/pendingIcebergQty
-            pendingPrice:
-                location: $message.payload#/params/pendingPrice
-            pendingQuantity:
-                description: Sets the quantity for the pending order.
-                location: $message.payload#/params/pendingQuantity
-            pendingSide:
-                description: 'Supported values: Order side'
-                location: $message.payload#/params/pendingSide
-            pendingStopPrice:
-                location: $message.payload#/params/pendingStopPrice
-            pendingStrategyId:
-                description: Arbitrary numeric value identifying the pending order within an order strategy.
-                location: $message.payload#/params/pendingStrategyId
-            pendingStrategyType:
-                description: Arbitrary numeric value identifying the pending order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/pendingStrategyType
-            pendingTimeInForce:
-                description: 'Supported values: Time In Force'
-                location: $message.payload#/params/pendingTimeInForce
-            pendingTrailingDelta:
-                location: $message.payload#/params/pendingTrailingDelta
-            pendingType:
-                description: 'Supported values: Order types.  Note that MARKET orders using quoteOrderQty are not supported.'
-                location: $message.payload#/params/pendingType
-            recvWindow:
-                description: The value cannot be greater than 60000.
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
-                location: $message.payload#/params/selfTradePreventionMode
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-            workingClientOrderId:
-                description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
-                location: $message.payload#/params/workingClientOrderId
-            workingIcebergQty:
-                description: This can only be used if workingTimeInForce is GTC, or if workingType is LIMIT_MAKER.
-                location: $message.payload#/params/workingIcebergQty
-            workingPrice:
-                location: $message.payload#/params/workingPrice
-            workingQuantity:
-                description: Sets the quantity for the working order.
-                location: $message.payload#/params/workingQuantity
-            workingSide:
-                description: 'Supported values: Order side'
-                location: $message.payload#/params/workingSide
-            workingStrategyId:
-                description: Arbitrary numeric value identifying the working order within an order strategy.
-                location: $message.payload#/params/workingStrategyId
-            workingStrategyType:
-                description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/workingStrategyType
-            workingTimeInForce:
-                description: 'Supported values: Time In Force'
-                location: $message.payload#/params/workingTimeInForce
-            workingType:
-                description: 'Supported values: LIMIT,LIMIT_MAKER'
-                location: $message.payload#/params/workingType
-    orderList_place_otoco:
-        address: orderList.place.otoco
-        title: Channel orderList.place.otoco
-        description: |-
-            Place an OTOCO.
-            - An OTOCO (One-Triggers-One-Cancels-the-Other) is an order list comprised of 3 orders.
-            - The first order is called the working order and must be LIMIT or LIMIT_MAKER. Initially, only the working order goes on the order book.
-
-            The behavior of the working order is the same as the OTO.
-            - OTOCO has 2 pending orders (pending above and pending below), forming an OCO pair. The pending orders are only placed on the order book when the working order gets fully filled.
-
-            The rules of the pending above and pending below follow the same rules as the Order list OCO.
-            - OTOCOs add 3 orders to the EXCHANGE_MAX_NUM_ORDERS filter and MAX_NUM_ORDERS filter.
-        messages:
-            receiveMessage:
+            orderListPlaceOtocoReceive:
                 $ref: '#/components/messages/orderListPlaceOtocoReceive'
-            sendMessage:
+            orderListPlaceOtocoSend:
                 $ref: '#/components/messages/orderListPlaceOtocoSend'
-        parameters:
-            listClientOrderId:
-                description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId, pendingAboveClientOrderId, and the pendingBelowClientOrderId.
-                location: $message.payload#/params/listClientOrderId
-            newOrderRespType:
-                description: 'Format of the JSON response. Supported values: Order Response Type'
-                location: $message.payload#/params/newOrderRespType
-            pendingAboveClientOrderId:
-                description: Arbitrary unique ID among open orders for the pending above order. Automatically generated if not sent.
-                location: $message.payload#/params/pendingAboveClientOrderId
-            pendingAboveIcebergQty:
-                description: This can only be used if pendingAboveTimeInForce is GTC or if pendingAboveType is LIMIT_MAKER.
-                location: $message.payload#/params/pendingAboveIcebergQty
-            pendingAbovePrice:
-                description: Can be used if pendingAboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                location: $message.payload#/params/pendingAbovePrice
-            pendingAboveStopPrice:
-                description: Can be used if pendingAboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT
-                location: $message.payload#/params/pendingAboveStopPrice
-            pendingAboveStrategyId:
-                description: Arbitrary numeric value identifying the pending above order within an order strategy.
-                location: $message.payload#/params/pendingAboveStrategyId
-            pendingAboveStrategyType:
-                description: Arbitrary numeric value identifying the pending above order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/pendingAboveStrategyType
-            pendingAboveTimeInForce:
-                location: $message.payload#/params/pendingAboveTimeInForce
-            pendingAboveTrailingDelta:
-                description: See Trailing Stop FAQ
-                location: $message.payload#/params/pendingAboveTrailingDelta
-            pendingAboveType:
-                description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
-                location: $message.payload#/params/pendingAboveType
-            pendingBelowClientOrderId:
-                description: Arbitrary unique ID among open orders for the pending below order. Automatically generated if not sent.
-                location: $message.payload#/params/pendingBelowClientOrderId
-            pendingBelowIcebergQty:
-                description: This can only be used if pendingBelowTimeInForce is GTC, or if pendingBelowType is LIMIT_MAKER.
-                location: $message.payload#/params/pendingBelowIcebergQty
-            pendingBelowPrice:
-                description: Can be used if pendingBelowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT to specify the limit price.
-                location: $message.payload#/params/pendingBelowPrice
-            pendingBelowStopPrice:
-                description: Can be used if pendingBelowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either pendingBelowStopPrice or pendingBelowTrailingDelta or both, must be specified.
-                location: $message.payload#/params/pendingBelowStopPrice
-            pendingBelowStrategyId:
-                description: Arbitrary numeric value identifying the pending below order within an order strategy.
-                location: $message.payload#/params/pendingBelowStrategyId
-            pendingBelowStrategyType:
-                description: Arbitrary numeric value identifying the pending below order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/pendingBelowStrategyType
-            pendingBelowTimeInForce:
-                description: 'Supported values: Time In Force'
-                location: $message.payload#/params/pendingBelowTimeInForce
-            pendingBelowTrailingDelta:
-                location: $message.payload#/params/pendingBelowTrailingDelta
-            pendingBelowType:
-                description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
-                location: $message.payload#/params/pendingBelowType
-            pendingQuantity:
-                location: $message.payload#/params/pendingQuantity
-            pendingSide:
-                description: 'Supported values: Order Side'
-                location: $message.payload#/params/pendingSide
-            recvWindow:
-                description: The value cannot be greater than 60000.
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
-                location: $message.payload#/params/selfTradePreventionMode
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-            workingClientOrderId:
-                description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
-                location: $message.payload#/params/workingClientOrderId
-            workingIcebergQty:
-                description: This can only be used if workingTimeInForce is GTC.
-                location: $message.payload#/params/workingIcebergQty
-            workingPrice:
-                location: $message.payload#/params/workingPrice
-            workingQuantity:
-                location: $message.payload#/params/workingQuantity
-            workingSide:
-                description: 'Supported values: Order Side'
-                location: $message.payload#/params/workingSide
-            workingStrategyId:
-                description: Arbitrary numeric value identifying the working order within an order strategy.
-                location: $message.payload#/params/workingStrategyId
-            workingStrategyType:
-                description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/workingStrategyType
-            workingTimeInForce:
-                description: 'Supported values: Time In Force'
-                location: $message.payload#/params/workingTimeInForce
-            workingType:
-                description: 'Supported values: LIMIT, LIMIT_MAKER'
-                location: $message.payload#/params/workingType
-    orderList_status:
-        address: orderList.status
-        title: Channel orderList.status
-        description: |-
-            Check execution status of an Order list.
-            For execution status of individual orders, use order.status.
-        messages:
-            receiveMessage:
+            orderListPlaceReceive:
+                $ref: '#/components/messages/orderListPlaceReceive'
+            orderListPlaceSend:
+                $ref: '#/components/messages/orderListPlaceSend'
+            orderListStatusReceive:
                 $ref: '#/components/messages/orderListStatusReceive'
-            sendMessage:
+            orderListStatusSend:
                 $ref: '#/components/messages/orderListStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            orderListId:
-                description: Query order list by orderListId.orderListId or origClientOrderId must be provided.
-                location: $message.payload#/params/orderListId
-            origClientOrderId:
-                description: Query order list by listClientOrderId.orderListId or origClientOrderId must be provided.
-                location: $message.payload#/params/origClientOrderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
-    ping:
-        address: ping
-        title: Channel ping
-        description: |-
-            Test connectivity to the WebSocket API.
-            Note:
-            You can use regular WebSocket ping frames to test connectivity as well,
-            WebSocket API will respond with pong frames as soon as possible.
-            ping request along with time is a safe way to test request-response handling in your application.
-        messages:
-            receiveMessage:
+            orderPlaceReceive:
+                $ref: '#/components/messages/orderPlaceReceive'
+            orderPlaceSend:
+                $ref: '#/components/messages/orderPlaceSend'
+            orderStatusReceive:
+                $ref: '#/components/messages/orderStatusReceive'
+            orderStatusSend:
+                $ref: '#/components/messages/orderStatusSend'
+            orderTestReceive:
+                $ref: '#/components/messages/orderTestReceive'
+            orderTestSend:
+                $ref: '#/components/messages/orderTestSend'
+            outboundAccountPosition:
+                name: Outbound Account Position Event
+                title: Account Update Event
+                description: Sent when account balance changes
+                payload:
+                    $ref: '#/components/schemas/OutboundAccountPositionEvent'
+            pingReceive:
                 $ref: '#/components/messages/pingReceive'
-            sendMessage:
+            pingSend:
                 $ref: '#/components/messages/pingSend'
-    session_logon:
-        address: session.logon
-        title: Channel session.logon
-        description: |-
-            Authenticate WebSocket connection using the provided API key.
-            After calling session.logon, you can omit apiKey and signature parameters for future requests that require them.
-            Note that only one API key can be authenticated.
-            Calling session.logon multiple times changes the current authenticated API key.
-        messages:
-            receiveMessage:
+            sessionLogonReceive:
                 $ref: '#/components/messages/sessionLogonReceive'
-            sendMessage:
+            sessionLogonSend:
                 $ref: '#/components/messages/sessionLogonSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
-    session_logout:
-        address: session.logout
-        title: Channel session.logout
-        description: |-
-            Forget the API key previously authenticated.
-            If the connection is not authenticated, this request does nothing.
-            Note that the WebSocket connection stays open after session.logout request.
-            You can continue using the connection,
-            but now you will have to explicitly provide the apiKey and signature parameters where needed.
-        messages:
-            receiveMessage:
+            sessionLogoutReceive:
                 $ref: '#/components/messages/sessionLogoutReceive'
-            sendMessage:
+            sessionLogoutSend:
                 $ref: '#/components/messages/sessionLogoutSend'
-    session_status:
-        address: session.status
-        title: Channel session.status
-        description: |-
-            Query the status of the WebSocket connection,
-            inspecting which API key (if any) is used to authorize requests.
-        messages:
-            receiveMessage:
+            sessionStatusReceive:
                 $ref: '#/components/messages/sessionStatusReceive'
-            sendMessage:
+            sessionStatusSend:
                 $ref: '#/components/messages/sessionStatusSend'
-    sor_order_place:
-        address: sor.order.place
-        title: Channel sor.order.place
-        description: |-
-            Places an order using smart order routing (SOR).
-            This adds 1 order to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
-            Read SOR FAQ to learn more.
-        messages:
-            receiveMessage:
+            sorOrderPlaceReceive:
                 $ref: '#/components/messages/sorOrderPlaceReceive'
-            sendMessage:
+            sorOrderPlaceSend:
                 $ref: '#/components/messages/sorOrderPlaceSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            icebergQty:
-                location: $message.payload#/params/icebergQty
-            newClientOrderId:
-                description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                location: $message.payload#/params/newClientOrderId
-            newOrderRespType:
-                description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default.'
-                location: $message.payload#/params/newOrderRespType
-            price:
-                description: Applicable only to LIMIT order type
-                location: $message.payload#/params/price
-            quantity:
-                location: $message.payload#/params/quantity
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            strategyId:
-                description: Arbitrary numeric value identifying the order within an order strategy.
-                location: $message.payload#/params/strategyId
-            strategyType:
-                description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/strategyType
-            symbol:
-                location: $message.payload#/params/symbol
-            timeInForce:
-                description: Applicable only to LIMIT order type
-                location: $message.payload#/params/timeInForce
-            timestamp:
-                location: $message.payload#/params/timestamp
-            type:
-                location: $message.payload#/params/type
-    sor_order_test:
-        address: sor.order.test
-        title: Channel sor.order.test
-        description: |-
-            Test new order creation and signature/recvWindow using smart order routing (SOR).
-            Creates and validates a new order but does not send it into the matching engine.
-            In addition to all parameters accepted by sor.order.place,
-            the following optional parameters are also accepted:
-        messages:
-            receiveMessage:
+            sorOrderTestReceive:
                 $ref: '#/components/messages/sorOrderTestReceive'
-            sendMessage:
+            sorOrderTestSend:
                 $ref: '#/components/messages/sorOrderTestSend'
-    ticker:
-        address: ticker
-        title: Channel ticker
-        description: |-
-            Get rolling window price change statistics with a custom window.
-            This request is similar to ticker.24hr,
-            but statistics are computed on demand using the arbitrary window you specify.
-            Note: Window size precision is limited to 1 minute.
-            While the closeTime is the current time of the request, openTime always start on a minute boundary.
-            As such, the effective window might be up to 59999 ms wider than the requested windowSize.
-            If you need to continuously monitor trading statistics, please consider using WebSocket Streams:
-            - <symbol>@ticker_<window_size> or !ticker_<window-size>@arr
-            Supported window sizes:
-            Notes:
-            - Either symbol or symbols must be specified.
-            - Maximum number of symbols in one request: 200.
-            - Window size units cannot be combined.
-            E.g., 1d 2h is not supported.
-        messages:
-            receiveMessage:
-                $ref: '#/components/messages/tickerReceive'
-            sendMessage:
-                $ref: '#/components/messages/tickerSend'
-        parameters:
-            symbol:
-                description: Query ticker of a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query ticker for multiple symbols
-                location: $message.payload#/params/symbols
-            type:
-                description: 'Ticker type: FULL (default) or MINI'
-                location: $message.payload#/params/type
-            windowSize:
-                description: Default 1d
-                location: $message.payload#/params/windowSize
-    ticker_24hr:
-        address: ticker.24hr
-        title: Channel ticker.24hr
-        description: |-
-            Get 24-hour rolling window price change statistics.
-            If you need to continuously monitor trading statistics, please consider using WebSocket Streams:
-            - <symbol>@ticker or !ticker@arr
-            - <symbol>@miniTicker or !miniTicker@arr
-            If you need different window sizes,
-            use the ticker request.
-            Notes:
-            - symbol and symbols cannot be used together.
-            - If no symbol is specified, returns information about all symbols currently trading on the exchange.
-        messages:
-            receiveMessage:
+            ticker24hrReceive:
                 $ref: '#/components/messages/ticker24hrReceive'
-            sendMessage:
+            ticker24hrSend:
                 $ref: '#/components/messages/ticker24hrSend'
-        parameters:
-            symbol:
-                description: Query ticker for a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query ticker for multiple symbols
-                location: $message.payload#/params/symbols
-            type:
-                description: 'Ticker type: FULL (default) or MINI'
-                location: $message.payload#/params/type
-    ticker_book:
-        address: ticker.book
-        title: Channel ticker.book
-        description: |-
-            Get the current best price and quantity on the order book.
-            If you need access to real-time order book ticker updates, please consider using WebSocket Streams:
-            - <symbol>@bookTicker
-            Notes:
-            - symbol and symbols cannot be used together.
-            - If no symbol is specified, returns information about all symbols currently trading on the exchange.
-        messages:
-            receiveMessage:
+            tickerBookReceive:
                 $ref: '#/components/messages/tickerBookReceive'
-            sendMessage:
+            tickerBookSend:
                 $ref: '#/components/messages/tickerBookSend'
-        parameters:
-            symbol:
-                description: Query ticker for a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query ticker for multiple symbols
-                location: $message.payload#/params/symbols
-    ticker_price:
-        address: ticker.price
-        title: Channel ticker.price
-        description: |-
-            Get the latest market price for a symbol.
-            If you need access to real-time price updates, please consider using WebSocket Streams:
-            - <symbol>@aggTrade
-            - <symbol>@trade
-            Notes:
-            - symbol and symbols cannot be used together.
-            - If no symbol is specified, returns information about all symbols currently trading on the exchange.
-        messages:
-            receiveMessage:
+            tickerPriceReceive:
                 $ref: '#/components/messages/tickerPriceReceive'
-            sendMessage:
+            tickerPriceSend:
                 $ref: '#/components/messages/tickerPriceSend'
-        parameters:
-            symbol:
-                description: Query price for a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query price for multiple symbols
-                location: $message.payload#/params/symbols
-    ticker_tradingDay:
-        address: ticker.tradingDay
-        title: Channel ticker.tradingDay
-        description: |-
-            Price change statistics for a trading day.
-            4 for each requested symbol.  The weight for this request will cap at 200 once the number of symbols in the request is more than 50.
-            Notes:
-            - Supported values for timeZone:
-
-            Hours and minutes (e.g. -1:00, 05:45)
-            Only hours (e.g. 0, 8, 4)
-        messages:
-            receiveMessage:
+            tickerReceive:
+                $ref: '#/components/messages/tickerReceive'
+            tickerSend:
+                $ref: '#/components/messages/tickerSend'
+            tickerTradingdayReceive:
                 $ref: '#/components/messages/tickerTradingdayReceive'
-            sendMessage:
+            tickerTradingdaySend:
                 $ref: '#/components/messages/tickerTradingdaySend'
-        parameters:
-            symbol:
-                description: Query ticker of a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query ticker for multiple symbols
-                location: $message.payload#/params/symbols
-            timeZone:
-                description: 'Default: 0 (UTC)'
-                location: $message.payload#/params/timeZone
-            type:
-                description: 'Supported values: FULL or MINI. If none provided, the default is FULL'
-                location: $message.payload#/params/type
-    time:
-        address: time
-        title: Channel time
-        description: Test connectivity to the WebSocket API and get the current server time.
-        messages:
-            receiveMessage:
+            timeReceive:
                 $ref: '#/components/messages/timeReceive'
-            sendMessage:
+            timeSend:
                 $ref: '#/components/messages/timeSend'
-    trades_aggregate:
-        address: trades.aggregate
-        title: Channel trades.aggregate
-        description: |-
-            Get aggregate trades.
-            An aggregate trade (aggtrade) represents one or more individual trades.
-            Trades that fill at the same time, from the same taker order, with the same price –
-            those trades are collected into an aggregate trade with total quantity of the individual trades.
-            If you need access to real-time trading activity, please consider using WebSocket Streams:
-            - <symbol>@aggTrade
-            If you need historical aggregate trade data,
-            please consider using data.binance.vision.
-        messages:
-            receiveMessage:
+            tradesAggregateReceive:
                 $ref: '#/components/messages/tradesAggregateReceive'
-            sendMessage:
+            tradesAggregateSend:
                 $ref: '#/components/messages/tradesAggregateSend'
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            fromId:
-                description: Aggregate trade ID to begin at
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-    trades_historical:
-        address: trades.historical
-        title: Channel trades.historical
-        description: Get historical trades.
-        messages:
-            receiveMessage:
+            tradesHistoricalReceive:
                 $ref: '#/components/messages/tradesHistoricalReceive'
-            sendMessage:
+            tradesHistoricalSend:
                 $ref: '#/components/messages/tradesHistoricalSend'
-        parameters:
-            fromId:
-                description: Trade ID to begin at
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            symbol:
-                location: $message.payload#/params/symbol
-    trades_recent:
-        address: trades.recent
-        title: Channel trades.recent
-        description: |-
-            Get recent trades.
-            If you need access to real-time trading activity, please consider using WebSocket Streams:
-            - <symbol>@trade
-        messages:
-            receiveMessage:
+            tradesRecentReceive:
                 $ref: '#/components/messages/tradesRecentReceive'
-            sendMessage:
+            tradesRecentSend:
                 $ref: '#/components/messages/tradesRecentSend'
-        parameters:
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            symbol:
-                location: $message.payload#/params/symbol
-    uiKlines:
-        address: uiKlines
-        title: Channel uiKlines
-        description: |-
-            Get klines (candlestick bars) optimized for presentation.
-            This request is similar to klines, having the same parameters and response.
-            uiKlines return modified kline data, optimized for presentation of candlestick charts.
-        messages:
-            receiveMessage:
+            uiKlinesReceive:
                 $ref: '#/components/messages/uiKlinesReceive'
-            sendMessage:
+            uiKlinesSend:
                 $ref: '#/components/messages/uiKlinesSend'
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            interval:
-                description: See klines
-                location: $message.payload#/params/interval
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timeZone:
-                description: 'Default: 0 (UTC)'
-                location: $message.payload#/params/timeZone
-    userDataStream_ping:
-        address: userDataStream.ping
-        title: Channel userDataStream.ping
-        description: |-
-            Ping a user data stream to keep it alive.
-            User data streams close automatically after 60 minutes,
-            even if you're listening to them on WebSocket Streams.
-            In order to keep the stream open, you have to regularly send pings using the userDataStream.ping request.
-            It is recommended to send a ping once every 30 minutes.
-        messages:
-            receiveMessage:
+            userDataStreamPingReceive:
                 $ref: '#/components/messages/userDataStreamPingReceive'
-            sendMessage:
+            userDataStreamPingSend:
                 $ref: '#/components/messages/userDataStreamPingSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            listenKey:
-                location: $message.payload#/params/listenKey
-    userDataStream_start:
-        address: userDataStream.start
-        title: Channel userDataStream.start
-        description: |-
-            Start a new user data stream.
-            Note: the stream will close in 60 minutes
-            unless userDataStream.ping requests are sent regularly.
-        messages:
-            receiveMessage:
+            userDataStreamStartReceive:
                 $ref: '#/components/messages/userDataStreamStartReceive'
-            sendMessage:
+            userDataStreamStartSend:
                 $ref: '#/components/messages/userDataStreamStartSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-    userDataStream_stop:
-        address: userDataStream.stop
-        title: Channel userDataStream.stop
-        description: Explicitly stop and close the user data stream.
-        messages:
-            receiveMessage:
+            userDataStreamStopReceive:
                 $ref: '#/components/messages/userDataStreamStopReceive'
-            sendMessage:
+            userDataStreamStopSend:
                 $ref: '#/components/messages/userDataStreamStopSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            listenKey:
-                location: $message.payload#/params/listenKey
-    userDataStream_subscribe:
-        address: userDataStream.subscribe
-        title: Channel userDataStream.subscribe
-        description: |-
-            Subscribe to the User Data Stream in the current WebSocket connection.
-            Notes:
-            - This method requires an authenticated WebSocket connection using Ed25519 keys. Please refer to session.logon.
-            - To check the subscription status, use session.status, see the userDataStream flag indicating you have have an active subscription.
-            - User Data Stream events are available in both JSON and SBE sessions.
-
-            Please refer to User Data Streams for the event format details.
-            For SBE, only SBE schema 2:1 or later is supported.
-        messages:
-            receiveMessage:
+            userDataStreamSubscribeReceive:
                 $ref: '#/components/messages/userDataStreamSubscribeReceive'
-            sendMessage:
+            userDataStreamSubscribeSend:
                 $ref: '#/components/messages/userDataStreamSubscribeSend'
-    userDataStream_unsubscribe:
-        address: userDataStream.unsubscribe
-        title: Channel userDataStream.unsubscribe
-        description: Stop listening to the User Data Stream in the current WebSocket connection.
-        messages:
-            receiveMessage:
+            userDataStreamUnsubscribeReceive:
                 $ref: '#/components/messages/userDataStreamUnsubscribeReceive'
-            sendMessage:
+            userDataStreamUnsubscribeSend:
                 $ref: '#/components/messages/userDataStreamUnsubscribeSend'
 operations:
     receiveAccountCommission:
@@ -1551,786 +255,1244 @@ operations:
         description: Receive response from account.commission
         action: receive
         channel:
-            $ref: '#/channels/account_commission'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountCommissionReceive'
+            - $ref: '#/channels/spot/messages/accountCommissionReceive'
     receiveAccountRatelimitsOrders:
         title: Receive from account.rateLimits.orders
         description: Receive response from account.rateLimits.orders
         action: receive
         channel:
-            $ref: '#/channels/account_rateLimits_orders'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountRatelimitsOrdersReceive'
+            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersReceive'
     receiveAccountStatus:
         title: Receive from account.status
         description: Receive response from account.status
         action: receive
         channel:
-            $ref: '#/channels/account_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountStatusReceive'
+            - $ref: '#/channels/spot/messages/accountStatusReceive'
     receiveAllorderlists:
         title: Receive from allOrderLists
         description: Receive response from allOrderLists
         action: receive
         channel:
-            $ref: '#/channels/allOrderLists'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/allOrderListsReceive'
+            - $ref: '#/channels/spot/messages/allOrderListsReceive'
     receiveAllorders:
         title: Receive from allOrders
         description: Receive response from allOrders
         action: receive
         channel:
-            $ref: '#/channels/allOrders'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/allOrdersReceive'
+            - $ref: '#/channels/spot/messages/allOrdersReceive'
     receiveAvgprice:
         title: Receive from avgPrice
         description: Receive response from avgPrice
         action: receive
         channel:
-            $ref: '#/channels/avgPrice'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/avgPriceReceive'
+            - $ref: '#/channels/spot/messages/avgPriceReceive'
     receiveDepth:
         title: Receive from depth
         description: Receive response from depth
         action: receive
         channel:
-            $ref: '#/channels/depth'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/depthReceive'
+            - $ref: '#/channels/spot/messages/depthReceive'
     receiveExchangeinfo:
         title: Receive from exchangeInfo
         description: Receive response from exchangeInfo
         action: receive
         channel:
-            $ref: '#/channels/exchangeInfo'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/exchangeInfoReceive'
+            - $ref: '#/channels/spot/messages/exchangeInfoReceive'
     receiveKlines:
         title: Receive from klines
         description: Receive response from klines
         action: receive
         channel:
-            $ref: '#/channels/klines'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/klinesReceive'
+            - $ref: '#/channels/spot/messages/klinesReceive'
     receiveMyallocations:
         title: Receive from myAllocations
         description: Receive response from myAllocations
         action: receive
         channel:
-            $ref: '#/channels/myAllocations'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myAllocationsReceive'
+            - $ref: '#/channels/spot/messages/myAllocationsReceive'
     receiveMypreventedmatches:
         title: Receive from myPreventedMatches
         description: Receive response from myPreventedMatches
         action: receive
         channel:
-            $ref: '#/channels/myPreventedMatches'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myPreventedMatchesReceive'
+            - $ref: '#/channels/spot/messages/myPreventedMatchesReceive'
     receiveMytrades:
         title: Receive from myTrades
         description: Receive response from myTrades
         action: receive
         channel:
-            $ref: '#/channels/myTrades'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myTradesReceive'
+            - $ref: '#/channels/spot/messages/myTradesReceive'
     receiveOpenorderlistsStatus:
         title: Receive from openOrderLists.status
         description: Receive response from openOrderLists.status
         action: receive
         channel:
-            $ref: '#/channels/openOrderLists_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrderListsStatusReceive'
+            - $ref: '#/channels/spot/messages/openOrderListsStatusReceive'
     receiveOpenordersCancelall:
         title: Receive from openOrders.cancelAll
         description: Receive response from openOrders.cancelAll
         action: receive
         channel:
-            $ref: '#/channels/openOrders_cancelAll'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrdersCancelallReceive'
+            - $ref: '#/channels/spot/messages/openOrdersCancelallReceive'
     receiveOpenordersStatus:
         title: Receive from openOrders.status
         description: Receive response from openOrders.status
         action: receive
         channel:
-            $ref: '#/channels/openOrders_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrdersStatusReceive'
+            - $ref: '#/channels/spot/messages/openOrdersStatusReceive'
     receiveOrderAmendKeeppriority:
         title: Receive from order.amend.keepPriority
         description: Receive response from order.amend.keepPriority
         action: receive
         channel:
-            $ref: '#/channels/order_amend_keepPriority'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderAmendKeeppriorityReceive'
+            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityReceive'
     receiveOrderAmendments:
         title: Receive from order.amendments
         description: Receive response from order.amendments
         action: receive
         channel:
-            $ref: '#/channels/order_amendments'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderAmendmentsReceive'
+            - $ref: '#/channels/spot/messages/orderAmendmentsReceive'
     receiveOrderCancel:
         title: Receive from order.cancel
         description: Receive response from order.cancel
         action: receive
         channel:
-            $ref: '#/channels/order_cancel'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderCancelReceive'
+            - $ref: '#/channels/spot/messages/orderCancelReceive'
     receiveOrderCancelreplace:
         title: Receive from order.cancelReplace
         description: Receive response from order.cancelReplace
         action: receive
         channel:
-            $ref: '#/channels/order_cancelReplace'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderCancelreplaceReceive'
+            - $ref: '#/channels/spot/messages/orderCancelreplaceReceive'
     receiveOrderPlace:
         title: Receive from order.place
         description: Receive response from order.place
         action: receive
         channel:
-            $ref: '#/channels/order_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderPlaceReceive'
+            - $ref: '#/channels/spot/messages/orderPlaceReceive'
     receiveOrderStatus:
         title: Receive from order.status
         description: Receive response from order.status
         action: receive
         channel:
-            $ref: '#/channels/order_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderStatusReceive'
+            - $ref: '#/channels/spot/messages/orderStatusReceive'
     receiveOrderTest:
         title: Receive from order.test
         description: Receive response from order.test
         action: receive
         channel:
-            $ref: '#/channels/order_test'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderTestReceive'
+            - $ref: '#/channels/spot/messages/orderTestReceive'
     receiveOrderlistCancel:
         title: Receive from orderList.cancel
         description: Receive response from orderList.cancel
         action: receive
         channel:
-            $ref: '#/channels/orderList_cancel'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListCancelReceive'
+            - $ref: '#/channels/spot/messages/orderListCancelReceive'
     receiveOrderlistPlace:
         title: Receive from orderList.place
         description: Receive response from orderList.place
         action: receive
         channel:
-            $ref: '#/channels/orderList_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceReceive'
     receiveOrderlistPlaceOco:
         title: Receive from orderList.place.oco
         description: Receive response from orderList.place.oco
         action: receive
         channel:
-            $ref: '#/channels/orderList_place_oco'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOcoReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceOcoReceive'
     receiveOrderlistPlaceOto:
         title: Receive from orderList.place.oto
         description: Receive response from orderList.place.oto
         action: receive
         channel:
-            $ref: '#/channels/orderList_place_oto'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOtoReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtoReceive'
     receiveOrderlistPlaceOtoco:
         title: Receive from orderList.place.otoco
         description: Receive response from orderList.place.otoco
         action: receive
         channel:
-            $ref: '#/channels/orderList_place_otoco'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOtocoReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtocoReceive'
     receiveOrderlistStatus:
         title: Receive from orderList.status
         description: Receive response from orderList.status
         action: receive
         channel:
-            $ref: '#/channels/orderList_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListStatusReceive'
+            - $ref: '#/channels/spot/messages/orderListStatusReceive'
     receivePing:
         title: Receive from ping
         description: Receive response from ping
         action: receive
         channel:
-            $ref: '#/channels/ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/pingReceive'
+            - $ref: '#/channels/spot/messages/pingReceive'
     receiveSessionLogon:
         title: Receive from session.logon
         description: Receive response from session.logon
         action: receive
         channel:
-            $ref: '#/channels/session_logon'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sessionLogonReceive'
+            - $ref: '#/channels/spot/messages/sessionLogonReceive'
     receiveSessionLogout:
         title: Receive from session.logout
         description: Receive response from session.logout
         action: receive
         channel:
-            $ref: '#/channels/session_logout'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sessionLogoutReceive'
+            - $ref: '#/channels/spot/messages/sessionLogoutReceive'
     receiveSessionStatus:
         title: Receive from session.status
         description: Receive response from session.status
         action: receive
         channel:
-            $ref: '#/channels/session_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sessionStatusReceive'
+            - $ref: '#/channels/spot/messages/sessionStatusReceive'
     receiveSorOrderPlace:
         title: Receive from sor.order.place
         description: Receive response from sor.order.place
         action: receive
         channel:
-            $ref: '#/channels/sor_order_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sorOrderPlaceReceive'
+            - $ref: '#/channels/spot/messages/sorOrderPlaceReceive'
     receiveSorOrderTest:
         title: Receive from sor.order.test
         description: Receive response from sor.order.test
         action: receive
         channel:
-            $ref: '#/channels/sor_order_test'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sorOrderTestReceive'
+            - $ref: '#/channels/spot/messages/sorOrderTestReceive'
     receiveTicker:
         title: Receive from ticker
         description: Receive response from ticker
         action: receive
         channel:
-            $ref: '#/channels/ticker'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerReceive'
+            - $ref: '#/channels/spot/messages/tickerReceive'
     receiveTicker24hr:
         title: Receive from ticker.24hr
         description: Receive response from ticker.24hr
         action: receive
         channel:
-            $ref: '#/channels/ticker_24hr'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/ticker24hrReceive'
+            - $ref: '#/channels/spot/messages/ticker24hrReceive'
     receiveTickerBook:
         title: Receive from ticker.book
         description: Receive response from ticker.book
         action: receive
         channel:
-            $ref: '#/channels/ticker_book'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerBookReceive'
+            - $ref: '#/channels/spot/messages/tickerBookReceive'
     receiveTickerPrice:
         title: Receive from ticker.price
         description: Receive response from ticker.price
         action: receive
         channel:
-            $ref: '#/channels/ticker_price'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerPriceReceive'
+            - $ref: '#/channels/spot/messages/tickerPriceReceive'
     receiveTickerTradingday:
         title: Receive from ticker.tradingDay
         description: Receive response from ticker.tradingDay
         action: receive
         channel:
-            $ref: '#/channels/ticker_tradingDay'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerTradingdayReceive'
+            - $ref: '#/channels/spot/messages/tickerTradingdayReceive'
     receiveTime:
         title: Receive from time
         description: Receive response from time
         action: receive
         channel:
-            $ref: '#/channels/time'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/timeReceive'
+            - $ref: '#/channels/spot/messages/timeReceive'
     receiveTradesAggregate:
         title: Receive from trades.aggregate
         description: Receive response from trades.aggregate
         action: receive
         channel:
-            $ref: '#/channels/trades_aggregate'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesAggregateReceive'
+            - $ref: '#/channels/spot/messages/tradesAggregateReceive'
     receiveTradesHistorical:
         title: Receive from trades.historical
         description: Receive response from trades.historical
         action: receive
         channel:
-            $ref: '#/channels/trades_historical'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesHistoricalReceive'
+            - $ref: '#/channels/spot/messages/tradesHistoricalReceive'
     receiveTradesRecent:
         title: Receive from trades.recent
         description: Receive response from trades.recent
         action: receive
         channel:
-            $ref: '#/channels/trades_recent'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesRecentReceive'
+            - $ref: '#/channels/spot/messages/tradesRecentReceive'
     receiveUiklines:
         title: Receive from uiKlines
         description: Receive response from uiKlines
         action: receive
         channel:
-            $ref: '#/channels/uiKlines'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/uiKlinesReceive'
+            - $ref: '#/channels/spot/messages/uiKlinesReceive'
+    receiveUserDataStreamEvents:
+        title: Receive user data stream events
+        description: Receive various user data stream events after successful subscription
+        action: receive
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/outboundAccountPosition'
+            - $ref: '#/channels/spot/messages/balanceUpdate'
+            - $ref: '#/channels/spot/messages/executionReport'
+            - $ref: '#/channels/spot/messages/listStatus'
+            - $ref: '#/channels/spot/messages/listenKeyExpired'
+            - $ref: '#/channels/spot/messages/externalLockUpdate'
     receiveUserdatastreamPing:
         title: Receive from userDataStream.ping
         description: Receive response from userDataStream.ping
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamPingReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamPingReceive'
     receiveUserdatastreamStart:
         title: Receive from userDataStream.start
         description: Receive response from userDataStream.start
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_start'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamStartReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamStartReceive'
     receiveUserdatastreamStop:
         title: Receive from userDataStream.stop
         description: Receive response from userDataStream.stop
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_stop'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamStopReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamStopReceive'
     receiveUserdatastreamSubscribe:
         title: Receive from userDataStream.subscribe
         description: Receive response from userDataStream.subscribe
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_subscribe'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamSubscribeReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeReceive'
     receiveUserdatastreamUnsubscribe:
         title: Receive from userDataStream.unsubscribe
         description: Receive response from userDataStream.unsubscribe
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_unsubscribe'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamUnsubscribeReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamUnsubscribeReceive'
     sendAccountCommission:
         title: Send to account.commission
         description: Send a account.commission request
         action: send
         channel:
-            $ref: '#/channels/account_commission'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountCommissionSend'
+            - $ref: '#/channels/spot/messages/accountCommissionSend'
     sendAccountRatelimitsOrders:
         title: Send to account.rateLimits.orders
         description: Send a account.rateLimits.orders request
         action: send
         channel:
-            $ref: '#/channels/account_rateLimits_orders'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountRatelimitsOrdersSend'
+            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersSend'
     sendAccountStatus:
         title: Send to account.status
         description: Send a account.status request
         action: send
         channel:
-            $ref: '#/channels/account_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountStatusSend'
+            - $ref: '#/channels/spot/messages/accountStatusSend'
     sendAllorderlists:
         title: Send to allOrderLists
         description: Send a allOrderLists request
         action: send
         channel:
-            $ref: '#/channels/allOrderLists'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/allOrderListsSend'
+            - $ref: '#/channels/spot/messages/allOrderListsSend'
     sendAllorders:
         title: Send to allOrders
         description: Send a allOrders request
         action: send
         channel:
-            $ref: '#/channels/allOrders'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/allOrdersSend'
+            - $ref: '#/channels/spot/messages/allOrdersSend'
     sendAvgprice:
         title: Send to avgPrice
         description: Send a avgPrice request
         action: send
         channel:
-            $ref: '#/channels/avgPrice'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/avgPriceSend'
+            - $ref: '#/channels/spot/messages/avgPriceSend'
     sendDepth:
         title: Send to depth
         description: Send a depth request
         action: send
         channel:
-            $ref: '#/channels/depth'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/depthSend'
+            - $ref: '#/channels/spot/messages/depthSend'
     sendExchangeinfo:
         title: Send to exchangeInfo
         description: Send a exchangeInfo request
         action: send
         channel:
-            $ref: '#/channels/exchangeInfo'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/exchangeInfoSend'
+            - $ref: '#/channels/spot/messages/exchangeInfoSend'
     sendKlines:
         title: Send to klines
         description: Send a klines request
         action: send
         channel:
-            $ref: '#/channels/klines'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/klinesSend'
+            - $ref: '#/channels/spot/messages/klinesSend'
     sendMyallocations:
         title: Send to myAllocations
         description: Send a myAllocations request
         action: send
         channel:
-            $ref: '#/channels/myAllocations'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myAllocationsSend'
+            - $ref: '#/channels/spot/messages/myAllocationsSend'
     sendMypreventedmatches:
         title: Send to myPreventedMatches
         description: Send a myPreventedMatches request
         action: send
         channel:
-            $ref: '#/channels/myPreventedMatches'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myPreventedMatchesSend'
+            - $ref: '#/channels/spot/messages/myPreventedMatchesSend'
     sendMytrades:
         title: Send to myTrades
         description: Send a myTrades request
         action: send
         channel:
-            $ref: '#/channels/myTrades'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myTradesSend'
+            - $ref: '#/channels/spot/messages/myTradesSend'
     sendOpenorderlistsStatus:
         title: Send to openOrderLists.status
         description: Send a openOrderLists.status request
         action: send
         channel:
-            $ref: '#/channels/openOrderLists_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrderListsStatusSend'
+            - $ref: '#/channels/spot/messages/openOrderListsStatusSend'
     sendOpenordersCancelall:
         title: Send to openOrders.cancelAll
         description: Send a openOrders.cancelAll request
         action: send
         channel:
-            $ref: '#/channels/openOrders_cancelAll'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrdersCancelallSend'
+            - $ref: '#/channels/spot/messages/openOrdersCancelallSend'
     sendOpenordersStatus:
         title: Send to openOrders.status
         description: Send a openOrders.status request
         action: send
         channel:
-            $ref: '#/channels/openOrders_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/openOrdersStatusSend'
+            - $ref: '#/channels/spot/messages/openOrdersStatusSend'
     sendOrderAmendKeeppriority:
         title: Send to order.amend.keepPriority
         description: Send a order.amend.keepPriority request
         action: send
         channel:
-            $ref: '#/channels/order_amend_keepPriority'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderAmendKeepprioritySend'
+            - $ref: '#/channels/spot/messages/orderAmendKeepprioritySend'
     sendOrderAmendments:
         title: Send to order.amendments
         description: Send a order.amendments request
         action: send
         channel:
-            $ref: '#/channels/order_amendments'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderAmendmentsSend'
+            - $ref: '#/channels/spot/messages/orderAmendmentsSend'
     sendOrderCancel:
         title: Send to order.cancel
         description: Send a order.cancel request
         action: send
         channel:
-            $ref: '#/channels/order_cancel'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderCancelSend'
+            - $ref: '#/channels/spot/messages/orderCancelSend'
     sendOrderCancelreplace:
         title: Send to order.cancelReplace
         description: Send a order.cancelReplace request
         action: send
         channel:
-            $ref: '#/channels/order_cancelReplace'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderCancelreplaceSend'
+            - $ref: '#/channels/spot/messages/orderCancelreplaceSend'
     sendOrderPlace:
         title: Send to order.place
         description: Send a order.place request
         action: send
         channel:
-            $ref: '#/channels/order_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderPlaceSend'
+            - $ref: '#/channels/spot/messages/orderPlaceSend'
     sendOrderStatus:
         title: Send to order.status
         description: Send a order.status request
         action: send
         channel:
-            $ref: '#/channels/order_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderStatusSend'
+            - $ref: '#/channels/spot/messages/orderStatusSend'
     sendOrderTest:
         title: Send to order.test
         description: Send a order.test request
         action: send
         channel:
-            $ref: '#/channels/order_test'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderTestSend'
+            - $ref: '#/channels/spot/messages/orderTestSend'
     sendOrderlistCancel:
         title: Send to orderList.cancel
         description: Send a orderList.cancel request
         action: send
         channel:
-            $ref: '#/channels/orderList_cancel'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListCancelSend'
+            - $ref: '#/channels/spot/messages/orderListCancelSend'
     sendOrderlistPlace:
         title: Send to orderList.place
         description: Send a orderList.place request
         action: send
         channel:
-            $ref: '#/channels/orderList_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceSend'
     sendOrderlistPlaceOco:
         title: Send to orderList.place.oco
         description: Send a orderList.place.oco request
         action: send
         channel:
-            $ref: '#/channels/orderList_place_oco'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOcoSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceOcoSend'
     sendOrderlistPlaceOto:
         title: Send to orderList.place.oto
         description: Send a orderList.place.oto request
         action: send
         channel:
-            $ref: '#/channels/orderList_place_oto'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOtoSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtoSend'
     sendOrderlistPlaceOtoco:
         title: Send to orderList.place.otoco
         description: Send a orderList.place.otoco request
         action: send
         channel:
-            $ref: '#/channels/orderList_place_otoco'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOtocoSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtocoSend'
     sendOrderlistStatus:
         title: Send to orderList.status
         description: Send a orderList.status request
         action: send
         channel:
-            $ref: '#/channels/orderList_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListStatusSend'
+            - $ref: '#/channels/spot/messages/orderListStatusSend'
     sendPing:
         title: Send to ping
         description: Send a ping request
         action: send
         channel:
-            $ref: '#/channels/ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/pingSend'
+            - $ref: '#/channels/spot/messages/pingSend'
     sendSessionLogon:
         title: Send to session.logon
         description: Send a session.logon request
         action: send
         channel:
-            $ref: '#/channels/session_logon'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sessionLogonSend'
+            - $ref: '#/channels/spot/messages/sessionLogonSend'
     sendSessionLogout:
         title: Send to session.logout
         description: Send a session.logout request
         action: send
         channel:
-            $ref: '#/channels/session_logout'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sessionLogoutSend'
+            - $ref: '#/channels/spot/messages/sessionLogoutSend'
     sendSessionStatus:
         title: Send to session.status
         description: Send a session.status request
         action: send
         channel:
-            $ref: '#/channels/session_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sessionStatusSend'
+            - $ref: '#/channels/spot/messages/sessionStatusSend'
     sendSorOrderPlace:
         title: Send to sor.order.place
         description: Send a sor.order.place request
         action: send
         channel:
-            $ref: '#/channels/sor_order_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sorOrderPlaceSend'
+            - $ref: '#/channels/spot/messages/sorOrderPlaceSend'
     sendSorOrderTest:
         title: Send to sor.order.test
         description: Send a sor.order.test request
         action: send
         channel:
-            $ref: '#/channels/sor_order_test'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sorOrderTestSend'
+            - $ref: '#/channels/spot/messages/sorOrderTestSend'
     sendTicker:
         title: Send to ticker
         description: Send a ticker request
         action: send
         channel:
-            $ref: '#/channels/ticker'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerSend'
+            - $ref: '#/channels/spot/messages/tickerSend'
     sendTicker24hr:
         title: Send to ticker.24hr
         description: Send a ticker.24hr request
         action: send
         channel:
-            $ref: '#/channels/ticker_24hr'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/ticker24hrSend'
+            - $ref: '#/channels/spot/messages/ticker24hrSend'
     sendTickerBook:
         title: Send to ticker.book
         description: Send a ticker.book request
         action: send
         channel:
-            $ref: '#/channels/ticker_book'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerBookSend'
+            - $ref: '#/channels/spot/messages/tickerBookSend'
     sendTickerPrice:
         title: Send to ticker.price
         description: Send a ticker.price request
         action: send
         channel:
-            $ref: '#/channels/ticker_price'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerPriceSend'
+            - $ref: '#/channels/spot/messages/tickerPriceSend'
     sendTickerTradingday:
         title: Send to ticker.tradingDay
         description: Send a ticker.tradingDay request
         action: send
         channel:
-            $ref: '#/channels/ticker_tradingDay'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerTradingdaySend'
+            - $ref: '#/channels/spot/messages/tickerTradingdaySend'
     sendTime:
         title: Send to time
         description: Send a time request
         action: send
         channel:
-            $ref: '#/channels/time'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/timeSend'
+            - $ref: '#/channels/spot/messages/timeSend'
     sendTradesAggregate:
         title: Send to trades.aggregate
         description: Send a trades.aggregate request
         action: send
         channel:
-            $ref: '#/channels/trades_aggregate'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesAggregateSend'
+            - $ref: '#/channels/spot/messages/tradesAggregateSend'
     sendTradesHistorical:
         title: Send to trades.historical
         description: Send a trades.historical request
         action: send
         channel:
-            $ref: '#/channels/trades_historical'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesHistoricalSend'
+            - $ref: '#/channels/spot/messages/tradesHistoricalSend'
     sendTradesRecent:
         title: Send to trades.recent
         description: Send a trades.recent request
         action: send
         channel:
-            $ref: '#/channels/trades_recent'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesRecentSend'
+            - $ref: '#/channels/spot/messages/tradesRecentSend'
     sendUiklines:
         title: Send to uiKlines
         description: Send a uiKlines request
         action: send
         channel:
-            $ref: '#/channels/uiKlines'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/uiKlinesSend'
+            - $ref: '#/channels/spot/messages/uiKlinesSend'
     sendUserdatastreamPing:
         title: Send to userDataStream.ping
         description: Send a userDataStream.ping request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamPingSend'
+            - $ref: '#/channels/spot/messages/userDataStreamPingSend'
     sendUserdatastreamStart:
         title: Send to userDataStream.start
         description: Send a userDataStream.start request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_start'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamStartSend'
+            - $ref: '#/channels/spot/messages/userDataStreamStartSend'
     sendUserdatastreamStop:
         title: Send to userDataStream.stop
         description: Send a userDataStream.stop request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_stop'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamStopSend'
+            - $ref: '#/channels/spot/messages/userDataStreamStopSend'
     sendUserdatastreamSubscribe:
         title: Send to userDataStream.subscribe
         description: Send a userDataStream.subscribe request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_subscribe'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamSubscribeSend'
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeSend'
     sendUserdatastreamUnsubscribe:
         title: Send to userDataStream.unsubscribe
         description: Send a userDataStream.unsubscribe request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_unsubscribe'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamUnsubscribeSend'
+            - $ref: '#/channels/spot/messages/userDataStreamUnsubscribeSend'
 components:
+    schemas:
+        BalanceUpdateEvent:
+            type: object
+            description: Balance Update - occurs during deposits, withdrawals, or transfers
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1573200697110
+                        T:
+                            type: integer
+                            format: int64
+                            description: Clear Time (milliseconds)
+                            example: 1573200697068
+                        a:
+                            type: string
+                            description: Asset
+                            example: BTC
+                        d:
+                            type: string
+                            description: Balance Delta
+                            example: "100.00000000"
+                        e:
+                            type: string
+                            description: Event Type
+                            example: balanceUpdate
+        EventStreamTerminatedEvent:
+            type: object
+            description: Event Stream Terminated - sent when User Data Stream is stopped (WebSocket API only)
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1728973001334
+                        e:
+                            type: string
+                            description: Event Type
+                            example: eventStreamTerminated
+        ExecutionReportEvent:
+            type: object
+            description: Order Update - orders are updated with executionReport event
+            properties:
+                event:
+                    type: object
+                    properties:
+                        A:
+                            type: string
+                            description: Prevented Quantity
+                            example: "3.000000"
+                        B:
+                            type: string
+                            description: Last Prevented Quantity
+                            example: "3.000000"
+                        C:
+                            type: string
+                            description: Original client order ID (for canceled orders)
+                            example: ""
+                        Cs:
+                            type: string
+                            description: Counter Symbol
+                            example: BTCUSDT
+                        D:
+                            type: integer
+                            format: int64
+                            description: Trailing Time (milliseconds)
+                            example: 1668680518494
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event time (milliseconds)
+                            example: 1499405658658
+                        F:
+                            type: string
+                            description: Iceberg quantity
+                            example: "0.00000000"
+                        I:
+                            type: integer
+                            format: int64
+                            description: Execution Id
+                            example: 8641984
+                        J:
+                            type: integer
+                            format: int64
+                            description: Strategy Type (if provided upon order placement)
+                            example: 1000000
+                        L:
+                            type: string
+                            description: Last executed price
+                            example: "0.00000000"
+                        M:
+                            type: boolean
+                            description: Ignore
+                            example: false
+                        "N":
+                            type: string
+                            description: Commission asset
+                        O:
+                            type: integer
+                            format: int64
+                            description: Order creation time (milliseconds)
+                            example: 1499405658657
+                        P:
+                            type: string
+                            description: Stop price
+                            example: "0.00000000"
+                        Q:
+                            type: string
+                            description: Quote Order Quantity
+                            example: "0.00000000"
+                        S:
+                            type: string
+                            description: Side
+                            example: BUY
+                            enum:
+                                - BUY
+                                - SELL
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction time (milliseconds)
+                            example: 1499405658657
+                        U:
+                            type: integer
+                            format: int64
+                            description: Counter Order Id
+                            example: 37
+                        V:
+                            type: string
+                            description: SelfTradePreventionMode
+                            example: NONE
+                        W:
+                            type: integer
+                            format: int64
+                            description: Working Time (visible if order is on the book)
+                            example: 1499405658657
+                        X:
+                            type: string
+                            description: Current order status
+                            example: NEW
+                        "Y":
+                            type: string
+                            description: Last quote asset transacted quantity
+                            example: "0.00000000"
+                        Z:
+                            type: string
+                            description: Cumulative quote asset transacted quantity
+                            example: "0.00000000"
+                        a:
+                            type: integer
+                            format: int64
+                            description: Allocation ID
+                            example: 1234
+                        b:
+                            type: string
+                            description: Match Type (for orders with allocations)
+                            example: ONE_PARTY_TRADE_REPORT
+                        c:
+                            type: string
+                            description: Client order ID
+                            example: mUvoqJxFIILMdfAW5iGSOW
+                        d:
+                            type: integer
+                            description: Trailing Delta (for trailing stop orders)
+                            example: 4
+                        e:
+                            type: string
+                            description: Event type
+                            example: executionReport
+                        f:
+                            type: string
+                            description: Time in force
+                            example: GTC
+                        g:
+                            type: integer
+                            format: int64
+                            description: OrderListId
+                            example: -1
+                        i:
+                            type: integer
+                            format: int64
+                            description: Order ID
+                            example: 4293153
+                        j:
+                            type: integer
+                            format: int64
+                            description: Strategy Id (if provided upon order placement)
+                            example: 1
+                        k:
+                            type: string
+                            description: Working Floor (for orders with potential allocations)
+                            example: SOR
+                        l:
+                            type: string
+                            description: Last executed quantity
+                            example: "0.00000000"
+                        m:
+                            type: boolean
+                            description: Is this trade the maker side?
+                            example: false
+                        "n":
+                            type: string
+                            description: Commission amount
+                            example: "0"
+                        o:
+                            type: string
+                            description: Order type
+                            example: LIMIT
+                        p:
+                            type: string
+                            description: Order price
+                            example: "0.10264410"
+                        pL:
+                            type: string
+                            description: Prevented Execution Price
+                            example: "0.10000001"
+                        pY:
+                            type: string
+                            description: Prevented Execution Quote Qty
+                            example: "0.21234562"
+                        pl:
+                            type: string
+                            description: Prevented Execution Quantity
+                            example: "2.123456"
+                        q:
+                            type: string
+                            description: Order quantity
+                            example: "1.00000000"
+                        r:
+                            type: string
+                            description: Order reject reason
+                            example: NONE
+                            enum:
+                                - NONE
+                                - INSUFFICIENT_BALANCES
+                                - STOP_PRICE_WOULD_TRIGGER_IMMEDIATELY
+                                - WOULD_MATCH_IMMEDIATELY
+                                - OCO_BAD_PRICES
+                        s:
+                            type: string
+                            description: Symbol
+                            example: ETHBTC
+                        t:
+                            type: integer
+                            format: int64
+                            description: Trade ID
+                            example: -1
+                        u:
+                            type: integer
+                            format: int64
+                            description: Trade Group Id
+                            example: 1
+                        uS:
+                            type: boolean
+                            description: UsedSor (for orders that used SOR)
+                            example: true
+                        v:
+                            type: integer
+                            format: int64
+                            description: Prevented Match Id (visible if order expired due to STP)
+                            example: 3
+                        w:
+                            type: boolean
+                            description: Is the order on the book?
+                            example: true
+                        x:
+                            type: string
+                            description: Current execution type
+                            example: NEW
+                            enum:
+                                - NEW
+                                - CANCELED
+                                - REPLACED
+                                - REJECTED
+                                - TRADE
+                                - EXPIRED
+                                - TRADE_PREVENTION
+                        z:
+                            type: string
+                            description: Cumulative filled quantity
+                            example: "0.00000000"
+        ExternalLockUpdateEvent:
+            type: object
+            description: External Lock Update - sent when spot wallet balance is locked/unlocked by external system
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1581557507324
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1581557507268
+                        a:
+                            type: string
+                            description: Asset
+                            example: NEO
+                        d:
+                            type: string
+                            description: Delta
+                            example: "10.00000000"
+                        e:
+                            type: string
+                            description: Event Type
+                            example: externalLockUpdate
+        ListStatusEvent:
+            type: object
+            description: List Status - sent with executionReport for order lists (OCO orders)
+            properties:
+                event:
+                    type: object
+                    properties:
+                        C:
+                            type: string
+                            description: List Client Order ID
+                            example: F4QN4G8DlFATFlIUQ0cjdD
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1564035303637
+                        L:
+                            type: string
+                            description: List Order Status
+                            example: EXECUTING
+                        O:
+                            type: array
+                            description: Array of orders in the list
+                            items:
+                                type: object
+                                properties:
+                                    c:
+                                        type: string
+                                        description: ClientOrderId
+                                        example: AJYsMjErWJesZvqlJCTUgL
+                                    i:
+                                        type: integer
+                                        format: int64
+                                        description: OrderId
+                                        example: 17
+                                    s:
+                                        type: string
+                                        description: Symbol
+                                        example: ETHBTC
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1564035303625
+                        c:
+                            type: string
+                            description: Contingency Type
+                            example: OCO
+                        e:
+                            type: string
+                            description: Event Type
+                            example: listStatus
+                        g:
+                            type: integer
+                            format: int64
+                            description: OrderListId
+                            example: 2
+                        l:
+                            type: string
+                            description: List Status Type
+                            example: EXEC_STARTED
+                        r:
+                            type: string
+                            description: List Reject Reason
+                            example: NONE
+                        s:
+                            type: string
+                            description: Symbol
+                            example: ETHBTC
+        ListenKeyExpiredEvent:
+            type: object
+            description: Listen Key Expired - sent when the listen key expires
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event time (milliseconds)
+                            example: 1699596037418
+                        e:
+                            type: string
+                            description: Event type
+                            example: listenKeyExpired
+                        listenKey:
+                            type: string
+                            description: The expired listen key
+                            example: OfYGbUzi3PraNagEkdKuFwUHn48brFsItTdsuiIXrucEvD0rhRXZ7I6URWfE8YE8
+        OutboundAccountPositionEvent:
+            type: object
+            description: Account Update - sent when account balance changes
+            properties:
+                event:
+                    type: object
+                    properties:
+                        B:
+                            type: array
+                            description: Balances Array
+                            items:
+                                type: object
+                                properties:
+                                    a:
+                                        type: string
+                                        description: Asset
+                                        example: ETH
+                                    f:
+                                        type: string
+                                        description: Free
+                                        example: "10000.000000"
+                                    l:
+                                        type: string
+                                        description: Locked
+                                        example: "0.000000"
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1564034571105
+                        e:
+                            type: string
+                            description: Event type
+                            example: outboundAccountPosition
+                        u:
+                            type: integer
+                            format: int64
+                            description: Time of last account update (milliseconds)
+                            example: 1564034571073
     messages:
         accountCommissionReceive:
             name: Account Commission Rates (USER_DATA) Response
@@ -9320,8 +8482,8 @@ components:
                             - listenKey
                             - apiKey
         userDataStreamSubscribeReceive:
-            name: User Data Stream subscription Response
-            title: User Data Stream subscription Response
+            name: Subscribe to User Data Stream (USER_STREAM) Response
+            title: Subscribe to User Data Stream (USER_STREAM) Response
             description: Receive response from userDataStream.subscribe
             payload:
                 type: object
@@ -9339,8 +8501,8 @@ components:
                         description: status property
                         example: 200
         userDataStreamSubscribeSend:
-            name: User Data Stream subscription Request
-            title: User Data Stream subscription Request
+            name: Subscribe to User Data Stream (USER_STREAM) Request
+            title: Subscribe to User Data Stream (USER_STREAM) Request
             description: Send a userDataStream.subscribe request
             payload:
                 type: object

@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    ticker_book:
-        address: ticker.book
+    spot:
+        address: /
         title: Channel ticker.book
         description: |-
             Get the current best price and quantity on the order book.
@@ -14,34 +14,27 @@ channels:
             - symbol and symbols cannot be used together.
             - If no symbol is specified, returns information about all symbols currently trading on the exchange.
         messages:
-            receiveMessage:
+            tickerBookReceive:
                 $ref: '#/components/messages/tickerBookReceive'
-            sendMessage:
+            tickerBookSend:
                 $ref: '#/components/messages/tickerBookSend'
-        parameters:
-            symbol:
-                description: Query ticker for a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query ticker for multiple symbols
-                location: $message.payload#/params/symbols
 operations:
     receiveTickerBook:
         title: Receive from ticker.book
         description: Receive response from ticker.book
         action: receive
         channel:
-            $ref: '#/channels/ticker_book'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerBookReceive'
+            - $ref: '#/channels/spot/messages/tickerBookReceive'
     sendTickerBook:
         title: Send to ticker.book
         description: Send a ticker.book request
         action: send
         channel:
-            $ref: '#/channels/ticker_book'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerBookSend'
+            - $ref: '#/channels/spot/messages/tickerBookSend'
 components:
     messages:
         tickerBookReceive:

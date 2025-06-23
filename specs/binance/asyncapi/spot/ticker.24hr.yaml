@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    ticker_24hr:
-        address: ticker.24hr
+    spot:
+        address: /
         title: Channel ticker.24hr
         description: |-
             Get 24-hour rolling window price change statistics.
@@ -17,37 +17,27 @@ channels:
             - symbol and symbols cannot be used together.
             - If no symbol is specified, returns information about all symbols currently trading on the exchange.
         messages:
-            receiveMessage:
+            ticker24hrReceive:
                 $ref: '#/components/messages/ticker24hrReceive'
-            sendMessage:
+            ticker24hrSend:
                 $ref: '#/components/messages/ticker24hrSend'
-        parameters:
-            symbol:
-                description: Query ticker for a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query ticker for multiple symbols
-                location: $message.payload#/params/symbols
-            type:
-                description: 'Ticker type: FULL (default) or MINI'
-                location: $message.payload#/params/type
 operations:
     receiveTicker24hr:
         title: Receive from ticker.24hr
         description: Receive response from ticker.24hr
         action: receive
         channel:
-            $ref: '#/channels/ticker_24hr'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/ticker24hrReceive'
+            - $ref: '#/channels/spot/messages/ticker24hrReceive'
     sendTicker24hr:
         title: Send to ticker.24hr
         description: Send a ticker.24hr request
         action: send
         channel:
-            $ref: '#/channels/ticker_24hr'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/ticker24hrSend'
+            - $ref: '#/channels/spot/messages/ticker24hrSend'
 components:
     messages:
         ticker24hrReceive:

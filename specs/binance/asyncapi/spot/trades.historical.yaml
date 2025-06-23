@@ -3,41 +3,32 @@ info:
     title: ""
     version: ""
 channels:
-    trades_historical:
-        address: trades.historical
+    spot:
+        address: /
         title: Channel trades.historical
         description: Get historical trades.
         messages:
-            receiveMessage:
+            tradesHistoricalReceive:
                 $ref: '#/components/messages/tradesHistoricalReceive'
-            sendMessage:
+            tradesHistoricalSend:
                 $ref: '#/components/messages/tradesHistoricalSend'
-        parameters:
-            fromId:
-                description: Trade ID to begin at
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            symbol:
-                location: $message.payload#/params/symbol
 operations:
     receiveTradesHistorical:
         title: Receive from trades.historical
         description: Receive response from trades.historical
         action: receive
         channel:
-            $ref: '#/channels/trades_historical'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesHistoricalReceive'
+            - $ref: '#/channels/spot/messages/tradesHistoricalReceive'
     sendTradesHistorical:
         title: Send to trades.historical
         description: Send a trades.historical request
         action: send
         channel:
-            $ref: '#/channels/trades_historical'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tradesHistoricalSend'
+            - $ref: '#/channels/spot/messages/tradesHistoricalSend'
 components:
     messages:
         tradesHistoricalReceive:

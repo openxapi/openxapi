@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    orderList_place_oto:
-        address: orderList.place.oto
+    spot:
+        address: /
         title: Channel orderList.place.oto
         description: |-
             Places an OTO.
@@ -15,102 +15,27 @@ channels:
             - When the order list is placed, if the working order gets immediately fully filled, the placement response will show the working order as FILLED but the pending order will still appear as PENDING_NEW. You need to query the status of the pending order again to see its updated status.
             - OTOs add 2 orders to the EXCHANGE_MAX_NUM_ORDERS filter and MAX_NUM_ORDERS filter.
         messages:
-            receiveMessage:
+            orderListPlaceOtoReceive:
                 $ref: '#/components/messages/orderListPlaceOtoReceive'
-            sendMessage:
+            orderListPlaceOtoSend:
                 $ref: '#/components/messages/orderListPlaceOtoSend'
-        parameters:
-            listClientOrderId:
-                description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId and the pendingClientOrderId.
-                location: $message.payload#/params/listClientOrderId
-            newOrderRespType:
-                description: 'Format of the JSON response. Supported values: Order Response Type'
-                location: $message.payload#/params/newOrderRespType
-            pendingClientOrderId:
-                description: Arbitrary unique ID among open orders for the pending order. Automatically generated if not sent.
-                location: $message.payload#/params/pendingClientOrderId
-            pendingIcebergQty:
-                description: This can only be used if pendingTimeInForce is GTC, or if pendingType is LIMIT_MAKER.
-                location: $message.payload#/params/pendingIcebergQty
-            pendingPrice:
-                location: $message.payload#/params/pendingPrice
-            pendingQuantity:
-                description: Sets the quantity for the pending order.
-                location: $message.payload#/params/pendingQuantity
-            pendingSide:
-                description: 'Supported values: Order side'
-                location: $message.payload#/params/pendingSide
-            pendingStopPrice:
-                location: $message.payload#/params/pendingStopPrice
-            pendingStrategyId:
-                description: Arbitrary numeric value identifying the pending order within an order strategy.
-                location: $message.payload#/params/pendingStrategyId
-            pendingStrategyType:
-                description: Arbitrary numeric value identifying the pending order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/pendingStrategyType
-            pendingTimeInForce:
-                description: 'Supported values: Time In Force'
-                location: $message.payload#/params/pendingTimeInForce
-            pendingTrailingDelta:
-                location: $message.payload#/params/pendingTrailingDelta
-            pendingType:
-                description: 'Supported values: Order types.  Note that MARKET orders using quoteOrderQty are not supported.'
-                location: $message.payload#/params/pendingType
-            recvWindow:
-                description: The value cannot be greater than 60000.
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
-                location: $message.payload#/params/selfTradePreventionMode
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-            workingClientOrderId:
-                description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
-                location: $message.payload#/params/workingClientOrderId
-            workingIcebergQty:
-                description: This can only be used if workingTimeInForce is GTC, or if workingType is LIMIT_MAKER.
-                location: $message.payload#/params/workingIcebergQty
-            workingPrice:
-                location: $message.payload#/params/workingPrice
-            workingQuantity:
-                description: Sets the quantity for the working order.
-                location: $message.payload#/params/workingQuantity
-            workingSide:
-                description: 'Supported values: Order side'
-                location: $message.payload#/params/workingSide
-            workingStrategyId:
-                description: Arbitrary numeric value identifying the working order within an order strategy.
-                location: $message.payload#/params/workingStrategyId
-            workingStrategyType:
-                description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/workingStrategyType
-            workingTimeInForce:
-                description: 'Supported values: Time In Force'
-                location: $message.payload#/params/workingTimeInForce
-            workingType:
-                description: 'Supported values: LIMIT,LIMIT_MAKER'
-                location: $message.payload#/params/workingType
 operations:
     receiveOrderlistPlaceOto:
         title: Receive from orderList.place.oto
         description: Receive response from orderList.place.oto
         action: receive
         channel:
-            $ref: '#/channels/orderList_place_oto'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOtoReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtoReceive'
     sendOrderlistPlaceOto:
         title: Send to orderList.place.oto
         description: Send a orderList.place.oto request
         action: send
         channel:
-            $ref: '#/channels/orderList_place_oto'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOtoSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtoSend'
 components:
     messages:
         orderListPlaceOtoReceive:

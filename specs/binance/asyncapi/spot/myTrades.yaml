@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    myTrades:
-        address: myTrades
+    spot:
+        address: /
         title: Channel myTrades
         description: |-
             Query information about all your trades, filtered by time range.
@@ -17,51 +17,27 @@ channels:
             - If no condition is specified, the most recent trades are returned.
             - The time between startTime and endTime can't be longer than 24 hours.
         messages:
-            receiveMessage:
+            myTradesReceive:
                 $ref: '#/components/messages/myTradesReceive'
-            sendMessage:
+            myTradesSend:
                 $ref: '#/components/messages/myTradesSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            endTime:
-                location: $message.payload#/params/endTime
-            fromId:
-                description: First trade ID to query
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            orderId:
-                location: $message.payload#/params/orderId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveMytrades:
         title: Receive from myTrades
         description: Receive response from myTrades
         action: receive
         channel:
-            $ref: '#/channels/myTrades'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myTradesReceive'
+            - $ref: '#/channels/spot/messages/myTradesReceive'
     sendMytrades:
         title: Send to myTrades
         description: Send a myTrades request
         action: send
         channel:
-            $ref: '#/channels/myTrades'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/myTradesSend'
+            - $ref: '#/channels/spot/messages/myTradesSend'
 components:
     messages:
         myTradesReceive:

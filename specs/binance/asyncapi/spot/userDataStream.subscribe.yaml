@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    userDataStream_subscribe:
-        address: userDataStream.subscribe
+    spot:
+        address: /
         title: Channel userDataStream.subscribe
         description: |-
             Subscribe to the User Data Stream in the current WebSocket connection.
@@ -16,9 +16,9 @@ channels:
             Please refer to User Data Streams for the event format details.
             For SBE, only SBE schema 2:1 or later is supported.
         messages:
-            receiveMessage:
+            userDataStreamSubscribeReceive:
                 $ref: '#/components/messages/userDataStreamSubscribeReceive'
-            sendMessage:
+            userDataStreamSubscribeSend:
                 $ref: '#/components/messages/userDataStreamSubscribeSend'
 operations:
     receiveUserdatastreamSubscribe:
@@ -26,22 +26,22 @@ operations:
         description: Receive response from userDataStream.subscribe
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_subscribe'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamSubscribeReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeReceive'
     sendUserdatastreamSubscribe:
         title: Send to userDataStream.subscribe
         description: Send a userDataStream.subscribe request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_subscribe'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamSubscribeSend'
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeSend'
 components:
     messages:
         userDataStreamSubscribeReceive:
-            name: User Data Stream subscription Response
-            title: User Data Stream subscription Response
+            name: Subscribe to User Data Stream (USER_STREAM) Response
+            title: Subscribe to User Data Stream (USER_STREAM) Response
             description: Receive response from userDataStream.subscribe
             payload:
                 type: object
@@ -59,8 +59,8 @@ components:
                         description: status property
                         example: 200
         userDataStreamSubscribeSend:
-            name: User Data Stream subscription Request
-            title: User Data Stream subscription Request
+            name: Subscribe to User Data Stream (USER_STREAM) Request
+            title: Subscribe to User Data Stream (USER_STREAM) Request
             description: Send a userDataStream.subscribe request
             payload:
                 type: object

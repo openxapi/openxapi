@@ -215,14 +215,14 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 		componentMessages := g.convertChannelMessagesToComponentMessages(&channel)
 
 		// Create operations for this channel
-		operations := g.createOperationsFromChannel(&channel)
+		operations := g.createOperationsFromChannel(&channel, apiType)
 
 		// Write channel spec to file
 		channelSpec := &AsyncAPISpec{
 			AsyncAPI: "3.0.0",
 			Info:     &AsyncAPIInfo{},
 			Channels: map[string]*AsyncAPIChannel{
-				g.sanitizeChannelName(channel.Name): asyncChannel,
+				apiType: asyncChannel,
 			},
 			Operations: operations,
 			Components: &AsyncAPIComponents{
@@ -306,6 +306,14 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 		return files[i].Name() < files[j].Name()
 	})
 
+	// Initialize the main channel for this apiType
+	mainChannel := &AsyncAPIChannel{
+		Address:     "/",
+		Title:       fmt.Sprintf("Channel %s", apiType),
+		Description: fmt.Sprintf("%s WebSocket API Channel", strings.Title(apiType)),
+		Messages:    make(map[string]*AsyncAPIMessage),
+	}
+
 	for _, file := range files {
 		// Read each channel spec
 		channelSpecPath := filepath.Join(baseDir, file.Name())
@@ -319,12 +327,18 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 			return fmt.Errorf("unmarshaling channel spec %s: %w", file.Name(), err)
 		}
 
-		// Merge channels
-		for k, v := range channelSpec.Channels {
-			if _, exists := spec.Channels[k]; exists {
-				return fmt.Errorf("duplicate channel: %s", k)
+		// Merge channels - since all channels now use the same key (apiType), we merge their messages
+		for _, v := range channelSpec.Channels {
+			// Merge messages from this channel into the main channel
+			for msgKey, msgRef := range v.Messages {
+				// Since individual files now use the same camelCase format as the final file,
+				// we can directly merge without creating unique keys
+				if _, exists := mainChannel.Messages[msgKey]; exists {
+					logrus.Debugf("Message key %s already exists, skipping duplicate", msgKey)
+					continue
+				}
+				mainChannel.Messages[msgKey] = msgRef
 			}
-			spec.Channels[k] = v
 		}
 
 		// Merge operations
@@ -374,6 +388,9 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 			}
 		}
 	}
+
+	// Add the merged main channel to the spec
+	spec.Channels[apiType] = mainChannel
 
 	outputDir := filepath.Join(g.outputDir, exchange, "asyncapi")
 	// Ensure output directory exists
@@ -430,9 +447,9 @@ func (g *Generator) sanitizeChannelName(channelName string) string {
 }
 
 // createOperationsFromChannel creates AsyncAPI 3.0.0 operations from a WebSocket channel
-func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel) map[string]*AsyncAPIOperation {
+func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiType string) map[string]*AsyncAPIOperation {
 	operations := make(map[string]*AsyncAPIOperation)
-	channelRef := fmt.Sprintf("#/channels/%s", g.sanitizeChannelName(channel.Name))
+	channelRef := fmt.Sprintf("#/channels/%s", apiType)
 	channelName := g.sanitizeChannelName(channel.Name)
 
 	// Create operations based on the messages in the channel
@@ -445,7 +462,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel) map[s
 			Description: sendMsg.Description,
 			Action:      "send",
 			Channel:     map[string]string{"$ref": channelRef},
-			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/components/messages/%s", messageKey)}},
+			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, messageKey)}},
 		}
 	}
 
@@ -458,7 +475,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel) map[s
 			Description: receiveMsg.Description,
 			Action:      "receive",
 			Channel:     map[string]string{"$ref": channelRef},
-			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/components/messages/%s", messageKey)}},
+			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, messageKey)}},
 		}
 	}
 
@@ -468,54 +485,24 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel) map[s
 // convertChannelToAsyncAPIChannel converts a WebSocket channel to AsyncAPI 3.0.0 channel
 func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *AsyncAPIChannel {
 	asyncChannel := &AsyncAPIChannel{
-		Address:     channel.Name,
+		Address:     "/",
 		Title:       fmt.Sprintf("Channel %s", channel.Name),
 		Description: channel.Description,
 		Messages:    make(map[string]*AsyncAPIMessage),
-		Parameters:  make(map[string]*AsyncAPIParameter),
-	}
-
-	// Convert parameters using the AsyncAPI 3.0.0 format
-	for _, param := range channel.Parameters {
-		// Create proper location using runtime expression format
-		location := "$message.payload#/params/" + param.Name
-		if param.Location == "header" {
-			location = "$message.header#/" + param.Name
-		}
-
-		asyncParam := &AsyncAPIParameter{
-			Description: param.Description,
-			Location:    location,
-		}
-
-		// Extract properties from schema if available
-		if param.Schema != nil {
-			if param.Schema.Default != nil {
-				asyncParam.Default = param.Schema.Default
-			}
-			if param.Schema.Enum != nil {
-				asyncParam.Enum = param.Schema.Enum
-			}
-			if param.Schema.Example != nil {
-				asyncParam.Examples = []interface{}{param.Schema.Example}
-			}
-		}
-
-		asyncChannel.Parameters[param.Name] = asyncParam
 	}
 
 	// Convert messages to use references to components.messages
 	channelName := g.sanitizeChannelName(channel.Name)
 	if _, exists := channel.Messages["send"]; exists {
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_send", channelName))
-		asyncChannel.Messages["sendMessage"] = &AsyncAPIMessage{
+		asyncChannel.Messages[messageKey] = &AsyncAPIMessage{
 			Ref: fmt.Sprintf("#/components/messages/%s", messageKey),
 		}
 	}
 
 	if _, exists := channel.Messages["receive"]; exists {
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_receive", channelName))
-		asyncChannel.Messages["receiveMessage"] = &AsyncAPIMessage{
+		asyncChannel.Messages[messageKey] = &AsyncAPIMessage{
 			Ref: fmt.Sprintf("#/components/messages/%s", messageKey),
 		}
 	}

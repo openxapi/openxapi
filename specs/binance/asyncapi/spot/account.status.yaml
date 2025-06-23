@@ -3,45 +3,32 @@ info:
     title: ""
     version: ""
 channels:
-    account_status:
-        address: account.status
+    spot:
+        address: /
         title: Channel account.status
         description: Query information about your account.
         messages:
-            receiveMessage:
+            accountStatusReceive:
                 $ref: '#/components/messages/accountStatusReceive'
-            sendMessage:
+            accountStatusSend:
                 $ref: '#/components/messages/accountStatusSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            omitZeroBalances:
-                description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
-                location: $message.payload#/params/omitZeroBalances
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveAccountStatus:
         title: Receive from account.status
         description: Receive response from account.status
         action: receive
         channel:
-            $ref: '#/channels/account_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountStatusReceive'
+            - $ref: '#/channels/spot/messages/accountStatusReceive'
     sendAccountStatus:
         title: Send to account.status
         description: Send a account.status request
         action: send
         channel:
-            $ref: '#/channels/account_status'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/accountStatusSend'
+            - $ref: '#/channels/spot/messages/accountStatusSend'
 components:
     messages:
         accountStatusReceive:

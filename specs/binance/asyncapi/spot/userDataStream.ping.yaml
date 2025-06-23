@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    userDataStream_ping:
-        address: userDataStream.ping
+    spot:
+        address: /
         title: Channel userDataStream.ping
         description: |-
             Ping a user data stream to keep it alive.
@@ -13,32 +13,27 @@ channels:
             In order to keep the stream open, you have to regularly send pings using the userDataStream.ping request.
             It is recommended to send a ping once every 30 minutes.
         messages:
-            receiveMessage:
+            userDataStreamPingReceive:
                 $ref: '#/components/messages/userDataStreamPingReceive'
-            sendMessage:
+            userDataStreamPingSend:
                 $ref: '#/components/messages/userDataStreamPingSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            listenKey:
-                location: $message.payload#/params/listenKey
 operations:
     receiveUserdatastreamPing:
         title: Receive from userDataStream.ping
         description: Receive response from userDataStream.ping
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamPingReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamPingReceive'
     sendUserdatastreamPing:
         title: Send to userDataStream.ping
         description: Send a userDataStream.ping request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamPingSend'
+            - $ref: '#/channels/spot/messages/userDataStreamPingSend'
 components:
     messages:
         userDataStreamPingReceive:

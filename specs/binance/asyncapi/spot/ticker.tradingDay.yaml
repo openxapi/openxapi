@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    ticker_tradingDay:
-        address: ticker.tradingDay
+    spot:
+        address: /
         title: Channel ticker.tradingDay
         description: |-
             Price change statistics for a trading day.
@@ -15,40 +15,27 @@ channels:
             Hours and minutes (e.g. -1:00, 05:45)
             Only hours (e.g. 0, 8, 4)
         messages:
-            receiveMessage:
+            tickerTradingdayReceive:
                 $ref: '#/components/messages/tickerTradingdayReceive'
-            sendMessage:
+            tickerTradingdaySend:
                 $ref: '#/components/messages/tickerTradingdaySend'
-        parameters:
-            symbol:
-                description: Query ticker of a single symbol
-                location: $message.payload#/params/symbol
-            symbols:
-                description: Query ticker for multiple symbols
-                location: $message.payload#/params/symbols
-            timeZone:
-                description: 'Default: 0 (UTC)'
-                location: $message.payload#/params/timeZone
-            type:
-                description: 'Supported values: FULL or MINI. If none provided, the default is FULL'
-                location: $message.payload#/params/type
 operations:
     receiveTickerTradingday:
         title: Receive from ticker.tradingDay
         description: Receive response from ticker.tradingDay
         action: receive
         channel:
-            $ref: '#/channels/ticker_tradingDay'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerTradingdayReceive'
+            - $ref: '#/channels/spot/messages/tickerTradingdayReceive'
     sendTickerTradingday:
         title: Send to ticker.tradingDay
         description: Send a ticker.tradingDay request
         action: send
         channel:
-            $ref: '#/channels/ticker_tradingDay'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/tickerTradingdaySend'
+            - $ref: '#/channels/spot/messages/tickerTradingdaySend'
 components:
     messages:
         tickerTradingdayReceive:

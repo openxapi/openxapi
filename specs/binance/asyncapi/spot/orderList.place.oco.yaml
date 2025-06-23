@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    orderList_place_oco:
-        address: orderList.place.oco
+    spot:
+        address: /
         title: Channel orderList.place.oco
         description: |-
             Send in an one-cancels-the-other (OCO) pair, where activation of one order immediately cancels the other.
@@ -24,107 +24,27 @@ channels:
             TAKE_PROFIT stopPrice > Last Traded Price > STOP_LOSS/STOP_LOSS_LIMIT stopPrice
             - OCOs add 2 orders to the EXCHANGE_MAX_ORDERS filter and MAX_NUM_ORDERS filter.
         messages:
-            receiveMessage:
+            orderListPlaceOcoReceive:
                 $ref: '#/components/messages/orderListPlaceOcoReceive'
-            sendMessage:
+            orderListPlaceOcoSend:
                 $ref: '#/components/messages/orderListPlaceOcoSend'
-        parameters:
-            aboveClientOrderId:
-                description: Arbitrary unique ID among open orders for the above order. Automatically generated if not sent
-                location: $message.payload#/params/aboveClientOrderId
-            aboveIcebergQty:
-                description: Note that this can only be used if aboveTimeInForce is GTC.
-                location: $message.payload#/params/aboveIcebergQty
-            abovePrice:
-                description: Can be used if aboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                location: $message.payload#/params/abovePrice
-            aboveStopPrice:
-                description: Can be used if aboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT. Either aboveStopPrice or aboveTrailingDelta or both, must be specified.
-                location: $message.payload#/params/aboveStopPrice
-            aboveStrategyId:
-                description: Arbitrary numeric value identifying the above order within an order strategy.
-                location: $message.payload#/params/aboveStrategyId
-            aboveStrategyType:
-                description: Arbitrary numeric value identifying the above order strategy. Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/aboveStrategyType
-            aboveTimeInForce:
-                description: Required if aboveType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT.
-                location: $message.payload#/params/aboveTimeInForce
-            aboveTrailingDelta:
-                description: See Trailing Stop order FAQ.
-                location: $message.payload#/params/aboveTrailingDelta
-            aboveType:
-                description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
-                location: $message.payload#/params/aboveType
-            apiKey:
-                location: $message.payload#/params/apiKey
-            belowClientOrderId:
-                location: $message.payload#/params/belowClientOrderId
-            belowIcebergQty:
-                description: Note that this can only be used if belowTimeInForce is GTC.
-                location: $message.payload#/params/belowIcebergQty
-            belowPrice:
-                description: Can be used if belowType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                location: $message.payload#/params/belowPrice
-            belowStopPrice:
-                description: Can be used if belowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either belowStopPrice or belowTrailingDelta or both, must be specified.
-                location: $message.payload#/params/belowStopPrice
-            belowStrategyId:
-                description: Arbitrary numeric value identifying the below order within an order strategy.
-                location: $message.payload#/params/belowStrategyId
-            belowStrategyType:
-                description: Arbitrary numeric value identifying the below order strategy. Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/belowStrategyType
-            belowTimeInForce:
-                description: Required if belowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT
-                location: $message.payload#/params/belowTimeInForce
-            belowTrailingDelta:
-                description: See Trailing Stop order FAQ.
-                location: $message.payload#/params/belowTrailingDelta
-            belowType:
-                description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
-                location: $message.payload#/params/belowType
-            listClientOrderId:
-                description: Arbitrary unique ID among open order lists. Automatically generated if not sent.  A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the aboveClientOrderId and the belowCLientOrderId.
-                location: $message.payload#/params/listClientOrderId
-            newOrderRespType:
-                description: 'Select response format: ACK, RESULT, FULL'
-                location: $message.payload#/params/newOrderRespType
-            quantity:
-                description: Quantity for both orders of the order list.
-                location: $message.payload#/params/quantity
-            recvWindow:
-                description: The value cannot be greater than 60000.
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveOrderlistPlaceOco:
         title: Receive from orderList.place.oco
         description: Receive response from orderList.place.oco
         action: receive
         channel:
-            $ref: '#/channels/orderList_place_oco'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOcoReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceOcoReceive'
     sendOrderlistPlaceOco:
         title: Send to orderList.place.oco
         description: Send a orderList.place.oco request
         action: send
         channel:
-            $ref: '#/channels/orderList_place_oco'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceOcoSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceOcoSend'
 components:
     messages:
         orderListPlaceOcoReceive:

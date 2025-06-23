@@ -3,102 +3,34 @@ info:
     title: ""
     version: ""
 channels:
-    order_cancelReplace:
-        address: order.cancelReplace
+    spot:
+        address: /
         title: Channel order.cancelReplace
         description: |-
             Cancel an existing order and immediately place a new order instead of the canceled one.
             A new order that was not attempted (i.e. when newOrderResult: NOT_ATTEMPTED), will still increase the unfilled order count by 1.
         messages:
-            receiveMessage:
+            orderCancelreplaceReceive:
                 $ref: '#/components/messages/orderCancelreplaceReceive'
-            sendMessage:
+            orderCancelreplaceSend:
                 $ref: '#/components/messages/orderCancelreplaceSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            cancelNewClientOrderId:
-                description: New ID for the canceled order. Automatically generated if not sent
-                location: $message.payload#/params/cancelNewClientOrderId
-            cancelOrderId:
-                description: Cancel order by orderId
-                location: $message.payload#/params/cancelOrderId
-            cancelOrigClientOrderId:
-                description: Cancel order by clientOrderId
-                location: $message.payload#/params/cancelOrigClientOrderId
-            cancelReplaceMode:
-                location: $message.payload#/params/cancelReplaceMode
-            cancelRestrictions:
-                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED. For more information please refer to Regarding cancelRestrictions.'
-                location: $message.payload#/params/cancelRestrictions
-            icebergQty:
-                location: $message.payload#/params/icebergQty
-            newClientOrderId:
-                description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                location: $message.payload#/params/newClientOrderId
-            newOrderRespType:
-                description: "Select response format: ACK, RESULT, FULL.\n            \n                MARKET and LIMIT orders produce FULL response by default,\n                other order types default to ACK."
-                location: $message.payload#/params/newOrderRespType
-            orderRateLimitExceededMode:
-                description: 'Supported values:  DO_NOTHING (default)- will only attempt to cancel the order if account has not exceeded the unfilled order rate limit CANCEL_ONLY - will always cancel the order.'
-                location: $message.payload#/params/orderRateLimitExceededMode
-            price:
-                location: $message.payload#/params/price
-            quantity:
-                location: $message.payload#/params/quantity
-            quoteOrderQty:
-                location: $message.payload#/params/quoteOrderQty
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: |-
-                    The allowed enums is dependent on what is configured on the symbol.
-                                Supported values: STP Modes.
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            stopPrice:
-                location: $message.payload#/params/stopPrice
-            strategyId:
-                description: Arbitrary numeric value identifying the order within an order strategy.
-                location: $message.payload#/params/strategyId
-            strategyType:
-                description: |-
-                    Arbitrary numeric value identifying the order strategy.
-                                Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/strategyType
-            symbol:
-                location: $message.payload#/params/symbol
-            timeInForce:
-                location: $message.payload#/params/timeInForce
-            timestamp:
-                location: $message.payload#/params/timestamp
-            trailingDelta:
-                description: See Trailing Stop order FAQ
-                location: $message.payload#/params/trailingDelta
-            type:
-                location: $message.payload#/params/type
 operations:
     receiveOrderCancelreplace:
         title: Receive from order.cancelReplace
         description: Receive response from order.cancelReplace
         action: receive
         channel:
-            $ref: '#/channels/order_cancelReplace'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderCancelreplaceReceive'
+            - $ref: '#/channels/spot/messages/orderCancelreplaceReceive'
     sendOrderCancelreplace:
         title: Send to order.cancelReplace
         description: Send a order.cancelReplace request
         action: send
         channel:
-            $ref: '#/channels/order_cancelReplace'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderCancelreplaceSend'
+            - $ref: '#/channels/spot/messages/orderCancelreplaceSend'
 components:
     messages:
         orderCancelreplaceReceive:

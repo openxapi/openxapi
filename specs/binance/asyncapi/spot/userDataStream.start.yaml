@@ -3,38 +3,35 @@ info:
     title: ""
     version: ""
 channels:
-    userDataStream_start:
-        address: userDataStream.start
+    spot:
+        address: /
         title: Channel userDataStream.start
         description: |-
             Start a new user data stream.
             Note: the stream will close in 60 minutes
             unless userDataStream.ping requests are sent regularly.
         messages:
-            receiveMessage:
+            userDataStreamStartReceive:
                 $ref: '#/components/messages/userDataStreamStartReceive'
-            sendMessage:
+            userDataStreamStartSend:
                 $ref: '#/components/messages/userDataStreamStartSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
 operations:
     receiveUserdatastreamStart:
         title: Receive from userDataStream.start
         description: Receive response from userDataStream.start
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_start'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamStartReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamStartReceive'
     sendUserdatastreamStart:
         title: Send to userDataStream.start
         description: Send a userDataStream.start request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_start'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/userDataStreamStartSend'
+            - $ref: '#/channels/spot/messages/userDataStreamStartSend'
 components:
     messages:
         userDataStreamStartReceive:

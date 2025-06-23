@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    orderList_place:
-        address: orderList.place
+    spot:
+        address: /
         title: Channel orderList.place
         description: |-
             Send in a new one-cancels-the-other (OCO) pair:
@@ -12,89 +12,27 @@ channels:
             where activation of one order immediately cancels the other.
             This adds 1 order to EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter
         messages:
-            receiveMessage:
+            orderListPlaceReceive:
                 $ref: '#/components/messages/orderListPlaceReceive'
-            sendMessage:
+            orderListPlaceSend:
                 $ref: '#/components/messages/orderListPlaceSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            limitClientOrderId:
-                description: Arbitrary unique ID among open orders for the limit order. Automatically generated if not sent
-                location: $message.payload#/params/limitClientOrderId
-            limitIcebergQty:
-                location: $message.payload#/params/limitIcebergQty
-            limitStrategyId:
-                description: Arbitrary numeric value identifying the limit order within an order strategy.
-                location: $message.payload#/params/limitStrategyId
-            limitStrategyType:
-                description: Arbitrary numeric value identifying the limit order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/limitStrategyType
-            listClientOrderId:
-                description: Arbitrary unique ID among open order lists. Automatically generated if not sent
-                location: $message.payload#/params/listClientOrderId
-            newOrderRespType:
-                description: 'Select response format: ACK, RESULT, FULL (default)'
-                location: $message.payload#/params/newOrderRespType
-            price:
-                description: Price for the limit order
-                location: $message.payload#/params/price
-            quantity:
-                location: $message.payload#/params/quantity
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes'
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            stopClientOrderId:
-                description: Arbitrary unique ID among open orders for the stop order. Automatically generated if not sent
-                location: $message.payload#/params/stopClientOrderId
-            stopIcebergQty:
-                location: $message.payload#/params/stopIcebergQty
-            stopLimitPrice:
-                location: $message.payload#/params/stopLimitPrice
-            stopLimitTimeInForce:
-                description: See order.place for available options
-                location: $message.payload#/params/stopLimitTimeInForce
-            stopPrice:
-                description: Either stopPrice or trailingDelta, or both must be specified
-                location: $message.payload#/params/stopPrice
-            stopStrategyId:
-                description: Arbitrary numeric value identifying the stop order within an order strategy.
-                location: $message.payload#/params/stopStrategyId
-            stopStrategyType:
-                description: Arbitrary numeric value identifying the stop order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/stopStrategyType
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
-            trailingDelta:
-                description: See Trailing Stop order FAQ
-                location: $message.payload#/params/trailingDelta
 operations:
     receiveOrderlistPlace:
         title: Receive from orderList.place
         description: Receive response from orderList.place
         action: receive
         channel:
-            $ref: '#/channels/orderList_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceReceive'
     sendOrderlistPlace:
         title: Send to orderList.place
         description: Send a orderList.place request
         action: send
         channel:
-            $ref: '#/channels/orderList_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListPlaceSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceSend'
 components:
     messages:
         orderListPlaceReceive:

@@ -3,53 +3,32 @@ info:
     title: ""
     version: ""
 channels:
-    orderList_cancel:
-        address: orderList.cancel
+    spot:
+        address: /
         title: Channel orderList.cancel
         description: Cancel an active order list.
         messages:
-            receiveMessage:
+            orderListCancelReceive:
                 $ref: '#/components/messages/orderListCancelReceive'
-            sendMessage:
+            orderListCancelSend:
                 $ref: '#/components/messages/orderListCancelSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            listClientOrderId:
-                description: Cancel order list by listClientId
-                location: $message.payload#/params/listClientOrderId
-            newClientOrderId:
-                description: New ID for the canceled order list. Automatically generated if not sent
-                location: $message.payload#/params/newClientOrderId
-            orderListId:
-                description: Cancel order list by orderListId
-                location: $message.payload#/params/orderListId
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            signature:
-                location: $message.payload#/params/signature
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
 operations:
     receiveOrderlistCancel:
         title: Receive from orderList.cancel
         description: Receive response from orderList.cancel
         action: receive
         channel:
-            $ref: '#/channels/orderList_cancel'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListCancelReceive'
+            - $ref: '#/channels/spot/messages/orderListCancelReceive'
     sendOrderlistCancel:
         title: Send to orderList.cancel
         description: Send a orderList.cancel request
         action: send
         channel:
-            $ref: '#/channels/orderList_cancel'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/orderListCancelSend'
+            - $ref: '#/channels/spot/messages/orderListCancelSend'
 components:
     messages:
         orderListCancelReceive:

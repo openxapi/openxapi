@@ -3,77 +3,35 @@ info:
     title: ""
     version: ""
 channels:
-    sor_order_place:
-        address: sor.order.place
+    spot:
+        address: /
         title: Channel sor.order.place
         description: |-
             Places an order using smart order routing (SOR).
             This adds 1 order to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
             Read SOR FAQ to learn more.
         messages:
-            receiveMessage:
+            sorOrderPlaceReceive:
                 $ref: '#/components/messages/sorOrderPlaceReceive'
-            sendMessage:
+            sorOrderPlaceSend:
                 $ref: '#/components/messages/sorOrderPlaceSend'
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            icebergQty:
-                location: $message.payload#/params/icebergQty
-            newClientOrderId:
-                description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                location: $message.payload#/params/newClientOrderId
-            newOrderRespType:
-                description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default.'
-                location: $message.payload#/params/newOrderRespType
-            price:
-                description: Applicable only to LIMIT order type
-                location: $message.payload#/params/price
-            quantity:
-                location: $message.payload#/params/quantity
-            recvWindow:
-                description: The value cannot be greater than 60000
-                location: $message.payload#/params/recvWindow
-            selfTradePreventionMode:
-                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
-                location: $message.payload#/params/selfTradePreventionMode
-            side:
-                description: BUY or SELL
-                location: $message.payload#/params/side
-            signature:
-                location: $message.payload#/params/signature
-            strategyId:
-                description: Arbitrary numeric value identifying the order within an order strategy.
-                location: $message.payload#/params/strategyId
-            strategyType:
-                description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                location: $message.payload#/params/strategyType
-            symbol:
-                location: $message.payload#/params/symbol
-            timeInForce:
-                description: Applicable only to LIMIT order type
-                location: $message.payload#/params/timeInForce
-            timestamp:
-                location: $message.payload#/params/timestamp
-            type:
-                location: $message.payload#/params/type
 operations:
     receiveSorOrderPlace:
         title: Receive from sor.order.place
         description: Receive response from sor.order.place
         action: receive
         channel:
-            $ref: '#/channels/sor_order_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sorOrderPlaceReceive'
+            - $ref: '#/channels/spot/messages/sorOrderPlaceReceive'
     sendSorOrderPlace:
         title: Send to sor.order.place
         description: Send a sor.order.place request
         action: send
         channel:
-            $ref: '#/channels/sor_order_place'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/components/messages/sorOrderPlaceSend'
+            - $ref: '#/channels/spot/messages/sorOrderPlaceSend'
 components:
     messages:
         sorOrderPlaceReceive:
