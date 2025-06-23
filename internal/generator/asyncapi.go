@@ -119,6 +119,7 @@ type AsyncAPIMessage struct {
 	Bindings      map[string]interface{} `json:"bindings,omitempty" yaml:"bindings,omitempty"`
 	Traits        []interface{}          `json:"traits,omitempty" yaml:"traits,omitempty"`
 	CorrelationId *AsyncAPICorrelationId `json:"correlationId,omitempty" yaml:"correlationId,omitempty"`
+	Ref           string                 `json:"$ref,omitempty" yaml:"$ref,omitempty"`
 }
 
 // AsyncAPICorrelationId represents correlation ID for request-reply
@@ -210,6 +211,9 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 		// Convert channel to AsyncAPI 3.0.0 format
 		asyncChannel := g.convertChannelToAsyncAPIChannel(&channel)
 
+		// Convert channel messages to component messages
+		componentMessages := g.convertChannelMessagesToComponentMessages(&channel)
+
 		// Create operations for this channel
 		operations := g.createOperationsFromChannel(&channel)
 
@@ -223,6 +227,7 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 			Operations: operations,
 			Components: &AsyncAPIComponents{
 				Schemas:         make(map[string]*AsyncAPISchema),
+				Messages:        componentMessages,
 				SecuritySchemes: make(map[string]*AsyncAPISecurityScheme),
 			},
 		}
@@ -343,6 +348,19 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 			}
 		}
 
+		// Merge messages
+		var messages []string
+		if channelSpec.Components != nil {
+			for k, v := range channelSpec.Components.Messages {
+				if slices.Contains(messages, k) {
+					logrus.Debugf("duplicate message found: %s", k)
+					continue
+				}
+				messages = append(messages, k)
+				spec.Components.Messages[k] = v
+			}
+		}
+
 		// Merge security schemes
 		var securitySchemas []string
 		if channelSpec.Components != nil {
@@ -415,29 +433,32 @@ func (g *Generator) sanitizeChannelName(channelName string) string {
 func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel) map[string]*AsyncAPIOperation {
 	operations := make(map[string]*AsyncAPIOperation)
 	channelRef := fmt.Sprintf("#/channels/%s", g.sanitizeChannelName(channel.Name))
+	channelName := g.sanitizeChannelName(channel.Name)
 
 	// Create operations based on the messages in the channel
 	if sendMsg, exists := channel.Messages["send"]; exists {
-		operationID := fmt.Sprintf("send_%s", g.sanitizeChannelName(channel.Name))
+		operationID := g.toCamelCase(fmt.Sprintf("send_%s", channelName))
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_send", channelName))
 		operations[operationID] = &AsyncAPIOperation{
 			Title:       fmt.Sprintf("Send to %s", channel.Name),
 			Summary:     sendMsg.Summary,
 			Description: sendMsg.Description,
 			Action:      "send",
 			Channel:     map[string]string{"$ref": channelRef},
-			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", g.sanitizeChannelName(channel.Name), "sendMessage")}},
+			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/components/messages/%s", messageKey)}},
 		}
 	}
 
 	if receiveMsg, exists := channel.Messages["receive"]; exists {
-		operationID := fmt.Sprintf("receive_%s", g.sanitizeChannelName(channel.Name))
+		operationID := g.toCamelCase(fmt.Sprintf("receive_%s", channelName))
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_receive", channelName))
 		operations[operationID] = &AsyncAPIOperation{
 			Title:       fmt.Sprintf("Receive from %s", channel.Name),
 			Summary:     receiveMsg.Summary,
 			Description: receiveMsg.Description,
 			Action:      "receive",
 			Channel:     map[string]string{"$ref": channelRef},
-			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", g.sanitizeChannelName(channel.Name), "receiveMessage")}},
+			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/components/messages/%s", messageKey)}},
 		}
 	}
 
@@ -483,13 +504,37 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 		asyncChannel.Parameters[param.Name] = asyncParam
 	}
 
-	// Convert messages to the new 3.0.0 format
+	// Convert messages to use references to components.messages
+	channelName := g.sanitizeChannelName(channel.Name)
+	if _, exists := channel.Messages["send"]; exists {
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_send", channelName))
+		asyncChannel.Messages["sendMessage"] = &AsyncAPIMessage{
+			Ref: fmt.Sprintf("#/components/messages/%s", messageKey),
+		}
+	}
+
+	if _, exists := channel.Messages["receive"]; exists {
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_receive", channelName))
+		asyncChannel.Messages["receiveMessage"] = &AsyncAPIMessage{
+			Ref: fmt.Sprintf("#/components/messages/%s", messageKey),
+		}
+	}
+
+	return asyncChannel
+}
+
+// convertChannelMessagesToComponentMessages converts channel messages to component messages
+func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.Channel) map[string]*AsyncAPIMessage {
+	componentMessages := make(map[string]*AsyncAPIMessage)
+	channelName := g.sanitizeChannelName(channel.Name)
+
 	if sendMsg, exists := channel.Messages["send"]; exists {
 		// Convert the payload and ensure params object has required fields populated
 		payload := g.convertToAsyncAPISchema(sendMsg.Payload)
 		g.populateParamsRequired(payload, channel.Parameters)
 
-		asyncChannel.Messages["sendMessage"] = &AsyncAPIMessage{
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_send", channelName))
+		componentMessages[messageKey] = &AsyncAPIMessage{
 			Name:        sendMsg.Title,
 			Title:       sendMsg.Title,
 			Summary:     sendMsg.Summary,
@@ -499,7 +544,8 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 	}
 
 	if receiveMsg, exists := channel.Messages["receive"]; exists {
-		asyncChannel.Messages["receiveMessage"] = &AsyncAPIMessage{
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_receive", channelName))
+		componentMessages[messageKey] = &AsyncAPIMessage{
 			Name:        receiveMsg.Title,
 			Title:       receiveMsg.Title,
 			Summary:     receiveMsg.Summary,
@@ -508,7 +554,7 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 		}
 	}
 
-	return asyncChannel
+	return componentMessages
 }
 
 // populateParamsRequired ensures that the params object in the payload has the required field populated
@@ -596,4 +642,21 @@ func (g *Generator) writeAsyncAPISpec(spec *AsyncAPISpec, path string) error {
 	}
 
 	return nil
+}
+
+// toCamelCase converts a string with underscores to camelCase
+func (g *Generator) toCamelCase(s string) string {
+	parts := strings.Split(s, "_")
+	if len(parts) == 0 {
+		return s
+	}
+	
+	// Keep the first part as is (for compound words like userDataStream), capitalize the rest
+	result := parts[0]
+	for i := 1; i < len(parts); i++ {
+		if len(parts[i]) > 0 {
+			result += strings.ToUpper(parts[i][:1]) + strings.ToLower(parts[i][1:])
+		}
+	}
+	return result
 }

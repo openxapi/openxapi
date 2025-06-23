@@ -9,158 +9,9 @@ channels:
         description: Retrieves allocations resulting from SOR order placement.
         messages:
             receiveMessage:
-                name: Account allocations (USER_DATA) Response
-                title: Account allocations (USER_DATA) Response
-                description: Receive response from myAllocations
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 20
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: array
-                            description: result property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    allocationId:
-                                        type: integer
-                                        format: int64
-                                        description: allocationId property
-                                        example: 0
-                                    allocationType:
-                                        type: string
-                                        description: allocationType property
-                                        example: SOR
-                                    commission:
-                                        type: string
-                                        description: commission property
-                                        example: "0.00000000"
-                                    commissionAsset:
-                                        type: string
-                                        description: commissionAsset property
-                                        example: BTC
-                                    isAllocator:
-                                        type: boolean
-                                        description: isAllocator property
-                                        example: false
-                                    isBuyer:
-                                        type: boolean
-                                        description: isBuyer property
-                                        example: false
-                                    isMaker:
-                                        type: boolean
-                                        description: isMaker property
-                                        example: false
-                                    orderId:
-                                        type: integer
-                                        format: int64
-                                        description: orderId property
-                                        example: 500
-                                    orderListId:
-                                        type: integer
-                                        format: int64
-                                        description: orderListId property
-                                        example: -1
-                                    price:
-                                        type: string
-                                        description: price property
-                                        example: "1.00000000"
-                                    qty:
-                                        type: string
-                                        description: qty property
-                                        example: "0.10000000"
-                                    quoteQty:
-                                        type: string
-                                        description: quoteQty property
-                                        example: "0.10000000"
-                                    symbol:
-                                        type: string
-                                        description: symbol property
-                                        example: BTCUSDT
-                                    time:
-                                        type: integer
-                                        format: int64
-                                        description: time property
-                                        example: 1687319487614
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
+                $ref: '#/components/messages/myAllocationsReceive'
             sendMessage:
-                name: Account allocations (USER_DATA) Request
-                title: Account allocations (USER_DATA) Request
-                description: Send a myAllocations request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
-                        method:
-                            type: string
-                            description: method property
-                            example: myAllocations
-                            enum:
-                                - myAllocations
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                endTime:
-                                    type: string
-                                fromAllocationId:
-                                    type: integer
-                                    format: int64
-                                limit:
-                                    type: integer
-                                    description: 'Default: 500; Maximum: 1000'
-                                orderId:
-                                    type: string
-                                recvWindow:
-                                    type: string
-                                    description: The value cannot be greater than 60000
-                                startTime:
-                                    type: string
-                                symbol:
-                                    type: string
-                                timestamp:
-                                    type: string
-                            required:
-                                - symbol
+                $ref: '#/components/messages/myAllocationsSend'
         parameters:
             endTime:
                 location: $message.payload#/params/endTime
@@ -181,20 +32,174 @@ channels:
             timestamp:
                 location: $message.payload#/params/timestamp
 operations:
-    receive_myAllocations:
+    receiveMyallocations:
         title: Receive from myAllocations
         description: Receive response from myAllocations
         action: receive
         channel:
             $ref: '#/channels/myAllocations'
         messages:
-            - $ref: '#/channels/myAllocations/messages/receiveMessage'
-    send_myAllocations:
+            - $ref: '#/components/messages/myAllocationsReceive'
+    sendMyallocations:
         title: Send to myAllocations
         description: Send a myAllocations request
         action: send
         channel:
             $ref: '#/channels/myAllocations'
         messages:
-            - $ref: '#/channels/myAllocations/messages/sendMessage'
-components: {}
+            - $ref: '#/components/messages/myAllocationsSend'
+components:
+    messages:
+        myAllocationsReceive:
+            name: Account allocations (USER_DATA) Response
+            title: Account allocations (USER_DATA) Response
+            description: Receive response from myAllocations
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 20
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: array
+                        description: result property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                allocationId:
+                                    type: integer
+                                    format: int64
+                                    description: allocationId property
+                                    example: 0
+                                allocationType:
+                                    type: string
+                                    description: allocationType property
+                                    example: SOR
+                                commission:
+                                    type: string
+                                    description: commission property
+                                    example: "0.00000000"
+                                commissionAsset:
+                                    type: string
+                                    description: commissionAsset property
+                                    example: BTC
+                                isAllocator:
+                                    type: boolean
+                                    description: isAllocator property
+                                    example: false
+                                isBuyer:
+                                    type: boolean
+                                    description: isBuyer property
+                                    example: false
+                                isMaker:
+                                    type: boolean
+                                    description: isMaker property
+                                    example: false
+                                orderId:
+                                    type: integer
+                                    format: int64
+                                    description: orderId property
+                                    example: 500
+                                orderListId:
+                                    type: integer
+                                    format: int64
+                                    description: orderListId property
+                                    example: -1
+                                price:
+                                    type: string
+                                    description: price property
+                                    example: "1.00000000"
+                                qty:
+                                    type: string
+                                    description: qty property
+                                    example: "0.10000000"
+                                quoteQty:
+                                    type: string
+                                    description: quoteQty property
+                                    example: "0.10000000"
+                                symbol:
+                                    type: string
+                                    description: symbol property
+                                    example: BTCUSDT
+                                time:
+                                    type: integer
+                                    format: int64
+                                    description: time property
+                                    example: 1687319487614
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+        myAllocationsSend:
+            name: Account allocations (USER_DATA) Request
+            title: Account allocations (USER_DATA) Request
+            description: Send a myAllocations request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                    method:
+                        type: string
+                        description: method property
+                        example: myAllocations
+                        enum:
+                            - myAllocations
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            endTime:
+                                type: string
+                            fromAllocationId:
+                                type: integer
+                                format: int64
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            orderId:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            startTime:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol

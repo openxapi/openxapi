@@ -11,140 +11,9 @@ channels:
             For execution status of individual orders, use order.status.
         messages:
             receiveMessage:
-                name: Query Order list (USER_DATA) Response
-                title: Query Order list (USER_DATA) Response
-                description: Receive response from orderList.status
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: b53fd5ff-82c7-4a04-bd64-5f9dc42c2100
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 4
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: object
-                            description: result property
-                            properties:
-                                contingencyType:
-                                    type: string
-                                    description: contingencyType property
-                                    example: OCO
-                                listClientOrderId:
-                                    type: string
-                                    description: listClientOrderId property
-                                    example: 08985fedd9ea2cf6b28996
-                                listOrderStatus:
-                                    type: string
-                                    description: listOrderStatus property
-                                    example: EXECUTING
-                                listStatusType:
-                                    type: string
-                                    description: listStatusType property
-                                    example: EXEC_STARTED
-                                orderListId:
-                                    type: integer
-                                    format: int64
-                                    description: orderListId property
-                                    example: 1274512
-                                orders:
-                                    type: array
-                                    description: orders property
-                                    items:
-                                        type: object
-                                        description: array item
-                                        properties:
-                                            clientOrderId:
-                                                type: string
-                                                description: clientOrderId property
-                                                example: BqtFCj5odMoWtSqGk2X9tU
-                                            orderId:
-                                                type: integer
-                                                format: int64
-                                                description: orderId property
-                                                example: 12569138901
-                                            symbol:
-                                                type: string
-                                                description: symbol property
-                                                example: BTCUSDT
-                                symbol:
-                                    type: string
-                                    description: symbol property
-                                    example: BTCUSDT
-                                transactionTime:
-                                    type: integer
-                                    format: int64
-                                    description: transactionTime property
-                                    example: 1660801713793
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
+                $ref: '#/components/messages/orderListStatusReceive'
             sendMessage:
-                name: Query Order list (USER_DATA) Request
-                title: Query Order list (USER_DATA) Request
-                description: Send a orderList.status request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: b53fd5ff-82c7-4a04-bd64-5f9dc42c2100
-                        method:
-                            type: string
-                            description: method property
-                            example: orderList.status
-                            enum:
-                                - orderList.status
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                apiKey:
-                                    type: string
-                                orderListId:
-                                    type: integer
-                                    format: int64
-                                    description: Query order list by orderListId.orderListId or origClientOrderId must be provided.
-                                origClientOrderId:
-                                    type: string
-                                    description: Query order list by listClientOrderId.orderListId or origClientOrderId must be provided.
-                                recvWindow:
-                                    type: string
-                                    description: The value cannot be greater than 60000
-                                signature:
-                                    type: string
-                                timestamp:
-                                    type: string
+                $ref: '#/components/messages/orderListStatusSend'
         parameters:
             apiKey:
                 location: $message.payload#/params/apiKey
@@ -162,20 +31,156 @@ channels:
             timestamp:
                 location: $message.payload#/params/timestamp
 operations:
-    receive_orderList_status:
+    receiveOrderlistStatus:
         title: Receive from orderList.status
         description: Receive response from orderList.status
         action: receive
         channel:
             $ref: '#/channels/orderList_status'
         messages:
-            - $ref: '#/channels/orderList_status/messages/receiveMessage'
-    send_orderList_status:
+            - $ref: '#/components/messages/orderListStatusReceive'
+    sendOrderlistStatus:
         title: Send to orderList.status
         description: Send a orderList.status request
         action: send
         channel:
             $ref: '#/channels/orderList_status'
         messages:
-            - $ref: '#/channels/orderList_status/messages/sendMessage'
-components: {}
+            - $ref: '#/components/messages/orderListStatusSend'
+components:
+    messages:
+        orderListStatusReceive:
+            name: Query Order list (USER_DATA) Response
+            title: Query Order list (USER_DATA) Response
+            description: Receive response from orderList.status
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b53fd5ff-82c7-4a04-bd64-5f9dc42c2100
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 4
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            contingencyType:
+                                type: string
+                                description: contingencyType property
+                                example: OCO
+                            listClientOrderId:
+                                type: string
+                                description: listClientOrderId property
+                                example: 08985fedd9ea2cf6b28996
+                            listOrderStatus:
+                                type: string
+                                description: listOrderStatus property
+                                example: EXECUTING
+                            listStatusType:
+                                type: string
+                                description: listStatusType property
+                                example: EXEC_STARTED
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: orderListId property
+                                example: 1274512
+                            orders:
+                                type: array
+                                description: orders property
+                                items:
+                                    type: object
+                                    description: array item
+                                    properties:
+                                        clientOrderId:
+                                            type: string
+                                            description: clientOrderId property
+                                            example: BqtFCj5odMoWtSqGk2X9tU
+                                        orderId:
+                                            type: integer
+                                            format: int64
+                                            description: orderId property
+                                            example: 12569138901
+                                        symbol:
+                                            type: string
+                                            description: symbol property
+                                            example: BTCUSDT
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            transactionTime:
+                                type: integer
+                                format: int64
+                                description: transactionTime property
+                                example: 1660801713793
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+        orderListStatusSend:
+            name: Query Order list (USER_DATA) Request
+            title: Query Order list (USER_DATA) Request
+            description: Send a orderList.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b53fd5ff-82c7-4a04-bd64-5f9dc42c2100
+                    method:
+                        type: string
+                        description: method property
+                        example: orderList.status
+                        enum:
+                            - orderList.status
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: Query order list by orderListId.orderListId or origClientOrderId must be provided.
+                            origClientOrderId:
+                                type: string
+                                description: Query order list by listClientOrderId.orderListId or origClientOrderId must be provided.
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            timestamp:
+                                type: string

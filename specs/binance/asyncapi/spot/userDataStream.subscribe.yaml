@@ -17,57 +17,62 @@ channels:
             For SBE, only SBE schema 2:1 or later is supported.
         messages:
             receiveMessage:
-                name: Subscribe to User Data Stream Response
-                title: Subscribe to User Data Stream Response
-                description: Response received after subscribing to user data stream
-                payload:
-                    type: object
-                    description: Response schema for subscription
-                    properties:
-                        id:
-                            type: string
-                            description: Request ID
-                            example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                        status:
-                            type: integer
-                            description: Response status code
-                            example: 200
-                        result:
-                            type: object
-                            description: Subscription result (empty object on success)
-                            properties: {}
+                $ref: '#/components/messages/userDataStreamSubscribeReceive'
             sendMessage:
-                name: Subscribe to User Data Stream Request
-                title: Subscribe to User Data Stream Request
-                description: Send a userDataStream.subscribe request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                        method:
-                            type: string
-                            description: method property
-                            example: userDataStream.subscribe
-                            enum:
-                                - userDataStream.subscribe
+                $ref: '#/components/messages/userDataStreamSubscribeSend'
 operations:
-    receive_userDataStream_subscribe:
-        title: Receive subscription response
+    receiveUserdatastreamSubscribe:
+        title: Receive from userDataStream.subscribe
         description: Receive response from userDataStream.subscribe
         action: receive
         channel:
             $ref: '#/channels/userDataStream_subscribe'
         messages:
-            - $ref: '#/channels/userDataStream_subscribe/messages/receiveMessage'
-    send_userDataStream_subscribe:
-        title: Send subscription request
+            - $ref: '#/components/messages/userDataStreamSubscribeReceive'
+    sendUserdatastreamSubscribe:
+        title: Send to userDataStream.subscribe
         description: Send a userDataStream.subscribe request
         action: send
         channel:
             $ref: '#/channels/userDataStream_subscribe'
         messages:
-            - $ref: '#/channels/userDataStream_subscribe/messages/sendMessage'
+            - $ref: '#/components/messages/userDataStreamSubscribeSend'
+components:
+    messages:
+        userDataStreamSubscribeReceive:
+            name: User Data Stream subscription Response
+            title: User Data Stream subscription Response
+            description: Receive response from userDataStream.subscribe
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                    result:
+                        type: object
+                        description: result property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+        userDataStreamSubscribeSend:
+            name: User Data Stream subscription Request
+            title: User Data Stream subscription Request
+            description: Send a userDataStream.subscribe request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.subscribe
+                        enum:
+                            - userDataStream.subscribe

@@ -9,57 +9,62 @@ channels:
         description: Stop listening to the User Data Stream in the current WebSocket connection.
         messages:
             receiveMessage:
-                name: Unsubscribe from User Data Stream Response
-                title: Unsubscribe from User Data Stream Response
-                description: Response received after unsubscribing from user data stream
-                payload:
-                    type: object
-                    description: Response schema for unsubscription
-                    properties:
-                        id:
-                            type: string
-                            description: Request ID
-                            example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                        status:
-                            type: integer
-                            description: Response status code
-                            example: 200
-                        result:
-                            type: object
-                            description: Empty result object
-                            example: {}
+                $ref: '#/components/messages/userDataStreamUnsubscribeReceive'
             sendMessage:
-                name: Unsubscribe from User Data Stream Request
-                title: Unsubscribe from User Data Stream Request
-                description: Send a userDataStream.unsubscribe request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                        method:
-                            type: string
-                            description: method property
-                            example: userDataStream.unsubscribe
-                            enum:
-                                - userDataStream.unsubscribe
+                $ref: '#/components/messages/userDataStreamUnsubscribeSend'
 operations:
-    receive_userDataStream_unsubscribe:
-        title: Receive unsubscription response
+    receiveUserdatastreamUnsubscribe:
+        title: Receive from userDataStream.unsubscribe
         description: Receive response from userDataStream.unsubscribe
         action: receive
         channel:
             $ref: '#/channels/userDataStream_unsubscribe'
         messages:
-            - $ref: '#/channels/userDataStream_unsubscribe/messages/receiveMessage'
-    send_userDataStream_unsubscribe:
-        title: Send unsubscription request
+            - $ref: '#/components/messages/userDataStreamUnsubscribeReceive'
+    sendUserdatastreamUnsubscribe:
+        title: Send to userDataStream.unsubscribe
         description: Send a userDataStream.unsubscribe request
         action: send
         channel:
             $ref: '#/channels/userDataStream_unsubscribe'
         messages:
-            - $ref: '#/channels/userDataStream_unsubscribe/messages/sendMessage'
+            - $ref: '#/components/messages/userDataStreamUnsubscribeSend'
+components:
+    messages:
+        userDataStreamUnsubscribeReceive:
+            name: Unsubscribe from User Data Stream (USER_STREAM) Response
+            title: Unsubscribe from User Data Stream (USER_STREAM) Response
+            description: Receive response from userDataStream.unsubscribe
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                    result:
+                        type: object
+                        description: result property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+        userDataStreamUnsubscribeSend:
+            name: Unsubscribe from User Data Stream (USER_STREAM) Request
+            title: Unsubscribe from User Data Stream (USER_STREAM) Request
+            description: Send a userDataStream.unsubscribe request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.unsubscribe
+                        enum:
+                            - userDataStream.unsubscribe
