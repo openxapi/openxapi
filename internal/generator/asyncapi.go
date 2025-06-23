@@ -332,24 +332,28 @@ func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, 
 
 		// Merge schemas
 		var schemas []string
-		for k, v := range channelSpec.Components.Schemas {
-			if slices.Contains(schemas, k) {
-				logrus.Debugf("duplicate schema found: %s", k)
-				continue
+		if channelSpec.Components != nil {
+			for k, v := range channelSpec.Components.Schemas {
+				if slices.Contains(schemas, k) {
+					logrus.Debugf("duplicate schema found: %s", k)
+					continue
+				}
+				schemas = append(schemas, k)
+				spec.Components.Schemas[k] = v
 			}
-			schemas = append(schemas, k)
-			spec.Components.Schemas[k] = v
 		}
 
 		// Merge security schemes
 		var securitySchemas []string
-		for k, v := range channelSpec.Components.SecuritySchemes {
-			if slices.Contains(securitySchemas, k) {
-				logrus.Debugf("duplicate security schema found: %s", k)
-				continue
+		if channelSpec.Components != nil {
+			for k, v := range channelSpec.Components.SecuritySchemes {
+				if slices.Contains(securitySchemas, k) {
+					logrus.Debugf("duplicate security schema found: %s", k)
+					continue
+				}
+				securitySchemas = append(securitySchemas, k)
+				spec.Components.SecuritySchemes[k] = v
 			}
-			securitySchemas = append(securitySchemas, k)
-			spec.Components.SecuritySchemes[k] = v
 		}
 	}
 

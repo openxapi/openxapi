@@ -8054,6 +8054,49 @@ channels:
             timeZone:
                 description: 'Default: 0 (UTC)'
                 location: $message.payload#/params/timeZone
+    userDataStream_events:
+        address: userDataStream.events
+        title: User Data Stream Events
+        description: |-
+            Channel for receiving user data stream events after successful subscription.
+            These events are sent automatically by the server when relevant account or order events occur.
+        messages:
+            balanceUpdate:
+                name: Balance Update Event
+                title: Balance Update Event
+                description: Occurs during deposits, withdrawals, or transfers
+                payload:
+                    $ref: '#/components/schemas/BalanceUpdateEvent'
+            executionReport:
+                name: Execution Report Event
+                title: Order Update Event
+                description: Orders are updated with executionReport event
+                payload:
+                    $ref: '#/components/schemas/ExecutionReportEvent'
+            externalLockUpdate:
+                name: External Lock Update Event
+                title: External Lock Update Event
+                description: Sent when spot wallet balance is locked/unlocked by external system
+                payload:
+                    $ref: '#/components/schemas/ExternalLockUpdateEvent'
+            listStatus:
+                name: List Status Event
+                title: List Status Event
+                description: Sent with executionReport for order lists (OCO orders)
+                payload:
+                    $ref: '#/components/schemas/ListStatusEvent'
+            listenKeyExpired:
+                name: Listen Key Expired Event
+                title: Listen Key Expired Event
+                description: Sent when the listen key expires
+                payload:
+                    $ref: '#/components/schemas/ListenKeyExpiredEvent'
+            outboundAccountPosition:
+                name: Outbound Account Position Event
+                title: Account Update Event
+                description: Sent when account balance changes
+                payload:
+                    $ref: '#/components/schemas/OutboundAccountPositionEvent'
     userDataStream_ping:
         address: userDataStream.ping
         title: Channel userDataStream.ping
@@ -8331,26 +8374,27 @@ channels:
             For SBE, only SBE schema 2:1 or later is supported.
         messages:
             receiveMessage:
-                name: Subscribe to User Data Stream (USER_STREAM) Response
-                title: Subscribe to User Data Stream (USER_STREAM) Response
-                description: Receive response from userDataStream.subscribe
+                name: Subscribe to User Data Stream Response
+                title: Subscribe to User Data Stream Response
+                description: Response received after subscribing to user data stream
                 payload:
                     type: object
-                    description: response schema
+                    description: Response schema for subscription
                     properties:
                         id:
                             type: string
-                            description: id property
+                            description: Request ID
                             example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
                         result:
-                            description: User Data Stream event payload - can be one of multiple event types
+                            type: object
+                            description: Subscription result (empty object on success)
                         status:
                             type: integer
-                            description: status property
+                            description: Response status code
                             example: 200
             sendMessage:
-                name: Subscribe to User Data Stream (USER_STREAM) Request
-                title: Subscribe to User Data Stream (USER_STREAM) Request
+                name: Subscribe to User Data Stream Request
+                title: Subscribe to User Data Stream Request
                 description: Send a userDataStream.subscribe request
                 payload:
                     type: object
@@ -8372,27 +8416,28 @@ channels:
         description: Stop listening to the User Data Stream in the current WebSocket connection.
         messages:
             receiveMessage:
-                name: Unsubscribe from User Data Stream (USER_STREAM) Response
-                title: Unsubscribe from User Data Stream (USER_STREAM) Response
-                description: Receive response from userDataStream.unsubscribe
+                name: Unsubscribe from User Data Stream Response
+                title: Unsubscribe from User Data Stream Response
+                description: Response received after unsubscribing from user data stream
                 payload:
                     type: object
-                    description: response schema
+                    description: Response schema for unsubscription
                     properties:
                         id:
                             type: string
-                            description: id property
+                            description: Request ID
                             example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
                         result:
-                            description: Event Stream Terminated response
-                            $ref: '#/components/schemas/EventStreamTerminatedEvent'
+                            type: object
+                            description: Empty result object
+                            example: {}
                         status:
                             type: integer
-                            description: status property
+                            description: Response status code
                             example: 200
             sendMessage:
-                name: Unsubscribe from User Data Stream (USER_STREAM) Request
-                title: Unsubscribe from User Data Stream (USER_STREAM) Request
+                name: Unsubscribe from User Data Stream Request
+                title: Unsubscribe from User Data Stream Request
                 description: Send a userDataStream.unsubscribe request
                 payload:
                     type: object
@@ -8761,6 +8806,19 @@ operations:
             $ref: '#/channels/uiKlines'
         messages:
             - $ref: '#/channels/uiKlines/messages/receiveMessage'
+    receive_userDataStream_events:
+        title: Receive user data stream events
+        description: Receive various user data stream events after successful subscription
+        action: receive
+        channel:
+            $ref: '#/channels/userDataStream_events'
+        messages:
+            - $ref: '#/channels/userDataStream_events/messages/outboundAccountPosition'
+            - $ref: '#/channels/userDataStream_events/messages/balanceUpdate'
+            - $ref: '#/channels/userDataStream_events/messages/executionReport'
+            - $ref: '#/channels/userDataStream_events/messages/listStatus'
+            - $ref: '#/channels/userDataStream_events/messages/listenKeyExpired'
+            - $ref: '#/channels/userDataStream_events/messages/externalLockUpdate'
     receive_userDataStream_ping:
         title: Receive from userDataStream.ping
         description: Receive response from userDataStream.ping
@@ -8786,7 +8844,7 @@ operations:
         messages:
             - $ref: '#/channels/userDataStream_stop/messages/receiveMessage'
     receive_userDataStream_subscribe:
-        title: Receive from userDataStream.subscribe
+        title: Receive subscription response
         description: Receive response from userDataStream.subscribe
         action: receive
         channel:
@@ -8794,7 +8852,7 @@ operations:
         messages:
             - $ref: '#/channels/userDataStream_subscribe/messages/receiveMessage'
     receive_userDataStream_unsubscribe:
-        title: Receive from userDataStream.unsubscribe
+        title: Receive unsubscription response
         description: Receive response from userDataStream.unsubscribe
         action: receive
         channel:
@@ -9178,7 +9236,7 @@ operations:
         messages:
             - $ref: '#/channels/userDataStream_stop/messages/sendMessage'
     send_userDataStream_subscribe:
-        title: Send to userDataStream.subscribe
+        title: Send subscription request
         description: Send a userDataStream.subscribe request
         action: send
         channel:
@@ -9186,7 +9244,7 @@ operations:
         messages:
             - $ref: '#/channels/userDataStream_subscribe/messages/sendMessage'
     send_userDataStream_unsubscribe:
-        title: Send to userDataStream.unsubscribe
+        title: Send unsubscription request
         description: Send a userDataStream.unsubscribe request
         action: send
         channel:
@@ -9199,28 +9257,31 @@ components:
             type: object
             description: Balance Update - occurs during deposits, withdrawals, or transfers
             properties:
-                E:
-                    type: integer
-                    format: int64
-                    description: Event Time (milliseconds)
-                    example: 1573200697110
-                T:
-                    type: integer
-                    format: int64
-                    description: Clear Time (milliseconds)
-                    example: 1573200697068
-                a:
-                    type: string
-                    description: Asset
-                    example: BTC
-                d:
-                    type: string
-                    description: Balance Delta
-                    example: "100.00000000"
-                e:
-                    type: string
-                    description: Event Type
-                    example: balanceUpdate
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1573200697110
+                        T:
+                            type: integer
+                            format: int64
+                            description: Clear Time (milliseconds)
+                            example: 1573200697068
+                        a:
+                            type: string
+                            description: Asset
+                            example: BTC
+                        d:
+                            type: string
+                            description: Balance Delta
+                            example: "100.00000000"
+                        e:
+                            type: string
+                            description: Event Type
+                            example: balanceUpdate
         EventStreamTerminatedEvent:
             type: object
             description: Event Stream Terminated - sent when User Data Stream is stopped (WebSocket API only)
@@ -9241,383 +9302,398 @@ components:
             type: object
             description: Order Update - orders are updated with executionReport event
             properties:
-                A:
-                    type: string
-                    description: Prevented Quantity
-                    example: "3.000000"
-                B:
-                    type: string
-                    description: Last Prevented Quantity
-                    example: "3.000000"
-                C:
-                    type: string
-                    description: Original client order ID (for canceled orders)
-                    example: ""
-                Cs:
-                    type: string
-                    description: Counter Symbol
-                    example: BTCUSDT
-                D:
-                    type: integer
-                    format: int64
-                    description: Trailing Time (milliseconds)
-                    example: 1668680518494
-                E:
-                    type: integer
-                    format: int64
-                    description: Event time (milliseconds)
-                    example: 1499405658658
-                F:
-                    type: string
-                    description: Iceberg quantity
-                    example: "0.00000000"
-                I:
-                    type: integer
-                    format: int64
-                    description: Execution Id
-                    example: 8641984
-                J:
-                    type: integer
-                    format: int64
-                    description: Strategy Type (if provided upon order placement)
-                    example: 1000000
-                L:
-                    type: string
-                    description: Last executed price
-                    example: "0.00000000"
-                M:
-                    type: boolean
-                    description: Ignore
-                    example: false
-                "N":
-                    type: string
-                    description: Commission asset
-                O:
-                    type: integer
-                    format: int64
-                    description: Order creation time (milliseconds)
-                    example: 1499405658657
-                P:
-                    type: string
-                    description: Stop price
-                    example: "0.00000000"
-                Q:
-                    type: string
-                    description: Quote Order Quantity
-                    example: "0.00000000"
-                S:
-                    type: string
-                    description: Side
-                    example: BUY
-                    enum:
-                        - BUY
-                        - SELL
-                T:
-                    type: integer
-                    format: int64
-                    description: Transaction time (milliseconds)
-                    example: 1499405658657
-                U:
-                    type: integer
-                    format: int64
-                    description: Counter Order Id
-                    example: 37
-                V:
-                    type: string
-                    description: SelfTradePreventionMode
-                    example: NONE
-                W:
-                    type: integer
-                    format: int64
-                    description: Working Time (visible if order is on the book)
-                    example: 1499405658657
-                X:
-                    type: string
-                    description: Current order status
-                    example: NEW
-                "Y":
-                    type: string
-                    description: Last quote asset transacted quantity
-                    example: "0.00000000"
-                Z:
-                    type: string
-                    description: Cumulative quote asset transacted quantity
-                    example: "0.00000000"
-                a:
-                    type: integer
-                    format: int64
-                    description: Allocation ID
-                    example: 1234
-                b:
-                    type: string
-                    description: Match Type (for orders with allocations)
-                    example: ONE_PARTY_TRADE_REPORT
-                c:
-                    type: string
-                    description: Client order ID
-                    example: mUvoqJxFIILMdfAW5iGSOW
-                d:
-                    type: integer
-                    description: Trailing Delta (for trailing stop orders)
-                    example: 4
-                e:
-                    type: string
-                    description: Event type
-                    example: executionReport
-                f:
-                    type: string
-                    description: Time in force
-                    example: GTC
-                g:
-                    type: integer
-                    format: int64
-                    description: OrderListId
-                    example: -1
-                i:
-                    type: integer
-                    format: int64
-                    description: Order ID
-                    example: 4293153
-                j:
-                    type: integer
-                    format: int64
-                    description: Strategy Id (if provided upon order placement)
-                    example: 1
-                k:
-                    type: string
-                    description: Working Floor (for orders with potential allocations)
-                    example: SOR
-                l:
-                    type: string
-                    description: Last executed quantity
-                    example: "0.00000000"
-                m:
-                    type: boolean
-                    description: Is this trade the maker side?
-                    example: false
-                "n":
-                    type: string
-                    description: Commission amount
-                    example: "0"
-                o:
-                    type: string
-                    description: Order type
-                    example: LIMIT
-                p:
-                    type: string
-                    description: Order price
-                    example: "0.10264410"
-                pL:
-                    type: string
-                    description: Prevented Execution Price
-                    example: "0.10000001"
-                pY:
-                    type: string
-                    description: Prevented Execution Quote Qty
-                    example: "0.21234562"
-                pl:
-                    type: string
-                    description: Prevented Execution Quantity
-                    example: "2.123456"
-                q:
-                    type: string
-                    description: Order quantity
-                    example: "1.00000000"
-                r:
-                    type: string
-                    description: Order reject reason
-                    example: NONE
-                    enum:
-                        - NONE
-                        - INSUFFICIENT_BALANCES
-                        - STOP_PRICE_WOULD_TRIGGER_IMMEDIATELY
-                        - WOULD_MATCH_IMMEDIATELY
-                        - OCO_BAD_PRICES
-                s:
-                    type: string
-                    description: Symbol
-                    example: ETHBTC
-                t:
-                    type: integer
-                    format: int64
-                    description: Trade ID
-                    example: -1
-                u:
-                    type: integer
-                    format: int64
-                    description: Trade Group Id
-                    example: 1
-                uS:
-                    type: boolean
-                    description: UsedSor (for orders that used SOR)
-                    example: true
-                v:
-                    type: integer
-                    format: int64
-                    description: Prevented Match Id (visible if order expired due to STP)
-                    example: 3
-                w:
-                    type: boolean
-                    description: Is the order on the book?
-                    example: true
-                x:
-                    type: string
-                    description: Current execution type
-                    example: NEW
-                    enum:
-                        - NEW
-                        - CANCELED
-                        - REPLACED
-                        - REJECTED
-                        - TRADE
-                        - EXPIRED
-                        - TRADE_PREVENTION
-                z:
-                    type: string
-                    description: Cumulative filled quantity
-                    example: "0.00000000"
+                event:
+                    type: object
+                    properties:
+                        A:
+                            type: string
+                            description: Prevented Quantity
+                            example: "3.000000"
+                        B:
+                            type: string
+                            description: Last Prevented Quantity
+                            example: "3.000000"
+                        C:
+                            type: string
+                            description: Original client order ID (for canceled orders)
+                            example: ""
+                        Cs:
+                            type: string
+                            description: Counter Symbol
+                            example: BTCUSDT
+                        D:
+                            type: integer
+                            format: int64
+                            description: Trailing Time (milliseconds)
+                            example: 1668680518494
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event time (milliseconds)
+                            example: 1499405658658
+                        F:
+                            type: string
+                            description: Iceberg quantity
+                            example: "0.00000000"
+                        I:
+                            type: integer
+                            format: int64
+                            description: Execution Id
+                            example: 8641984
+                        J:
+                            type: integer
+                            format: int64
+                            description: Strategy Type (if provided upon order placement)
+                            example: 1000000
+                        L:
+                            type: string
+                            description: Last executed price
+                            example: "0.00000000"
+                        M:
+                            type: boolean
+                            description: Ignore
+                            example: false
+                        "N":
+                            type: string
+                            description: Commission asset
+                        O:
+                            type: integer
+                            format: int64
+                            description: Order creation time (milliseconds)
+                            example: 1499405658657
+                        P:
+                            type: string
+                            description: Stop price
+                            example: "0.00000000"
+                        Q:
+                            type: string
+                            description: Quote Order Quantity
+                            example: "0.00000000"
+                        S:
+                            type: string
+                            description: Side
+                            example: BUY
+                            enum:
+                                - BUY
+                                - SELL
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction time (milliseconds)
+                            example: 1499405658657
+                        U:
+                            type: integer
+                            format: int64
+                            description: Counter Order Id
+                            example: 37
+                        V:
+                            type: string
+                            description: SelfTradePreventionMode
+                            example: NONE
+                        W:
+                            type: integer
+                            format: int64
+                            description: Working Time (visible if order is on the book)
+                            example: 1499405658657
+                        X:
+                            type: string
+                            description: Current order status
+                            example: NEW
+                        "Y":
+                            type: string
+                            description: Last quote asset transacted quantity
+                            example: "0.00000000"
+                        Z:
+                            type: string
+                            description: Cumulative quote asset transacted quantity
+                            example: "0.00000000"
+                        a:
+                            type: integer
+                            format: int64
+                            description: Allocation ID
+                            example: 1234
+                        b:
+                            type: string
+                            description: Match Type (for orders with allocations)
+                            example: ONE_PARTY_TRADE_REPORT
+                        c:
+                            type: string
+                            description: Client order ID
+                            example: mUvoqJxFIILMdfAW5iGSOW
+                        d:
+                            type: integer
+                            description: Trailing Delta (for trailing stop orders)
+                            example: 4
+                        e:
+                            type: string
+                            description: Event type
+                            example: executionReport
+                        f:
+                            type: string
+                            description: Time in force
+                            example: GTC
+                        g:
+                            type: integer
+                            format: int64
+                            description: OrderListId
+                            example: -1
+                        i:
+                            type: integer
+                            format: int64
+                            description: Order ID
+                            example: 4293153
+                        j:
+                            type: integer
+                            format: int64
+                            description: Strategy Id (if provided upon order placement)
+                            example: 1
+                        k:
+                            type: string
+                            description: Working Floor (for orders with potential allocations)
+                            example: SOR
+                        l:
+                            type: string
+                            description: Last executed quantity
+                            example: "0.00000000"
+                        m:
+                            type: boolean
+                            description: Is this trade the maker side?
+                            example: false
+                        "n":
+                            type: string
+                            description: Commission amount
+                            example: "0"
+                        o:
+                            type: string
+                            description: Order type
+                            example: LIMIT
+                        p:
+                            type: string
+                            description: Order price
+                            example: "0.10264410"
+                        pL:
+                            type: string
+                            description: Prevented Execution Price
+                            example: "0.10000001"
+                        pY:
+                            type: string
+                            description: Prevented Execution Quote Qty
+                            example: "0.21234562"
+                        pl:
+                            type: string
+                            description: Prevented Execution Quantity
+                            example: "2.123456"
+                        q:
+                            type: string
+                            description: Order quantity
+                            example: "1.00000000"
+                        r:
+                            type: string
+                            description: Order reject reason
+                            example: NONE
+                            enum:
+                                - NONE
+                                - INSUFFICIENT_BALANCES
+                                - STOP_PRICE_WOULD_TRIGGER_IMMEDIATELY
+                                - WOULD_MATCH_IMMEDIATELY
+                                - OCO_BAD_PRICES
+                        s:
+                            type: string
+                            description: Symbol
+                            example: ETHBTC
+                        t:
+                            type: integer
+                            format: int64
+                            description: Trade ID
+                            example: -1
+                        u:
+                            type: integer
+                            format: int64
+                            description: Trade Group Id
+                            example: 1
+                        uS:
+                            type: boolean
+                            description: UsedSor (for orders that used SOR)
+                            example: true
+                        v:
+                            type: integer
+                            format: int64
+                            description: Prevented Match Id (visible if order expired due to STP)
+                            example: 3
+                        w:
+                            type: boolean
+                            description: Is the order on the book?
+                            example: true
+                        x:
+                            type: string
+                            description: Current execution type
+                            example: NEW
+                            enum:
+                                - NEW
+                                - CANCELED
+                                - REPLACED
+                                - REJECTED
+                                - TRADE
+                                - EXPIRED
+                                - TRADE_PREVENTION
+                        z:
+                            type: string
+                            description: Cumulative filled quantity
+                            example: "0.00000000"
         ExternalLockUpdateEvent:
             type: object
             description: External Lock Update - sent when spot wallet balance is locked/unlocked by external system
             properties:
-                E:
-                    type: integer
-                    format: int64
-                    description: Event Time (milliseconds)
-                    example: 1581557507324
-                T:
-                    type: integer
-                    format: int64
-                    description: Transaction Time (milliseconds)
-                    example: 1581557507268
-                a:
-                    type: string
-                    description: Asset
-                    example: NEO
-                d:
-                    type: string
-                    description: Delta
-                    example: "10.00000000"
-                e:
-                    type: string
-                    description: Event Type
-                    example: externalLockUpdate
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1581557507324
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1581557507268
+                        a:
+                            type: string
+                            description: Asset
+                            example: NEO
+                        d:
+                            type: string
+                            description: Delta
+                            example: "10.00000000"
+                        e:
+                            type: string
+                            description: Event Type
+                            example: externalLockUpdate
         ListStatusEvent:
             type: object
             description: List Status - sent with executionReport for order lists (OCO orders)
             properties:
-                C:
-                    type: string
-                    description: List Client Order ID
-                    example: F4QN4G8DlFATFlIUQ0cjdD
-                E:
-                    type: integer
-                    format: int64
-                    description: Event Time (milliseconds)
-                    example: 1564035303637
-                L:
-                    type: string
-                    description: List Order Status
-                    example: EXECUTING
-                O:
-                    type: array
-                    description: Array of orders in the list
-                    items:
-                        type: object
-                        properties:
-                            c:
-                                type: string
-                                description: ClientOrderId
-                                example: AJYsMjErWJesZvqlJCTUgL
-                            i:
-                                type: integer
-                                format: int64
-                                description: OrderId
-                                example: 17
-                            s:
-                                type: string
-                                description: Symbol
-                                example: ETHBTC
-                T:
-                    type: integer
-                    format: int64
-                    description: Transaction Time (milliseconds)
-                    example: 1564035303625
-                c:
-                    type: string
-                    description: Contingency Type
-                    example: OCO
-                e:
-                    type: string
-                    description: Event Type
-                    example: listStatus
-                g:
-                    type: integer
-                    format: int64
-                    description: OrderListId
-                    example: 2
-                l:
-                    type: string
-                    description: List Status Type
-                    example: EXEC_STARTED
-                r:
-                    type: string
-                    description: List Reject Reason
-                    example: NONE
-                s:
-                    type: string
-                    description: Symbol
-                    example: ETHBTC
+                event:
+                    type: object
+                    properties:
+                        C:
+                            type: string
+                            description: List Client Order ID
+                            example: F4QN4G8DlFATFlIUQ0cjdD
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1564035303637
+                        L:
+                            type: string
+                            description: List Order Status
+                            example: EXECUTING
+                        O:
+                            type: array
+                            description: Array of orders in the list
+                            items:
+                                type: object
+                                properties:
+                                    c:
+                                        type: string
+                                        description: ClientOrderId
+                                        example: AJYsMjErWJesZvqlJCTUgL
+                                    i:
+                                        type: integer
+                                        format: int64
+                                        description: OrderId
+                                        example: 17
+                                    s:
+                                        type: string
+                                        description: Symbol
+                                        example: ETHBTC
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1564035303625
+                        c:
+                            type: string
+                            description: Contingency Type
+                            example: OCO
+                        e:
+                            type: string
+                            description: Event Type
+                            example: listStatus
+                        g:
+                            type: integer
+                            format: int64
+                            description: OrderListId
+                            example: 2
+                        l:
+                            type: string
+                            description: List Status Type
+                            example: EXEC_STARTED
+                        r:
+                            type: string
+                            description: List Reject Reason
+                            example: NONE
+                        s:
+                            type: string
+                            description: Symbol
+                            example: ETHBTC
         ListenKeyExpiredEvent:
             type: object
             description: Listen Key Expired - sent when the listen key expires
             properties:
-                E:
-                    type: integer
-                    format: int64
-                    description: Event time (milliseconds)
-                    example: 1699596037418
-                e:
-                    type: string
-                    description: Event type
-                    example: listenKeyExpired
-                listenKey:
-                    type: string
-                    description: The expired listen key
-                    example: OfYGbUzi3PraNagEkdKuFwUHn48brFsItTdsuiIXrucEvD0rhRXZ7I6URWfE8YE8
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event time (milliseconds)
+                            example: 1699596037418
+                        e:
+                            type: string
+                            description: Event type
+                            example: listenKeyExpired
+                        listenKey:
+                            type: string
+                            description: The expired listen key
+                            example: OfYGbUzi3PraNagEkdKuFwUHn48brFsItTdsuiIXrucEvD0rhRXZ7I6URWfE8YE8
         OutboundAccountPositionEvent:
             type: object
             description: Account Update - sent when account balance changes
             properties:
-                B:
-                    type: array
-                    description: Balances Array
-                    items:
-                        type: object
-                        properties:
-                            a:
-                                type: string
-                                description: Asset
-                                example: ETH
-                            f:
-                                type: string
-                                description: Free
-                                example: "10000.000000"
-                            l:
-                                type: string
-                                description: Locked
-                                example: "0.000000"
-                E:
-                    type: integer
-                    format: int64
-                    description: Event Time (milliseconds)
-                    example: 1564034571105
-                e:
-                    type: string
-                    description: Event type
-                    example: outboundAccountPosition
-                u:
-                    type: integer
-                    format: int64
-                    description: Time of last account update (milliseconds)
-                    example: 1564034571073
+                event:
+                    type: object
+                    properties:
+                        B:
+                            type: array
+                            description: Balances Array
+                            items:
+                                type: object
+                                properties:
+                                    a:
+                                        type: string
+                                        description: Asset
+                                        example: ETH
+                                    f:
+                                        type: string
+                                        description: Free
+                                        example: "10000.000000"
+                                    l:
+                                        type: string
+                                        description: Locked
+                                        example: "0.000000"
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1564034571105
+                        e:
+                            type: string
+                            description: Event type
+                            example: outboundAccountPosition
+                        u:
+                            type: integer
+                            format: int64
+                            description: Time of last account update (milliseconds)
+                            example: 1564034571073
