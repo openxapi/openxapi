@@ -280,6 +280,56 @@ func TestDocumentParser_ResponseFieldDetails(t *testing.T) {
 	t.Logf("✅ Time method has correct result structure with serverTime")
 }
 
+func TestDocumentParser_CorrelationId(t *testing.T) {
+	parser := &DocumentParser{}
+
+	// Load the sample HTML file
+	samplePath := filepath.Join("..", "..", "..", "..", "samples", "binance", "websocket", "spot", "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_general-requests.html")
+
+	file, err := os.Open(samplePath)
+	require.NoError(t, err, "Failed to open sample file")
+	defer file.Close()
+
+	urlEntity := &config.URLEntity{
+		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/general-requests",
+		DocType: "websocket-api",
+	}
+
+	channels, err := parser.Parse(file, urlEntity, []string{})
+	require.NoError(t, err, "Failed to parse document")
+
+	// Check each method to verify correlation ID is set when 'id' property exists
+	for _, channel := range channels {
+		// Check send message
+		if sendMsg, exists := channel.Messages["send"]; exists {
+			if sendMsg.Payload != nil && sendMsg.Payload.Properties != nil {
+				if _, hasId := sendMsg.Payload.Properties["id"]; hasId {
+					require.NotNil(t, sendMsg.CorrelationId, "Send message should have CorrelationId when payload has 'id' property for method: %s", channel.Name)
+					assert.Equal(t, "$message.payload#/id", sendMsg.CorrelationId.Location, "CorrelationId location should be '$message.payload#/id' for method: %s", channel.Name)
+					assert.Equal(t, "Message correlation ID", sendMsg.CorrelationId.Description, "CorrelationId description should be set for method: %s", channel.Name)
+					t.Logf("✅ %s send message has correlation ID: %s", channel.Name, sendMsg.CorrelationId.Location)
+				} else {
+					t.Logf("ℹ️ %s send message does not have 'id' property, no correlation ID expected", channel.Name)
+				}
+			}
+		}
+
+		// Check receive message
+		if receiveMsg, exists := channel.Messages["receive"]; exists {
+			if receiveMsg.Payload != nil && receiveMsg.Payload.Properties != nil {
+				if _, hasId := receiveMsg.Payload.Properties["id"]; hasId {
+					require.NotNil(t, receiveMsg.CorrelationId, "Receive message should have CorrelationId when payload has 'id' property for method: %s", channel.Name)
+					assert.Equal(t, "$message.payload#/id", receiveMsg.CorrelationId.Location, "CorrelationId location should be '$message.payload#/id' for method: %s", channel.Name)
+					assert.Equal(t, "Message correlation ID", receiveMsg.CorrelationId.Description, "CorrelationId description should be set for method: %s", channel.Name)
+					t.Logf("✅ %s receive message has correlation ID: %s", channel.Name, receiveMsg.CorrelationId.Location)
+				} else {
+					t.Logf("ℹ️ %s receive message does not have 'id' property, no correlation ID expected", channel.Name)
+				}
+			}
+		}
+	}
+}
+
 // Helper function to get field names from properties map
 func getFieldNames(properties map[string]*wsparser.Schema) []string {
 	var names []string

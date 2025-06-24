@@ -302,19 +302,35 @@ func (p *DocumentParser) extractMethod(content []string, category string) (*pars
 
 	// Add request and response messages
 	if requestSchema != nil {
-		channel.Messages["send"] = &parser.Message{
+		sendMessage := &parser.Message{
 			Title:       fmt.Sprintf("%s Request", channel.Summary),
 			Description: fmt.Sprintf("Send a %s request", channel.Name),
 			Payload:     requestSchema,
 		}
+		// Set correlation ID if the payload has an 'id' property
+		if p.hasIdProperty(requestSchema) {
+			sendMessage.CorrelationId = &parser.CorrelationId{
+				Location:    "$message.payload#/id",
+				Description: "Message correlation ID",
+			}
+		}
+		channel.Messages["send"] = sendMessage
 	}
 
 	if responseSchema != nil {
-		channel.Messages["receive"] = &parser.Message{
+		receiveMessage := &parser.Message{
 			Title:       fmt.Sprintf("%s Response", channel.Summary),
 			Description: fmt.Sprintf("Receive response from %s", channel.Name),
 			Payload:     responseSchema,
 		}
+		// Set correlation ID if the payload has an 'id' property
+		if p.hasIdProperty(responseSchema) {
+			receiveMessage.CorrelationId = &parser.CorrelationId{
+				Location:    "$message.payload#/id",
+				Description: "Message correlation ID",
+			}
+		}
+		channel.Messages["receive"] = receiveMessage
 	}
 
 	return channel, foundMethod
@@ -807,4 +823,14 @@ func (p *DocumentParser) isProtectedMethod(methodName string, protectedMethods [
 	}
 
 	return false
+}
+
+// hasIdProperty checks if a schema has an 'id' property
+func (p *DocumentParser) hasIdProperty(schema *parser.Schema) bool {
+	if schema == nil || schema.Properties == nil {
+		return false
+	}
+
+	_, exists := schema.Properties["id"]
+	return exists
 }

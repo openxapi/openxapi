@@ -521,24 +521,44 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 		g.populateParamsRequired(payload, channel.Parameters)
 
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_send", channelName))
-		componentMessages[messageKey] = &AsyncAPIMessage{
+		asyncMessage := &AsyncAPIMessage{
 			Name:        sendMsg.Title,
 			Title:       sendMsg.Title,
 			Summary:     sendMsg.Summary,
 			Description: sendMsg.Description,
 			Payload:     payload,
 		}
+
+		// Set correlation ID if present in the parser message
+		if sendMsg.CorrelationId != nil {
+			asyncMessage.CorrelationId = &AsyncAPICorrelationId{
+				Location:    sendMsg.CorrelationId.Location,
+				Description: sendMsg.CorrelationId.Description,
+			}
+		}
+
+		componentMessages[messageKey] = asyncMessage
 	}
 
 	if receiveMsg, exists := channel.Messages["receive"]; exists {
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_receive", channelName))
-		componentMessages[messageKey] = &AsyncAPIMessage{
+		asyncMessage := &AsyncAPIMessage{
 			Name:        receiveMsg.Title,
 			Title:       receiveMsg.Title,
 			Summary:     receiveMsg.Summary,
 			Description: receiveMsg.Description,
 			Payload:     g.convertToAsyncAPISchema(receiveMsg.Payload),
 		}
+
+		// Set correlation ID if present in the parser message
+		if receiveMsg.CorrelationId != nil {
+			asyncMessage.CorrelationId = &AsyncAPICorrelationId{
+				Location:    receiveMsg.CorrelationId.Location,
+				Description: receiveMsg.CorrelationId.Description,
+			}
+		}
+
+		componentMessages[messageKey] = asyncMessage
 	}
 
 	return componentMessages
@@ -637,7 +657,7 @@ func (g *Generator) toCamelCase(s string) string {
 	if len(parts) == 0 {
 		return s
 	}
-	
+
 	// Keep the first part as is (for compound words like userDataStream), capitalize the rest
 	result := parts[0]
 	for i := 1; i < len(parts); i++ {
