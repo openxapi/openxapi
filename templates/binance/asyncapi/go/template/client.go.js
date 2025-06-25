@@ -236,7 +236,36 @@ func (c *Client) handleMessage(data []byte) error {
 
 	// Check if this is a response to a request (has "id" field)
 	if id, hasID := genericMessage["id"]; hasID {
-		return c.handleRequestResponse(id.(string), data, nil)
+		// Parse response structure to check for errors
+		var response struct {
+			ID     interface{} \`json:"id"\`
+			Status int         \`json:"status"\`
+			Result interface{} \`json:"result,omitempty"\`
+			Error  *struct {
+				Code int    \`json:"code"\`
+				Msg  string \`json:"msg"\`
+			} \`json:"error,omitempty"\`
+			RateLimits []interface{} \`json:"rateLimits,omitempty"\`
+		}
+
+		if err := json.Unmarshal(data, &response); err != nil {
+			return fmt.Errorf("failed to parse response structure: %w", err)
+		}
+
+		requestID := fmt.Sprintf("%v", id)
+
+		// Check if status indicates an error
+		var responseError error
+		if response.Status != 200 && response.Error != nil {
+			responseError = &APIError{
+				Status:  response.Status,
+				Code:    response.Error.Code,
+				Message: response.Error.Msg,
+				ID:      requestID,
+			}
+		}
+
+		return c.handleRequestResponse(requestID, data, responseError)
 	}
 
 	// Check for event structure with nested "event" object (Binance event messages)
@@ -285,10 +314,6 @@ func (c *Client) handleEventMessage(eventType string, data []byte) error {
 	// Handle with event handler
 	return c.eventHandler.HandleResponse(eventType, data)
 }`}
-      </Text>
-
-      <Text newLines={2}>
-        {``}
       </Text>
 
       <Text newLines={2}>
@@ -344,4 +369,4 @@ func (c *Client) GetURL() string {
       </Text>
     </File>
   );
-} 
+}
