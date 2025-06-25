@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    klines:
-        address: klines
+    spot:
+        address: /
         title: Channel klines
         description: |-
             Get klines (candlestick bars).
@@ -14,127 +14,124 @@ channels:
             If you need historical kline data,
             please consider using data.binance.vision.
         messages:
-            receiveMessage:
-                name: Klines Response
-                title: Klines Response
-                description: Receive response from klines
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 2
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: array
-                            description: result property
-                            items:
-                                type: array
-                                description: array item
-                                items:
-                                    type: object
-                                    description: array item
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Klines Request
-                title: Klines Request
-                description: Send a klines request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
-                        method:
-                            type: string
-                            description: method property
-                            example: klines
-                            enum:
-                                - klines
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                endTime:
-                                    type: string
-                                interval:
-                                    type: string
-                                limit:
-                                    type: integer
-                                    description: 'Default: 500; Maximum: 1000'
-                                startTime:
-                                    type: string
-                                symbol:
-                                    type: string
-                                timeZone:
-                                    type: string
-                                    description: 'Default: 0 (UTC)'
-                            required:
-                                - symbol
-                                - interval
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            interval:
-                location: $message.payload#/params/interval
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
-            timeZone:
-                description: 'Default: 0 (UTC)'
-                location: $message.payload#/params/timeZone
+            klinesRequest:
+                $ref: '#/components/messages/klinesRequest'
+            klinesResponse:
+                $ref: '#/components/messages/klinesResponse'
 operations:
-    receive_klines:
+    receiveKlines:
         title: Receive from klines
         description: Receive response from klines
         action: receive
         channel:
-            $ref: '#/channels/klines'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/klines/messages/receiveMessage'
-    send_klines:
+            - $ref: '#/channels/spot/messages/klinesResponse'
+    sendKlines:
         title: Send to klines
         description: Send a klines request
         action: send
         channel:
-            $ref: '#/channels/klines'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/klines/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/klinesRequest'
+components:
+    messages:
+        klinesRequest:
+            name: Klines Request
+            title: Klines Request
+            description: Send a klines request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
+                    method:
+                        type: string
+                        description: method property
+                        example: klines
+                        enum:
+                            - klines
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            endTime:
+                                type: string
+                            interval:
+                                type: string
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            startTime:
+                                type: string
+                            symbol:
+                                type: string
+                            timeZone:
+                                type: string
+                                description: 'Default: 0 (UTC)'
+                        required:
+                            - symbol
+                            - interval
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        klinesResponse:
+            name: Klines Response
+            title: Klines Response
+            description: Receive response from klines
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 2
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: array
+                        description: result property
+                        items:
+                            type: array
+                            description: array item
+                            items:
+                                type: object
+                                description: array item
+                                example: 1655971200000
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

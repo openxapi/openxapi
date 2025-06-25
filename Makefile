@@ -6,6 +6,7 @@ GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 GOVET=$(GOCMD) vet
+GOLIST=$(GOCMD) list ./... | grep -v 'test/project'
 BIN_DIR=bin
 BINARY_NAME=$(BIN_DIR)/openxapi
 
@@ -177,7 +178,7 @@ format:
 
 lint:
 	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run ./...; \
+		golangci-lint run $$($(GOLIST)); \
 	else \
 		echo "golangci-lint is not installed. Please install it using:"; \
 		echo "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"; \
@@ -185,18 +186,18 @@ lint:
 	fi
 
 vet:
-	@$(GOVET) ./...
+	@$(GOVET) $$($(GOLIST))
 
 test: unit-test
 
 unit-test:
-	@$(GOTEST) -v -race ./...
+	@$(GOTEST) -v -race $$($(GOLIST))
 
 test-with-samples:
-	@TEST_WITH_SAMPLES=1 $(GOTEST) -v ./...
+	@TEST_WITH_SAMPLES=1 $(GOTEST) -v $$($(GOLIST))
 
 coverage:
-	@$(GOTEST) -coverprofile=coverage.out ./...
+	@$(GOTEST) -coverprofile=coverage.out $$($(GOLIST))
 	@$(GOCMD) tool cover -html=coverage.out
 
 deps:

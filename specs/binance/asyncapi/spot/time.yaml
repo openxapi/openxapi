@@ -3,96 +3,107 @@ info:
     title: ""
     version: ""
 channels:
-    time:
-        address: time
+    spot:
+        address: /
         title: Channel time
         description: Test connectivity to the WebSocket API and get the current server time.
         messages:
-            receiveMessage:
-                name: Check server time Response
-                title: Check server time Response
-                description: Receive response from time
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 187d3cb2-942d-484c-8271-4e2141bbadb1
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 1
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: object
-                            description: result property
-                            properties:
-                                serverTime:
-                                    type: integer
-                                    format: int64
-                                    description: serverTime property
-                                    example: 1656400526260
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Check server time Request
-                title: Check server time Request
-                description: Send a time request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 187d3cb2-942d-484c-8271-4e2141bbadb1
-                        method:
-                            type: string
-                            description: method property
-                            example: time
-                            enum:
-                                - time
+            timeRequest:
+                $ref: '#/components/messages/timeRequest'
+            timeResponse:
+                $ref: '#/components/messages/timeResponse'
 operations:
-    receive_time:
+    receiveTime:
         title: Receive from time
         description: Receive response from time
         action: receive
         channel:
-            $ref: '#/channels/time'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/time/messages/receiveMessage'
-    send_time:
+            - $ref: '#/channels/spot/messages/timeResponse'
+    sendTime:
         title: Send to time
         description: Send a time request
         action: send
         channel:
-            $ref: '#/channels/time'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/time/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/timeRequest'
+components:
+    messages:
+        timeRequest:
+            name: Check server time Request
+            title: Check server time Request
+            description: Send a time request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 187d3cb2-942d-484c-8271-4e2141bbadb1
+                    method:
+                        type: string
+                        description: method property
+                        example: time
+                        enum:
+                            - time
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        timeResponse:
+            name: Check server time Response
+            title: Check server time Response
+            description: Receive response from time
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 187d3cb2-942d-484c-8271-4e2141bbadb1
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 1
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            serverTime:
+                                type: integer
+                                format: int64
+                                description: serverTime property
+                                example: 1656400526260
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

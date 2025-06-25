@@ -1,6 +1,6 @@
 # Binance AsyncAPI Go WebSocket Client Template
 
-This template generates **Go WebSocket clients** for Binance's WebSocket API based on AsyncAPI 3.0 specifications. It provides comprehensive support for **oneOf response types**, **async response management**, and **enhanced error handling**.
+This template generates **Go WebSocket clients** for Binance's WebSocket API based on AsyncAPI 3.0 specifications. It provides comprehensive support for **oneOf response types**, **async response management**, **enhanced error handling**, and **high-performance event processing**.
 
 > **Note**: This template is specifically designed for Go language. For other languages, use the corresponding language-specific templates.
 
@@ -16,8 +16,18 @@ This will generate the Go client using default parameters:
 - Spec file: `../../../../specs/binance/asyncapi/spot.yaml`
 - Output directory: `./output`
 - Server: `production`
-- Package name: `main`
-- Module name: `binance-websocket-client`
+- Package name: `spot`
+- Module name: `github.com/openxapi/binance-go/ws`
+
+### Module-Based Generation
+
+```bash
+# Generate specific module (spot, futures, options, etc.)
+MODULE=spot npm run generate:module
+
+# Test specific module
+MODULE=spot npm run test:module
+```
 
 ### Custom Generation
 
@@ -55,24 +65,27 @@ npm run generate
 | `SPEC_FILE` | Path to AsyncAPI specification | `../../../../specs/binance/asyncapi/spot.yaml` |
 | `OUTPUT_DIR` | Output directory for generated code | `./output` |
 | `SERVER` | Server environment to use | `production` |
-| `PACKAGE_NAME` | Go package name | `main` |
-| `MODULE_NAME` | Go module name | `binance-websocket-client` |
+| `PACKAGE_NAME` | Go package name | `spot` |
+| `MODULE_NAME` | Go module name | `github.com/openxapi/binance-go/ws` |
 | `CLIENT_VERSION` | Client version | `0.1.0` |
-| `AUTHOR` | Author name | (empty) |
+| `AUTHOR` | Author name | `openxapi` |
 
 ## Features
 
 - ✅ **AsyncAPI 3.0 Compatible**: Full support for AsyncAPI 3.0 specifications
 - ✅ **OneOf Support**: Automatic handling of multiple response types in a single endpoint
-- ✅ **Async Response Management**: Global response list and type-safe handlers
-- ✅ **Enhanced Error Handling**: Comprehensive API error handling with status codes
+- ✅ **High-Performance Architecture**: Optimized with sync.Map, pre-allocated buffers, and concurrent-safe operations
+- ✅ **Enhanced Error Handling**: Comprehensive API error handling with HTTP-like status codes
 - ✅ **Automatic JSON Parsing**: Response handlers receive parsed objects, not raw bytes
-- ✅ **Type-Safe Go Client**: Generated Go structs with proper types
-- ✅ **Event-Driven Architecture**: Support for WebSocket event handling
+- ✅ **Type-Safe Go Client**: Generated Go structs with proper types and validation
+- ✅ **Event-Driven Architecture**: Support for WebSocket event handling with global handlers
 - ✅ **Response History**: Track all received messages with queryable history
 - ✅ **Gorilla WebSocket**: Built on reliable WebSocket implementation
-- ✅ **Thread-Safe**: Concurrent-safe operations with proper locking
+- ✅ **Thread-Safe**: Concurrent-safe operations with proper locking mechanisms
+- ✅ **Context-Based Authentication**: Per-request authentication via Go's context.Context
+- ✅ **Multiple Authentication Methods**: HMAC-SHA256, RSA, and Ed25519 signing
 - ✅ **Environment Variable Support**: Configurable via environment variables
+- ✅ **Module-Based Generation**: Support for different Binance API modules
 
 ## Error Handling
 
@@ -170,6 +183,26 @@ OneOf allows a single field to accept multiple different schema types. For examp
 
 The client automatically detects the event type based on distinctive fields (like the `e` field in Binance events) and parses the response into the correct Go struct.
 
+## High-Performance Features
+
+### Optimized Client Architecture
+
+The client is designed for high-performance scenarios:
+
+- **Pre-allocated Buffers**: JSON parsing uses pre-allocated buffers to reduce garbage collection
+- **sync.Map**: Response handlers use sync.Map for better concurrent performance
+- **Separate Mutexes**: Response list and client state use separate mutexes to reduce contention
+- **Capacity Pre-allocation**: Response lists are pre-allocated with capacity to minimize reallocations
+
+### Concurrent Safety
+
+All client operations are thread-safe:
+
+- Response handlers use RWMutex for concurrent access
+- Response history is protected with mutex
+- Global response registry uses locks for safe registration
+- Event handlers support concurrent registration and execution
+
 ## Usage Examples
 
 ### Basic OneOf Handling with Error Support
@@ -191,25 +224,24 @@ err := client.UserDataStreamSubscribeWithOneOfHandler(func(result interface{}, r
 })
 ```
 
-### Global Response Handlers
+### Event Handler Registration
 
 ```go
 // Register handlers for specific event types globally
-client.RegisterGlobalHandler("ExecutionReportEvent", func(data interface{}) error {
-    if event, ok := data.(*models.ExecutionReportEvent); ok {
-        // Handle execution report
-        processOrderUpdate(event)
-    }
+client.HandleExecutionReportEvent(func(event *models.ExecutionReportEvent) error {
+    // Handle execution report
+    processOrderUpdate(event)
     return nil
 })
 
-client.RegisterGlobalHandler("BalanceUpdateEvent", func(data interface{}) error {
-    if event, ok := data.(*models.BalanceUpdateEvent); ok {
-        // Handle balance update
-        updateBalance(event.A, event.D)
-    }
+client.HandleBalanceUpdateEvent(func(event *models.BalanceUpdateEvent) error {
+    // Handle balance update
+    updateBalance(event.A, event.D)
     return nil
 })
+
+// Or setup all default handlers at once
+client.SetupDefaultUserDataStreamHandlers()
 ```
 
 ### Response History Management
@@ -233,9 +265,7 @@ if err == nil {
 }
 ```
 
-### Using the Generated Client
-
-After generation, you can use the client in your Go project:
+### Authentication Examples
 
 ```go
 package main
@@ -245,7 +275,7 @@ import (
 	"log"
 	"time"
 
-	"binance-websocket-client/models"
+	"github.com/openxapi/binance-go/ws/models"
 )
 
 func main() {
@@ -430,6 +460,8 @@ The template generates the following structure:
 ```
 output/
 ├── client.go              # Main WebSocket client with oneOf support and error handling
+├── signing.go             # Request signing utilities (HMAC, RSA, Ed25519)
+├── signing_test.go        # Signing tests and benchmarks
 ├── go.mod                 # Go module file
 ├── models/
 │   ├── models.go         # Common utilities and response registry
@@ -440,8 +472,6 @@ output/
 │   ├── listen_key_expired_event.go
 │   ├── external_lock_update_event.go
 │   └── user_data_stream_subscribe_result.go  # OneOf wrapper type
-├── signing.go            # Request signing utilities
-├── signing_test.go       # Signing tests
 └── README.md             # Generated client documentation
 ```
 
@@ -457,6 +487,12 @@ This will:
 1. Clean previous test artifacts
 2. Generate a test client
 3. Build the Go client
+
+### Test Specific Module
+
+```bash
+MODULE=spot npm run test:module
+```
 
 ### Clean Test Files
 
@@ -476,7 +512,49 @@ npm run test:generate
 npm run test:build
 ```
 
+### Run Example
 
+```bash
+npm run example
+```
+
+## Generation Configuration
+
+### Template Parameters
+
+The template supports the following parameters:
+
+| Parameter | Description | Default | Required |
+|-----------|-------------|---------|----------|
+| `moduleName` | Go module name | `github.com/openxapi/binance-go/ws` | Yes |
+| `packageName` | Go package name | `spot` | No |
+| `version` | Client version | `0.1.0` | No |
+| `author` | Author name | `openxapi` | No |
+
+### Module-Based Configuration
+
+The template supports module-based generation using JSON configuration files:
+
+```json
+{
+  "generator": {
+    "parameters": {
+      "moduleName": {
+        "default": "github.com/openxapi/binance-go/ws"
+      },
+      "packageName": {
+        "default": "spot"
+      },
+      "version": {
+        "default": "0.1.0"
+      },
+      "author": {
+        "default": "openxapi"
+      }
+    }
+  }
+}
+```
 
 ## Key Components
 
@@ -494,12 +572,12 @@ models.GlobalRegistry.RegisterType("MyEventType", MyEvent{}, func() interface{} 
 instance, err := models.GlobalRegistry.CreateInstance("MyEventType")
 ```
 
-### GlobalResponseHandler
+### EventHandler
 
-Manages global handlers for different response types:
+Manages event handlers for different response types with optimized performance:
 
 ```go
-handler := NewGlobalResponseHandler()
+handler := NewEventHandler()
 handler.RegisterHandler("ExecutionReportEvent", myHandler)
 ```
 
@@ -551,13 +629,34 @@ func(response *models.PingTestConnectivityResponse, err error) error {
 }
 ```
 
-## Configuration
+## Authentication Features
 
-The template supports the following parameters:
+### Supported Methods
 
-- `server`: WebSocket server to connect to (default: first server in spec)
-- `packageName`: Go package name (default: `main`)
-- `moduleName`: Go module name (default: `binance-websocket-client`)
+- **HMAC-SHA256**: Fast and secure for high-frequency trading
+- **RSA**: Standard corporate authentication
+- **Ed25519**: Recommended for best performance and security balance
+
+### Context-Based Authentication
+
+```go
+// Per-request authentication
+auth := NewAuth("your-api-key")
+auth.SetSecretKey("your-secret-key")
+authCtx, _ := auth.ContextWithValue(context.Background())
+
+// Use authenticated context
+client.SendAccountCommission(authCtx, request, responseHandler)
+```
+
+### Client-Level Authentication
+
+```go
+// Authentication for all requests
+auth := NewAuth("your-api-key")
+auth.SetSecretKey("your-secret-key")
+client := NewClientWithAuth(auth)
+```
 
 ## AsyncAPI Specification Requirements
 
@@ -681,7 +780,7 @@ responseHandler := func(response *models.SomeResponseType, err error) error {
 
 - `github.com/gorilla/websocket`: WebSocket implementation
 - `github.com/google/uuid`: UUID generation for request IDs
-- Standard Go libraries: `encoding/json`, `sync`, `context`, etc.
+- Standard Go libraries: `encoding/json`, `sync`, `context`, `crypto/*`, etc.
 
 ## Contributing
 

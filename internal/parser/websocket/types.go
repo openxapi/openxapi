@@ -10,6 +10,12 @@ type Documentation struct {
 	Options map[string]string // Additional options for parsing
 }
 
+// CorrelationId represents correlation ID for request-reply pattern
+type CorrelationId struct {
+	Location    string // Location of the correlation ID in the message
+	Description string // Description of the correlation ID
+}
+
 // Schema represents a JSON Schema definition for WebSocket messages
 type Schema struct {
 	OneOf       []*Schema     `json:"oneOf,omitempty"`
@@ -83,14 +89,15 @@ type Parameter struct {
 
 // Message represents a WebSocket message
 type Message struct {
-	Title       string                 // Message title
-	Description string                 // Description of the message
-	Payload     *Schema                // Message payload schema
-	Headers     map[string]*Schema     // Message headers
-	Examples    []interface{}          // Message examples
-	Bindings    map[string]interface{} // Protocol-specific bindings
-	Tags        []string               // Message tags
-	Summary     string                 // Message summary
+	Title         string                 // Message title
+	Description   string                 // Description of the message
+	Payload       *Schema                // Message payload schema
+	Headers       map[string]*Schema     // Message headers
+	Examples      []interface{}          // Message examples
+	Bindings      map[string]interface{} // Protocol-specific bindings
+	Tags          []string               // Message tags
+	Summary       string                 // Message summary
+	CorrelationId *CorrelationId         // Correlation ID for the message
 }
 
 // SecuritySchema represents a security requirement for a channel

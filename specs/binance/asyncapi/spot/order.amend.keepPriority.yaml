@@ -3,226 +3,217 @@ info:
     title: ""
     version: ""
 channels:
-    order_amend_keepPriority:
-        address: order.amend.keepPriority
+    spot:
+        address: /
         title: Channel order.amend.keepPriority
         description: |-
             Reduce the quantity of an existing open order.
             This adds 0 orders to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
             Read Order Amend Keep Priority FAQ to learn more.
         messages:
-            receiveMessage:
-                name: Order Amend Keep Priority (TRADE) Response
-                title: Order Amend Keep Priority (TRADE) Response
-                description: Receive response from order.amend.keepPriority
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 56374a46-3061-486b-a311-89ee972eb648
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 1
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: object
-                            description: result property
-                            properties:
-                                amendedOrder:
-                                    type: object
-                                    description: amendedOrder property
-                                    properties:
-                                        clientOrderId:
-                                            type: string
-                                            description: clientOrderId property
-                                            example: 4zR9HFcEq8gM1tWUqPEUHc
-                                        cumulativeQuoteQty:
-                                            type: string
-                                            description: cumulativeQuoteQty property
-                                            example: "0.00000000"
-                                        executedQty:
-                                            type: string
-                                            description: executedQty property
-                                            example: "0.00000000"
-                                        orderId:
-                                            type: integer
-                                            format: int64
-                                            description: orderId property
-                                            example: 12
-                                        orderListId:
-                                            type: integer
-                                            format: int64
-                                            description: orderListId property
-                                            example: -1
-                                        origClientOrderId:
-                                            type: string
-                                            description: origClientOrderId property
-                                            example: my_test_order1
-                                        preventedQty:
-                                            type: string
-                                            description: preventedQty property
-                                            example: "0.00000000"
-                                        price:
-                                            type: string
-                                            description: price property
-                                            example: "5.00000000"
-                                        qty:
-                                            type: string
-                                            description: qty property
-                                            example: "5.00000000"
-                                        quoteOrderQty:
-                                            type: string
-                                            description: quoteOrderQty property
-                                            example: "0.00000000"
-                                        selfTradePreventionMode:
-                                            type: string
-                                            description: selfTradePreventionMode property
-                                            example: NONE
-                                        side:
-                                            type: string
-                                            description: side property
-                                            example: BUY
-                                        status:
-                                            type: string
-                                            description: status property
-                                            example: NEW
-                                        symbol:
-                                            type: string
-                                            description: symbol property
-                                            example: BTCUSDT
-                                        timeInForce:
-                                            type: string
-                                            description: timeInForce property
-                                            example: GTC
-                                        type:
-                                            type: string
-                                            description: type property
-                                            example: LIMIT
-                                        workingTime:
-                                            type: integer
-                                            format: int64
-                                            description: workingTime property
-                                            example: 1741923284364
-                                executionId:
-                                    type: integer
-                                    format: int64
-                                    description: executionId property
-                                    example: 16
-                                transactTime:
-                                    type: integer
-                                    format: int64
-                                    description: transactTime property
-                                    example: 1741923284382
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Order Amend Keep Priority (TRADE) Request
-                title: Order Amend Keep Priority (TRADE) Request
-                description: Send a order.amend.keepPriority request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 56374a46-3061-486b-a311-89ee972eb648
-                        method:
-                            type: string
-                            description: method property
-                            example: order.amend.keepPriority
-                            enum:
-                                - order.amend.keepPriority
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                newClientOrderId:
-                                    type: string
-                                    description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
-                                newQty:
-                                    type: string
-                                    description: newQty must be greater than 0 and less than the order's quantity.
-                                orderId:
-                                    type: string
-                                    description: orderId or origClientOrderId must be sent
-                                origClientOrderId:
-                                    type: string
-                                    description: orderId or origClientOrderId must be sent
-                                recvWindow:
-                                    type: string
-                                    description: The value cannot be greater than 60000.
-                                symbol:
-                                    type: string
-                                timestamp:
-                                    type: string
-                            required:
-                                - symbol
-                                - newQty
-                                - timestamp
-        parameters:
-            newClientOrderId:
-                description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
-                location: $message.payload#/params/newClientOrderId
-            newQty:
-                description: newQty must be greater than 0 and less than the order's quantity.
-                location: $message.payload#/params/newQty
-            orderId:
-                description: orderId or origClientOrderId must be sent
-                location: $message.payload#/params/orderId
-            origClientOrderId:
-                description: orderId or origClientOrderId must be sent
-                location: $message.payload#/params/origClientOrderId
-            recvWindow:
-                description: The value cannot be greater than 60000.
-                location: $message.payload#/params/recvWindow
-            symbol:
-                location: $message.payload#/params/symbol
-            timestamp:
-                location: $message.payload#/params/timestamp
+            orderAmendKeeppriorityRequest:
+                $ref: '#/components/messages/orderAmendKeeppriorityRequest'
+            orderAmendKeeppriorityResponse:
+                $ref: '#/components/messages/orderAmendKeeppriorityResponse'
 operations:
-    receive_order_amend_keepPriority:
+    receiveOrderAmendKeeppriority:
         title: Receive from order.amend.keepPriority
         description: Receive response from order.amend.keepPriority
         action: receive
         channel:
-            $ref: '#/channels/order_amend_keepPriority'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/order_amend_keepPriority/messages/receiveMessage'
-    send_order_amend_keepPriority:
+            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityResponse'
+    sendOrderAmendKeeppriority:
         title: Send to order.amend.keepPriority
         description: Send a order.amend.keepPriority request
         action: send
         channel:
-            $ref: '#/channels/order_amend_keepPriority'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/order_amend_keepPriority/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityRequest'
+components:
+    messages:
+        orderAmendKeeppriorityRequest:
+            name: Order Amend Keep Priority (TRADE) Request
+            title: Order Amend Keep Priority (TRADE) Request
+            description: Send a order.amend.keepPriority request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 56374a46-3061-486b-a311-89ee972eb648
+                    method:
+                        type: string
+                        description: method property
+                        example: order.amend.keepPriority
+                        enum:
+                            - order.amend.keepPriority
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            newClientOrderId:
+                                type: string
+                                description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
+                            newQty:
+                                type: string
+                                description: newQty must be greater than 0 and less than the order's quantity.
+                            orderId:
+                                type: string
+                                description: orderId or origClientOrderId must be sent
+                            origClientOrderId:
+                                type: string
+                                description: orderId or origClientOrderId must be sent
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000.
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - newQty
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderAmendKeeppriorityResponse:
+            name: Order Amend Keep Priority (TRADE) Response
+            title: Order Amend Keep Priority (TRADE) Response
+            description: Receive response from order.amend.keepPriority
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 56374a46-3061-486b-a311-89ee972eb648
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 1
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            amendedOrder:
+                                type: object
+                                description: amendedOrder property
+                                properties:
+                                    clientOrderId:
+                                        type: string
+                                        description: clientOrderId property
+                                        example: 4zR9HFcEq8gM1tWUqPEUHc
+                                    cumulativeQuoteQty:
+                                        type: string
+                                        description: cumulativeQuoteQty property
+                                        example: "0.00000000"
+                                    executedQty:
+                                        type: string
+                                        description: executedQty property
+                                        example: "0.00000000"
+                                    orderId:
+                                        type: integer
+                                        format: int64
+                                        description: orderId property
+                                        example: 12
+                                    orderListId:
+                                        type: integer
+                                        format: int64
+                                        description: orderListId property
+                                        example: -1
+                                    origClientOrderId:
+                                        type: string
+                                        description: origClientOrderId property
+                                        example: my_test_order1
+                                    preventedQty:
+                                        type: string
+                                        description: preventedQty property
+                                        example: "0.00000000"
+                                    price:
+                                        type: string
+                                        description: price property
+                                        example: "5.00000000"
+                                    qty:
+                                        type: string
+                                        description: qty property
+                                        example: "5.00000000"
+                                    quoteOrderQty:
+                                        type: string
+                                        description: quoteOrderQty property
+                                        example: "0.00000000"
+                                    selfTradePreventionMode:
+                                        type: string
+                                        description: selfTradePreventionMode property
+                                        example: NONE
+                                    side:
+                                        type: string
+                                        description: side property
+                                        example: BUY
+                                    status:
+                                        type: string
+                                        description: status property
+                                        example: NEW
+                                    symbol:
+                                        type: string
+                                        description: symbol property
+                                        example: BTCUSDT
+                                    timeInForce:
+                                        type: string
+                                        description: timeInForce property
+                                        example: GTC
+                                    type:
+                                        type: string
+                                        description: type property
+                                        example: LIMIT
+                                    workingTime:
+                                        type: integer
+                                        format: int64
+                                        description: workingTime property
+                                        example: 1741923284364
+                            executionId:
+                                type: integer
+                                format: int64
+                                description: executionId property
+                                example: 16
+                            transactTime:
+                                type: integer
+                                format: int64
+                                description: transactTime property
+                                example: 1741923284382
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

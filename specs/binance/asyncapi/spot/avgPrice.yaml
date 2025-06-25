@@ -3,115 +3,123 @@ info:
     title: ""
     version: ""
 channels:
-    avgPrice:
-        address: avgPrice
+    spot:
+        address: /
         title: Channel avgPrice
         description: Get current average price for a symbol.
         messages:
-            receiveMessage:
-                name: Current average price Response
-                title: Current average price Response
-                description: Receive response from avgPrice
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: ddbfb65f-9ebf-42ec-8240-8f0f91de0867
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 2
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: object
-                            description: result property
-                            properties:
-                                closeTime:
-                                    type: integer
-                                    format: int64
-                                    description: closeTime property
-                                    example: 1694061154503
-                                mins:
-                                    type: integer
-                                    description: mins property
-                                    example: 5
-                                price:
-                                    type: string
-                                    description: price property
-                                    example: "9.35751834"
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Current average price Request
-                title: Current average price Request
-                description: Send a avgPrice request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: ddbfb65f-9ebf-42ec-8240-8f0f91de0867
-                        method:
-                            type: string
-                            description: method property
-                            example: avgPrice
-                            enum:
-                                - avgPrice
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                symbol:
-                                    type: string
-                            required:
-                                - symbol
-        parameters:
-            symbol:
-                location: $message.payload#/params/symbol
+            avgPriceRequest:
+                $ref: '#/components/messages/avgPriceRequest'
+            avgPriceResponse:
+                $ref: '#/components/messages/avgPriceResponse'
 operations:
-    receive_avgPrice:
+    receiveAvgprice:
         title: Receive from avgPrice
         description: Receive response from avgPrice
         action: receive
         channel:
-            $ref: '#/channels/avgPrice'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/avgPrice/messages/receiveMessage'
-    send_avgPrice:
+            - $ref: '#/channels/spot/messages/avgPriceResponse'
+    sendAvgprice:
         title: Send to avgPrice
         description: Send a avgPrice request
         action: send
         channel:
-            $ref: '#/channels/avgPrice'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/avgPrice/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/avgPriceRequest'
+components:
+    messages:
+        avgPriceRequest:
+            name: Current average price Request
+            title: Current average price Request
+            description: Send a avgPrice request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: ddbfb65f-9ebf-42ec-8240-8f0f91de0867
+                    method:
+                        type: string
+                        description: method property
+                        example: avgPrice
+                        enum:
+                            - avgPrice
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        avgPriceResponse:
+            name: Current average price Response
+            title: Current average price Response
+            description: Receive response from avgPrice
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: ddbfb65f-9ebf-42ec-8240-8f0f91de0867
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 2
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            closeTime:
+                                type: integer
+                                format: int64
+                                description: closeTime property
+                                example: 1694061154503
+                            mins:
+                                type: integer
+                                description: mins property
+                                example: 5
+                            price:
+                                type: string
+                                description: price property
+                                example: "9.35751834"
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

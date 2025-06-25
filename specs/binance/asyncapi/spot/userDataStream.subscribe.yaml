@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    userDataStream_subscribe:
-        address: userDataStream.subscribe
+    spot:
+        address: /
         title: Channel userDataStream.subscribe
         description: |-
             Subscribe to the User Data Stream in the current WebSocket connection.
@@ -16,465 +16,69 @@ channels:
             Please refer to User Data Streams for the event format details.
             For SBE, only SBE schema 2:1 or later is supported.
         messages:
-            receiveMessage:
-                name: Subscribe to User Data Stream (USER_STREAM) Response
-                title: Subscribe to User Data Stream (USER_STREAM) Response
-                description: Receive response from userDataStream.subscribe
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                        result:
-                            oneOf:
-                                - $ref: '#/components/schemas/OutboundAccountPositionEvent'
-                                - $ref: '#/components/schemas/BalanceUpdateEvent'
-                                - $ref: '#/components/schemas/ExecutionReportEvent'
-                                - $ref: '#/components/schemas/ListStatusEvent'
-                                - $ref: '#/components/schemas/ListenKeyExpiredEvent'
-                                - $ref: '#/components/schemas/ExternalLockUpdateEvent'
-                            description: User Data Stream event payload - can be one of multiple event types
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Subscribe to User Data Stream (USER_STREAM) Request
-                title: Subscribe to User Data Stream (USER_STREAM) Request
-                description: Send a userDataStream.subscribe request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                        method:
-                            type: string
-                            description: method property
-                            example: userDataStream.subscribe
-                            enum:
-                                - userDataStream.subscribe
+            userDataStreamSubscribeRequest:
+                $ref: '#/components/messages/userDataStreamSubscribeRequest'
+            userDataStreamSubscribeResponse:
+                $ref: '#/components/messages/userDataStreamSubscribeResponse'
 operations:
-    receive_userDataStream_subscribe:
+    receiveUserdatastreamSubscribe:
         title: Receive from userDataStream.subscribe
         description: Receive response from userDataStream.subscribe
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_subscribe'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/userDataStream_subscribe/messages/receiveMessage'
-    send_userDataStream_subscribe:
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeResponse'
+    sendUserdatastreamSubscribe:
         title: Send to userDataStream.subscribe
         description: Send a userDataStream.subscribe request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_subscribe'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/userDataStream_subscribe/messages/sendMessage'
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeRequest'
 components:
-    schemas:
-        OutboundAccountPositionEvent:
-            type: object
-            description: Account Update - sent when account balance changes
-            properties:
-                e:
-                    type: string
-                    description: Event type
-                    example: outboundAccountPosition
-                E:
-                    type: integer
-                    format: int64
-                    description: Event Time (milliseconds)
-                    example: 1564034571105
-                u:
-                    type: integer
-                    format: int64
-                    description: Time of last account update (milliseconds)
-                    example: 1564034571073
-                B:
-                    type: array
-                    description: Balances Array
-                    items:
+    messages:
+        userDataStreamSubscribeRequest:
+            name: Subscribe to User Data Stream (USER_STREAM) Request
+            title: Subscribe to User Data Stream (USER_STREAM) Request
+            description: Send a userDataStream.subscribe request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.subscribe
+                        enum:
+                            - userDataStream.subscribe
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamSubscribeResponse:
+            name: Subscribe to User Data Stream (USER_STREAM) Response
+            title: Subscribe to User Data Stream (USER_STREAM) Response
+            description: Receive response from userDataStream.subscribe
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                    result:
                         type: object
-                        properties:
-                            a:
-                                type: string
-                                description: Asset
-                                example: ETH
-                            f:
-                                type: string
-                                description: Free
-                                example: "10000.000000"
-                            l:
-                                type: string
-                                description: Locked
-                                example: "0.000000"
-        BalanceUpdateEvent:
-            type: object
-            description: Balance Update - occurs during deposits, withdrawals, or transfers
-            properties:
-                e:
-                    type: string
-                    description: Event Type
-                    example: balanceUpdate
-                E:
-                    type: integer
-                    format: int64
-                    description: Event Time (milliseconds)
-                    example: 1573200697110
-                a:
-                    type: string
-                    description: Asset
-                    example: BTC
-                d:
-                    type: string
-                    description: Balance Delta
-                    example: "100.00000000"
-                T:
-                    type: integer
-                    format: int64
-                    description: Clear Time (milliseconds)
-                    example: 1573200697068
-        ExecutionReportEvent:
-            type: object
-            description: Order Update - orders are updated with executionReport event
-            properties:
-                e:
-                    type: string
-                    description: Event type
-                    example: executionReport
-                E:
-                    type: integer
-                    format: int64
-                    description: Event time (milliseconds)
-                    example: 1499405658658
-                s:
-                    type: string
-                    description: Symbol
-                    example: ETHBTC
-                c:
-                    type: string
-                    description: Client order ID
-                    example: mUvoqJxFIILMdfAW5iGSOW
-                S:
-                    type: string
-                    description: Side
-                    example: BUY
-                    enum: [BUY, SELL]
-                o:
-                    type: string
-                    description: Order type
-                    example: LIMIT
-                f:
-                    type: string
-                    description: Time in force
-                    example: GTC
-                q:
-                    type: string
-                    description: Order quantity
-                    example: "1.00000000"
-                p:
-                    type: string
-                    description: Order price
-                    example: "0.10264410"
-                P:
-                    type: string
-                    description: Stop price
-                    example: "0.00000000"
-                F:
-                    type: string
-                    description: Iceberg quantity
-                    example: "0.00000000"
-                g:
-                    type: integer
-                    format: int64
-                    description: OrderListId
-                    example: -1
-                C:
-                    type: string
-                    description: Original client order ID (for canceled orders)
-                    example: ""
-                x:
-                    type: string
-                    description: Current execution type
-                    example: NEW
-                    enum: [NEW, CANCELED, REPLACED, REJECTED, TRADE, EXPIRED, TRADE_PREVENTION]
-                X:
-                    type: string
-                    description: Current order status
-                    example: NEW
-                r:
-                    type: string
-                    description: Order reject reason
-                    example: NONE
-                    enum: [NONE, INSUFFICIENT_BALANCES, STOP_PRICE_WOULD_TRIGGER_IMMEDIATELY, WOULD_MATCH_IMMEDIATELY, OCO_BAD_PRICES]
-                i:
-                    type: integer
-                    format: int64
-                    description: Order ID
-                    example: 4293153
-                l:
-                    type: string
-                    description: Last executed quantity
-                    example: "0.00000000"
-                z:
-                    type: string
-                    description: Cumulative filled quantity
-                    example: "0.00000000"
-                L:
-                    type: string
-                    description: Last executed price
-                    example: "0.00000000"
-                n:
-                    type: string
-                    description: Commission amount
-                    example: "0"
-                N:
-                    type: string
-                    description: Commission asset
-                    nullable: true
-                    example: null
-                T:
-                    type: integer
-                    format: int64
-                    description: Transaction time (milliseconds)
-                    example: 1499405658657
-                t:
-                    type: integer
-                    format: int64
-                    description: Trade ID
-                    example: -1
-                v:
-                    type: integer
-                    format: int64
-                    description: Prevented Match Id (visible if order expired due to STP)
-                    example: 3
-                I:
-                    type: integer
-                    format: int64
-                    description: Execution Id
-                    example: 8641984
-                w:
-                    type: boolean
-                    description: Is the order on the book?
-                    example: true
-                m:
-                    type: boolean
-                    description: Is this trade the maker side?
-                    example: false
-                M:
-                    type: boolean
-                    description: Ignore
-                    example: false
-                O:
-                    type: integer
-                    format: int64
-                    description: Order creation time (milliseconds)
-                    example: 1499405658657
-                Z:
-                    type: string
-                    description: Cumulative quote asset transacted quantity
-                    example: "0.00000000"
-                Y:
-                    type: string
-                    description: Last quote asset transacted quantity
-                    example: "0.00000000"
-                Q:
-                    type: string
-                    description: Quote Order Quantity
-                    example: "0.00000000"
-                W:
-                    type: integer
-                    format: int64
-                    description: Working Time (visible if order is on the book)
-                    example: 1499405658657
-                V:
-                    type: string
-                    description: SelfTradePreventionMode
-                    example: NONE
-                # Conditional fields that may appear
-                d:
-                    type: integer
-                    description: Trailing Delta (for trailing stop orders)
-                    example: 4
-                D:
-                    type: integer
-                    format: int64
-                    description: Trailing Time (milliseconds)
-                    example: 1668680518494
-                j:
-                    type: integer
-                    format: int64
-                    description: Strategy Id (if provided upon order placement)
-                    example: 1
-                J:
-                    type: integer
-                    format: int64
-                    description: Strategy Type (if provided upon order placement)
-                    example: 1000000
-                A:
-                    type: string
-                    description: Prevented Quantity
-                    example: "3.000000"
-                B:
-                    type: string
-                    description: Last Prevented Quantity
-                    example: "3.000000"
-                u:
-                    type: integer
-                    format: int64
-                    description: Trade Group Id
-                    example: 1
-                U:
-                    type: integer
-                    format: int64
-                    description: Counter Order Id
-                    example: 37
-                Cs:
-                    type: string
-                    description: Counter Symbol
-                    example: BTCUSDT
-                pl:
-                    type: string
-                    description: Prevented Execution Quantity
-                    example: "2.123456"
-                pL:
-                    type: string
-                    description: Prevented Execution Price
-                    example: "0.10000001"
-                pY:
-                    type: string
-                    description: Prevented Execution Quote Qty
-                    example: "0.21234562"
-                b:
-                    type: string
-                    description: Match Type (for orders with allocations)
-                    example: ONE_PARTY_TRADE_REPORT
-                a:
-                    type: integer
-                    format: int64
-                    description: Allocation ID
-                    example: 1234
-                k:
-                    type: string
-                    description: Working Floor (for orders with potential allocations)
-                    example: SOR
-                uS:
-                    type: boolean
-                    description: UsedSor (for orders that used SOR)
-                    example: true
-        ListStatusEvent:
-            type: object
-            description: List Status - sent with executionReport for order lists (OCO orders)
-            properties:
-                e:
-                    type: string
-                    description: Event Type
-                    example: listStatus
-                E:
-                    type: integer
-                    format: int64
-                    description: Event Time (milliseconds)
-                    example: 1564035303637
-                s:
-                    type: string
-                    description: Symbol
-                    example: ETHBTC
-                g:
-                    type: integer
-                    format: int64
-                    description: OrderListId
-                    example: 2
-                c:
-                    type: string
-                    description: Contingency Type
-                    example: OCO
-                l:
-                    type: string
-                    description: List Status Type
-                    example: EXEC_STARTED
-                L:
-                    type: string
-                    description: List Order Status
-                    example: EXECUTING
-                r:
-                    type: string
-                    description: List Reject Reason
-                    example: NONE
-                C:
-                    type: string
-                    description: List Client Order ID
-                    example: F4QN4G8DlFATFlIUQ0cjdD
-                T:
-                    type: integer
-                    format: int64
-                    description: Transaction Time (milliseconds)
-                    example: 1564035303625
-                O:
-                    type: array
-                    description: Array of orders in the list
-                    items:
-                        type: object
-                        properties:
-                            s:
-                                type: string
-                                description: Symbol
-                                example: ETHBTC
-                            i:
-                                type: integer
-                                format: int64
-                                description: OrderId
-                                example: 17
-                            c:
-                                type: string
-                                description: ClientOrderId
-                                example: AJYsMjErWJesZvqlJCTUgL
-        ListenKeyExpiredEvent:
-            type: object
-            description: Listen Key Expired - sent when the listen key expires
-            properties:
-                e:
-                    type: string
-                    description: Event type
-                    example: listenKeyExpired
-                E:
-                    type: integer
-                    format: int64
-                    description: Event time (milliseconds)
-                    example: 1699596037418
-                listenKey:
-                    type: string
-                    description: The expired listen key
-                    example: OfYGbUzi3PraNagEkdKuFwUHn48brFsItTdsuiIXrucEvD0rhRXZ7I6URWfE8YE8
-
-        ExternalLockUpdateEvent:
-            type: object
-            description: External Lock Update - sent when spot wallet balance is locked/unlocked by external system
-            properties:
-                e:
-                    type: string
-                    description: Event Type
-                    example: externalLockUpdate
-                E:
-                    type: integer
-                    format: int64
-                    description: Event Time (milliseconds)
-                    example: 1581557507324
-                a:
-                    type: string
-                    description: Asset
-                    example: NEO
-                d:
-                    type: string
-                    description: Delta
-                    example: "10.00000000"
-                T:
-                    type: integer
-                    format: int64
-                    description: Transaction Time (milliseconds)
-                    example: 1581557507268
+                        description: result property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    ping:
-        address: ping
+    spot:
+        address: /
         title: Channel ping
         description: |-
             Test connectivity to the WebSocket API.
@@ -13,85 +13,96 @@ channels:
             WebSocket API will respond with pong frames as soon as possible.
             ping request along with time is a safe way to test request-response handling in your application.
         messages:
-            receiveMessage:
-                name: Test connectivity Response
-                title: Test connectivity Response
-                description: Receive response from ping
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 922bcc6e-9de8-440d-9e84-7c80933a8d0d
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 1
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: object
-                            description: result property
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Test connectivity Request
-                title: Test connectivity Request
-                description: Send a ping request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 922bcc6e-9de8-440d-9e84-7c80933a8d0d
-                        method:
-                            type: string
-                            description: method property
-                            example: ping
-                            enum:
-                                - ping
+            pingRequest:
+                $ref: '#/components/messages/pingRequest'
+            pingResponse:
+                $ref: '#/components/messages/pingResponse'
 operations:
-    receive_ping:
+    receivePing:
         title: Receive from ping
         description: Receive response from ping
         action: receive
         channel:
-            $ref: '#/channels/ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/ping/messages/receiveMessage'
-    send_ping:
+            - $ref: '#/channels/spot/messages/pingResponse'
+    sendPing:
         title: Send to ping
         description: Send a ping request
         action: send
         channel:
-            $ref: '#/channels/ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/ping/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/pingRequest'
+components:
+    messages:
+        pingRequest:
+            name: Test connectivity Request
+            title: Test connectivity Request
+            description: Send a ping request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 922bcc6e-9de8-440d-9e84-7c80933a8d0d
+                    method:
+                        type: string
+                        description: method property
+                        example: ping
+                        enum:
+                            - ping
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        pingResponse:
+            name: Test connectivity Response
+            title: Test connectivity Response
+            description: Receive response from ping
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 922bcc6e-9de8-440d-9e84-7c80933a8d0d
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 1
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

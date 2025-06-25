@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    userDataStream_ping:
-        address: userDataStream.ping
+    spot:
+        address: /
         title: Channel userDataStream.ping
         description: |-
             Ping a user data stream to keep it alive.
@@ -13,101 +13,107 @@ channels:
             In order to keep the stream open, you have to regularly send pings using the userDataStream.ping request.
             It is recommended to send a ping once every 30 minutes.
         messages:
-            receiveMessage:
-                name: Ping user data stream (USER_STREAM) (Deprecated) Response
-                title: Ping user data stream (USER_STREAM) (Deprecated) Response
-                description: Receive response from userDataStream.ping
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 815d5fce-0880-4287-a567-80badf004c74
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 2
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        response:
-                            type: object
-                            description: response property
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Ping user data stream (USER_STREAM) (Deprecated) Request
-                title: Ping user data stream (USER_STREAM) (Deprecated) Request
-                description: Send a userDataStream.ping request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 815d5fce-0880-4287-a567-80badf004c74
-                        method:
-                            type: string
-                            description: method property
-                            example: userDataStream.ping
-                            enum:
-                                - userDataStream.ping
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                apiKey:
-                                    type: string
-                                listenKey:
-                                    type: string
-                            required:
-                                - listenKey
-                                - apiKey
-        parameters:
-            apiKey:
-                location: $message.payload#/params/apiKey
-            listenKey:
-                location: $message.payload#/params/listenKey
+            userDataStreamPingRequest:
+                $ref: '#/components/messages/userDataStreamPingRequest'
+            userDataStreamPingResponse:
+                $ref: '#/components/messages/userDataStreamPingResponse'
 operations:
-    receive_userDataStream_ping:
+    receiveUserdatastreamPing:
         title: Receive from userDataStream.ping
         description: Receive response from userDataStream.ping
         action: receive
         channel:
-            $ref: '#/channels/userDataStream_ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/userDataStream_ping/messages/receiveMessage'
-    send_userDataStream_ping:
+            - $ref: '#/channels/spot/messages/userDataStreamPingResponse'
+    sendUserdatastreamPing:
         title: Send to userDataStream.ping
         description: Send a userDataStream.ping request
         action: send
         channel:
-            $ref: '#/channels/userDataStream_ping'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/userDataStream_ping/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/userDataStreamPingRequest'
+components:
+    messages:
+        userDataStreamPingRequest:
+            name: Ping user data stream (USER_STREAM) (Deprecated) Request
+            title: Ping user data stream (USER_STREAM) (Deprecated) Request
+            description: Send a userDataStream.ping request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 815d5fce-0880-4287-a567-80badf004c74
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.ping
+                        enum:
+                            - userDataStream.ping
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            listenKey:
+                                type: string
+                        required:
+                            - listenKey
+                            - apiKey
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamPingResponse:
+            name: Ping user data stream (USER_STREAM) (Deprecated) Response
+            title: Ping user data stream (USER_STREAM) (Deprecated) Response
+            description: Receive response from userDataStream.ping
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 815d5fce-0880-4287-a567-80badf004c74
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 2
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    response:
+                        type: object
+                        description: response property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

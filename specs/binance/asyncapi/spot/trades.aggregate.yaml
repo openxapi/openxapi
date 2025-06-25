@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    trades_aggregate:
-        address: trades.aggregate
+    spot:
+        address: /
         title: Channel trades.aggregate
         description: |-
             Get aggregate trades.
@@ -16,153 +16,151 @@ channels:
             If you need historical aggregate trade data,
             please consider using data.binance.vision.
         messages:
-            receiveMessage:
-                name: Aggregate trades Response
-                title: Aggregate trades Response
-                description: Receive response from trades.aggregate
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 189da436-d4bd-48ca-9f95-9f613d621717
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 2
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: array
-                            description: result property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    M:
-                                        type: boolean
-                                        description: M property
-                                        example: true
-                                    T:
-                                        type: integer
-                                        description: T property
-                                        example: 1565877971222
-                                    a:
-                                        type: integer
-                                        description: a property
-                                        example: 50000000
-                                    f:
-                                        type: integer
-                                        description: f property
-                                        example: 59120167
-                                    l:
-                                        type: integer
-                                        description: l property
-                                        example: 59120170
-                                    m:
-                                        type: boolean
-                                        description: m property
-                                        example: true
-                                    p:
-                                        type: string
-                                        description: p property
-                                        example: "0.00274100"
-                                    q:
-                                        type: string
-                                        description: q property
-                                        example: "57.19000000"
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Aggregate trades Request
-                title: Aggregate trades Request
-                description: Send a trades.aggregate request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 189da436-d4bd-48ca-9f95-9f613d621717
-                        method:
-                            type: string
-                            description: method property
-                            example: trades.aggregate
-                            enum:
-                                - trades.aggregate
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                endTime:
-                                    type: string
-                                fromId:
-                                    type: integer
-                                    format: int64
-                                    description: Aggregate trade ID to begin at
-                                limit:
-                                    type: integer
-                                    description: 'Default: 500; Maximum: 1000'
-                                startTime:
-                                    type: string
-                                symbol:
-                                    type: string
-                            required:
-                                - symbol
-        parameters:
-            endTime:
-                location: $message.payload#/params/endTime
-            fromId:
-                description: Aggregate trade ID to begin at
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            startTime:
-                location: $message.payload#/params/startTime
-            symbol:
-                location: $message.payload#/params/symbol
+            tradesAggregateRequest:
+                $ref: '#/components/messages/tradesAggregateRequest'
+            tradesAggregateResponse:
+                $ref: '#/components/messages/tradesAggregateResponse'
 operations:
-    receive_trades_aggregate:
+    receiveTradesAggregate:
         title: Receive from trades.aggregate
         description: Receive response from trades.aggregate
         action: receive
         channel:
-            $ref: '#/channels/trades_aggregate'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/trades_aggregate/messages/receiveMessage'
-    send_trades_aggregate:
+            - $ref: '#/channels/spot/messages/tradesAggregateResponse'
+    sendTradesAggregate:
         title: Send to trades.aggregate
         description: Send a trades.aggregate request
         action: send
         channel:
-            $ref: '#/channels/trades_aggregate'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/trades_aggregate/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/tradesAggregateRequest'
+components:
+    messages:
+        tradesAggregateRequest:
+            name: Aggregate trades Request
+            title: Aggregate trades Request
+            description: Send a trades.aggregate request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 189da436-d4bd-48ca-9f95-9f613d621717
+                    method:
+                        type: string
+                        description: method property
+                        example: trades.aggregate
+                        enum:
+                            - trades.aggregate
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            endTime:
+                                type: string
+                            fromId:
+                                type: integer
+                                format: int64
+                                description: Aggregate trade ID to begin at
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            startTime:
+                                type: string
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tradesAggregateResponse:
+            name: Aggregate trades Response
+            title: Aggregate trades Response
+            description: Receive response from trades.aggregate
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 189da436-d4bd-48ca-9f95-9f613d621717
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 2
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: array
+                        description: result property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                M:
+                                    type: boolean
+                                    description: M property
+                                    example: true
+                                T:
+                                    type: integer
+                                    description: T property
+                                    example: 1565877971222
+                                a:
+                                    type: integer
+                                    description: a property
+                                    example: 50000000
+                                f:
+                                    type: integer
+                                    description: f property
+                                    example: 59120167
+                                l:
+                                    type: integer
+                                    description: l property
+                                    example: 59120170
+                                m:
+                                    type: boolean
+                                    description: m property
+                                    example: true
+                                p:
+                                    type: string
+                                    description: p property
+                                    example: "0.00274100"
+                                q:
+                                    type: string
+                                    description: q property
+                                    example: "57.19000000"
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

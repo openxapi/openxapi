@@ -1,11 +1,12 @@
 /*
  * This component generates individual Go model files for each message type
  * It creates separate .go files in a models package for better organization
- * Now supports oneOf structures for flexible message handling
+ * Now supports AsyncAPI 3.0 with event messages and request/response pairs
  */
 export function IndividualModels({ asyncapi }) {
   const messages = new Map();
   const oneOfTypes = new Map(); // Track oneOf types for special handling
+  const eventSchemas = new Map(); // Track event schemas separately
   
   // Extract all messages from channels with more specific naming
   asyncapi.channels().forEach((channel) => {
@@ -13,11 +14,12 @@ export function IndividualModels({ asyncapi }) {
     
     channel.messages().forEach((message) => {
       const messageName = message.name() || message.id();
+      const messageId = message.id();
       const payload = message.payload();
       
       if (payload && payload.type() === 'object') {
-        // Create unique message names based on channel and message type
-        const uniqueMessageName = `${channelName}_${messageName}`;
+        // Create unique message names based on message ID or name
+        const uniqueMessageName = messageId || `${channelName}_${messageName}`;
         
         // Check for oneOf in properties (especially in result field)
         const properties = payload.properties();
@@ -36,17 +38,24 @@ export function IndividualModels({ asyncapi }) {
           }
         }
         
+        // Determine if this is an event message based on message structure
+        const isEventMessage = messageName.includes('Event') || 
+                              (properties && properties.event) ||
+                              messageName.match(/(balanceUpdate|executionReport|listStatus|listenKeyExpired|outboundAccountPosition|externalLockUpdate)/i);
+        
         messages.set(uniqueMessageName, {
           message,
           payload,
           channel: channel.address(),
-          originalName: messageName
+          originalName: messageName,
+          messageId: messageId,
+          isEvent: isEventMessage
         });
       }
     });
   });
 
-  // Extract schemas from components for oneOf references
+  // Extract schemas from components for oneOf references and event schemas
   const componentSchemas = new Map();
   
   // Access component schemas via JSON structure (most reliable method)
@@ -57,8 +66,14 @@ export function IndividualModels({ asyncapi }) {
         componentSchemas.set(schemaName, {
           type: schemaData.type,
           properties: schemaData.properties,
-          description: schemaData.description
+          description: schemaData.description,
+          isEvent: schemaName.includes('Event')
         });
+        
+        // Track event schemas separately
+        if (schemaName.includes('Event')) {
+          eventSchemas.set(schemaName, schemaData);
+        }
       });
     }
   }
@@ -68,7 +83,7 @@ export function IndividualModels({ asyncapi }) {
   
   // Generate regular message models
   messages.forEach((messageData, messageName) => {
-    const modelContent = generateModelFile(messageName, messageData.payload, messageData.message, oneOfTypes, componentSchemas);
+    const modelContent = generateModelFile(messageName, messageData.payload, messageData.message, oneOfTypes, componentSchemas, messageData.isEvent);
     modelFiles.push({
       name: `${toSnakeCase(messageName)}.go`,
       content: modelContent
@@ -84,11 +99,31 @@ export function IndividualModels({ asyncapi }) {
     });
   });
 
-  // Generate component schema models
+  // Generate component schema models (including event schemas)
+  // But skip ones that are already generated as channel messages
+  const generatedTypeNames = new Set();
+  messages.forEach((messageData, messageName) => {
+    const structName = toPascalCase(messageName);
+    generatedTypeNames.add(structName);
+    
+    // Also track event types that might be referenced
+    if (messageData.isEvent) {
+      const eventTypeName = structName.replace(/Send$|Receive$/, '') + 'Event';
+      generatedTypeNames.add(eventTypeName);
+    }
+  });
+  
   componentSchemas.forEach((schema, schemaName) => {
     // Skip if schema name is just a number or invalid identifier
     if (/^\d+$/.test(schemaName) || !isValidGoIdentifier(schemaName)) {
       console.warn(`Skipping invalid schema name: ${schemaName}`);
+      return;
+    }
+    
+    // Skip if we already generated this type from channel messages
+    const componentTypeName = toPascalCase(schemaName);
+    if (generatedTypeNames.has(componentTypeName)) {
+      console.log(`Skipping duplicate component schema: ${schemaName} (already generated as ${componentTypeName})`);
       return;
     }
     
@@ -105,7 +140,7 @@ export function IndividualModels({ asyncapi }) {
 /*
  * Generate a complete Go model file with package declaration
  */
-function generateModelFile(name, schema, message, oneOfTypes, componentSchemas) {
+function generateModelFile(name, schema, message, oneOfTypes, componentSchemas, isEvent = false) {
   const structName = toPascalCase(name);
   const needsTime = hasTimeFields(schema);
   
@@ -128,8 +163,8 @@ import (
   const nestedStructs = generateNestedStructs(schema, structName);
   content += nestedStructs;
 
-  content += generateStructWithDocs(structName, schema, message);
-  content += generateHelperMethods(structName);
+  content += generateStructWithDocs(structName, schema, message, false, isEvent);
+  content += generateHelperMethods(structName, isEvent);
   
   return content;
 }
@@ -172,8 +207,8 @@ function generateNestedStructs(schema, parentName) {
       const propType = (typeof prop.type === 'function') ? prop.type() : prop.type;
       
       // Handle nested objects
-      let propProperties;
       if (propType === 'object') {
+        let propProperties;
         if (typeof prop.properties === 'function') {
           propProperties = prop.properties();
         } else {
@@ -198,44 +233,54 @@ function generateNestedStructs(schema, parentName) {
           nestedStructs += generateStructWithDocs(nestedStructName, prop, null, true);
           nestedStructs += '\n';
           
-          // Recursively generate nested structs for deeper levels
+          // Recursively generate nested structs
           nestedStructs += generateNestedStructs(prop, nestedStructName);
         }
-      } else if (propType === 'array') {
-        // Handle AsyncAPI objects - items might be a function
-        const items = (typeof prop.items === 'function') ? prop.items() : prop.items;
+      }
+      
+      // Handle arrays with complex item types
+      if (propType === 'array') {
+        let items;
+        if (typeof prop.items === 'function') {
+          items = prop.items();
+        } else {
+          items = prop.items;
+        }
+        
         if (items) {
-          // Get the items type properly
-          const itemsType = (typeof items.type === 'function') ? items.type() : items.type;
+          const itemType = (typeof items.type === 'function') ? items.type() : items.type;
           
-          let itemsProperties;
-          if (itemsType === 'object') {
+          // If array item is an object with properties, generate a struct for it
+          if (itemType === 'object') {
+            let itemProperties;
             if (typeof items.properties === 'function') {
-              itemsProperties = items.properties();
+              itemProperties = items.properties();
             } else {
-              itemsProperties = items.properties;
+              itemProperties = items.properties;
             }
             
-            // Check if itemsProperties has content using same logic as above
-            let itemsPropertyKeys = [];
-            if (itemsProperties) {
-              if (typeof itemsProperties.all === 'function') {
-                const allProps = itemsProperties.all();
-                itemsPropertyKeys = Object.keys(allProps);
-              } else if (itemsProperties instanceof Map) {
-                itemsPropertyKeys = Array.from(itemsProperties.keys());
-              } else if (typeof itemsProperties === 'object') {
-                itemsPropertyKeys = Object.keys(itemsProperties);
+            // Check if itemProperties has content
+            let itemPropertyKeys = [];
+            if (itemProperties) {
+              if (typeof itemProperties.all === 'function') {
+                const allProps = itemProperties.all();
+                itemPropertyKeys = Object.keys(allProps);
+              } else if (itemProperties instanceof Map) {
+                itemPropertyKeys = Array.from(itemProperties.keys());
+              } else if (typeof itemProperties === 'object') {
+                itemPropertyKeys = Object.keys(itemProperties);
               }
             }
             
-            if (itemsPropertyKeys && itemsPropertyKeys.length > 0) {
-              const nestedStructName = `${parentName}${toPascalCase(propName)}`;
-              nestedStructs += generateStructWithDocs(nestedStructName, items, null, true);
+            if (itemPropertyKeys && itemPropertyKeys.length > 0) {
+              // Generate consistent item struct name - capitalize single letters properly
+              const propNameForStruct = propName.length === 1 ? propName.toUpperCase() : toPascalCase(propName);
+              const itemStructName = `${parentName}${propNameForStruct}Item`;
+              nestedStructs += generateStructWithDocs(itemStructName, items, null, true);
               nestedStructs += '\n';
               
-              // Recursively generate nested structs for array item objects
-              nestedStructs += generateNestedStructs(items, nestedStructName);
+              // Recursively generate nested structs for the array item
+              nestedStructs += generateNestedStructs(items, itemStructName);
             }
           }
         }
@@ -290,7 +335,7 @@ function generateStructDefinition(name, schema) {
       usedFieldNames.add(fieldName);
       
       const isRequired = requiredFields.includes(propName);
-      const jsonTag = `\`json:"${propName}${getJsonTagOptions(prop, isRequired)}"\``;
+      const jsonTag = getJsonTagOptions(prop, isRequired);
       
       if (prop.description) {
         // Handle multi-line descriptions by splitting and prefixing each line with //
@@ -309,7 +354,7 @@ function generateStructDefinition(name, schema) {
       if (prop.examples && prop.examples.length > 0) {
         structDef += `\t// Example: ${prop.examples[0]}\n`;
       }
-      structDef += `\t${fieldName} ${goType} ${jsonTag}\n`;
+      structDef += `\t${fieldName} ${goType} \`json:"${propName}${jsonTag}"\`\n`;
     });
   }
 
@@ -320,23 +365,26 @@ function generateStructDefinition(name, schema) {
 /*
  * Generate a Go struct with comprehensive documentation
  */
-function generateStructWithDocs(name, schema, message, isNested = false) {
+function generateStructWithDocs(name, schema, message, isNested = false, isEvent = false) {
   let structDef = '';
   
-  if (!isNested && message) {
-    const title = (typeof message.title === 'function') ? message.title() : (message.title || name);
-    const description = (typeof message.description === 'function') ? message.description() : message.description;
-    
-    structDef += `// ${name} represents the ${title} message\n`;
-    if (description && typeof description === 'string') {
-      structDef += `// ${description}\n`;
+  // Add documentation
+  if (!isNested) {
+    if (message && message.description()) {
+      structDef += `// ${name} - ${message.description()}\n`;
+    } else if (isEvent) {
+      structDef += `// ${name} - Event message structure\n`;
+    } else {
+      structDef += `// ${name} - Message structure\n`;
     }
-  } else {
-    structDef += `// ${name} represents a ${isNested ? 'nested object' : 'message structure'}\n`;
+    
+    if (message && message.name()) {
+      structDef += `// Message name: ${message.name()}\n`;
+    }
   }
   
   structDef += `type ${name} struct {\n`;
-
+  
   // Handle both AsyncAPI objects and plain objects
   let properties;
   if (typeof schema.properties === 'function') {
@@ -344,15 +392,6 @@ function generateStructWithDocs(name, schema, message, isNested = false) {
   } else {
     properties = schema.properties;
   }
-  
-  let requiredFields;
-  if (typeof schema.required === 'function') {
-    requiredFields = schema.required() || [];
-  } else {
-    requiredFields = schema.required || [];
-  }
-  
-  const usedFieldNames = new Set();
   
   if (properties) {
     // Handle AsyncAPI Map-like objects
@@ -371,165 +410,231 @@ function generateStructWithDocs(name, schema, message, isNested = false) {
       propertiesToIterate = properties;
     }
     
+    // Get required fields
+    let requiredFields = [];
+    if (typeof schema.required === 'function') {
+      requiredFields = schema.required() || [];
+    } else if (Array.isArray(schema.required)) {
+      requiredFields = schema.required;
+    }
+    
+    // Track used field names to prevent collisions
+    const usedFieldNames = new Set();
+    
     Object.keys(propertiesToIterate).forEach((propName) => {
       const prop = propertiesToIterate[propName];
-      let goType = '';
-      
-      // Handle oneOf types specially
-      if (prop.oneOf && Array.isArray(prop.oneOf)) {
-        goType = `${name}${toPascalCase(propName)}`;
-      } else {
-        goType = mapJsonTypeToGo(prop, propName, name);
-      }
-      
-      let fieldName = toPascalCase(propName);
-      
-      // Handle duplicate field names
-      if (usedFieldNames.has(fieldName)) {
-        fieldName = fieldName + toPascalCase(propName);
-      }
-      usedFieldNames.add(fieldName);
-      
       const isRequired = requiredFields.includes(propName);
-      const jsonTag = `\`json:"${propName}${getJsonTagOptions(prop, isRequired)}"\``;
       
-      // Handle property description - AsyncAPI objects might have description as function
-      const propDescription = (typeof prop.description === 'function') ? prop.description() : prop.description;
-      if (propDescription) {
-        if (typeof propDescription === 'string') {
-          const description = propDescription.trim();
-          const lines = description.split('\n');
-          lines.forEach(line => {
-            const trimmedLine = line.trim();
-            if (trimmedLine) {
-              structDef += `\t// ${trimmedLine}\n`;
-            }
-          });
+      // Generate property documentation
+      const propDocs = generatePropertyDocs(prop);
+      if (propDocs) {
+        structDef += `\t${propDocs}\n`;
+      }
+      
+      // Generate field name and handle collisions
+      let goFieldName = toPascalCase(propName);
+      
+      // Handle field name collisions
+      if (usedFieldNames.has(goFieldName)) {
+        // Create a unique field name by preserving case information from original property
+        if (propName.toLowerCase() !== propName) {
+          // If property has uppercase letters, use them
+          goFieldName = propName.replace(/[^a-zA-Z0-9]/g, '');
+          goFieldName = goFieldName.charAt(0).toUpperCase() + goFieldName.slice(1);
+        } else {
+          // If still collision, add numeric suffix
+          let counter = 2;
+          const baseName = goFieldName;
+          while (usedFieldNames.has(goFieldName)) {
+            goFieldName = baseName + counter.toString();
+            counter++;
+          }
         }
       }
+      usedFieldNames.add(goFieldName);
       
-      // Handle examples - AsyncAPI objects might have examples as function
-      const propExamples = (typeof prop.examples === 'function') ? prop.examples() : prop.examples;
-      if (propExamples && Array.isArray(propExamples) && propExamples.length > 0) {
-        structDef += `\t// Example: ${propExamples[0]}\n`;
-      }
-      structDef += `\t${fieldName} ${goType} ${jsonTag}\n`;
+      const goType = mapJsonTypeToGo(prop, propName, name);
+      const jsonTag = getJsonTagOptions(prop, isRequired);
+      
+      structDef += `\t${goFieldName} ${goType} \`json:"${propName}${jsonTag}"\`\n`;
     });
   }
-
-  structDef += '}\n\n';
+  
+  structDef += '}\n';
+  
+  if (!isNested) {
+    structDef += '\n';
+  }
+  
   return structDef;
 }
 
 /*
- * Generate helper methods for the struct
+ * Generate helper methods for struct (including event-specific methods)
  */
-function generateHelperMethods(structName) {
-  return `// ToJSON converts ${structName} to JSON bytes
-func (m *${structName}) ToJSON() ([]byte, error) {
-\treturn json.Marshal(m)
-}
-
-// FromJSON populates ${structName} from JSON bytes
-func (m *${structName}) FromJSON(data []byte) error {
-\treturn json.Unmarshal(data, m)
-}
-
-// String returns a string representation of ${structName}
-func (m *${structName}) String() string {
-\tdata, _ := m.ToJSON()
-\treturn string(data)
-}
-
-`;
+function generateHelperMethods(structName, isEvent = false) {
+  let methods = '';
+  
+  // Standard JSON marshaling methods
+  methods += `// String returns string representation of ${structName}\n`;
+  methods += `func (s ${structName}) String() string {\n`;
+  methods += `\tb, _ := json.Marshal(s)\n`;
+  methods += `\treturn string(b)\n`;
+  methods += `}\n\n`;
+  
+  // Event-specific methods
+  if (isEvent) {
+    methods += `// GetEventType returns the event type for ${structName}\n`;
+    methods += `func (s ${structName}) GetEventType() string {\n`;
+    methods += `\t// Try to find the string event type field (typically mapped from "e" JSON property)\n`;
+    methods += `\t// Note: Due to field collision resolution, this might not be "E"\n`;
+    methods += `\treturn "${structName.toLowerCase()}"\n`;
+    methods += `}\n\n`;
+    
+    methods += `// GetEventTime returns the event timestamp for ${structName}\n`;
+    methods += `func (s ${structName}) GetEventTime() int64 {\n`;
+    methods += `\t// Try to find the int64 event time field (typically mapped from "E" JSON property)\n`;
+    methods += `\tif s.Event.E != 0 {\n`;
+    methods += `\t\treturn s.Event.E\n`;
+    methods += `\t}\n`;
+    methods += `\treturn 0\n`;
+    methods += `}\n\n`;
+  }
+  
+  return methods;
 }
 
 /*
  * Map JSON schema types to Go types with more precision
  */
 function mapJsonTypeToGo(property, propName, parentStructName) {
-  // Handle AsyncAPI objects - type is a function
-  const type = (typeof property.type === 'function') ? property.type() : property.type;
+  // Handle both AsyncAPI objects and plain objects
+  let propType;
+  if (typeof property.type === 'function') {
+    propType = property.type();
+  } else {
+    propType = property.type;
+  }
   
-  switch (type) {
+  // Handle $ref references
+  if (property.$ref) {
+    const refName = extractSchemaNameFromRef(property.$ref);
+    if (refName && isValidGoIdentifier(refName)) {
+      return refName;
+    }
+  }
+  
+  switch (propType) {
     case 'string':
-      return 'string';
-    case 'integer':
-      return 'int64';
-    case 'number':
-      return 'float64';
-    case 'boolean':
-      return 'bool';
-    case 'object':
-      // Handle both AsyncAPI objects and plain objects for properties
-      let objProperties;
-      if (typeof property.properties === 'function') {
-        objProperties = property.properties();
+      // Handle enums
+      let enumValues;
+      if (typeof property.enum === 'function') {
+        enumValues = property.enum();
       } else {
-        objProperties = property.properties;
+        enumValues = property.enum;
+      }
+      if (enumValues && Array.isArray(enumValues)) {
+        return 'string'; // Could generate enum types later
       }
       
-      // For AsyncAPI objects, objProperties might be a Map or have .all() method
+      // Handle format-specific types
+      let format;
+      if (typeof property.format === 'function') {
+        format = property.format();
+      } else {
+        format = property.format;
+      }
+      
+      if (format === 'date-time') {
+        return 'time.Time';
+      }
+      return 'string';
+      
+    case 'integer':
+      let intFormat;
+      if (typeof property.format === 'function') {
+        intFormat = property.format();
+      } else {
+        intFormat = property.format;
+      }
+      
+      if (intFormat === 'int32') {
+        return 'int32';
+      } else if (intFormat === 'int64') {
+        return 'int64';
+      }
+      return 'int64'; // Default to int64 for integers
+      
+    case 'number':
+      let numFormat;
+      if (typeof property.format === 'function') {
+        numFormat = property.format();
+      } else {
+        numFormat = property.format;
+      }
+      
+      if (numFormat === 'float') {
+        return 'float32';
+      } else if (numFormat === 'double') {
+        return 'float64';
+      }
+      return 'float64'; // Default to float64 for numbers
+      
+    case 'boolean':
+      return 'bool';
+      
+    case 'object':
+      // Handle nested objects
+      let propProperties;
+      if (typeof property.properties === 'function') {
+        propProperties = property.properties();
+      } else {
+        propProperties = property.properties;
+      }
+      
+      // Check if propProperties has actual content
       let propertyKeys = [];
-      if (objProperties) {
-        if (typeof objProperties.all === 'function') {
-          // AsyncAPI Map-like object
-          const allProps = objProperties.all();
+      if (propProperties) {
+        if (typeof propProperties.all === 'function') {
+          const allProps = propProperties.all();
           propertyKeys = Object.keys(allProps);
-        } else if (objProperties instanceof Map) {
-          // Map object
-          propertyKeys = Array.from(objProperties.keys());
-        } else if (typeof objProperties === 'object') {
-          // Regular object
-          propertyKeys = Object.keys(objProperties);
+        } else if (propProperties instanceof Map) {
+          propertyKeys = Array.from(propProperties.keys());
+        } else if (typeof propProperties === 'object') {
+          propertyKeys = Object.keys(propProperties);
         }
       }
       
       if (propertyKeys && propertyKeys.length > 0) {
-        // Generate a specific struct type for nested objects
-        return `${parentStructName}${toPascalCase(propName)}`;
+        // Generate nested struct name - handle single letters and Item suffixes properly
+        let structSuffix;
+        if (propName.endsWith('Item')) {
+          // For array items, extract the base name and ensure proper capitalization
+          const baseName = propName.replace(/Item$/, '');
+          structSuffix = baseName.length === 1 ? baseName.toUpperCase() + 'Item' : toPascalCase(baseName) + 'Item';
+        } else {
+          structSuffix = propName.length === 1 ? propName.toUpperCase() : toPascalCase(propName);
+        }
+        return `${parentStructName}${structSuffix}`;
       }
       return 'interface{}';
+      
     case 'array':
-      // Handle AsyncAPI objects - items might be a function
-      const items = (typeof property.items === 'function') ? property.items() : property.items;
+      let items;
+      if (typeof property.items === 'function') {
+        items = property.items();
+      } else {
+        items = property.items;
+      }
+      
       if (items) {
-        // Get the items type properly
-        const itemsType = (typeof items.type === 'function') ? items.type() : items.type;
-        
-        // Handle both AsyncAPI objects and plain objects for array items
-        let itemsProperties;
-        if (itemsType === 'object') {
-          if (typeof items.properties === 'function') {
-            itemsProperties = items.properties();
-          } else {
-            itemsProperties = items.properties;
-          }
-          
-          // Check if itemsProperties has content using same logic as above
-          let itemsPropertyKeys = [];
-          if (itemsProperties) {
-            if (typeof itemsProperties.all === 'function') {
-              const allProps = itemsProperties.all();
-              itemsPropertyKeys = Object.keys(allProps);
-            } else if (itemsProperties instanceof Map) {
-              itemsPropertyKeys = Array.from(itemsProperties.keys());
-            } else if (typeof itemsProperties === 'object') {
-              itemsPropertyKeys = Object.keys(itemsProperties);
-            }
-          }
-          
-          if (itemsPropertyKeys && itemsPropertyKeys.length > 0) {
-            // For array of objects, use the nested struct name
-            return `[]${parentStructName}${toPascalCase(propName)}`;
-          } else {
-            return '[]interface{}';
-          }
-        } else {
-          return `[]${mapJsonTypeToGo(items, propName, parentStructName)}`;
-        }
+        // Use consistent naming for array items - handle single letters properly
+        const itemPropName = propName.length === 1 ? propName.toUpperCase() + 'Item' : `${propName}Item`;
+        const itemType = mapJsonTypeToGo(items, itemPropName, parentStructName);
+        return `[]${itemType}`;
       }
       return '[]interface{}';
+      
     default:
       return 'interface{}';
   }
@@ -539,7 +644,13 @@ function mapJsonTypeToGo(property, propName, parentStructName) {
  * Get JSON tag options based on property characteristics
  */
 function getJsonTagOptions(property, isRequired = false) {
-  return isRequired ? '' : ',omitempty';
+  let options = '';
+  
+  if (!isRequired) {
+    options += ',omitempty';
+  }
+  
+  return options;
 }
 
 /*
@@ -548,24 +659,34 @@ function getJsonTagOptions(property, isRequired = false) {
 function generatePropertyDocs(prop) {
   let docs = '';
   
-  // Handle property description
-  const propDescription = (typeof prop.description === 'function') ? prop.description() : prop.description;
-  if (propDescription && typeof propDescription === 'string') {
-    // Handle multi-line descriptions by splitting and prefixing each line with //
-    const description = propDescription.trim();
-    const lines = description.split('\n');
-    lines.forEach(line => {
-      const trimmedLine = line.trim();
-      if (trimmedLine) {
-        docs += `\t// ${trimmedLine}\n`;
-      }
-    });
+  // Handle both AsyncAPI objects and plain objects
+  let description;
+  if (typeof prop.description === 'function') {
+    description = prop.description();
+  } else {
+    description = prop.description;
   }
   
-  // Handle property examples
-  const propExamples = (typeof prop.examples === 'function') ? prop.examples() : prop.examples;
-  if (propExamples && Array.isArray(propExamples) && propExamples.length > 0) {
-    docs += `\t// Example: ${propExamples[0]}\n`;
+  if (description) {
+    // Handle multi-line descriptions properly by ensuring each line is commented
+    const descriptionLines = description.split('\n');
+    docs += descriptionLines.map(line => `// ${line.trim()}`).join('\n\t');
+  }
+  
+  // Add example if available
+  let example;
+  if (typeof prop.example === 'function') {
+    example = prop.example();
+  } else {
+    example = prop.example;
+  }
+  
+  if (example !== undefined) {
+    if (docs) {
+      docs += ` (example: ${JSON.stringify(example)})`;
+    } else {
+      docs += `// Example: ${JSON.stringify(example)}`;
+    }
   }
   
   return docs;
@@ -579,24 +700,19 @@ function generatePropertyDocs(prop) {
 function toPascalCase(str) {
   if (!str) return '';
   
-  // Remove parentheses and their content
-  const cleanStr = str.replace(/\([^)]*\)/g, '');
-  
-  // If it's already in PascalCase or camelCase, preserve it
-  if (/^[A-Z][a-zA-Z0-9]*$/.test(cleanStr)) {
-    return cleanStr;
-  }
-  
-  // Split on word boundaries (spaces, hyphens, underscores, dots)
-  // but also split on camelCase boundaries
-  const words = cleanStr
-    .replace(/([a-z])([A-Z])/g, '$1 $2') // Split camelCase
-    .split(/[\s\-_\.]+/)
-    .filter(word => word.length > 0);
-  
-  return words
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join('');
+  // Handle special cases with dots, underscores, and camelCase
+  return str
+    .split(/[._-]/)
+    .map(word => {
+      if (!word) return '';
+      // Handle camelCase words by splitting on uppercase letters
+      return word.replace(/([a-z])([A-Z])/g, '$1 $2')
+        .split(' ')
+        .map(subWord => subWord.charAt(0).toUpperCase() + subWord.slice(1).toLowerCase())
+        .join('');
+    })
+    .join('')
+    .replace(/\s+/g, ''); // Remove any remaining spaces
 }
 
 /*
@@ -605,15 +721,13 @@ function toPascalCase(str) {
 function toSnakeCase(str) {
   if (!str) return '';
   
-  // Remove parentheses and their content
-  const cleanStr = str.replace(/\([^)]*\)/g, '');
-  
-  return cleanStr
-    .replace(/([A-Z])/g, '_$1')
+  return str
+    .replace(/([A-Z])/g, '_$1') // Insert underscore before capital letters
     .toLowerCase()
-    .replace(/^_/, '')
-    .replace(/[\s\-\.]+/g, '_')
-    .replace(/__+/g, '_'); // Replace multiple underscores with single underscore
+    .replace(/^_/, '') // Remove leading underscore
+    .replace(/[^a-z0-9_]/g, '_') // Replace invalid characters with underscore
+    .replace(/_+/g, '_') // Replace multiple underscores with single underscore
+    .replace(/_$/, ''); // Remove trailing underscore
 }
 
 /*
@@ -758,7 +872,7 @@ import (
 
   content += `// ${structName} represents ${schema.description || schemaName}\n`;
   content += generateStructDefinition(structName, schema);
-  content += generateHelperMethods(structName);
+  content += generateHelperMethods(structName, schema.isEvent || false);
   
   return content;
 }
@@ -830,4 +944,4 @@ function isGoKeyword(name) {
     'var'
   ];
   return goKeywords.includes(name);
-} 
+}

@@ -3,8 +3,8 @@ info:
     title: ""
     version: ""
 channels:
-    sor_order_test:
-        address: sor.order.test
+    spot:
+        address: /
         title: Channel sor.order.test
         description: |-
             Test new order creation and signature/recvWindow using smart order routing (SOR).
@@ -12,126 +12,137 @@ channels:
             In addition to all parameters accepted by sor.order.place,
             the following optional parameters are also accepted:
         messages:
-            receiveMessage:
-                name: Test new order using SOR (TRADE) Response
-                title: Test new order using SOR (TRADE) Response
-                description: Receive response from sor.order.test
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 1
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: object
-                            description: result property
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Test new order using SOR (TRADE) Request
-                title: Test new order using SOR (TRADE) Request
-                description: Send a sor.order.test request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
-                        method:
-                            type: string
-                            description: method property
-                            example: sor.order.test
-                            enum:
-                                - sor.order.test
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                apiKey:
-                                    type: string
-                                    description: apiKey property
-                                    example: u5lgqJb97QWXWfgeV4cROuHbReSJM9rgQL0IvYcYc7BVeA5lpAqqc3a5p2OARIFk
-                                price:
-                                    type: number
-                                    description: price property
-                                    example: 0.1
-                                quantity:
-                                    type: number
-                                    description: quantity property
-                                    example: 0.1
-                                side:
-                                    type: string
-                                    description: side property
-                                    example: BUY
-                                signature:
-                                    type: string
-                                    description: signature property
-                                    example: fd301899567bc9472ce023392160cdc265ad8fcbbb67e0ea1b2af70a4b0cd9c7
-                                symbol:
-                                    type: string
-                                    description: symbol property
-                                    example: BTCUSDT
-                                timeInForce:
-                                    type: string
-                                    description: timeInForce property
-                                    example: GTC
-                                timestamp:
-                                    type: integer
-                                    format: int64
-                                    description: timestamp property
-                                    example: 1687485436575
-                                type:
-                                    type: string
-                                    description: type property
-                                    example: LIMIT
+            sorOrderTestRequest:
+                $ref: '#/components/messages/sorOrderTestRequest'
+            sorOrderTestResponse:
+                $ref: '#/components/messages/sorOrderTestResponse'
 operations:
-    receive_sor_order_test:
+    receiveSorOrderTest:
         title: Receive from sor.order.test
         description: Receive response from sor.order.test
         action: receive
         channel:
-            $ref: '#/channels/sor_order_test'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/sor_order_test/messages/receiveMessage'
-    send_sor_order_test:
+            - $ref: '#/channels/spot/messages/sorOrderTestResponse'
+    sendSorOrderTest:
         title: Send to sor.order.test
         description: Send a sor.order.test request
         action: send
         channel:
-            $ref: '#/channels/sor_order_test'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/sor_order_test/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/sorOrderTestRequest'
+components:
+    messages:
+        sorOrderTestRequest:
+            name: Test new order using SOR (TRADE) Request
+            title: Test new order using SOR (TRADE) Request
+            description: Send a sor.order.test request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
+                    method:
+                        type: string
+                        description: method property
+                        example: sor.order.test
+                        enum:
+                            - sor.order.test
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                                description: apiKey property
+                                example: u5lgqJb97QWXWfgeV4cROuHbReSJM9rgQL0IvYcYc7BVeA5lpAqqc3a5p2OARIFk
+                            price:
+                                type: number
+                                description: price property
+                                example: 0.1
+                            quantity:
+                                type: number
+                                description: quantity property
+                                example: 0.1
+                            side:
+                                type: string
+                                description: side property
+                                example: BUY
+                            signature:
+                                type: string
+                                description: signature property
+                                example: fd301899567bc9472ce023392160cdc265ad8fcbbb67e0ea1b2af70a4b0cd9c7
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            timeInForce:
+                                type: string
+                                description: timeInForce property
+                                example: GTC
+                            timestamp:
+                                type: integer
+                                format: int64
+                                description: timestamp property
+                                example: 1687485436575
+                            type:
+                                type: string
+                                description: type property
+                                example: LIMIT
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sorOrderTestResponse:
+            name: Test new order using SOR (TRADE) Response
+            title: Test new order using SOR (TRADE) Response
+            description: Receive response from sor.order.test
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 1
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

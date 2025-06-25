@@ -3,148 +3,150 @@ info:
     title: ""
     version: ""
 channels:
-    trades_historical:
-        address: trades.historical
+    spot:
+        address: /
         title: Channel trades.historical
         description: Get historical trades.
         messages:
-            receiveMessage:
-                name: Historical trades Response
-                title: Historical trades Response
-                description: Receive response from trades.historical
-                payload:
-                    type: object
-                    description: response schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: cffc9c7d-4efc-4ce0-b587-6b87448f052a
-                        rateLimits:
-                            type: array
-                            description: rateLimits property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    count:
-                                        type: integer
-                                        description: count property
-                                        example: 10
-                                    interval:
-                                        type: string
-                                        description: interval property
-                                        example: MINUTE
-                                    intervalNum:
-                                        type: integer
-                                        description: intervalNum property
-                                        example: 1
-                                    limit:
-                                        type: integer
-                                        description: limit property
-                                        example: 6000
-                                    rateLimitType:
-                                        type: string
-                                        description: rateLimitType property
-                                        example: REQUEST_WEIGHT
-                        result:
-                            type: array
-                            description: result property
-                            items:
-                                type: object
-                                description: array item
-                                properties:
-                                    id:
-                                        type: integer
-                                        format: int64
-                                        description: id property
-                                        example: 0
-                                    isBestMatch:
-                                        type: boolean
-                                        description: isBestMatch property
-                                        example: true
-                                    isBuyerMaker:
-                                        type: boolean
-                                        description: isBuyerMaker property
-                                        example: true
-                                    price:
-                                        type: string
-                                        description: price property
-                                        example: "0.00005000"
-                                    qty:
-                                        type: string
-                                        description: qty property
-                                        example: "40.00000000"
-                                    quoteQty:
-                                        type: string
-                                        description: quoteQty property
-                                        example: "0.00200000"
-                                    time:
-                                        type: integer
-                                        format: int64
-                                        description: time property
-                                        example: 1500004800376
-                        status:
-                            type: integer
-                            description: status property
-                            example: 200
-            sendMessage:
-                name: Historical trades Request
-                title: Historical trades Request
-                description: Send a trades.historical request
-                payload:
-                    type: object
-                    description: request schema
-                    properties:
-                        id:
-                            type: string
-                            description: id property
-                            example: cffc9c7d-4efc-4ce0-b587-6b87448f052a
-                        method:
-                            type: string
-                            description: method property
-                            example: trades.historical
-                            enum:
-                                - trades.historical
-                        params:
-                            type: object
-                            description: params property
-                            properties:
-                                fromId:
-                                    type: integer
-                                    format: int64
-                                    description: Trade ID to begin at
-                                limit:
-                                    type: integer
-                                    description: 'Default: 500; Maximum: 1000'
-                                symbol:
-                                    type: string
-                            required:
-                                - symbol
-        parameters:
-            fromId:
-                description: Trade ID to begin at
-                location: $message.payload#/params/fromId
-            limit:
-                description: 'Default: 500; Maximum: 1000'
-                location: $message.payload#/params/limit
-            symbol:
-                location: $message.payload#/params/symbol
+            tradesHistoricalRequest:
+                $ref: '#/components/messages/tradesHistoricalRequest'
+            tradesHistoricalResponse:
+                $ref: '#/components/messages/tradesHistoricalResponse'
 operations:
-    receive_trades_historical:
+    receiveTradesHistorical:
         title: Receive from trades.historical
         description: Receive response from trades.historical
         action: receive
         channel:
-            $ref: '#/channels/trades_historical'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/trades_historical/messages/receiveMessage'
-    send_trades_historical:
+            - $ref: '#/channels/spot/messages/tradesHistoricalResponse'
+    sendTradesHistorical:
         title: Send to trades.historical
         description: Send a trades.historical request
         action: send
         channel:
-            $ref: '#/channels/trades_historical'
+            $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/trades_historical/messages/sendMessage'
-components: {}
+            - $ref: '#/channels/spot/messages/tradesHistoricalRequest'
+components:
+    messages:
+        tradesHistoricalRequest:
+            name: Historical trades Request
+            title: Historical trades Request
+            description: Send a trades.historical request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: cffc9c7d-4efc-4ce0-b587-6b87448f052a
+                    method:
+                        type: string
+                        description: method property
+                        example: trades.historical
+                        enum:
+                            - trades.historical
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            fromId:
+                                type: integer
+                                format: int64
+                                description: Trade ID to begin at
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tradesHistoricalResponse:
+            name: Historical trades Response
+            title: Historical trades Response
+            description: Receive response from trades.historical
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: cffc9c7d-4efc-4ce0-b587-6b87448f052a
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 10
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: array
+                        description: result property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                id:
+                                    type: integer
+                                    format: int64
+                                    description: id property
+                                    example: 0
+                                isBestMatch:
+                                    type: boolean
+                                    description: isBestMatch property
+                                    example: true
+                                isBuyerMaker:
+                                    type: boolean
+                                    description: isBuyerMaker property
+                                    example: true
+                                price:
+                                    type: string
+                                    description: price property
+                                    example: "0.00005000"
+                                qty:
+                                    type: string
+                                    description: qty property
+                                    example: "40.00000000"
+                                quoteQty:
+                                    type: string
+                                    description: quoteQty property
+                                    example: "0.00200000"
+                                time:
+                                    type: integer
+                                    format: int64
+                                    description: time property
+                                    example: 1500004800376
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
