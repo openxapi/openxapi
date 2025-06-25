@@ -109,7 +109,9 @@ func main() {
     defer client.Disconnect()
     
     // Use public endpoints with automatic JSON parsing
-    err := client.SendPingDefault(ctx, func(response *models.PingTestConnectivityResponse, err error) error {
+    // Note: id and method are set automatically by the client
+    request := &models.PingRequest{}
+    err := client.SendPing(ctx, request, func(response *models.PingResponse, err error) error {
         if err != nil {
             if apiErr, ok := IsAPIError(err); ok {
                 log.Printf("Ping API error: Status=%d, Code=%d, Message=%s", 
@@ -125,6 +127,29 @@ func main() {
     })
     if err != nil {
         log.Printf("Error sending ping: %v", err)
+    }
+    
+    // Example with parameters - get order book depth
+    depthRequest := &models.DepthRequest{
+        Params: models.DepthRequestParams{
+            Symbol: "BTCUSDT",
+            Limit:  100,
+        },
+    }
+    err = client.SendDepth(ctx, depthRequest, func(response *models.DepthResponse, err error) error {
+        if err != nil {
+            if apiErr, ok := IsAPIError(err); ok {
+                log.Printf("Depth API error: %s", apiErr.Error())
+                return nil
+            }
+            return err
+        }
+        
+        log.Printf("Order book depth received for %s", "BTCUSDT")
+        return nil
+    })
+    if err != nil {
+        log.Printf("Error getting depth: %v", err)
     }
 }
 \`\`\`
@@ -153,8 +178,13 @@ func main() {
     defer client.Disconnect()
     
     // Now you can use authenticated endpoints with automatic JSON parsing
-    request := &models.AccountCommissionAccountCommissionRatesRequest{}
-    err := client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+    // Note: id and method are set automatically, but params must be provided
+    request := &models.AccountCommissionRequest{
+        Params: models.AccountCommissionRequestParams{
+            Symbol: "BTCUSDT",
+        },
+    }
+    err := client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionResponse, err error) error {
         if err != nil {
             if apiErr, ok := IsAPIError(err); ok {
                 log.Printf("Account commission API error: %s", apiErr.Error())
@@ -203,8 +233,13 @@ func main() {
     }
     
     // Use per-request auth with automatic JSON parsing
-    request := &models.AccountCommissionAccountCommissionRatesRequest{}
-    err = client.SendAccountCommission(authCtx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+    // Note: Only id and method are auto-set, all params must be provided
+    request := &models.AccountCommissionRequest{
+        Params: models.AccountCommissionRequestParams{
+            Symbol: "BTCUSDT",
+        },
+    }
+    err = client.SendAccountCommission(authCtx, request, func(response *models.AccountCommissionResponse, err error) error {
         if err != nil {
             if apiErr, ok := IsAPIError(err); ok {
                 switch apiErr.Status {
@@ -264,8 +299,18 @@ func main() {
     readOnlyCtx, _ := readOnlyAuth.ContextWithValue(context.Background())
     
     // Trading operations use trading auth with automatic JSON parsing
-    orderRequest := &models.OrderPlaceOrderRequest{}
-    err := client.SendOrderPlace(tradingCtx, orderRequest, func(response *models.OrderPlaceOrderResponse, err error) error {
+    // Note: All trading parameters must be specified in params
+    orderRequest := &models.OrderPlaceRequest{
+        Params: models.OrderPlaceRequestParams{
+            Symbol:    "BTCUSDT",
+            Side:      "BUY",
+            Type:      "LIMIT",
+            Quantity:  "0.001",
+            Price:     "50000.00",
+            TimeInForce: "GTC",
+        },
+    }
+    err := client.SendOrderPlace(tradingCtx, orderRequest, func(response *models.OrderPlaceResponse, err error) error {
         if err != nil {
             if apiErr, ok := IsAPIError(err); ok {
                 if apiErr.Status == 429 {
@@ -287,8 +332,9 @@ func main() {
     }
     
     // Account info uses read-only auth with automatic JSON parsing
-    accountRequest := &models.AccountStatusAccountStatusRequest{}
-    err = client.SendAccountStatus(readOnlyCtx, accountRequest, func(response *models.AccountStatusAccountStatusResponse, err error) error {
+    accountRequest := &models.AccountStatusRequest{
+    }
+    err = client.SendAccountStatus(readOnlyCtx, accountRequest, func(response *models.AccountStatusResponse, err error) error {
         if err != nil {
             if apiErr, ok := IsAPIError(err); ok {
                 log.Printf("Account status error: %s", apiErr.Error())
@@ -341,8 +387,13 @@ func main() {
     defer client.Disconnect()
     
     // Example authenticated request with automatic JSON parsing
-    request := &models.AccountCommissionAccountCommissionRatesRequest{}
-    err = client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+    // Note: All required parameters must be provided in params
+    request := &models.AccountCommissionRequest{
+        Params: models.AccountCommissionRequestParams{
+            Symbol: "BTCUSDT",
+        },
+    }
+    err = client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionResponse, err error) error {
         if err != nil {
             if apiErr, ok := IsAPIError(err); ok {
                 log.Printf("RSA auth error: %s", apiErr.Error())
@@ -395,8 +446,13 @@ func main() {
     defer client.Disconnect()
     
     // Example authenticated request with comprehensive error handling and automatic JSON parsing
-    request := &models.AccountCommissionAccountCommissionRatesRequest{}
-    err = client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+    // Note: All required parameters must be specified in params
+    request := &models.AccountCommissionRequest{
+        Params: models.AccountCommissionRequestParams{
+            Symbol: "BTCUSDT",
+        },
+    }
+    err = client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionResponse, err error) error {
         if err != nil {
             if apiErr, ok := IsAPIError(err); ok {
                 switch apiErr.Status {
@@ -449,23 +505,35 @@ func main() {
     defer client.Disconnect()
     
     // Setup individual event handlers for different event types
-    client.HandleExecutionReportEvent(func(event *models.ExecutionReportEvent) error {
+    client.HandleExecutionReport(func(event *models.ExecutionReport) error {
         log.Printf("Order update: Symbol=%s, Side=%s, Status=%s", event.S, event.Side, event.X)
         return nil
     })
     
-    client.HandleBalanceUpdateEvent(func(event *models.BalanceUpdateEvent) error {
+    client.HandleBalanceUpdate(func(event *models.BalanceUpdate) error {
         log.Printf("Balance update: Asset=%s, Delta=%s", event.A, event.D)
         return nil
     })
     
-    client.HandleOutboundAccountPositionEvent(func(event *models.OutboundAccountPositionEvent) error {
+    client.HandleOutboundAccountPosition(func(event *models.OutboundAccountPosition) error {
         log.Printf("Account position update: Event time=%d", event.E)
         return nil
     })
     
-    // Or setup all default handlers at once
-    client.SetupDefaultUserDataStreamHandlers()
+    client.HandleListenKeyExpired(func(event *models.ListenKeyExpired) error {
+        log.Printf("Listen key expired: Event time=%d", event.E)
+        return nil
+    })
+    
+    client.HandleListStatus(func(event *models.ListStatus) error {
+        log.Printf("List status update: %+v", event)
+        return nil
+    })
+    
+    client.HandleExternalLockUpdate(func(event *models.ExternalLockUpdate) error {
+        log.Printf("External lock update: %+v", event)
+        return nil
+    })
     
     // Subscribe to user data stream (requires authentication)
     auth := NewAuth("your-api-key")
@@ -473,7 +541,7 @@ func main() {
     authCtx, _ := auth.ContextWithValue(context.Background())
     
     request := &models.UserDataStreamSubscribeRequest{}
-    err := client.SendUserDataStreamSubscribe(authCtx, request, func(response *models.UserDataStreamSubscribeResponse, err error) error {
+    err := client.SendUserdatastreamSubscribe(authCtx, request, func(response *models.UserDataStreamSubscribeResponse, err error) error {
         if err != nil {
             if apiErr, ok := IsAPIError(err); ok {
                 log.Printf("UserDataStream error: %s", apiErr.Error())
@@ -495,11 +563,11 @@ func main() {
 
 \`\`\`go
 // Get all received responses
-history := client.GetResponseHistory()
+history := client.GetResponseList()
 log.Printf("Received %d responses", len(history))
 
 // Clear history when needed
-client.ClearResponseHistory()
+client.ClearResponseList()
 
 // Access specific responses
 for i, response := range history {
@@ -548,7 +616,12 @@ The client provides clear error messages for authentication issues and API error
 
 \`\`\`go
 ctx := context.Background()
-err := client.SendSomeAuthenticatedRequest(ctx, request, func(response *models.SomeResponseType, err error) error {
+request := &models.AccountCommissionRequest{
+    Params: models.AccountCommissionRequestParams{
+        Symbol: "BTCUSDT",
+    },
+}
+err := client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionResponse, err error) error {
     if err != nil {
         if strings.Contains(err.Error(), "authentication required") {
             log.Println("Please set up authentication credentials")
@@ -576,8 +649,12 @@ If authentication is required but not provided in either context or client:
 ctx := context.Background() // No auth in context
 client := NewClient()       // No auth on client
 
-request := &models.AccountCommissionAccountCommissionRatesRequest{}
-err := client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+request := &models.AccountCommissionRequest{
+    Params: models.AccountCommissionRequestParams{
+        Symbol: "BTCUSDT",
+    },
+}
+err := client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionResponse, err error) error {
     if err != nil {
         log.Printf("Error: %v", err)
         // Returns: "authentication required for USER_DATA request but no auth provided in context or client"
@@ -604,7 +681,7 @@ err := client.SendAccountCommission(ctx, request, func(response *models.AccountC
 Response handlers work the same way regardless of authentication method, with automatic JSON parsing:
 
 \`\`\`go
-responseHandler := func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+responseHandler := func(response *models.AccountCommissionResponse, err error) error {
     if err != nil {
         if apiErr, ok := IsAPIError(err); ok {
             log.Printf("API Error: Status=%d, Code=%d, Message=%s, ID=%s", 
@@ -632,7 +709,12 @@ client.SendAccountCommission(request, responseHandler)
 
 **New method signatures:**
 \`\`\`go
-client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+request := &models.AccountCommissionRequest{
+    Params: models.AccountCommissionRequestParams{
+        Symbol: "BTCUSDT",
+    },
+}
+client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionResponse, err error) error {
     // Handle both success and error cases - response is automatically parsed!
     return nil
 })
@@ -644,42 +726,6 @@ All client methods now require a \`context.Context\` as the first parameter and 
 - Request tracing and observability
 - Proper error handling
 - Automatic JSON parsing
-
-### Authentication Migration Strategies
-
-**Strategy 1: Minimal Changes (Backward Compatible)**
-\`\`\`go
-// Add context.Background() to existing calls and enjoy automatic JSON parsing
-ctx := context.Background()
-client.SendAccountCommission(ctx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
-    if err != nil {
-        log.Printf("Error: %v", err)
-        return err
-    }
-    // Response is ready to use - no JSON unmarshaling needed!
-    log.Printf("Success: %+v", response.Result)
-    return nil
-})
-\`\`\`
-
-**Strategy 2: Enhanced with Per-Request Auth and Error Handling**
-\`\`\`go
-// Create per-request auth contexts with comprehensive error handling
-authCtx, _ := auth.ContextWithValue(context.Background())
-client.SendAccountCommission(authCtx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
-    if err != nil {
-        if apiErr, ok := IsAPIError(err); ok {
-            log.Printf("API Error: %+v", apiErr)
-            return nil
-        }
-        return err
-    }
-    
-    // Response is automatically parsed - ready to use!
-    log.Printf("Success: %+v", response.Result)
-    return nil
-})
-\`\`\`
 
 ## High-Performance Features
 
@@ -752,8 +798,12 @@ if err != nil {
     log.Fatal(err)
 }
 
-request := &models.AccountCommissionAccountCommissionRatesRequest{}
-err = client.SendAccountCommission(authCtx, request, func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+request := &models.AccountCommissionRequest{
+    Params: models.AccountCommissionRequestParams{
+        Symbol: "BTCUSDT",
+    },
+}
+err = client.SendAccountCommission(authCtx, request, func(response *models.AccountCommissionResponse, err error) error {
     if err != nil {
         if apiErr, ok := IsAPIError(err); ok {
             log.Printf("Timeout or API error: %s", apiErr.Error())
@@ -786,7 +836,7 @@ readOnlyCtx, _ := readOnlyAuth.ContextWithValue(context.Background())
 
 \`\`\`go
 // Debug handler for troubleshooting API errors with automatic JSON parsing
-debugHandler := func(response *models.AccountCommissionAccountCommissionRatesResponse, err error) error {
+debugHandler := func(response *models.AccountCommissionResponse, err error) error {
     if err != nil {
         if apiErr, ok := IsAPIError(err); ok {
             log.Printf("=== API ERROR DEBUG ===")
@@ -804,6 +854,31 @@ debugHandler := func(response *models.AccountCommissionAccountCommissionRatesRes
     // Response is automatically parsed - ready to use!
     log.Printf("Success response: %+v", response.Result)
     return nil
+}
+\`\`\`
+
+## Important Notes
+
+### Request Structure
+
+When creating requests, remember that:
+
+1. **\`id\`** and **\`method\`** fields are automatically set by the client
+2. **\`params\`** field must contain all the required parameters for the endpoint
+3. Each request type has its own \`Params\` struct with specific fields
+
+### Example Request Creation Pattern
+
+\`\`\`go
+// General pattern for creating requests
+request := &models.SomeRequest{
+    // Don't set Id or Method - these are handled automatically
+    Params: models.SomeRequestParams{
+        // Set all required parameters here
+        RequiredParam1: "value1",
+        RequiredParam2: "value2",
+        OptionalParam:  "optional_value", // omitempty fields can be left empty
+    },
 }
 \`\`\`
 
@@ -833,7 +908,7 @@ For issues or questions:
 
 ## License
 
-This generated client follows your project's license terms.
+This generated client follows MIT License.
 `}
       </Text>
     </File>
