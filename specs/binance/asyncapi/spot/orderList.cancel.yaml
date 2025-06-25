@@ -8,10 +8,10 @@ channels:
         title: Channel orderList.cancel
         description: Cancel an active order list.
         messages:
-            orderListCancelReceive:
-                $ref: '#/components/messages/orderListCancelReceive'
-            orderListCancelSend:
-                $ref: '#/components/messages/orderListCancelSend'
+            orderListCancelRequest:
+                $ref: '#/components/messages/orderListCancelRequest'
+            orderListCancelResponse:
+                $ref: '#/components/messages/orderListCancelResponse'
 operations:
     receiveOrderlistCancel:
         title: Receive from orderList.cancel
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListCancelReceive'
+            - $ref: '#/channels/spot/messages/orderListCancelResponse'
     sendOrderlistCancel:
         title: Send to orderList.cancel
         description: Send a orderList.cancel request
@@ -28,10 +28,62 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListCancelSend'
+            - $ref: '#/channels/spot/messages/orderListCancelRequest'
 components:
     messages:
-        orderListCancelReceive:
+        orderListCancelRequest:
+            name: Cancel Order list (TRADE) Request
+            title: Cancel Order list (TRADE) Request
+            description: Send a orderList.cancel request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: c5899911-d3f4-47ae-8835-97da553d27d0
+                    method:
+                        type: string
+                        description: method property
+                        example: orderList.cancel
+                        enum:
+                            - orderList.cancel
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            listClientOrderId:
+                                type: string
+                                description: Cancel order list by listClientId
+                            newClientOrderId:
+                                type: string
+                                description: New ID for the canceled order list. Automatically generated if not sent
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: Cancel order list by orderListId
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - orderListId
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderListCancelResponse:
             name: Cancel Order list (TRADE) Response
             title: Cancel Order list (TRADE) Response
             description: Receive response from orderList.cancel
@@ -202,58 +254,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderListCancelSend:
-            name: Cancel Order list (TRADE) Request
-            title: Cancel Order list (TRADE) Request
-            description: Send a orderList.cancel request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: c5899911-d3f4-47ae-8835-97da553d27d0
-                    method:
-                        type: string
-                        description: method property
-                        example: orderList.cancel
-                        enum:
-                            - orderList.cancel
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            listClientOrderId:
-                                type: string
-                                description: Cancel order list by listClientId
-                            newClientOrderId:
-                                type: string
-                                description: New ID for the canceled order list. Automatically generated if not sent
-                            orderListId:
-                                type: integer
-                                format: int64
-                                description: Cancel order list by orderListId
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - orderListId
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

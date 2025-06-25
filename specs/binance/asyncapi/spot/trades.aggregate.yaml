@@ -16,10 +16,10 @@ channels:
             If you need historical aggregate trade data,
             please consider using data.binance.vision.
         messages:
-            tradesAggregateReceive:
-                $ref: '#/components/messages/tradesAggregateReceive'
-            tradesAggregateSend:
-                $ref: '#/components/messages/tradesAggregateSend'
+            tradesAggregateRequest:
+                $ref: '#/components/messages/tradesAggregateRequest'
+            tradesAggregateResponse:
+                $ref: '#/components/messages/tradesAggregateResponse'
 operations:
     receiveTradesAggregate:
         title: Receive from trades.aggregate
@@ -28,7 +28,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tradesAggregateReceive'
+            - $ref: '#/channels/spot/messages/tradesAggregateResponse'
     sendTradesAggregate:
         title: Send to trades.aggregate
         description: Send a trades.aggregate request
@@ -36,10 +36,50 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tradesAggregateSend'
+            - $ref: '#/channels/spot/messages/tradesAggregateRequest'
 components:
     messages:
-        tradesAggregateReceive:
+        tradesAggregateRequest:
+            name: Aggregate trades Request
+            title: Aggregate trades Request
+            description: Send a trades.aggregate request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 189da436-d4bd-48ca-9f95-9f613d621717
+                    method:
+                        type: string
+                        description: method property
+                        example: trades.aggregate
+                        enum:
+                            - trades.aggregate
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            endTime:
+                                type: string
+                            fromId:
+                                type: integer
+                                format: int64
+                                description: Aggregate trade ID to begin at
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            startTime:
+                                type: string
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tradesAggregateResponse:
             name: Aggregate trades Response
             title: Aggregate trades Response
             description: Receive response from trades.aggregate
@@ -121,46 +161,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        tradesAggregateSend:
-            name: Aggregate trades Request
-            title: Aggregate trades Request
-            description: Send a trades.aggregate request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 189da436-d4bd-48ca-9f95-9f613d621717
-                    method:
-                        type: string
-                        description: method property
-                        example: trades.aggregate
-                        enum:
-                            - trades.aggregate
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            endTime:
-                                type: string
-                            fromId:
-                                type: integer
-                                format: int64
-                                description: Aggregate trade ID to begin at
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            startTime:
-                                type: string
-                            symbol:
-                                type: string
-                        required:
-                            - symbol
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

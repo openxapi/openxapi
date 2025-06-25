@@ -17,10 +17,10 @@ channels:
             The rules of the pending above and pending below follow the same rules as the Order list OCO.
             - OTOCOs add 3 orders to the EXCHANGE_MAX_NUM_ORDERS filter and MAX_NUM_ORDERS filter.
         messages:
-            orderListPlaceOtocoReceive:
-                $ref: '#/components/messages/orderListPlaceOtocoReceive'
-            orderListPlaceOtocoSend:
-                $ref: '#/components/messages/orderListPlaceOtocoSend'
+            orderListPlaceOtocoRequest:
+                $ref: '#/components/messages/orderListPlaceOtocoRequest'
+            orderListPlaceOtocoResponse:
+                $ref: '#/components/messages/orderListPlaceOtocoResponse'
 operations:
     receiveOrderlistPlaceOtoco:
         title: Receive from orderList.place.otoco
@@ -29,7 +29,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtocoReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtocoResponse'
     sendOrderlistPlaceOtoco:
         title: Send to orderList.place.otoco
         description: Send a orderList.place.otoco request
@@ -37,10 +37,146 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtocoSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtocoRequest'
 components:
     messages:
-        orderListPlaceOtocoReceive:
+        orderListPlaceOtocoRequest:
+            name: Place new Order list - OTOCO (TRADE) Request
+            title: Place new Order list - OTOCO (TRADE) Request
+            description: Send a orderList.place.otoco request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: "1712544408508"
+                    method:
+                        type: string
+                        description: method property
+                        example: orderList.place.otoco
+                        enum:
+                            - orderList.place.otoco
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            listClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId, pendingAboveClientOrderId, and the pendingBelowClientOrderId.
+                            newOrderRespType:
+                                type: string
+                                description: 'Format of the JSON response. Supported values: Order Response Type'
+                            pendingAboveClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders for the pending above order. Automatically generated if not sent.
+                            pendingAboveIcebergQty:
+                                type: string
+                                description: This can only be used if pendingAboveTimeInForce is GTC or if pendingAboveType is LIMIT_MAKER.
+                            pendingAbovePrice:
+                                type: string
+                                description: Can be used if pendingAboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
+                            pendingAboveStopPrice:
+                                type: string
+                                description: Can be used if pendingAboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT
+                            pendingAboveStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the pending above order within an order strategy.
+                            pendingAboveStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the pending above order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                            pendingAboveTimeInForce:
+                                type: string
+                            pendingAboveTrailingDelta:
+                                type: string
+                                description: See Trailing Stop FAQ
+                            pendingAboveType:
+                                type: string
+                                description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
+                            pendingBelowClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders for the pending below order. Automatically generated if not sent.
+                            pendingBelowIcebergQty:
+                                type: string
+                                description: This can only be used if pendingBelowTimeInForce is GTC, or if pendingBelowType is LIMIT_MAKER.
+                            pendingBelowPrice:
+                                type: string
+                                description: Can be used if pendingBelowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT to specify the limit price.
+                            pendingBelowStopPrice:
+                                type: string
+                                description: Can be used if pendingBelowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either pendingBelowStopPrice or pendingBelowTrailingDelta or both, must be specified.
+                            pendingBelowStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the pending below order within an order strategy.
+                            pendingBelowStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the pending below order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                            pendingBelowTimeInForce:
+                                type: string
+                                description: 'Supported values: Time In Force'
+                            pendingBelowTrailingDelta:
+                                type: string
+                            pendingBelowType:
+                                type: string
+                                description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
+                            pendingQuantity:
+                                type: string
+                            pendingSide:
+                                type: string
+                                description: 'Supported values: Order Side'
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000.
+                            selfTradePreventionMode:
+                                type: string
+                                description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
+                            signature:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                            workingClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
+                            workingIcebergQty:
+                                type: string
+                                description: This can only be used if workingTimeInForce is GTC.
+                            workingPrice:
+                                type: string
+                            workingQuantity:
+                                type: string
+                            workingSide:
+                                type: string
+                                description: 'Supported values: Order Side'
+                            workingStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the working order within an order strategy.
+                            workingStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                            workingTimeInForce:
+                                type: string
+                                description: 'Supported values: Time In Force'
+                            workingType:
+                                type: string
+                                description: 'Supported values: LIMIT, LIMIT_MAKER'
+                        required:
+                            - symbol
+                            - workingType
+                            - workingSide
+                            - workingPrice
+                            - workingQuantity
+                            - pendingSide
+                            - pendingQuantity
+                            - pendingAboveType
+                            - timestamp
+                            - signature
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderListPlaceOtocoResponse:
             name: Place new Order list - OTOCO (TRADE) Response
             title: Place new Order list - OTOCO (TRADE) Response
             description: Receive response from orderList.place.otoco
@@ -212,142 +348,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderListPlaceOtocoSend:
-            name: Place new Order list - OTOCO (TRADE) Request
-            title: Place new Order list - OTOCO (TRADE) Request
-            description: Send a orderList.place.otoco request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: "1712544408508"
-                    method:
-                        type: string
-                        description: method property
-                        example: orderList.place.otoco
-                        enum:
-                            - orderList.place.otoco
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            listClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId, pendingAboveClientOrderId, and the pendingBelowClientOrderId.
-                            newOrderRespType:
-                                type: string
-                                description: 'Format of the JSON response. Supported values: Order Response Type'
-                            pendingAboveClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the pending above order. Automatically generated if not sent.
-                            pendingAboveIcebergQty:
-                                type: string
-                                description: This can only be used if pendingAboveTimeInForce is GTC or if pendingAboveType is LIMIT_MAKER.
-                            pendingAbovePrice:
-                                type: string
-                                description: Can be used if pendingAboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                            pendingAboveStopPrice:
-                                type: string
-                                description: Can be used if pendingAboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT
-                            pendingAboveStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the pending above order within an order strategy.
-                            pendingAboveStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the pending above order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                            pendingAboveTimeInForce:
-                                type: string
-                            pendingAboveTrailingDelta:
-                                type: string
-                                description: See Trailing Stop FAQ
-                            pendingAboveType:
-                                type: string
-                                description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
-                            pendingBelowClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the pending below order. Automatically generated if not sent.
-                            pendingBelowIcebergQty:
-                                type: string
-                                description: This can only be used if pendingBelowTimeInForce is GTC, or if pendingBelowType is LIMIT_MAKER.
-                            pendingBelowPrice:
-                                type: string
-                                description: Can be used if pendingBelowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT to specify the limit price.
-                            pendingBelowStopPrice:
-                                type: string
-                                description: Can be used if pendingBelowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either pendingBelowStopPrice or pendingBelowTrailingDelta or both, must be specified.
-                            pendingBelowStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the pending below order within an order strategy.
-                            pendingBelowStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the pending below order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                            pendingBelowTimeInForce:
-                                type: string
-                                description: 'Supported values: Time In Force'
-                            pendingBelowTrailingDelta:
-                                type: string
-                            pendingBelowType:
-                                type: string
-                                description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
-                            pendingQuantity:
-                                type: string
-                            pendingSide:
-                                type: string
-                                description: 'Supported values: Order Side'
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000.
-                            selfTradePreventionMode:
-                                type: string
-                                description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                            workingClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
-                            workingIcebergQty:
-                                type: string
-                                description: This can only be used if workingTimeInForce is GTC.
-                            workingPrice:
-                                type: string
-                            workingQuantity:
-                                type: string
-                            workingSide:
-                                type: string
-                                description: 'Supported values: Order Side'
-                            workingStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the working order within an order strategy.
-                            workingStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                            workingTimeInForce:
-                                type: string
-                                description: 'Supported values: Time In Force'
-                            workingType:
-                                type: string
-                                description: 'Supported values: LIMIT, LIMIT_MAKER'
-                        required:
-                            - symbol
-                            - workingType
-                            - workingSide
-                            - workingPrice
-                            - workingQuantity
-                            - pendingSide
-                            - pendingQuantity
-                            - pendingAboveType
-                            - timestamp
-                            - signature
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

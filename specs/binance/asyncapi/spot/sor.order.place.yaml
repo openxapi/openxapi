@@ -11,10 +11,10 @@ channels:
             This adds 1 order to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
             Read SOR FAQ to learn more.
         messages:
-            sorOrderPlaceReceive:
-                $ref: '#/components/messages/sorOrderPlaceReceive'
-            sorOrderPlaceSend:
-                $ref: '#/components/messages/sorOrderPlaceSend'
+            sorOrderPlaceRequest:
+                $ref: '#/components/messages/sorOrderPlaceRequest'
+            sorOrderPlaceResponse:
+                $ref: '#/components/messages/sorOrderPlaceResponse'
 operations:
     receiveSorOrderPlace:
         title: Receive from sor.order.place
@@ -23,7 +23,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/sorOrderPlaceReceive'
+            - $ref: '#/channels/spot/messages/sorOrderPlaceResponse'
     sendSorOrderPlace:
         title: Send to sor.order.place
         description: Send a sor.order.place request
@@ -31,10 +31,84 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/sorOrderPlaceSend'
+            - $ref: '#/channels/spot/messages/sorOrderPlaceRequest'
 components:
     messages:
-        sorOrderPlaceReceive:
+        sorOrderPlaceRequest:
+            name: Place new order using SOR (TRADE) Request
+            title: Place new order using SOR (TRADE) Request
+            description: Send a sor.order.place request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
+                    method:
+                        type: string
+                        description: method property
+                        example: sor.order.place
+                        enum:
+                            - sor.order.place
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            icebergQty:
+                                type: string
+                            newClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders. Automatically generated if not sent
+                            newOrderRespType:
+                                type: string
+                                description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default.'
+                            price:
+                                type: string
+                                description: Applicable only to LIMIT order type
+                            quantity:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            selfTradePreventionMode:
+                                type: string
+                                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
+                            side:
+                                type: string
+                                description: BUY or SELL
+                            signature:
+                                type: string
+                            strategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the order within an order strategy.
+                            strategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
+                            symbol:
+                                type: string
+                            timeInForce:
+                                type: string
+                                description: Applicable only to LIMIT order type
+                            timestamp:
+                                type: string
+                            type:
+                                type: string
+                        required:
+                            - symbol
+                            - side
+                            - type
+                            - quantity
+                            - apiKey
+                            - timestamp
+                            - signature
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sorOrderPlaceResponse:
             name: Place new order using SOR (TRADE) Response
             title: Place new order using SOR (TRADE) Response
             description: Receive response from sor.order.place
@@ -197,80 +271,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        sorOrderPlaceSend:
-            name: Place new order using SOR (TRADE) Request
-            title: Place new order using SOR (TRADE) Request
-            description: Send a sor.order.place request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
-                    method:
-                        type: string
-                        description: method property
-                        example: sor.order.place
-                        enum:
-                            - sor.order.place
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            icebergQty:
-                                type: string
-                            newClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                            newOrderRespType:
-                                type: string
-                                description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default.'
-                            price:
-                                type: string
-                                description: Applicable only to LIMIT order type
-                            quantity:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            selfTradePreventionMode:
-                                type: string
-                                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
-                            side:
-                                type: string
-                                description: BUY or SELL
-                            signature:
-                                type: string
-                            strategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the order within an order strategy.
-                            strategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                            symbol:
-                                type: string
-                            timeInForce:
-                                type: string
-                                description: Applicable only to LIMIT order type
-                            timestamp:
-                                type: string
-                            type:
-                                type: string
-                        required:
-                            - symbol
-                            - side
-                            - type
-                            - quantity
-                            - apiKey
-                            - timestamp
-                            - signature
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

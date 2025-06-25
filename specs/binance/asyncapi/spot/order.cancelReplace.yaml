@@ -10,10 +10,10 @@ channels:
             Cancel an existing order and immediately place a new order instead of the canceled one.
             A new order that was not attempted (i.e. when newOrderResult: NOT_ATTEMPTED), will still increase the unfilled order count by 1.
         messages:
-            orderCancelreplaceReceive:
-                $ref: '#/components/messages/orderCancelreplaceReceive'
-            orderCancelreplaceSend:
-                $ref: '#/components/messages/orderCancelreplaceSend'
+            orderCancelreplaceRequest:
+                $ref: '#/components/messages/orderCancelreplaceRequest'
+            orderCancelreplaceResponse:
+                $ref: '#/components/messages/orderCancelreplaceResponse'
 operations:
     receiveOrderCancelreplace:
         title: Receive from order.cancelReplace
@@ -22,7 +22,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderCancelreplaceReceive'
+            - $ref: '#/channels/spot/messages/orderCancelreplaceResponse'
     sendOrderCancelreplace:
         title: Send to order.cancelReplace
         description: Send a order.cancelReplace request
@@ -30,10 +30,112 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderCancelreplaceSend'
+            - $ref: '#/channels/spot/messages/orderCancelreplaceRequest'
 components:
     messages:
-        orderCancelreplaceReceive:
+        orderCancelreplaceRequest:
+            name: Cancel and replace order (TRADE) Request
+            title: Cancel and replace order (TRADE) Request
+            description: Send a order.cancelReplace request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 99de1036-b5e2-4e0f-9b5c-13d751c93a1a
+                    method:
+                        type: string
+                        description: method property
+                        example: order.cancelReplace
+                        enum:
+                            - order.cancelReplace
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            cancelNewClientOrderId:
+                                type: string
+                                description: New ID for the canceled order. Automatically generated if not sent
+                            cancelOrderId:
+                                type: integer
+                                format: int64
+                                description: Cancel order by orderId
+                            cancelOrigClientOrderId:
+                                type: string
+                                description: Cancel order by clientOrderId
+                            cancelReplaceMode:
+                                type: string
+                            cancelRestrictions:
+                                type: string
+                                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED. For more information please refer to Regarding cancelRestrictions.'
+                            icebergQty:
+                                type: string
+                            newClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders. Automatically generated if not sent
+                            newOrderRespType:
+                                type: string
+                                description: "Select response format: ACK, RESULT, FULL.\n            \n                MARKET and LIMIT orders produce FULL response by default,\n                other order types default to ACK."
+                            orderRateLimitExceededMode:
+                                type: string
+                                description: 'Supported values:  DO_NOTHING (default)- will only attempt to cancel the order if account has not exceeded the unfilled order rate limit CANCEL_ONLY - will always cancel the order.'
+                            price:
+                                type: string
+                            quantity:
+                                type: string
+                            quoteOrderQty:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            selfTradePreventionMode:
+                                type: string
+                                description: |-
+                                    The allowed enums is dependent on what is configured on the symbol.
+                                                Supported values: STP Modes.
+                            side:
+                                type: string
+                                description: BUY or SELL
+                            signature:
+                                type: string
+                            stopPrice:
+                                type: string
+                            strategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the order within an order strategy.
+                            strategyType:
+                                type: integer
+                                description: |-
+                                    Arbitrary numeric value identifying the order strategy.
+                                                Values smaller than 1000000 are reserved and cannot be used.
+                            symbol:
+                                type: string
+                            timeInForce:
+                                type: string
+                            timestamp:
+                                type: string
+                            trailingDelta:
+                                type: string
+                                description: See Trailing Stop order FAQ
+                            type:
+                                type: string
+                        required:
+                            - symbol
+                            - cancelReplaceMode
+                            - cancelOrderId
+                            - side
+                            - type
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderCancelreplaceResponse:
             name: Cancel and replace order (TRADE) Response
             title: Cancel and replace order (TRADE) Response
             description: Receive response from order.cancelReplace
@@ -226,108 +328,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderCancelreplaceSend:
-            name: Cancel and replace order (TRADE) Request
-            title: Cancel and replace order (TRADE) Request
-            description: Send a order.cancelReplace request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 99de1036-b5e2-4e0f-9b5c-13d751c93a1a
-                    method:
-                        type: string
-                        description: method property
-                        example: order.cancelReplace
-                        enum:
-                            - order.cancelReplace
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            cancelNewClientOrderId:
-                                type: string
-                                description: New ID for the canceled order. Automatically generated if not sent
-                            cancelOrderId:
-                                type: integer
-                                format: int64
-                                description: Cancel order by orderId
-                            cancelOrigClientOrderId:
-                                type: string
-                                description: Cancel order by clientOrderId
-                            cancelReplaceMode:
-                                type: string
-                            cancelRestrictions:
-                                type: string
-                                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED. For more information please refer to Regarding cancelRestrictions.'
-                            icebergQty:
-                                type: string
-                            newClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                            newOrderRespType:
-                                type: string
-                                description: "Select response format: ACK, RESULT, FULL.\n            \n                MARKET and LIMIT orders produce FULL response by default,\n                other order types default to ACK."
-                            orderRateLimitExceededMode:
-                                type: string
-                                description: 'Supported values:  DO_NOTHING (default)- will only attempt to cancel the order if account has not exceeded the unfilled order rate limit CANCEL_ONLY - will always cancel the order.'
-                            price:
-                                type: string
-                            quantity:
-                                type: string
-                            quoteOrderQty:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            selfTradePreventionMode:
-                                type: string
-                                description: |-
-                                    The allowed enums is dependent on what is configured on the symbol.
-                                                Supported values: STP Modes.
-                            side:
-                                type: string
-                                description: BUY or SELL
-                            signature:
-                                type: string
-                            stopPrice:
-                                type: string
-                            strategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the order within an order strategy.
-                            strategyType:
-                                type: integer
-                                description: |-
-                                    Arbitrary numeric value identifying the order strategy.
-                                                Values smaller than 1000000 are reserved and cannot be used.
-                            symbol:
-                                type: string
-                            timeInForce:
-                                type: string
-                            timestamp:
-                                type: string
-                            trailingDelta:
-                                type: string
-                                description: See Trailing Stop order FAQ
-                            type:
-                                type: string
-                        required:
-                            - symbol
-                            - cancelReplaceMode
-                            - cancelOrderId
-                            - side
-                            - type
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

@@ -121,8 +121,8 @@ func (p *DocumentParser) parseChannelFromSection(section *goquery.Selection, url
 		Protected:   p.isProtectedChannel(name, protectedMethods),
 	}
 
-	// Add basic send/receive messages for OKX format
-	channel.Messages["send"] = &parser.Message{
+	// Add basic request/response messages for OKX format
+	channel.Messages["request"] = &parser.Message{
 		Title:       "Subscribe",
 		Description: fmt.Sprintf("Subscribe to %s", channel.Name),
 		Payload: &parser.Schema{
@@ -154,7 +154,7 @@ func (p *DocumentParser) parseChannelFromSection(section *goquery.Selection, url
 		},
 	}
 
-	channel.Messages["receive"] = &parser.Message{
+	channel.Messages["response"] = &parser.Message{
 		Title:       "Channel Data",
 		Description: fmt.Sprintf("Receive data from %s", channel.Name),
 		Payload: &parser.Schema{

@@ -12,10 +12,10 @@ channels:
             - userDataStream.start request
             - executionReport user data stream event
         messages:
-            openOrdersStatusReceive:
-                $ref: '#/components/messages/openOrdersStatusReceive'
-            openOrdersStatusSend:
-                $ref: '#/components/messages/openOrdersStatusSend'
+            openOrdersStatusRequest:
+                $ref: '#/components/messages/openOrdersStatusRequest'
+            openOrdersStatusResponse:
+                $ref: '#/components/messages/openOrdersStatusResponse'
 operations:
     receiveOpenordersStatus:
         title: Receive from openOrders.status
@@ -24,7 +24,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/openOrdersStatusReceive'
+            - $ref: '#/channels/spot/messages/openOrdersStatusResponse'
     sendOpenordersStatus:
         title: Send to openOrders.status
         description: Send a openOrders.status request
@@ -32,10 +32,51 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/openOrdersStatusSend'
+            - $ref: '#/channels/spot/messages/openOrdersStatusRequest'
 components:
     messages:
-        openOrdersStatusReceive:
+        openOrdersStatusRequest:
+            name: Current open orders (USER_DATA) Request
+            title: Current open orders (USER_DATA) Request
+            description: Send a openOrders.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 55f07876-4f6f-4c47-87dc-43e5fff3f2e7
+                    method:
+                        type: string
+                        description: method property
+                        example: openOrders.status
+                        enum:
+                            - openOrders.status
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            symbol:
+                                type: string
+                                description: If omitted, open orders for all symbols are returned
+                            timestamp:
+                                type: string
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        openOrdersStatusResponse:
             name: Current open orders (USER_DATA) Response
             title: Current open orders (USER_DATA) Response
             description: Receive response from openOrders.status
@@ -170,47 +211,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        openOrdersStatusSend:
-            name: Current open orders (USER_DATA) Request
-            title: Current open orders (USER_DATA) Request
-            description: Send a openOrders.status request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 55f07876-4f6f-4c47-87dc-43e5fff3f2e7
-                    method:
-                        type: string
-                        description: method property
-                        example: openOrders.status
-                        enum:
-                            - openOrders.status
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                                description: If omitted, open orders for all symbols are returned
-                            timestamp:
-                                type: string
-                        required:
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

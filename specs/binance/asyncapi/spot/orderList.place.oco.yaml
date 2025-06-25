@@ -24,10 +24,10 @@ channels:
             TAKE_PROFIT stopPrice > Last Traded Price > STOP_LOSS/STOP_LOSS_LIMIT stopPrice
             - OCOs add 2 orders to the EXCHANGE_MAX_ORDERS filter and MAX_NUM_ORDERS filter.
         messages:
-            orderListPlaceOcoReceive:
-                $ref: '#/components/messages/orderListPlaceOcoReceive'
-            orderListPlaceOcoSend:
-                $ref: '#/components/messages/orderListPlaceOcoSend'
+            orderListPlaceOcoRequest:
+                $ref: '#/components/messages/orderListPlaceOcoRequest'
+            orderListPlaceOcoResponse:
+                $ref: '#/components/messages/orderListPlaceOcoResponse'
 operations:
     receiveOrderlistPlaceOco:
         title: Receive from orderList.place.oco
@@ -36,7 +36,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOcoReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceOcoResponse'
     sendOrderlistPlaceOco:
         title: Send to orderList.place.oco
         description: Send a orderList.place.oco request
@@ -44,10 +44,123 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOcoSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceOcoRequest'
 components:
     messages:
-        orderListPlaceOcoReceive:
+        orderListPlaceOcoRequest:
+            name: Place new Order list - OCO (TRADE) Request
+            title: Place new Order list - OCO (TRADE) Request
+            description: Send a orderList.place.oco request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 56374a46-3261-486b-a211-99ed972eb648
+                    method:
+                        type: string
+                        description: method property
+                        example: orderList.place.oco
+                        enum:
+                            - orderList.place.oco
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            aboveClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders for the above order. Automatically generated if not sent
+                            aboveIcebergQty:
+                                type: string
+                                description: Note that this can only be used if aboveTimeInForce is GTC.
+                            abovePrice:
+                                type: string
+                                description: Can be used if aboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
+                            aboveStopPrice:
+                                type: string
+                                description: Can be used if aboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT. Either aboveStopPrice or aboveTrailingDelta or both, must be specified.
+                            aboveStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the above order within an order strategy.
+                            aboveStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the above order strategy. Values smaller than 1000000 are reserved and cannot be used.
+                            aboveTimeInForce:
+                                type: string
+                                description: Required if aboveType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT.
+                            aboveTrailingDelta:
+                                type: string
+                                description: See Trailing Stop order FAQ.
+                            aboveType:
+                                type: string
+                                description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
+                            apiKey:
+                                type: string
+                            belowClientOrderId:
+                                type: string
+                            belowIcebergQty:
+                                type: string
+                                description: Note that this can only be used if belowTimeInForce is GTC.
+                            belowPrice:
+                                type: string
+                                description: Can be used if belowType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
+                            belowStopPrice:
+                                type: string
+                                description: Can be used if belowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either belowStopPrice or belowTrailingDelta or both, must be specified.
+                            belowStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the below order within an order strategy.
+                            belowStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the below order strategy. Values smaller than 1000000 are reserved and cannot be used.
+                            belowTimeInForce:
+                                type: string
+                                description: Required if belowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT
+                            belowTrailingDelta:
+                                type: string
+                                description: See Trailing Stop order FAQ.
+                            belowType:
+                                type: string
+                                description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
+                            listClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent.  A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the aboveClientOrderId and the belowCLientOrderId.
+                            newOrderRespType:
+                                type: string
+                                description: 'Select response format: ACK, RESULT, FULL'
+                            quantity:
+                                type: string
+                                description: Quantity for both orders of the order list.
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000.
+                            selfTradePreventionMode:
+                                type: string
+                                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
+                            side:
+                                type: string
+                                description: BUY or SELL
+                            signature:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - side
+                            - quantity
+                            - aboveType
+                            - belowType
+                            - apiKey
+                            - timestamp
+                            - signature
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderListPlaceOcoResponse:
             name: Place new Order list - OCO (TRADE) Response
             title: Place new Order list - OCO (TRADE) Response
             description: Receive response from orderList.place.oco
@@ -223,119 +336,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderListPlaceOcoSend:
-            name: Place new Order list - OCO (TRADE) Request
-            title: Place new Order list - OCO (TRADE) Request
-            description: Send a orderList.place.oco request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 56374a46-3261-486b-a211-99ed972eb648
-                    method:
-                        type: string
-                        description: method property
-                        example: orderList.place.oco
-                        enum:
-                            - orderList.place.oco
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            aboveClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the above order. Automatically generated if not sent
-                            aboveIcebergQty:
-                                type: string
-                                description: Note that this can only be used if aboveTimeInForce is GTC.
-                            abovePrice:
-                                type: string
-                                description: Can be used if aboveType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                            aboveStopPrice:
-                                type: string
-                                description: Can be used if aboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT. Either aboveStopPrice or aboveTrailingDelta or both, must be specified.
-                            aboveStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the above order within an order strategy.
-                            aboveStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the above order strategy. Values smaller than 1000000 are reserved and cannot be used.
-                            aboveTimeInForce:
-                                type: string
-                                description: Required if aboveType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT.
-                            aboveTrailingDelta:
-                                type: string
-                                description: See Trailing Stop order FAQ.
-                            aboveType:
-                                type: string
-                                description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
-                            apiKey:
-                                type: string
-                            belowClientOrderId:
-                                type: string
-                            belowIcebergQty:
-                                type: string
-                                description: Note that this can only be used if belowTimeInForce is GTC.
-                            belowPrice:
-                                type: string
-                                description: Can be used if belowType is STOP_LOSS_LIMIT , LIMIT_MAKER, or TAKE_PROFIT_LIMIT to specify the limit price.
-                            belowStopPrice:
-                                type: string
-                                description: Can be used if belowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either belowStopPrice or belowTrailingDelta or both, must be specified.
-                            belowStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the below order within an order strategy.
-                            belowStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the below order strategy. Values smaller than 1000000 are reserved and cannot be used.
-                            belowTimeInForce:
-                                type: string
-                                description: Required if belowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT
-                            belowTrailingDelta:
-                                type: string
-                                description: See Trailing Stop order FAQ.
-                            belowType:
-                                type: string
-                                description: 'Supported values: STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT,TAKE_PROFIT_LIMIT'
-                            listClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent.  A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the aboveClientOrderId and the belowCLientOrderId.
-                            newOrderRespType:
-                                type: string
-                                description: 'Select response format: ACK, RESULT, FULL'
-                            quantity:
-                                type: string
-                                description: Quantity for both orders of the order list.
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000.
-                            selfTradePreventionMode:
-                                type: string
-                                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
-                            side:
-                                type: string
-                                description: BUY or SELL
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - side
-                            - quantity
-                            - aboveType
-                            - belowType
-                            - apiKey
-                            - timestamp
-                            - signature
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

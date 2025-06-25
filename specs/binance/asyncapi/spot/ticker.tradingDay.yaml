@@ -15,10 +15,10 @@ channels:
             Hours and minutes (e.g. -1:00, 05:45)
             Only hours (e.g. 0, 8, 4)
         messages:
-            tickerTradingdayReceive:
-                $ref: '#/components/messages/tickerTradingdayReceive'
-            tickerTradingdaySend:
-                $ref: '#/components/messages/tickerTradingdaySend'
+            tickerTradingdayRequest:
+                $ref: '#/components/messages/tickerTradingdayRequest'
+            tickerTradingdayResponse:
+                $ref: '#/components/messages/tickerTradingdayResponse'
 operations:
     receiveTickerTradingday:
         title: Receive from ticker.tradingDay
@@ -27,7 +27,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerTradingdayReceive'
+            - $ref: '#/channels/spot/messages/tickerTradingdayResponse'
     sendTickerTradingday:
         title: Send to ticker.tradingDay
         description: Send a ticker.tradingDay request
@@ -35,10 +35,55 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerTradingdaySend'
+            - $ref: '#/channels/spot/messages/tickerTradingdayRequest'
 components:
     messages:
-        tickerTradingdayReceive:
+        tickerTradingdayRequest:
+            name: Trading Day Ticker Request
+            title: Trading Day Ticker Request
+            description: Send a ticker.tradingDay request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
+                    method:
+                        type: string
+                        description: method property
+                        example: ticker.tradingDay
+                        enum:
+                            - ticker.tradingDay
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+                                description: Query ticker of a single symbol
+                            symbols:
+                                type: array
+                                description: Query ticker for multiple symbols
+                                items:
+                                    type: string
+                                    description: array item
+                            timeZone:
+                                type: string
+                                description: 'Default: 0 (UTC)'
+                            type:
+                                type: string
+                                description: 'Supported values: FULL or MINI. If none provided, the default is FULL'
+                        required:
+                            - symbol
+                            - symbols
+                            - timeZone
+                            - type
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tickerTradingdayResponse:
             name: Trading Day Ticker Response
             title: Trading Day Ticker Response
             description: Receive response from ticker.tradingDay
@@ -149,51 +194,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        tickerTradingdaySend:
-            name: Trading Day Ticker Request
-            title: Trading Day Ticker Request
-            description: Send a ticker.tradingDay request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
-                    method:
-                        type: string
-                        description: method property
-                        example: ticker.tradingDay
-                        enum:
-                            - ticker.tradingDay
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                                description: Query ticker of a single symbol
-                            symbols:
-                                type: array
-                                description: Query ticker for multiple symbols
-                                items:
-                                    type: string
-                                    description: array item
-                            timeZone:
-                                type: string
-                                description: 'Default: 0 (UTC)'
-                            type:
-                                type: string
-                                description: 'Supported values: FULL or MINI. If none provided, the default is FULL'
-                        required:
-                            - symbol
-                            - symbols
-                            - timeZone
-                            - type
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

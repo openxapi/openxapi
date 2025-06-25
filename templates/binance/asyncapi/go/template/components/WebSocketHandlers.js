@@ -10,7 +10,7 @@ export function WebSocketHandlers({ asyncapi }) {
   // Generate handlers for send operations (request methods)
   operations.forEach((operation) => {
     if (operation.action() === 'send') {
-      handlers += generateTypedRequestMethod(operation);
+      handlers += generateTypedRequestMethod(operation, asyncapi);
       handlers += '\n';
     }
   });
@@ -49,7 +49,7 @@ function generateEventHandlers(asyncapi) {
                                        messageId.includes('externalLockUpdate'));
       
       if (isEventMessage) {
-        eventHandlers += generateEventHandler(message, channel);
+        eventHandlers += generateEventHandler(message, asyncapi);
         eventHandlers += '\n';
       }
     });
@@ -61,7 +61,7 @@ function generateEventHandlers(asyncapi) {
 /*
  * Generate event handler for a specific event message
  */
-function generateEventHandler(message, channel) {
+function generateEventHandler(message, asyncapi) {
   const messageName = message.name() || message.id();
   const messageId = message.id();
   const eventName = capitalizeFirst(messageId || messageName);
@@ -118,7 +118,7 @@ function generateEventHandler(message, channel) {
 /*
  * Generate a typed request method for an operation that sends messages
  */
-function generateTypedRequestMethod(operation) {
+function generateTypedRequestMethod(operation, asyncapi) {
   const operationId = operation.id();
   // Clean the method name - remove 'send' prefix if present
   const cleanedOperationId = operationId.replace(/^send/, '');
@@ -131,20 +131,77 @@ function generateTypedRequestMethod(operation) {
   let sendMessage = null;
   let receiveMessage = null;
   
-  // Find send and receive messages
+  // Find send message in current operation
   messages.forEach((message) => {
     const messageName = message.name() || message.id();
     const messageId = message.id();
     
-    if (messageId.includes('Send') || messageName.includes('Request')) {
+    if (messageId.includes('Request') || messageName.includes('Request')) {
       sendMessage = message;
-    } else if (messageId.includes('Receive') || messageName.includes('Response')) {
-      receiveMessage = message;
     }
   });
   
+  // Find corresponding receive operation and response message
+  // Look for operations with matching base name but 'receive' action
+  if (asyncapi && asyncapi.operations) {
+    const allOperations = asyncapi.operations();
+    const expectedReceiveOperationId = `receive${capitalizeFirst(cleanedOperationId)}`;
+    
+    allOperations.forEach((op) => {
+      if (op.id() === expectedReceiveOperationId && op.action() === 'receive') {
+        const receiveMessages = op.messages();
+        receiveMessages.forEach((msg) => {
+          const msgName = msg.name() || msg.id();
+          const msgId = msg.id();
+          
+          if (msgId.includes('Response') || msgName.includes('Response')) {
+            receiveMessage = msg;
+          }
+        });
+      }
+    });
+  }
+  
+  // If we still don't have a receive message, try alternative matching strategies
+  if (!receiveMessage && asyncapi && asyncapi.operations) {
+    const allOperations = asyncapi.operations();
+    
+    // Strategy 1: Look for any receive operation that has a response message matching our request
+    allOperations.forEach((op) => {
+      if (op.action() === 'receive' && !receiveMessage) {
+        const receiveMessages = op.messages();
+        receiveMessages.forEach((msg) => {
+          const msgId = msg.id();
+          const msgName = msg.name() || msg.id();
+          
+          // Try to match based on operation name pattern
+          if (sendMessage) {
+            const sendMsgId = sendMessage.id();
+            const expectedResponseId = sendMsgId.replace('Request', 'Response');
+            
+            if (msgId === expectedResponseId || msgName.includes('Response')) {
+              // Additional check: make sure this response is related to our request
+              if (msgId.toLowerCase().includes(cleanedOperationId.toLowerCase()) || 
+                  msgName.toLowerCase().includes(cleanedOperationId.toLowerCase())) {
+                receiveMessage = msg;
+              }
+            }
+          }
+        });
+      }
+    });
+  }
+  
   if (!sendMessage || !sendMessage.payload()) {
     return `// Error: No sendMessage found for ${operationId}\n`;
+  }
+  
+  // Extract the actual method value from the send message payload
+  const actualMethod = extractMethodFromMessage(sendMessage);
+  if (!actualMethod) {
+    // Add debug information to help troubleshoot
+    const debugInfo = getDebugInfoForMessage(sendMessage);
+    return `// Error: No method enum found in sendMessage for ${operationId}\n// Debug: ${debugInfo}\n`;
   }
   
   // Generate struct names based on the actual model naming convention
@@ -154,17 +211,151 @@ function generateTypedRequestMethod(operation) {
   let handler = '';
   
   // Generate basic method that takes request struct and returns response struct
-  handler += generateBasicTypedMethod(methodName, channelAddress, requestStructName, responseStructName, sendMessage);
+  handler += generateBasicTypedMethod(methodName, actualMethod, requestStructName, responseStructName, sendMessage);
   
   // Generate convenience method with individual parameters
-  handler += generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName, sendMessage);
+  handler += generateConvenienceMethod(operation, methodName, actualMethod, requestStructName, responseStructName, sendMessage);
   
   // Generate oneOf handler method if response has oneOf
   if (receiveMessage && hasOneOfInResponse(receiveMessage)) {
-    handler += generateOneOfHandlerMethod(methodName, channelAddress, requestStructName, sendMessage);
+    handler += generateOneOfHandlerMethod(methodName, actualMethod, requestStructName, sendMessage);
   }
 
   return handler;
+}
+
+/*
+ * Extract the actual method value from send message payload
+ */
+function extractMethodFromMessage(sendMessage) {
+  if (!sendMessage || !sendMessage.payload()) {
+    return null;
+  }
+  
+  const payload = sendMessage.payload();
+  
+  // Handle AsyncAPI objects - properties might be a function
+  let properties;
+  if (typeof payload.properties === 'function') {
+    properties = payload.properties();
+  } else {
+    properties = payload.properties;
+  }
+  
+  if (!properties) {
+    return null;
+  }
+  
+  // Handle AsyncAPI Map-like objects for properties
+  let methodProperty;
+  if (typeof properties.all === 'function') {
+    // AsyncAPI Map-like object
+    const allProperties = properties.all();
+    methodProperty = allProperties.method;
+  } else if (properties instanceof Map) {
+    // Map object
+    methodProperty = properties.get('method');
+  } else {
+    // Regular object
+    methodProperty = properties.method;
+  }
+  
+  if (!methodProperty) {
+    return null;
+  }
+  
+  // Extract enum value from method property
+  let enumValues;
+  if (typeof methodProperty.enum === 'function') {
+    enumValues = methodProperty.enum();
+  } else {
+    enumValues = methodProperty.enum;
+  }
+  
+  if (enumValues && Array.isArray(enumValues) && enumValues.length > 0) {
+    // Return the first (and usually only) enum value
+    return enumValues[0];
+  }
+  
+  // Fall back to example if no enum found
+  let example;
+  if (typeof methodProperty.example === 'function') {
+    example = methodProperty.example();
+  } else {
+    example = methodProperty.example;
+  }
+  
+  if (example) {
+    return example;
+  }
+  
+  return null;
+}
+
+/*
+ * Generate debug information for a message when method extraction fails
+ */
+function getDebugInfoForMessage(message) {
+  const info = [];
+  
+  if (message) {
+    info.push(`message exists: true`);
+    info.push(`message.id(): ${message.id()}`);
+    info.push(`message.name(): ${message.name()}`);
+    
+    const payload = message.payload();
+    if (payload) {
+      info.push(`payload exists: true`);
+      
+      // Check payload properties
+      let properties;
+      if (typeof payload.properties === 'function') {
+        properties = payload.properties();
+        info.push(`properties() function exists: true`);
+      } else if (payload.properties) {
+        properties = payload.properties;
+        info.push(`properties property exists: true`);
+      }
+      
+      if (properties) {
+        info.push(`properties exist: true`);
+        
+        // Check different property access methods
+        if (typeof properties.all === 'function') {
+          const allProps = properties.all();
+          info.push(`properties.all() keys: ${Object.keys(allProps).join(', ')}`);
+          if (allProps.method) {
+            info.push(`method property found via all()`);
+            const methodProp = allProps.method;
+            if (methodProp.enum) {
+              info.push(`method.enum: ${JSON.stringify(methodProp.enum)}`);
+            }
+            if (methodProp.example) {
+              info.push(`method.example: ${methodProp.example}`);
+            }
+          }
+        } else if (properties instanceof Map) {
+          info.push(`properties is Map with keys: ${Array.from(properties.keys()).join(', ')}`);
+          if (properties.has('method')) {
+            info.push(`method found in Map`);
+          }
+        } else {
+          info.push(`properties keys: ${Object.keys(properties).join(', ')}`);
+          if (properties.method) {
+            info.push(`method property found directly`);
+          }
+        }
+      } else {
+        info.push(`properties: null`);
+      }
+    } else {
+      info.push(`payload: null`);
+    }
+  } else {
+    info.push(`message: null`);
+  }
+  
+  return info.join(', ');
 }
 
 /*
@@ -190,11 +381,11 @@ function getModelStructName(channelAddress, messageName) {
 /*
  * Generate basic typed method that takes request struct
  */
-function generateBasicTypedMethod(methodName, channelAddress, requestStructName, responseStructName, sendMessage) {
+function generateBasicTypedMethod(methodName, actualMethod, requestStructName, responseStructName, sendMessage) {
   // Extract authentication type from the send message
   const authType = extractAuthTypeFromMessage(sendMessage);
   
-  let method = `// Send${methodName} sends a ${channelAddress} request using typed request/response structs\n`;
+  let method = `// Send${methodName} sends a ${actualMethod} request using typed request/response structs\n`;
   method += `// Authentication required: ${authType}\n`;
   method += `// If request.Id is empty, a new request ID will be generated automatically\n`;
   // Handle response type - use interface{} if no specific response type
@@ -208,7 +399,7 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   method += `\t\treqID = GenerateRequestID()\n`;
   method += `\t\trequest.Id = reqID\n`;
   method += `\t}\n`;
-  method += `\trequest.Method = "${channelAddress}"\n\n`;
+  method += `\trequest.Method = "${actualMethod}"\n\n`;
   
   method += `\t// Convert struct to map for WebSocket sending\n`;
   method += `\trequestMap, err := structToMap(request)\n`;
@@ -338,7 +529,7 @@ function transformAuthTypeToGoConstant(authType) {
 /*
  * Generate convenience method with individual parameters
  */
-function generateConvenienceMethod(operation, methodName, channelAddress, requestStructName, responseStructName, sendMessage) {
+function generateConvenienceMethod(operation, methodName, actualMethod, requestStructName, responseStructName, sendMessage) {
   // For now, skip convenience methods to keep the generated code simpler
   // They can be added later if needed
   return '';
@@ -347,10 +538,10 @@ function generateConvenienceMethod(operation, methodName, channelAddress, reques
 /*
  * Generate oneOf handler method for responses with oneOf types
  */
-function generateOneOfHandlerMethod(methodName, channelAddress, requestStructName, sendMessage) {
+function generateOneOfHandlerMethod(methodName, actualMethod, requestStructName, sendMessage) {
   const authType = extractAuthTypeFromMessage(sendMessage);
   
-  let method = `// Send${methodName}WithOneOfHandler sends a ${channelAddress} request with oneOf response handling\n`;
+  let method = `// Send${methodName}WithOneOfHandler sends a ${actualMethod} request with oneOf response handling\n`;
   method += `// Authentication required: ${authType}\n`;
   method += `// The handler will receive the response as interface{} for custom type handling\n`;
   method += `func (c *Client) Send${methodName}WithOneOfHandler(ctx context.Context, request *models.${requestStructName}, responseHandler func(interface{}, error) error) error {\n`;
@@ -362,7 +553,7 @@ function generateOneOfHandlerMethod(methodName, channelAddress, requestStructNam
   method += `\t\treqID = GenerateRequestID()\n`;
   method += `\t\trequest.Id = reqID\n`;
   method += `\t}\n`;
-  method += `\trequest.Method = "${channelAddress}"\n\n`;
+  method += `\trequest.Method = "${actualMethod}"\n\n`;
   
   method += `\t// Convert struct to map for WebSocket sending\n`;
   method += `\trequestMap, err := structToMap(request)\n`;
@@ -496,7 +687,7 @@ function generateUserDataStreamConvenienceMethods() {
   methods += `// SubscribeToUserDataStream subscribes to user data stream events\n`;
   methods += `// This is a convenience method that handles listen key management automatically\n`;
   methods += `func (c *Client) SubscribeToUserDataStream(ctx context.Context, listenKey string) error {\n`;
-  methods += `\trequest := &models.UserDataStreamSubscribeSend{\n`;
+  methods += `\trequest := &models.UserDataStreamSubscribeRequest{\n`;
   methods += `\t\tId:     GenerateRequestID(),\n`;
   methods += `\t\tMethod: "userDataStream.subscribe",\n`;
   methods += `\t}\n`;
@@ -520,7 +711,7 @@ function generateUserDataStreamConvenienceMethods() {
   
   methods += `// UnsubscribeFromUserDataStream unsubscribes from user data stream events\n`;
   methods += `func (c *Client) UnsubscribeFromUserDataStream(ctx context.Context) error {\n`;
-  methods += `\trequest := &models.UserDataStreamUnsubscribeSend{\n`;
+  methods += `\trequest := &models.UserDataStreamUnsubscribeRequest{\n`;
   methods += `\t\tId:     GenerateRequestID(),\n`;
   methods += `\t\tMethod: "userDataStream.unsubscribe",\n`;
   methods += `\t}\n`;

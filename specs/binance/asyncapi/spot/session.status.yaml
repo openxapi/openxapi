@@ -10,10 +10,10 @@ channels:
             Query the status of the WebSocket connection,
             inspecting which API key (if any) is used to authorize requests.
         messages:
-            sessionStatusReceive:
-                $ref: '#/components/messages/sessionStatusReceive'
-            sessionStatusSend:
-                $ref: '#/components/messages/sessionStatusSend'
+            sessionStatusRequest:
+                $ref: '#/components/messages/sessionStatusRequest'
+            sessionStatusResponse:
+                $ref: '#/components/messages/sessionStatusResponse'
 operations:
     receiveSessionStatus:
         title: Receive from session.status
@@ -22,7 +22,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/sessionStatusReceive'
+            - $ref: '#/channels/spot/messages/sessionStatusResponse'
     sendSessionStatus:
         title: Send to session.status
         description: Send a session.status request
@@ -30,10 +30,31 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/sessionStatusSend'
+            - $ref: '#/channels/spot/messages/sessionStatusRequest'
 components:
     messages:
-        sessionStatusReceive:
+        sessionStatusRequest:
+            name: Query session status Request
+            title: Query session status Request
+            description: Send a session.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
+                    method:
+                        type: string
+                        description: method property
+                        example: session.status
+                        enum:
+                            - session.status
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionStatusResponse:
             name: Query session status Response
             title: Query session status Response
             description: Receive response from session.status
@@ -78,27 +99,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        sessionStatusSend:
-            name: Query session status Request
-            title: Query session status Request
-            description: Send a session.status request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
-                    method:
-                        type: string
-                        description: method property
-                        example: session.status
-                        enum:
-                            - session.status
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

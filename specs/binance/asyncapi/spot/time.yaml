@@ -8,10 +8,10 @@ channels:
         title: Channel time
         description: Test connectivity to the WebSocket API and get the current server time.
         messages:
-            timeReceive:
-                $ref: '#/components/messages/timeReceive'
-            timeSend:
-                $ref: '#/components/messages/timeSend'
+            timeRequest:
+                $ref: '#/components/messages/timeRequest'
+            timeResponse:
+                $ref: '#/components/messages/timeResponse'
 operations:
     receiveTime:
         title: Receive from time
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/timeReceive'
+            - $ref: '#/channels/spot/messages/timeResponse'
     sendTime:
         title: Send to time
         description: Send a time request
@@ -28,10 +28,31 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/timeSend'
+            - $ref: '#/channels/spot/messages/timeRequest'
 components:
     messages:
-        timeReceive:
+        timeRequest:
+            name: Check server time Request
+            title: Check server time Request
+            description: Send a time request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 187d3cb2-942d-484c-8271-4e2141bbadb1
+                    method:
+                        type: string
+                        description: method property
+                        example: time
+                        enum:
+                            - time
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        timeResponse:
             name: Check server time Response
             title: Check server time Response
             description: Receive response from time
@@ -83,27 +104,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        timeSend:
-            name: Check server time Request
-            title: Check server time Request
-            description: Send a time request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 187d3cb2-942d-484c-8271-4e2141bbadb1
-                    method:
-                        type: string
-                        description: method property
-                        example: time
-                        enum:
-                            - time
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

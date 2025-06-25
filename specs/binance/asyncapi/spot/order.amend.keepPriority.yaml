@@ -11,10 +11,10 @@ channels:
             This adds 0 orders to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
             Read Order Amend Keep Priority FAQ to learn more.
         messages:
-            orderAmendKeeppriorityReceive:
-                $ref: '#/components/messages/orderAmendKeeppriorityReceive'
-            orderAmendKeepprioritySend:
-                $ref: '#/components/messages/orderAmendKeepprioritySend'
+            orderAmendKeeppriorityRequest:
+                $ref: '#/components/messages/orderAmendKeeppriorityRequest'
+            orderAmendKeeppriorityResponse:
+                $ref: '#/components/messages/orderAmendKeeppriorityResponse'
 operations:
     receiveOrderAmendKeeppriority:
         title: Receive from order.amend.keepPriority
@@ -23,7 +23,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityReceive'
+            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityResponse'
     sendOrderAmendKeeppriority:
         title: Send to order.amend.keepPriority
         description: Send a order.amend.keepPriority request
@@ -31,10 +31,58 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderAmendKeepprioritySend'
+            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityRequest'
 components:
     messages:
-        orderAmendKeeppriorityReceive:
+        orderAmendKeeppriorityRequest:
+            name: Order Amend Keep Priority (TRADE) Request
+            title: Order Amend Keep Priority (TRADE) Request
+            description: Send a order.amend.keepPriority request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 56374a46-3061-486b-a311-89ee972eb648
+                    method:
+                        type: string
+                        description: method property
+                        example: order.amend.keepPriority
+                        enum:
+                            - order.amend.keepPriority
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            newClientOrderId:
+                                type: string
+                                description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
+                            newQty:
+                                type: string
+                                description: newQty must be greater than 0 and less than the order's quantity.
+                            orderId:
+                                type: string
+                                description: orderId or origClientOrderId must be sent
+                            origClientOrderId:
+                                type: string
+                                description: orderId or origClientOrderId must be sent
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000.
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - newQty
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderAmendKeeppriorityResponse:
             name: Order Amend Keep Priority (TRADE) Response
             title: Order Amend Keep Priority (TRADE) Response
             description: Receive response from order.amend.keepPriority
@@ -166,54 +214,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderAmendKeepprioritySend:
-            name: Order Amend Keep Priority (TRADE) Request
-            title: Order Amend Keep Priority (TRADE) Request
-            description: Send a order.amend.keepPriority request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 56374a46-3061-486b-a311-89ee972eb648
-                    method:
-                        type: string
-                        description: method property
-                        example: order.amend.keepPriority
-                        enum:
-                            - order.amend.keepPriority
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            newClientOrderId:
-                                type: string
-                                description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
-                            newQty:
-                                type: string
-                                description: newQty must be greater than 0 and less than the order's quantity.
-                            orderId:
-                                type: string
-                                description: orderId or origClientOrderId must be sent
-                            origClientOrderId:
-                                type: string
-                                description: orderId or origClientOrderId must be sent
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000.
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - newQty
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

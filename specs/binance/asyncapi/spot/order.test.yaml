@@ -13,10 +13,10 @@ channels:
             In addition to all parameters accepted by order.place,
             the following optional parameters are also accepted:
         messages:
-            orderTestReceive:
-                $ref: '#/components/messages/orderTestReceive'
-            orderTestSend:
-                $ref: '#/components/messages/orderTestSend'
+            orderTestRequest:
+                $ref: '#/components/messages/orderTestRequest'
+            orderTestResponse:
+                $ref: '#/components/messages/orderTestResponse'
 operations:
     receiveOrderTest:
         title: Receive from order.test
@@ -25,7 +25,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderTestReceive'
+            - $ref: '#/channels/spot/messages/orderTestResponse'
     sendOrderTest:
         title: Send to order.test
         description: Send a order.test request
@@ -33,59 +33,10 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderTestSend'
+            - $ref: '#/channels/spot/messages/orderTestRequest'
 components:
     messages:
-        orderTestReceive:
-            name: Test new order (TRADE) Response
-            title: Test new order (TRADE) Response
-            description: Receive response from order.test
-            payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 6ffebe91-01d9-43ac-be99-57cf062e0e30
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 1
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderTestSend:
+        orderTestRequest:
             name: Test new order (TRADE) Request
             title: Test new order (TRADE) Request
             description: Send a order.test request
@@ -144,6 +95,55 @@ components:
                                 type: string
                                 description: type property
                                 example: LIMIT
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderTestResponse:
+            name: Test new order (TRADE) Response
+            title: Test new order (TRADE) Response
+            description: Receive response from order.test
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 6ffebe91-01d9-43ac-be99-57cf062e0e30
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 1
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

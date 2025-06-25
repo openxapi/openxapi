@@ -8,10 +8,10 @@ channels:
         title: Channel exchangeInfo
         description: Query current exchange trading rules, rate limits, and symbol information.
         messages:
-            exchangeInfoReceive:
-                $ref: '#/components/messages/exchangeInfoReceive'
-            exchangeInfoSend:
-                $ref: '#/components/messages/exchangeInfoSend'
+            exchangeInfoRequest:
+                $ref: '#/components/messages/exchangeInfoRequest'
+            exchangeInfoResponse:
+                $ref: '#/components/messages/exchangeInfoResponse'
 operations:
     receiveExchangeinfo:
         title: Receive from exchangeInfo
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/exchangeInfoReceive'
+            - $ref: '#/channels/spot/messages/exchangeInfoResponse'
     sendExchangeinfo:
         title: Send to exchangeInfo
         description: Send a exchangeInfo request
@@ -28,10 +28,56 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/exchangeInfoSend'
+            - $ref: '#/channels/spot/messages/exchangeInfoRequest'
 components:
     messages:
-        exchangeInfoReceive:
+        exchangeInfoRequest:
+            name: Exchange information Request
+            title: Exchange information Request
+            description: Send a exchangeInfo request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 5494febb-d167-46a2-996d-70533eb4d976
+                    method:
+                        type: string
+                        description: method property
+                        example: exchangeInfo
+                        enum:
+                            - exchangeInfo
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            permissions:
+                                type: array
+                                description: Filter symbols by permissions
+                                items:
+                                    type: string
+                                    description: array item
+                            showPermissionSets:
+                                type: boolean
+                                description: Controls whether the content of the permissionSets field is populated or not. Defaults to true.
+                            symbol:
+                                type: string
+                                description: Describe a single symbol
+                            symbolStatus:
+                                type: string
+                                description: 'Filters symbols that have this tradingStatus. Valid values: TRADING, HALT, BREAK  Cannot be used in combination with symbol or symbols'
+                            symbols:
+                                type: array
+                                description: Describe multiple symbols
+                                items:
+                                    type: string
+                                    description: array item
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        exchangeInfoResponse:
             name: Exchange information Response
             title: Exchange information Response
             description: Receive response from exchangeInfo
@@ -268,52 +314,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        exchangeInfoSend:
-            name: Exchange information Request
-            title: Exchange information Request
-            description: Send a exchangeInfo request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 5494febb-d167-46a2-996d-70533eb4d976
-                    method:
-                        type: string
-                        description: method property
-                        example: exchangeInfo
-                        enum:
-                            - exchangeInfo
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            permissions:
-                                type: array
-                                description: Filter symbols by permissions
-                                items:
-                                    type: string
-                                    description: array item
-                            showPermissionSets:
-                                type: boolean
-                                description: Controls whether the content of the permissionSets field is populated or not. Defaults to true.
-                            symbol:
-                                type: string
-                                description: Describe a single symbol
-                            symbolStatus:
-                                type: string
-                                description: 'Filters symbols that have this tradingStatus. Valid values: TRADING, HALT, BREAK  Cannot be used in combination with symbol or symbols'
-                            symbols:
-                                type: array
-                                description: Describe multiple symbols
-                                items:
-                                    type: string
-                                    description: array item
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

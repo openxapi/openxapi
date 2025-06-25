@@ -14,10 +14,10 @@ channels:
             - <symbol>@depth
             You can use depth request together with <symbol>@depth streams to maintain a local order book.
         messages:
-            depthReceive:
-                $ref: '#/components/messages/depthReceive'
-            depthSend:
-                $ref: '#/components/messages/depthSend'
+            depthRequest:
+                $ref: '#/components/messages/depthRequest'
+            depthResponse:
+                $ref: '#/components/messages/depthResponse'
 operations:
     receiveDepth:
         title: Receive from depth
@@ -26,7 +26,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/depthReceive'
+            - $ref: '#/channels/spot/messages/depthResponse'
     sendDepth:
         title: Send to depth
         description: Send a depth request
@@ -34,10 +34,42 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/depthSend'
+            - $ref: '#/channels/spot/messages/depthRequest'
 components:
     messages:
-        depthReceive:
+        depthRequest:
+            name: Order book Request
+            title: Order book Request
+            description: Send a depth request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 51e2affb-0aba-4821-ba75-f2625006eb43
+                    method:
+                        type: string
+                        description: method property
+                        example: depth
+                        enum:
+                            - depth
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            limit:
+                                type: integer
+                                description: 'Default: 100; Maximum: 5000'
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        depthResponse:
             name: Order book Response
             title: Order book Response
             description: Receive response from depth
@@ -109,38 +141,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        depthSend:
-            name: Order book Request
-            title: Order book Request
-            description: Send a depth request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 51e2affb-0aba-4821-ba75-f2625006eb43
-                    method:
-                        type: string
-                        description: method property
-                        example: depth
-                        enum:
-                            - depth
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            limit:
-                                type: integer
-                                description: 'Default: 100; Maximum: 5000'
-                            symbol:
-                                type: string
-                        required:
-                            - symbol
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

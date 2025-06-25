@@ -13,10 +13,10 @@ channels:
             You can continue using the connection,
             but now you will have to explicitly provide the apiKey and signature parameters where needed.
         messages:
-            sessionLogoutReceive:
-                $ref: '#/components/messages/sessionLogoutReceive'
-            sessionLogoutSend:
-                $ref: '#/components/messages/sessionLogoutSend'
+            sessionLogoutRequest:
+                $ref: '#/components/messages/sessionLogoutRequest'
+            sessionLogoutResponse:
+                $ref: '#/components/messages/sessionLogoutResponse'
 operations:
     receiveSessionLogout:
         title: Receive from session.logout
@@ -25,7 +25,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/sessionLogoutReceive'
+            - $ref: '#/channels/spot/messages/sessionLogoutResponse'
     sendSessionLogout:
         title: Send to session.logout
         description: Send a session.logout request
@@ -33,10 +33,31 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/sessionLogoutSend'
+            - $ref: '#/channels/spot/messages/sessionLogoutRequest'
 components:
     messages:
-        sessionLogoutReceive:
+        sessionLogoutRequest:
+            name: Log out of the session Request
+            title: Log out of the session Request
+            description: Send a session.logout request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: c174a2b1-3f51-4580-b200-8528bd237cb7
+                    method:
+                        type: string
+                        description: method property
+                        example: session.logout
+                        enum:
+                            - session.logout
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionLogoutResponse:
             name: Log out of the session Response
             title: Log out of the session Response
             description: Receive response from session.logout
@@ -79,27 +100,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        sessionLogoutSend:
-            name: Log out of the session Request
-            title: Log out of the session Request
-            description: Send a session.logout request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: c174a2b1-3f51-4580-b200-8528bd237cb7
-                    method:
-                        type: string
-                        description: method property
-                        example: session.logout
-                        enum:
-                            - session.logout
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

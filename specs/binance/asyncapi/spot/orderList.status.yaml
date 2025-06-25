@@ -10,10 +10,10 @@ channels:
             Check execution status of an Order list.
             For execution status of individual orders, use order.status.
         messages:
-            orderListStatusReceive:
-                $ref: '#/components/messages/orderListStatusReceive'
-            orderListStatusSend:
-                $ref: '#/components/messages/orderListStatusSend'
+            orderListStatusRequest:
+                $ref: '#/components/messages/orderListStatusRequest'
+            orderListStatusResponse:
+                $ref: '#/components/messages/orderListStatusResponse'
 operations:
     receiveOrderlistStatus:
         title: Receive from orderList.status
@@ -22,7 +22,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListStatusReceive'
+            - $ref: '#/channels/spot/messages/orderListStatusResponse'
     sendOrderlistStatus:
         title: Send to orderList.status
         description: Send a orderList.status request
@@ -30,10 +30,51 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListStatusSend'
+            - $ref: '#/channels/spot/messages/orderListStatusRequest'
 components:
     messages:
-        orderListStatusReceive:
+        orderListStatusRequest:
+            name: Query Order list (USER_DATA) Request
+            title: Query Order list (USER_DATA) Request
+            description: Send a orderList.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b53fd5ff-82c7-4a04-bd64-5f9dc42c2100
+                    method:
+                        type: string
+                        description: method property
+                        example: orderList.status
+                        enum:
+                            - orderList.status
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: Query order list by orderListId.orderListId or origClientOrderId must be provided.
+                            origClientOrderId:
+                                type: string
+                                description: Query order list by listClientOrderId.orderListId or origClientOrderId must be provided.
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            timestamp:
+                                type: string
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderListStatusResponse:
             name: Query Order list (USER_DATA) Response
             title: Query Order list (USER_DATA) Response
             description: Receive response from orderList.status
@@ -130,47 +171,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderListStatusSend:
-            name: Query Order list (USER_DATA) Request
-            title: Query Order list (USER_DATA) Request
-            description: Send a orderList.status request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b53fd5ff-82c7-4a04-bd64-5f9dc42c2100
-                    method:
-                        type: string
-                        description: method property
-                        example: orderList.status
-                        enum:
-                            - orderList.status
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            orderListId:
-                                type: integer
-                                format: int64
-                                description: Query order list by orderListId.orderListId or origClientOrderId must be provided.
-                            origClientOrderId:
-                                type: string
-                                description: Query order list by listClientOrderId.orderListId or origClientOrderId must be provided.
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            timestamp:
-                                type: string
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

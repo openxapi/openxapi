@@ -11,10 +11,10 @@ channels:
             This request is similar to klines, having the same parameters and response.
             uiKlines return modified kline data, optimized for presentation of candlestick charts.
         messages:
-            uiKlinesReceive:
-                $ref: '#/components/messages/uiKlinesReceive'
-            uiKlinesSend:
-                $ref: '#/components/messages/uiKlinesSend'
+            uiKlinesRequest:
+                $ref: '#/components/messages/uiKlinesRequest'
+            uiKlinesResponse:
+                $ref: '#/components/messages/uiKlinesResponse'
 operations:
     receiveUiklines:
         title: Receive from uiKlines
@@ -23,7 +23,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/uiKlinesReceive'
+            - $ref: '#/channels/spot/messages/uiKlinesResponse'
     sendUiklines:
         title: Send to uiKlines
         description: Send a uiKlines request
@@ -31,10 +31,53 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/uiKlinesSend'
+            - $ref: '#/channels/spot/messages/uiKlinesRequest'
 components:
     messages:
-        uiKlinesReceive:
+        uiKlinesRequest:
+            name: UI Klines Request
+            title: UI Klines Request
+            description: Send a uiKlines request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b137468a-fb20-4c06-bd6b-625148eec958
+                    method:
+                        type: string
+                        description: method property
+                        example: uiKlines
+                        enum:
+                            - uiKlines
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            endTime:
+                                type: string
+                            interval:
+                                type: string
+                                description: See klines
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            startTime:
+                                type: string
+                            symbol:
+                                type: string
+                            timeZone:
+                                type: string
+                                description: 'Default: 0 (UTC)'
+                        required:
+                            - symbol
+                            - interval
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        uiKlinesResponse:
             name: UI Klines Response
             title: UI Klines Response
             description: Receive response from uiKlines
@@ -87,49 +130,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        uiKlinesSend:
-            name: UI Klines Request
-            title: UI Klines Request
-            description: Send a uiKlines request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b137468a-fb20-4c06-bd6b-625148eec958
-                    method:
-                        type: string
-                        description: method property
-                        example: uiKlines
-                        enum:
-                            - uiKlines
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            endTime:
-                                type: string
-                            interval:
-                                type: string
-                                description: See klines
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            startTime:
-                                type: string
-                            symbol:
-                                type: string
-                            timeZone:
-                                type: string
-                                description: 'Default: 0 (UTC)'
-                        required:
-                            - symbol
-                            - interval
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

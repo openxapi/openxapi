@@ -8,10 +8,10 @@ channels:
         title: Channel avgPrice
         description: Get current average price for a symbol.
         messages:
-            avgPriceReceive:
-                $ref: '#/components/messages/avgPriceReceive'
-            avgPriceSend:
-                $ref: '#/components/messages/avgPriceSend'
+            avgPriceRequest:
+                $ref: '#/components/messages/avgPriceRequest'
+            avgPriceResponse:
+                $ref: '#/components/messages/avgPriceResponse'
 operations:
     receiveAvgprice:
         title: Receive from avgPrice
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/avgPriceReceive'
+            - $ref: '#/channels/spot/messages/avgPriceResponse'
     sendAvgprice:
         title: Send to avgPrice
         description: Send a avgPrice request
@@ -28,10 +28,39 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/avgPriceSend'
+            - $ref: '#/channels/spot/messages/avgPriceRequest'
 components:
     messages:
-        avgPriceReceive:
+        avgPriceRequest:
+            name: Current average price Request
+            title: Current average price Request
+            description: Send a avgPrice request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: ddbfb65f-9ebf-42ec-8240-8f0f91de0867
+                    method:
+                        type: string
+                        description: method property
+                        example: avgPrice
+                        enum:
+                            - avgPrice
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        avgPriceResponse:
             name: Current average price Response
             title: Current average price Response
             description: Receive response from avgPrice
@@ -91,35 +120,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        avgPriceSend:
-            name: Current average price Request
-            title: Current average price Request
-            description: Send a avgPrice request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: ddbfb65f-9ebf-42ec-8240-8f0f91de0867
-                    method:
-                        type: string
-                        description: method property
-                        example: avgPrice
-                        enum:
-                            - avgPrice
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                        required:
-                            - symbol
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

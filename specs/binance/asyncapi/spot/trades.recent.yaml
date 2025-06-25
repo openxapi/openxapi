@@ -11,10 +11,10 @@ channels:
             If you need access to real-time trading activity, please consider using WebSocket Streams:
             - <symbol>@trade
         messages:
-            tradesRecentReceive:
-                $ref: '#/components/messages/tradesRecentReceive'
-            tradesRecentSend:
-                $ref: '#/components/messages/tradesRecentSend'
+            tradesRecentRequest:
+                $ref: '#/components/messages/tradesRecentRequest'
+            tradesRecentResponse:
+                $ref: '#/components/messages/tradesRecentResponse'
 operations:
     receiveTradesRecent:
         title: Receive from trades.recent
@@ -23,7 +23,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tradesRecentReceive'
+            - $ref: '#/channels/spot/messages/tradesRecentResponse'
     sendTradesRecent:
         title: Send to trades.recent
         description: Send a trades.recent request
@@ -31,10 +31,42 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tradesRecentSend'
+            - $ref: '#/channels/spot/messages/tradesRecentRequest'
 components:
     messages:
-        tradesRecentReceive:
+        tradesRecentRequest:
+            name: Recent trades Request
+            title: Recent trades Request
+            description: Send a trades.recent request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 409a20bd-253d-41db-a6dd-687862a5882f
+                    method:
+                        type: string
+                        description: method property
+                        example: trades.recent
+                        enum:
+                            - trades.recent
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tradesRecentResponse:
             name: Recent trades Response
             title: Recent trades Response
             description: Receive response from trades.recent
@@ -114,38 +146,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        tradesRecentSend:
-            name: Recent trades Request
-            title: Recent trades Request
-            description: Send a trades.recent request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 409a20bd-253d-41db-a6dd-687862a5882f
-                    method:
-                        type: string
-                        description: method property
-                        example: trades.recent
-                        enum:
-                            - trades.recent
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            symbol:
-                                type: string
-                        required:
-                            - symbol
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

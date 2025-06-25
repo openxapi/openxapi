@@ -8,10 +8,10 @@ channels:
         title: Channel account.commission
         description: Get current account commission rates.
         messages:
-            accountCommissionReceive:
-                $ref: '#/components/messages/accountCommissionReceive'
-            accountCommissionSend:
-                $ref: '#/components/messages/accountCommissionSend'
+            accountCommissionRequest:
+                $ref: '#/components/messages/accountCommissionRequest'
+            accountCommissionResponse:
+                $ref: '#/components/messages/accountCommissionResponse'
 operations:
     receiveAccountCommission:
         title: Receive from account.commission
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/accountCommissionReceive'
+            - $ref: '#/channels/spot/messages/accountCommissionResponse'
     sendAccountCommission:
         title: Send to account.commission
         description: Send a account.commission request
@@ -28,10 +28,39 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/accountCommissionSend'
+            - $ref: '#/channels/spot/messages/accountCommissionRequest'
 components:
     messages:
-        accountCommissionReceive:
+        accountCommissionRequest:
+            name: Account Commission Rates (USER_DATA) Request
+            title: Account Commission Rates (USER_DATA) Request
+            description: Send a account.commission request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
+                    method:
+                        type: string
+                        description: method property
+                        example: account.commission
+                        enum:
+                            - account.commission
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        accountCommissionResponse:
             name: Account Commission Rates (USER_DATA) Response
             title: Account Commission Rates (USER_DATA) Response
             description: Receive response from account.commission
@@ -142,35 +171,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        accountCommissionSend:
-            name: Account Commission Rates (USER_DATA) Request
-            title: Account Commission Rates (USER_DATA) Request
-            description: Send a account.commission request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
-                    method:
-                        type: string
-                        description: method property
-                        example: account.commission
-                        enum:
-                            - account.commission
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                        required:
-                            - symbol
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

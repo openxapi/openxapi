@@ -16,10 +16,10 @@ channels:
             Please refer to User Data Streams for the event format details.
             For SBE, only SBE schema 2:1 or later is supported.
         messages:
-            userDataStreamSubscribeReceive:
-                $ref: '#/components/messages/userDataStreamSubscribeReceive'
-            userDataStreamSubscribeSend:
-                $ref: '#/components/messages/userDataStreamSubscribeSend'
+            userDataStreamSubscribeRequest:
+                $ref: '#/components/messages/userDataStreamSubscribeRequest'
+            userDataStreamSubscribeResponse:
+                $ref: '#/components/messages/userDataStreamSubscribeResponse'
 operations:
     receiveUserdatastreamSubscribe:
         title: Receive from userDataStream.subscribe
@@ -28,7 +28,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/userDataStreamSubscribeReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeResponse'
     sendUserdatastreamSubscribe:
         title: Send to userDataStream.subscribe
         description: Send a userDataStream.subscribe request
@@ -36,10 +36,31 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/userDataStreamSubscribeSend'
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeRequest'
 components:
     messages:
-        userDataStreamSubscribeReceive:
+        userDataStreamSubscribeRequest:
+            name: Subscribe to User Data Stream (USER_STREAM) Request
+            title: Subscribe to User Data Stream (USER_STREAM) Request
+            description: Send a userDataStream.subscribe request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.subscribe
+                        enum:
+                            - userDataStream.subscribe
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamSubscribeResponse:
             name: Subscribe to User Data Stream (USER_STREAM) Response
             title: Subscribe to User Data Stream (USER_STREAM) Response
             description: Receive response from userDataStream.subscribe
@@ -58,27 +79,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        userDataStreamSubscribeSend:
-            name: Subscribe to User Data Stream (USER_STREAM) Request
-            title: Subscribe to User Data Stream (USER_STREAM) Request
-            description: Send a userDataStream.subscribe request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                    method:
-                        type: string
-                        description: method property
-                        example: userDataStream.subscribe
-                        enum:
-                            - userDataStream.subscribe
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

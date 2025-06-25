@@ -14,10 +14,10 @@ channels:
             If you need historical kline data,
             please consider using data.binance.vision.
         messages:
-            klinesReceive:
-                $ref: '#/components/messages/klinesReceive'
-            klinesSend:
-                $ref: '#/components/messages/klinesSend'
+            klinesRequest:
+                $ref: '#/components/messages/klinesRequest'
+            klinesResponse:
+                $ref: '#/components/messages/klinesResponse'
 operations:
     receiveKlines:
         title: Receive from klines
@@ -26,7 +26,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/klinesReceive'
+            - $ref: '#/channels/spot/messages/klinesResponse'
     sendKlines:
         title: Send to klines
         description: Send a klines request
@@ -34,10 +34,52 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/klinesSend'
+            - $ref: '#/channels/spot/messages/klinesRequest'
 components:
     messages:
-        klinesReceive:
+        klinesRequest:
+            name: Klines Request
+            title: Klines Request
+            description: Send a klines request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
+                    method:
+                        type: string
+                        description: method property
+                        example: klines
+                        enum:
+                            - klines
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            endTime:
+                                type: string
+                            interval:
+                                type: string
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            startTime:
+                                type: string
+                            symbol:
+                                type: string
+                            timeZone:
+                                type: string
+                                description: 'Default: 0 (UTC)'
+                        required:
+                            - symbol
+                            - interval
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        klinesResponse:
             name: Klines Response
             title: Klines Response
             description: Receive response from klines
@@ -90,48 +132,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        klinesSend:
-            name: Klines Request
-            title: Klines Request
-            description: Send a klines request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
-                    method:
-                        type: string
-                        description: method property
-                        example: klines
-                        enum:
-                            - klines
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            endTime:
-                                type: string
-                            interval:
-                                type: string
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            startTime:
-                                type: string
-                            symbol:
-                                type: string
-                            timeZone:
-                                type: string
-                                description: 'Default: 0 (UTC)'
-                        required:
-                            - symbol
-                            - interval
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

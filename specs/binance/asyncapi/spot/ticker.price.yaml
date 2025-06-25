@@ -15,10 +15,10 @@ channels:
             - symbol and symbols cannot be used together.
             - If no symbol is specified, returns information about all symbols currently trading on the exchange.
         messages:
-            tickerPriceReceive:
-                $ref: '#/components/messages/tickerPriceReceive'
-            tickerPriceSend:
-                $ref: '#/components/messages/tickerPriceSend'
+            tickerPriceRequest:
+                $ref: '#/components/messages/tickerPriceRequest'
+            tickerPriceResponse:
+                $ref: '#/components/messages/tickerPriceResponse'
 operations:
     receiveTickerPrice:
         title: Receive from ticker.price
@@ -27,7 +27,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerPriceReceive'
+            - $ref: '#/channels/spot/messages/tickerPriceResponse'
     sendTickerPrice:
         title: Send to ticker.price
         description: Send a ticker.price request
@@ -35,10 +35,44 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerPriceSend'
+            - $ref: '#/channels/spot/messages/tickerPriceRequest'
 components:
     messages:
-        tickerPriceReceive:
+        tickerPriceRequest:
+            name: Symbol price ticker Request
+            title: Symbol price ticker Request
+            description: Send a ticker.price request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
+                    method:
+                        type: string
+                        description: method property
+                        example: ticker.price
+                        enum:
+                            - ticker.price
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+                                description: Query price for a single symbol
+                            symbols:
+                                type: array
+                                description: Query price for multiple symbols
+                                items:
+                                    type: string
+                                    description: array item
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tickerPriceResponse:
             name: Symbol price ticker Response
             title: Symbol price ticker Response
             description: Receive response from ticker.price
@@ -93,40 +127,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        tickerPriceSend:
-            name: Symbol price ticker Request
-            title: Symbol price ticker Request
-            description: Send a ticker.price request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
-                    method:
-                        type: string
-                        description: method property
-                        example: ticker.price
-                        enum:
-                            - ticker.price
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                                description: Query price for a single symbol
-                            symbols:
-                                type: array
-                                description: Query price for multiple symbols
-                                items:
-                                    type: string
-                                    description: array item
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

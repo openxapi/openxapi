@@ -8,10 +8,10 @@ channels:
         title: Channel trades.historical
         description: Get historical trades.
         messages:
-            tradesHistoricalReceive:
-                $ref: '#/components/messages/tradesHistoricalReceive'
-            tradesHistoricalSend:
-                $ref: '#/components/messages/tradesHistoricalSend'
+            tradesHistoricalRequest:
+                $ref: '#/components/messages/tradesHistoricalRequest'
+            tradesHistoricalResponse:
+                $ref: '#/components/messages/tradesHistoricalResponse'
 operations:
     receiveTradesHistorical:
         title: Receive from trades.historical
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tradesHistoricalReceive'
+            - $ref: '#/channels/spot/messages/tradesHistoricalResponse'
     sendTradesHistorical:
         title: Send to trades.historical
         description: Send a trades.historical request
@@ -28,10 +28,46 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tradesHistoricalSend'
+            - $ref: '#/channels/spot/messages/tradesHistoricalRequest'
 components:
     messages:
-        tradesHistoricalReceive:
+        tradesHistoricalRequest:
+            name: Historical trades Request
+            title: Historical trades Request
+            description: Send a trades.historical request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: cffc9c7d-4efc-4ce0-b587-6b87448f052a
+                    method:
+                        type: string
+                        description: method property
+                        example: trades.historical
+                        enum:
+                            - trades.historical
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            fromId:
+                                type: integer
+                                format: int64
+                                description: Trade ID to begin at
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tradesHistoricalResponse:
             name: Historical trades Response
             title: Historical trades Response
             description: Receive response from trades.historical
@@ -111,42 +147,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        tradesHistoricalSend:
-            name: Historical trades Request
-            title: Historical trades Request
-            description: Send a trades.historical request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: cffc9c7d-4efc-4ce0-b587-6b87448f052a
-                    method:
-                        type: string
-                        description: method property
-                        example: trades.historical
-                        enum:
-                            - trades.historical
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            fromId:
-                                type: integer
-                                format: int64
-                                description: Trade ID to begin at
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            symbol:
-                                type: string
-                        required:
-                            - symbol
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

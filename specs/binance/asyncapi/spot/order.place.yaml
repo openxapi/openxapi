@@ -10,10 +10,10 @@ channels:
             Send in a new order.
             This adds 1 order to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
         messages:
-            orderPlaceReceive:
-                $ref: '#/components/messages/orderPlaceReceive'
-            orderPlaceSend:
-                $ref: '#/components/messages/orderPlaceSend'
+            orderPlaceRequest:
+                $ref: '#/components/messages/orderPlaceRequest'
+            orderPlaceResponse:
+                $ref: '#/components/messages/orderPlaceResponse'
 operations:
     receiveOrderPlace:
         title: Receive from order.place
@@ -22,7 +22,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderPlaceReceive'
+            - $ref: '#/channels/spot/messages/orderPlaceResponse'
     sendOrderPlace:
         title: Send to order.place
         description: Send a order.place request
@@ -30,83 +30,10 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderPlaceSend'
+            - $ref: '#/channels/spot/messages/orderPlaceRequest'
 components:
     messages:
-        orderPlaceReceive:
-            name: Place new order (TRADE) Response
-            title: Place new order (TRADE) Response
-            description: Receive response from order.place
-            payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 56374a46-3061-486b-a311-99ee972eb648
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 1
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: SECOND
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 10
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 50
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: ORDERS
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            clientOrderId:
-                                type: string
-                                description: clientOrderId property
-                                example: 4d96324ff9d44481926157ec08158a40
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: orderId property
-                                example: 12569099453
-                            orderListId:
-                                type: integer
-                                format: int64
-                                description: orderListId property
-                                example: -1
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSDT
-                            transactTime:
-                                type: integer
-                                format: int64
-                                description: transactTime property
-                                example: 1660801715639
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderPlaceSend:
+        orderPlaceRequest:
             name: Place new order (TRADE) Request
             title: Place new order (TRADE) Request
             description: Send a order.place request
@@ -181,6 +108,79 @@ components:
                             - apiKey
                             - signature
                             - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderPlaceResponse:
+            name: Place new order (TRADE) Response
+            title: Place new order (TRADE) Response
+            description: Receive response from order.place
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 56374a46-3061-486b-a311-99ee972eb648
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 1
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: SECOND
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 10
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 50
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: ORDERS
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            clientOrderId:
+                                type: string
+                                description: clientOrderId property
+                                example: 4d96324ff9d44481926157ec08158a40
+                            orderId:
+                                type: integer
+                                format: int64
+                                description: orderId property
+                                example: 12569099453
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: orderListId property
+                                example: -1
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            transactTime:
+                                type: integer
+                                format: int64
+                                description: transactTime property
+                                example: 1660801715639
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

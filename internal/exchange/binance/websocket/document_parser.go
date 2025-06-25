@@ -314,7 +314,7 @@ func (p *DocumentParser) extractMethod(content []string, category string) (*pars
 				Description: "Message correlation ID",
 			}
 		}
-		channel.Messages["send"] = sendMessage
+		channel.Messages["request"] = sendMessage
 	}
 
 	if responseSchema != nil {
@@ -330,7 +330,7 @@ func (p *DocumentParser) extractMethod(content []string, category string) (*pars
 				Description: "Message correlation ID",
 			}
 		}
-		channel.Messages["receive"] = receiveMessage
+		channel.Messages["response"] = receiveMessage
 	}
 
 	return channel, foundMethod

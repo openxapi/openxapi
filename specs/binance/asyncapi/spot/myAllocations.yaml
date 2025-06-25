@@ -8,10 +8,10 @@ channels:
         title: Channel myAllocations
         description: Retrieves allocations resulting from SOR order placement.
         messages:
-            myAllocationsReceive:
-                $ref: '#/components/messages/myAllocationsReceive'
-            myAllocationsSend:
-                $ref: '#/components/messages/myAllocationsSend'
+            myAllocationsRequest:
+                $ref: '#/components/messages/myAllocationsRequest'
+            myAllocationsResponse:
+                $ref: '#/components/messages/myAllocationsResponse'
 operations:
     receiveMyallocations:
         title: Receive from myAllocations
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/myAllocationsReceive'
+            - $ref: '#/channels/spot/messages/myAllocationsResponse'
     sendMyallocations:
         title: Send to myAllocations
         description: Send a myAllocations request
@@ -28,10 +28,56 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/myAllocationsSend'
+            - $ref: '#/channels/spot/messages/myAllocationsRequest'
 components:
     messages:
-        myAllocationsReceive:
+        myAllocationsRequest:
+            name: Account allocations (USER_DATA) Request
+            title: Account allocations (USER_DATA) Request
+            description: Send a myAllocations request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                    method:
+                        type: string
+                        description: method property
+                        example: myAllocations
+                        enum:
+                            - myAllocations
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            endTime:
+                                type: string
+                            fromAllocationId:
+                                type: integer
+                                format: int64
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            orderId:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            startTime:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        myAllocationsResponse:
             name: Account allocations (USER_DATA) Response
             title: Account allocations (USER_DATA) Response
             description: Receive response from myAllocations
@@ -141,52 +187,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        myAllocationsSend:
-            name: Account allocations (USER_DATA) Request
-            title: Account allocations (USER_DATA) Request
-            description: Send a myAllocations request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
-                    method:
-                        type: string
-                        description: method property
-                        example: myAllocations
-                        enum:
-                            - myAllocations
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            endTime:
-                                type: string
-                            fromAllocationId:
-                                type: integer
-                                format: int64
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            orderId:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            startTime:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

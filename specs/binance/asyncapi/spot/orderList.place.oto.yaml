@@ -15,10 +15,10 @@ channels:
             - When the order list is placed, if the working order gets immediately fully filled, the placement response will show the working order as FILLED but the pending order will still appear as PENDING_NEW. You need to query the status of the pending order again to see its updated status.
             - OTOs add 2 orders to the EXCHANGE_MAX_NUM_ORDERS filter and MAX_NUM_ORDERS filter.
         messages:
-            orderListPlaceOtoReceive:
-                $ref: '#/components/messages/orderListPlaceOtoReceive'
-            orderListPlaceOtoSend:
-                $ref: '#/components/messages/orderListPlaceOtoSend'
+            orderListPlaceOtoRequest:
+                $ref: '#/components/messages/orderListPlaceOtoRequest'
+            orderListPlaceOtoResponse:
+                $ref: '#/components/messages/orderListPlaceOtoResponse'
 operations:
     receiveOrderlistPlaceOto:
         title: Receive from orderList.place.oto
@@ -27,7 +27,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtoReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtoResponse'
     sendOrderlistPlaceOto:
         title: Send to orderList.place.oto
         description: Send a orderList.place.oto request
@@ -35,10 +35,120 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtoSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceOtoRequest'
 components:
     messages:
-        orderListPlaceOtoReceive:
+        orderListPlaceOtoRequest:
+            name: Place new Order list - OTO (TRADE) Request
+            title: Place new Order list - OTO (TRADE) Request
+            description: Send a orderList.place.oto request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: "1712544395950"
+                    method:
+                        type: string
+                        description: method property
+                        example: orderList.place.oto
+                        enum:
+                            - orderList.place.oto
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            listClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId and the pendingClientOrderId.
+                            newOrderRespType:
+                                type: string
+                                description: 'Format of the JSON response. Supported values: Order Response Type'
+                            pendingClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders for the pending order. Automatically generated if not sent.
+                            pendingIcebergQty:
+                                type: string
+                                description: This can only be used if pendingTimeInForce is GTC, or if pendingType is LIMIT_MAKER.
+                            pendingPrice:
+                                type: string
+                            pendingQuantity:
+                                type: string
+                                description: Sets the quantity for the pending order.
+                            pendingSide:
+                                type: string
+                                description: 'Supported values: Order side'
+                            pendingStopPrice:
+                                type: string
+                            pendingStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the pending order within an order strategy.
+                            pendingStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the pending order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                            pendingTimeInForce:
+                                type: string
+                                description: 'Supported values: Time In Force'
+                            pendingTrailingDelta:
+                                type: string
+                            pendingType:
+                                type: string
+                                description: 'Supported values: Order types.  Note that MARKET orders using quoteOrderQty are not supported.'
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000.
+                            selfTradePreventionMode:
+                                type: string
+                                description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
+                            signature:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                            workingClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
+                            workingIcebergQty:
+                                type: string
+                                description: This can only be used if workingTimeInForce is GTC, or if workingType is LIMIT_MAKER.
+                            workingPrice:
+                                type: string
+                            workingQuantity:
+                                type: string
+                                description: Sets the quantity for the working order.
+                            workingSide:
+                                type: string
+                                description: 'Supported values: Order side'
+                            workingStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the working order within an order strategy.
+                            workingStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                            workingTimeInForce:
+                                type: string
+                                description: 'Supported values: Time In Force'
+                            workingType:
+                                type: string
+                                description: 'Supported values: LIMIT,LIMIT_MAKER'
+                        required:
+                            - symbol
+                            - workingType
+                            - workingSide
+                            - workingPrice
+                            - workingQuantity
+                            - pendingType
+                            - pendingSide
+                            - pendingQuantity
+                            - timestamp
+                            - signature
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderListPlaceOtoResponse:
             name: Place new Order list - OTO (TRADE) Response
             title: Place new Order list - OTO (TRADE) Response
             description: Receive response from orderList.place.oto
@@ -210,116 +320,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderListPlaceOtoSend:
-            name: Place new Order list - OTO (TRADE) Request
-            title: Place new Order list - OTO (TRADE) Request
-            description: Send a orderList.place.oto request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: "1712544395950"
-                    method:
-                        type: string
-                        description: method property
-                        example: orderList.place.oto
-                        enum:
-                            - orderList.place.oto
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            listClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId and the pendingClientOrderId.
-                            newOrderRespType:
-                                type: string
-                                description: 'Format of the JSON response. Supported values: Order Response Type'
-                            pendingClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the pending order. Automatically generated if not sent.
-                            pendingIcebergQty:
-                                type: string
-                                description: This can only be used if pendingTimeInForce is GTC, or if pendingType is LIMIT_MAKER.
-                            pendingPrice:
-                                type: string
-                            pendingQuantity:
-                                type: string
-                                description: Sets the quantity for the pending order.
-                            pendingSide:
-                                type: string
-                                description: 'Supported values: Order side'
-                            pendingStopPrice:
-                                type: string
-                            pendingStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the pending order within an order strategy.
-                            pendingStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the pending order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                            pendingTimeInForce:
-                                type: string
-                                description: 'Supported values: Time In Force'
-                            pendingTrailingDelta:
-                                type: string
-                            pendingType:
-                                type: string
-                                description: 'Supported values: Order types.  Note that MARKET orders using quoteOrderQty are not supported.'
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000.
-                            selfTradePreventionMode:
-                                type: string
-                                description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                            workingClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
-                            workingIcebergQty:
-                                type: string
-                                description: This can only be used if workingTimeInForce is GTC, or if workingType is LIMIT_MAKER.
-                            workingPrice:
-                                type: string
-                            workingQuantity:
-                                type: string
-                                description: Sets the quantity for the working order.
-                            workingSide:
-                                type: string
-                                description: 'Supported values: Order side'
-                            workingStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the working order within an order strategy.
-                            workingStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                            workingTimeInForce:
-                                type: string
-                                description: 'Supported values: Time In Force'
-                            workingType:
-                                type: string
-                                description: 'Supported values: LIMIT,LIMIT_MAKER'
-                        required:
-                            - symbol
-                            - workingType
-                            - workingSide
-                            - workingPrice
-                            - workingQuantity
-                            - pendingType
-                            - pendingSide
-                            - pendingQuantity
-                            - timestamp
-                            - signature
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

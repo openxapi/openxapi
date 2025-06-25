@@ -8,10 +8,10 @@ channels:
         title: Channel order.amendments
         description: Queries all amendments of a single order.
         messages:
-            orderAmendmentsReceive:
-                $ref: '#/components/messages/orderAmendmentsReceive'
-            orderAmendmentsSend:
-                $ref: '#/components/messages/orderAmendmentsSend'
+            orderAmendmentsRequest:
+                $ref: '#/components/messages/orderAmendmentsRequest'
+            orderAmendmentsResponse:
+                $ref: '#/components/messages/orderAmendmentsResponse'
 operations:
     receiveOrderAmendments:
         title: Receive from order.amendments
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderAmendmentsReceive'
+            - $ref: '#/channels/spot/messages/orderAmendmentsResponse'
     sendOrderAmendments:
         title: Send to order.amendments
         description: Send a order.amendments request
@@ -28,10 +28,53 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderAmendmentsSend'
+            - $ref: '#/channels/spot/messages/orderAmendmentsRequest'
 components:
     messages:
-        orderAmendmentsReceive:
+        orderAmendmentsRequest:
+            name: Query Order Amendments (USER_DATA) Request
+            title: Query Order Amendments (USER_DATA) Request
+            description: Send a order.amendments request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 6f5ebe91-01d9-43ac-be99-57cf062e0e30
+                    method:
+                        type: string
+                        description: method property
+                        example: order.amendments
+                        enum:
+                            - order.amendments
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            fromExecutionId:
+                                type: string
+                            limit:
+                                type: integer
+                                description: 'Default:500; Maximum: 1000'
+                            orderId:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000.
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - orderId
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderAmendmentsResponse:
             name: Query Order Amendments (USER_DATA) Response
             title: Query Order Amendments (USER_DATA) Response
             description: Receive response from order.amendments
@@ -116,49 +159,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderAmendmentsSend:
-            name: Query Order Amendments (USER_DATA) Request
-            title: Query Order Amendments (USER_DATA) Request
-            description: Send a order.amendments request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 6f5ebe91-01d9-43ac-be99-57cf062e0e30
-                    method:
-                        type: string
-                        description: method property
-                        example: order.amendments
-                        enum:
-                            - order.amendments
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            fromExecutionId:
-                                type: string
-                            limit:
-                                type: integer
-                                description: 'Default:500; Maximum: 1000'
-                            orderId:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000.
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - orderId
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

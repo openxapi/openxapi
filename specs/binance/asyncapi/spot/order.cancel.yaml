@@ -8,10 +8,10 @@ channels:
         title: Channel order.cancel
         description: Cancel an active order.
         messages:
-            orderCancelReceive:
-                $ref: '#/components/messages/orderCancelReceive'
-            orderCancelSend:
-                $ref: '#/components/messages/orderCancelSend'
+            orderCancelRequest:
+                $ref: '#/components/messages/orderCancelRequest'
+            orderCancelResponse:
+                $ref: '#/components/messages/orderCancelResponse'
 operations:
     receiveOrderCancel:
         title: Receive from order.cancel
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderCancelReceive'
+            - $ref: '#/channels/spot/messages/orderCancelResponse'
     sendOrderCancel:
         title: Send to order.cancel
         description: Send a order.cancel request
@@ -28,10 +28,65 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderCancelSend'
+            - $ref: '#/channels/spot/messages/orderCancelRequest'
 components:
     messages:
-        orderCancelReceive:
+        orderCancelRequest:
+            name: Cancel order (TRADE) Request
+            title: Cancel order (TRADE) Request
+            description: Send a order.cancel request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
+                    method:
+                        type: string
+                        description: method property
+                        example: order.cancel
+                        enum:
+                            - order.cancel
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            cancelRestrictions:
+                                type: string
+                                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED.'
+                            newClientOrderId:
+                                type: string
+                                description: New ID for the canceled order. Automatically generated if not sent
+                            orderId:
+                                type: integer
+                                format: int64
+                                description: Cancel order by orderId
+                            origClientOrderId:
+                                type: string
+                                description: Cancel order by clientOrderId
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - orderId
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderCancelResponse:
             name: Cancel order (TRADE) Response
             title: Cancel order (TRADE) Response
             description: Receive response from order.cancel
@@ -166,61 +221,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderCancelSend:
-            name: Cancel order (TRADE) Request
-            title: Cancel order (TRADE) Request
-            description: Send a order.cancel request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
-                    method:
-                        type: string
-                        description: method property
-                        example: order.cancel
-                        enum:
-                            - order.cancel
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            cancelRestrictions:
-                                type: string
-                                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED.'
-                            newClientOrderId:
-                                type: string
-                                description: New ID for the canceled order. Automatically generated if not sent
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: Cancel order by orderId
-                            origClientOrderId:
-                                type: string
-                                description: Cancel order by clientOrderId
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - orderId
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

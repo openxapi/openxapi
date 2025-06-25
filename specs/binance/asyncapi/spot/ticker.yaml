@@ -22,10 +22,10 @@ channels:
             - Window size units cannot be combined.
             E.g., 1d 2h is not supported.
         messages:
-            tickerReceive:
-                $ref: '#/components/messages/tickerReceive'
-            tickerSend:
-                $ref: '#/components/messages/tickerSend'
+            tickerRequest:
+                $ref: '#/components/messages/tickerRequest'
+            tickerResponse:
+                $ref: '#/components/messages/tickerResponse'
 operations:
     receiveTicker:
         title: Receive from ticker
@@ -34,7 +34,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerReceive'
+            - $ref: '#/channels/spot/messages/tickerResponse'
     sendTicker:
         title: Send to ticker
         description: Send a ticker request
@@ -42,10 +42,55 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerSend'
+            - $ref: '#/channels/spot/messages/tickerRequest'
 components:
     messages:
-        tickerReceive:
+        tickerRequest:
+            name: Rolling window price change statistics Request
+            title: Rolling window price change statistics Request
+            description: Send a ticker request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
+                    method:
+                        type: string
+                        description: method property
+                        example: ticker
+                        enum:
+                            - ticker
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+                                description: Query ticker of a single symbol
+                            symbols:
+                                type: array
+                                description: Query ticker for multiple symbols
+                                items:
+                                    type: string
+                                    description: array item
+                            type:
+                                type: string
+                                description: 'Ticker type: FULL (default) or MINI'
+                            windowSize:
+                                type: string
+                                description: Default 1d
+                        required:
+                            - symbol
+                            - symbols
+                            - type
+                            - windowSize
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tickerResponse:
             name: Rolling window price change statistics Response
             title: Rolling window price change statistics Response
             description: Receive response from ticker
@@ -156,51 +201,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        tickerSend:
-            name: Rolling window price change statistics Request
-            title: Rolling window price change statistics Request
-            description: Send a ticker request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: f4b3b507-c8f2-442a-81a6-b2f12daa030f
-                    method:
-                        type: string
-                        description: method property
-                        example: ticker
-                        enum:
-                            - ticker
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                                description: Query ticker of a single symbol
-                            symbols:
-                                type: array
-                                description: Query ticker for multiple symbols
-                                items:
-                                    type: string
-                                    description: array item
-                            type:
-                                type: string
-                                description: 'Ticker type: FULL (default) or MINI'
-                            windowSize:
-                                type: string
-                                description: Default 1d
-                        required:
-                            - symbol
-                            - symbols
-                            - type
-                            - windowSize
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

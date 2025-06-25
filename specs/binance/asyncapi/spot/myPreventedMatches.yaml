@@ -14,10 +14,10 @@ channels:
             - symbol + orderId + fromPreventedMatchId (limit will default to 500)
             - symbol + orderId + fromPreventedMatchId + limit
         messages:
-            myPreventedMatchesReceive:
-                $ref: '#/components/messages/myPreventedMatchesReceive'
-            myPreventedMatchesSend:
-                $ref: '#/components/messages/myPreventedMatchesSend'
+            myPreventedMatchesRequest:
+                $ref: '#/components/messages/myPreventedMatchesRequest'
+            myPreventedMatchesResponse:
+                $ref: '#/components/messages/myPreventedMatchesResponse'
 operations:
     receiveMypreventedmatches:
         title: Receive from myPreventedMatches
@@ -26,7 +26,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/myPreventedMatchesReceive'
+            - $ref: '#/channels/spot/messages/myPreventedMatchesResponse'
     sendMypreventedmatches:
         title: Send to myPreventedMatches
         description: Send a myPreventedMatches request
@@ -34,10 +34,54 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/myPreventedMatchesSend'
+            - $ref: '#/channels/spot/messages/myPreventedMatchesRequest'
 components:
     messages:
-        myPreventedMatchesReceive:
+        myPreventedMatchesRequest:
+            name: Account prevented matches (USER_DATA) Request
+            title: Account prevented matches (USER_DATA) Request
+            description: Send a myPreventedMatches request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                    method:
+                        type: string
+                        description: method property
+                        example: myPreventedMatches
+                        enum:
+                            - myPreventedMatches
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            fromPreventedMatchId:
+                                type: string
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            orderId:
+                                type: string
+                            preventedMatchId:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        myPreventedMatchesResponse:
             name: Account prevented matches (USER_DATA) Response
             title: Account prevented matches (USER_DATA) Response
             description: Receive response from myPreventedMatches
@@ -132,50 +176,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        myPreventedMatchesSend:
-            name: Account prevented matches (USER_DATA) Request
-            title: Account prevented matches (USER_DATA) Request
-            description: Send a myPreventedMatches request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
-                    method:
-                        type: string
-                        description: method property
-                        example: myPreventedMatches
-                        enum:
-                            - myPreventedMatches
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            fromPreventedMatchId:
-                                type: string
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            orderId:
-                                type: string
-                            preventedMatchId:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

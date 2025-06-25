@@ -8,10 +8,10 @@ channels:
         title: Channel account.status
         description: Query information about your account.
         messages:
-            accountStatusReceive:
-                $ref: '#/components/messages/accountStatusReceive'
-            accountStatusSend:
-                $ref: '#/components/messages/accountStatusSend'
+            accountStatusRequest:
+                $ref: '#/components/messages/accountStatusRequest'
+            accountStatusResponse:
+                $ref: '#/components/messages/accountStatusResponse'
 operations:
     receiveAccountStatus:
         title: Receive from account.status
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/accountStatusReceive'
+            - $ref: '#/channels/spot/messages/accountStatusResponse'
     sendAccountStatus:
         title: Send to account.status
         description: Send a account.status request
@@ -28,10 +28,51 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/accountStatusSend'
+            - $ref: '#/channels/spot/messages/accountStatusRequest'
 components:
     messages:
-        accountStatusReceive:
+        accountStatusRequest:
+            name: Account information (USER_DATA) Request
+            title: Account information (USER_DATA) Request
+            description: Send a account.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
+                    method:
+                        type: string
+                        description: method property
+                        example: account.status
+                        enum:
+                            - account.status
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            omitZeroBalances:
+                                type: boolean
+                                description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        accountStatusResponse:
             name: Account information (USER_DATA) Response
             title: Account information (USER_DATA) Response
             description: Receive response from account.status
@@ -177,47 +218,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        accountStatusSend:
-            name: Account information (USER_DATA) Request
-            title: Account information (USER_DATA) Request
-            description: Send a account.status request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
-                    method:
-                        type: string
-                        description: method property
-                        example: account.status
-                        enum:
-                            - account.status
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            omitZeroBalances:
-                                type: boolean
-                                description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

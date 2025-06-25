@@ -12,10 +12,10 @@ channels:
             where activation of one order immediately cancels the other.
             This adds 1 order to EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter
         messages:
-            orderListPlaceReceive:
-                $ref: '#/components/messages/orderListPlaceReceive'
-            orderListPlaceSend:
-                $ref: '#/components/messages/orderListPlaceSend'
+            orderListPlaceRequest:
+                $ref: '#/components/messages/orderListPlaceRequest'
+            orderListPlaceResponse:
+                $ref: '#/components/messages/orderListPlaceResponse'
 operations:
     receiveOrderlistPlace:
         title: Receive from orderList.place
@@ -24,7 +24,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceReceive'
+            - $ref: '#/channels/spot/messages/orderListPlaceResponse'
     sendOrderlistPlace:
         title: Send to orderList.place
         description: Send a orderList.place request
@@ -32,10 +32,106 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceSend'
+            - $ref: '#/channels/spot/messages/orderListPlaceRequest'
 components:
     messages:
-        orderListPlaceReceive:
+        orderListPlaceRequest:
+            name: Place new OCO - Deprecated (TRADE) Request
+            title: Place new OCO - Deprecated (TRADE) Request
+            description: Send a orderList.place request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 56374a46-3061-486b-a311-99ee972eb648
+                    method:
+                        type: string
+                        description: method property
+                        example: orderList.place
+                        enum:
+                            - orderList.place
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            limitClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders for the limit order. Automatically generated if not sent
+                            limitIcebergQty:
+                                type: string
+                            limitStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the limit order within an order strategy.
+                            limitStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the limit order strategy.Values smaller than 1000000 are reserved and cannot be used.
+                            listClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent
+                            newOrderRespType:
+                                type: string
+                                description: 'Select response format: ACK, RESULT, FULL (default)'
+                            price:
+                                type: string
+                                description: Price for the limit order
+                            quantity:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            selfTradePreventionMode:
+                                type: string
+                                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes'
+                            side:
+                                type: string
+                                description: BUY or SELL
+                            signature:
+                                type: string
+                            stopClientOrderId:
+                                type: string
+                                description: Arbitrary unique ID among open orders for the stop order. Automatically generated if not sent
+                            stopIcebergQty:
+                                type: string
+                            stopLimitPrice:
+                                type: string
+                            stopLimitTimeInForce:
+                                type: string
+                                description: See order.place for available options
+                            stopPrice:
+                                type: string
+                                description: Either stopPrice or trailingDelta, or both must be specified
+                            stopStrategyId:
+                                type: string
+                                description: Arbitrary numeric value identifying the stop order within an order strategy.
+                            stopStrategyType:
+                                type: integer
+                                description: Arbitrary numeric value identifying the stop order strategy.Values smaller than 1000000 are reserved and cannot be used.
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                            trailingDelta:
+                                type: integer
+                                description: See Trailing Stop order FAQ
+                        required:
+                            - symbol
+                            - side
+                            - price
+                            - quantity
+                            - stopPrice
+                            - trailingDelta
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderListPlaceResponse:
             name: Place new OCO - Deprecated (TRADE) Response
             title: Place new OCO - Deprecated (TRADE) Response
             description: Receive response from orderList.place
@@ -211,102 +307,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderListPlaceSend:
-            name: Place new OCO - Deprecated (TRADE) Request
-            title: Place new OCO - Deprecated (TRADE) Request
-            description: Send a orderList.place request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 56374a46-3061-486b-a311-99ee972eb648
-                    method:
-                        type: string
-                        description: method property
-                        example: orderList.place
-                        enum:
-                            - orderList.place
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            limitClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the limit order. Automatically generated if not sent
-                            limitIcebergQty:
-                                type: string
-                            limitStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the limit order within an order strategy.
-                            limitStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the limit order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                            listClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent
-                            newOrderRespType:
-                                type: string
-                                description: 'Select response format: ACK, RESULT, FULL (default)'
-                            price:
-                                type: string
-                                description: Price for the limit order
-                            quantity:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            selfTradePreventionMode:
-                                type: string
-                                description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes'
-                            side:
-                                type: string
-                                description: BUY or SELL
-                            signature:
-                                type: string
-                            stopClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the stop order. Automatically generated if not sent
-                            stopIcebergQty:
-                                type: string
-                            stopLimitPrice:
-                                type: string
-                            stopLimitTimeInForce:
-                                type: string
-                                description: See order.place for available options
-                            stopPrice:
-                                type: string
-                                description: Either stopPrice or trailingDelta, or both must be specified
-                            stopStrategyId:
-                                type: string
-                                description: Arbitrary numeric value identifying the stop order within an order strategy.
-                            stopStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the stop order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                            trailingDelta:
-                                type: integer
-                                description: See Trailing Stop order FAQ
-                        required:
-                            - symbol
-                            - side
-                            - price
-                            - quantity
-                            - stopPrice
-                            - trailingDelta
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

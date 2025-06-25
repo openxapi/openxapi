@@ -14,10 +14,10 @@ channels:
             - symbol and symbols cannot be used together.
             - If no symbol is specified, returns information about all symbols currently trading on the exchange.
         messages:
-            tickerBookReceive:
-                $ref: '#/components/messages/tickerBookReceive'
-            tickerBookSend:
-                $ref: '#/components/messages/tickerBookSend'
+            tickerBookRequest:
+                $ref: '#/components/messages/tickerBookRequest'
+            tickerBookResponse:
+                $ref: '#/components/messages/tickerBookResponse'
 operations:
     receiveTickerBook:
         title: Receive from ticker.book
@@ -26,7 +26,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerBookReceive'
+            - $ref: '#/channels/spot/messages/tickerBookResponse'
     sendTickerBook:
         title: Send to ticker.book
         description: Send a ticker.book request
@@ -34,10 +34,44 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerBookSend'
+            - $ref: '#/channels/spot/messages/tickerBookRequest'
 components:
     messages:
-        tickerBookReceive:
+        tickerBookRequest:
+            name: Symbol order book ticker Request
+            title: Symbol order book ticker Request
+            description: Send a ticker.book request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 057deb3a-2990-41d1-b58b-98ea0f09e1b4
+                    method:
+                        type: string
+                        description: method property
+                        example: ticker.book
+                        enum:
+                            - ticker.book
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+                                description: Query ticker for a single symbol
+                            symbols:
+                                type: array
+                                description: Query ticker for multiple symbols
+                                items:
+                                    type: string
+                                    description: array item
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tickerBookResponse:
             name: Symbol order book ticker Response
             title: Symbol order book ticker Response
             description: Receive response from ticker.book
@@ -104,40 +138,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        tickerBookSend:
-            name: Symbol order book ticker Request
-            title: Symbol order book ticker Request
-            description: Send a ticker.book request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 057deb3a-2990-41d1-b58b-98ea0f09e1b4
-                    method:
-                        type: string
-                        description: method property
-                        example: ticker.book
-                        enum:
-                            - ticker.book
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                                description: Query ticker for a single symbol
-                            symbols:
-                                type: array
-                                description: Query ticker for multiple symbols
-                                items:
-                                    type: string
-                                    description: array item
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

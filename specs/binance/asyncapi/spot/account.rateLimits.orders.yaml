@@ -8,10 +8,10 @@ channels:
         title: Channel account.rateLimits.orders
         description: Query your current unfilled order count for all intervals.
         messages:
-            accountRatelimitsOrdersReceive:
-                $ref: '#/components/messages/accountRatelimitsOrdersReceive'
-            accountRatelimitsOrdersSend:
-                $ref: '#/components/messages/accountRatelimitsOrdersSend'
+            accountRatelimitsOrdersRequest:
+                $ref: '#/components/messages/accountRatelimitsOrdersRequest'
+            accountRatelimitsOrdersResponse:
+                $ref: '#/components/messages/accountRatelimitsOrdersResponse'
 operations:
     receiveAccountRatelimitsOrders:
         title: Receive from account.rateLimits.orders
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersReceive'
+            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersResponse'
     sendAccountRatelimitsOrders:
         title: Send to account.rateLimits.orders
         description: Send a account.rateLimits.orders request
@@ -28,10 +28,48 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersSend'
+            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersRequest'
 components:
     messages:
-        accountRatelimitsOrdersReceive:
+        accountRatelimitsOrdersRequest:
+            name: Unfilled Order Count (USER_DATA) Request
+            title: Unfilled Order Count (USER_DATA) Request
+            description: Send a account.rateLimits.orders request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3783d8d-f8d1-4d2c-b8a0-b7596af5a664
+                    method:
+                        type: string
+                        description: method property
+                        example: account.rateLimits.orders
+                        enum:
+                            - account.rateLimits.orders
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        accountRatelimitsOrdersResponse:
             name: Unfilled Order Count (USER_DATA) Response
             title: Unfilled Order Count (USER_DATA) Response
             description: Receive response from account.rateLimits.orders
@@ -101,44 +139,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        accountRatelimitsOrdersSend:
-            name: Unfilled Order Count (USER_DATA) Request
-            title: Unfilled Order Count (USER_DATA) Request
-            description: Send a account.rateLimits.orders request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3783d8d-f8d1-4d2c-b8a0-b7596af5a664
-                    method:
-                        type: string
-                        description: method property
-                        example: account.rateLimits.orders
-                        enum:
-                            - account.rateLimits.orders
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

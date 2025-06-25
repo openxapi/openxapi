@@ -11,10 +11,10 @@ channels:
             Note: the stream will close in 60 minutes
             unless userDataStream.ping requests are sent regularly.
         messages:
-            userDataStreamStartReceive:
-                $ref: '#/components/messages/userDataStreamStartReceive'
-            userDataStreamStartSend:
-                $ref: '#/components/messages/userDataStreamStartSend'
+            userDataStreamStartRequest:
+                $ref: '#/components/messages/userDataStreamStartRequest'
+            userDataStreamStartResponse:
+                $ref: '#/components/messages/userDataStreamStartResponse'
 operations:
     receiveUserdatastreamStart:
         title: Receive from userDataStream.start
@@ -23,7 +23,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/userDataStreamStartReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamStartResponse'
     sendUserdatastreamStart:
         title: Send to userDataStream.start
         description: Send a userDataStream.start request
@@ -31,10 +31,39 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/userDataStreamStartSend'
+            - $ref: '#/channels/spot/messages/userDataStreamStartRequest'
 components:
     messages:
-        userDataStreamStartReceive:
+        userDataStreamStartRequest:
+            name: Start user data stream (USER_STREAM) (Deprecated) Request
+            title: Start user data stream (USER_STREAM) (Deprecated) Request
+            description: Send a userDataStream.start request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.start
+                        enum:
+                            - userDataStream.start
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                        required:
+                            - apiKey
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamStartResponse:
             name: Start user data stream (USER_STREAM) (Deprecated) Response
             title: Start user data stream (USER_STREAM) (Deprecated) Response
             description: Receive response from userDataStream.start
@@ -85,35 +114,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        userDataStreamStartSend:
-            name: Start user data stream (USER_STREAM) (Deprecated) Request
-            title: Start user data stream (USER_STREAM) (Deprecated) Request
-            description: Send a userDataStream.start request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
-                    method:
-                        type: string
-                        description: method property
-                        example: userDataStream.start
-                        enum:
-                            - userDataStream.start
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                        required:
-                            - apiKey
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

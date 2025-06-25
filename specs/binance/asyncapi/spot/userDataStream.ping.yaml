@@ -13,10 +13,10 @@ channels:
             In order to keep the stream open, you have to regularly send pings using the userDataStream.ping request.
             It is recommended to send a ping once every 30 minutes.
         messages:
-            userDataStreamPingReceive:
-                $ref: '#/components/messages/userDataStreamPingReceive'
-            userDataStreamPingSend:
-                $ref: '#/components/messages/userDataStreamPingSend'
+            userDataStreamPingRequest:
+                $ref: '#/components/messages/userDataStreamPingRequest'
+            userDataStreamPingResponse:
+                $ref: '#/components/messages/userDataStreamPingResponse'
 operations:
     receiveUserdatastreamPing:
         title: Receive from userDataStream.ping
@@ -25,7 +25,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/userDataStreamPingReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamPingResponse'
     sendUserdatastreamPing:
         title: Send to userDataStream.ping
         description: Send a userDataStream.ping request
@@ -33,10 +33,42 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/userDataStreamPingSend'
+            - $ref: '#/channels/spot/messages/userDataStreamPingRequest'
 components:
     messages:
-        userDataStreamPingReceive:
+        userDataStreamPingRequest:
+            name: Ping user data stream (USER_STREAM) (Deprecated) Request
+            title: Ping user data stream (USER_STREAM) (Deprecated) Request
+            description: Send a userDataStream.ping request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 815d5fce-0880-4287-a567-80badf004c74
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.ping
+                        enum:
+                            - userDataStream.ping
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            listenKey:
+                                type: string
+                        required:
+                            - listenKey
+                            - apiKey
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamPingResponse:
             name: Ping user data stream (USER_STREAM) (Deprecated) Response
             title: Ping user data stream (USER_STREAM) (Deprecated) Response
             description: Receive response from userDataStream.ping
@@ -82,38 +114,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        userDataStreamPingSend:
-            name: Ping user data stream (USER_STREAM) (Deprecated) Request
-            title: Ping user data stream (USER_STREAM) (Deprecated) Request
-            description: Send a userDataStream.ping request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 815d5fce-0880-4287-a567-80badf004c74
-                    method:
-                        type: string
-                        description: method property
-                        example: userDataStream.ping
-                        enum:
-                            - userDataStream.ping
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            listenKey:
-                                type: string
-                        required:
-                            - listenKey
-                            - apiKey
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

@@ -8,10 +8,10 @@ channels:
         title: Channel userDataStream.stop
         description: Explicitly stop and close the user data stream.
         messages:
-            userDataStreamStopReceive:
-                $ref: '#/components/messages/userDataStreamStopReceive'
-            userDataStreamStopSend:
-                $ref: '#/components/messages/userDataStreamStopSend'
+            userDataStreamStopRequest:
+                $ref: '#/components/messages/userDataStreamStopRequest'
+            userDataStreamStopResponse:
+                $ref: '#/components/messages/userDataStreamStopResponse'
 operations:
     receiveUserdatastreamStop:
         title: Receive from userDataStream.stop
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/userDataStreamStopReceive'
+            - $ref: '#/channels/spot/messages/userDataStreamStopResponse'
     sendUserdatastreamStop:
         title: Send to userDataStream.stop
         description: Send a userDataStream.stop request
@@ -28,10 +28,42 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/userDataStreamStopSend'
+            - $ref: '#/channels/spot/messages/userDataStreamStopRequest'
 components:
     messages:
-        userDataStreamStopReceive:
+        userDataStreamStopRequest:
+            name: Stop user data stream (USER_STREAM) (Deprecated) Request
+            title: Stop user data stream (USER_STREAM) (Deprecated) Request
+            description: Send a userDataStream.stop request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 819e1b1b-8c06-485b-a13e-131326c69599
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.stop
+                        enum:
+                            - userDataStream.stop
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            listenKey:
+                                type: string
+                        required:
+                            - listenKey
+                            - apiKey
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamStopResponse:
             name: Stop user data stream (USER_STREAM) (Deprecated) Response
             title: Stop user data stream (USER_STREAM) (Deprecated) Response
             description: Receive response from userDataStream.stop
@@ -77,38 +109,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        userDataStreamStopSend:
-            name: Stop user data stream (USER_STREAM) (Deprecated) Request
-            title: Stop user data stream (USER_STREAM) (Deprecated) Request
-            description: Send a userDataStream.stop request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 819e1b1b-8c06-485b-a13e-131326c69599
-                    method:
-                        type: string
-                        description: method property
-                        example: userDataStream.stop
-                        enum:
-                            - userDataStream.stop
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            listenKey:
-                                type: string
-                        required:
-                            - listenKey
-                            - apiKey
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

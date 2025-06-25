@@ -10,10 +10,10 @@ channels:
             Cancel all open orders on a symbol.
             This includes orders that are part of an order list.
         messages:
-            openOrdersCancelallReceive:
-                $ref: '#/components/messages/openOrdersCancelallReceive'
-            openOrdersCancelallSend:
-                $ref: '#/components/messages/openOrdersCancelallSend'
+            openOrdersCancelallRequest:
+                $ref: '#/components/messages/openOrdersCancelallRequest'
+            openOrdersCancelallResponse:
+                $ref: '#/components/messages/openOrdersCancelallResponse'
 operations:
     receiveOpenordersCancelall:
         title: Receive from openOrders.cancelAll
@@ -22,7 +22,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/openOrdersCancelallReceive'
+            - $ref: '#/channels/spot/messages/openOrdersCancelallResponse'
     sendOpenordersCancelall:
         title: Send to openOrders.cancelAll
         description: Send a openOrders.cancelAll request
@@ -30,10 +30,51 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/openOrdersCancelallSend'
+            - $ref: '#/channels/spot/messages/openOrdersCancelallRequest'
 components:
     messages:
-        openOrdersCancelallReceive:
+        openOrdersCancelallRequest:
+            name: Cancel open orders (TRADE) Request
+            title: Cancel open orders (TRADE) Request
+            description: Send a openOrders.cancelAll request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 778f938f-9041-4b88-9914-efbf64eeacc8
+                    method:
+                        type: string
+                        description: method property
+                        example: openOrders.cancelAll
+                        enum:
+                            - openOrders.cancelAll
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        openOrdersCancelallResponse:
             name: Cancel open orders (TRADE) Response
             title: Cancel open orders (TRADE) Response
             description: Receive response from openOrders.cancelAll
@@ -176,47 +217,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        openOrdersCancelallSend:
-            name: Cancel open orders (TRADE) Request
-            title: Cancel open orders (TRADE) Request
-            description: Send a openOrders.cancelAll request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 778f938f-9041-4b88-9914-efbf64eeacc8
-                    method:
-                        type: string
-                        description: method property
-                        example: openOrders.cancelAll
-                        enum:
-                            - openOrders.cancelAll
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

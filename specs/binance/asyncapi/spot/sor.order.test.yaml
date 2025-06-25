@@ -12,10 +12,10 @@ channels:
             In addition to all parameters accepted by sor.order.place,
             the following optional parameters are also accepted:
         messages:
-            sorOrderTestReceive:
-                $ref: '#/components/messages/sorOrderTestReceive'
-            sorOrderTestSend:
-                $ref: '#/components/messages/sorOrderTestSend'
+            sorOrderTestRequest:
+                $ref: '#/components/messages/sorOrderTestRequest'
+            sorOrderTestResponse:
+                $ref: '#/components/messages/sorOrderTestResponse'
 operations:
     receiveSorOrderTest:
         title: Receive from sor.order.test
@@ -24,7 +24,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/sorOrderTestReceive'
+            - $ref: '#/channels/spot/messages/sorOrderTestResponse'
     sendSorOrderTest:
         title: Send to sor.order.test
         description: Send a sor.order.test request
@@ -32,59 +32,10 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/sorOrderTestSend'
+            - $ref: '#/channels/spot/messages/sorOrderTestRequest'
 components:
     messages:
-        sorOrderTestReceive:
-            name: Test new order using SOR (TRADE) Response
-            title: Test new order using SOR (TRADE) Response
-            description: Receive response from sor.order.test
-            payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 1
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        sorOrderTestSend:
+        sorOrderTestRequest:
             name: Test new order using SOR (TRADE) Request
             title: Test new order using SOR (TRADE) Request
             description: Send a sor.order.test request
@@ -143,6 +94,55 @@ components:
                                 type: string
                                 description: type property
                                 example: LIMIT
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sorOrderTestResponse:
+            name: Test new order using SOR (TRADE) Response
+            title: Test new order using SOR (TRADE) Response
+            description: Receive response from sor.order.test
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 1
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

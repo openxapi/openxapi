@@ -17,10 +17,10 @@ channels:
             - symbol and symbols cannot be used together.
             - If no symbol is specified, returns information about all symbols currently trading on the exchange.
         messages:
-            ticker24hrReceive:
-                $ref: '#/components/messages/ticker24hrReceive'
-            ticker24hrSend:
-                $ref: '#/components/messages/ticker24hrSend'
+            ticker24hrRequest:
+                $ref: '#/components/messages/ticker24hrRequest'
+            ticker24hrResponse:
+                $ref: '#/components/messages/ticker24hrResponse'
 operations:
     receiveTicker24hr:
         title: Receive from ticker.24hr
@@ -29,7 +29,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/ticker24hrReceive'
+            - $ref: '#/channels/spot/messages/ticker24hrResponse'
     sendTicker24hr:
         title: Send to ticker.24hr
         description: Send a ticker.24hr request
@@ -37,10 +37,47 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/ticker24hrSend'
+            - $ref: '#/channels/spot/messages/ticker24hrRequest'
 components:
     messages:
-        ticker24hrReceive:
+        ticker24hrRequest:
+            name: 24hr ticker price change statistics Request
+            title: 24hr ticker price change statistics Request
+            description: Send a ticker.24hr request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 93fb61ef-89f8-4d6e-b022-4f035a3fadad
+                    method:
+                        type: string
+                        description: method property
+                        example: ticker.24hr
+                        enum:
+                            - ticker.24hr
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+                                description: Query ticker for a single symbol
+                            symbols:
+                                type: array
+                                description: Query ticker for multiple symbols
+                                items:
+                                    type: string
+                                    description: array item
+                            type:
+                                type: string
+                                description: 'Ticker type: FULL (default) or MINI'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        ticker24hrResponse:
             name: 24hr ticker price change statistics Response
             title: 24hr ticker price change statistics Response
             description: Receive response from ticker.24hr
@@ -175,43 +212,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        ticker24hrSend:
-            name: 24hr ticker price change statistics Request
-            title: 24hr ticker price change statistics Request
-            description: Send a ticker.24hr request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 93fb61ef-89f8-4d6e-b022-4f035a3fadad
-                    method:
-                        type: string
-                        description: method property
-                        example: ticker.24hr
-                        enum:
-                            - ticker.24hr
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                                description: Query ticker for a single symbol
-                            symbols:
-                                type: array
-                                description: Query ticker for multiple symbols
-                                items:
-                                    type: string
-                                    description: array item
-                            type:
-                                type: string
-                                description: 'Ticker type: FULL (default) or MINI'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

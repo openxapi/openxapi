@@ -453,9 +453,9 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 	channelName := g.sanitizeChannelName(channel.Name)
 
 	// Create operations based on the messages in the channel
-	if sendMsg, exists := channel.Messages["send"]; exists {
+	if sendMsg, exists := channel.Messages["request"]; exists {
 		operationID := g.toCamelCase(fmt.Sprintf("send_%s", channelName))
-		messageKey := g.toCamelCase(fmt.Sprintf("%s_send", channelName))
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_request", channelName))
 		operations[operationID] = &AsyncAPIOperation{
 			Title:       fmt.Sprintf("Send to %s", channel.Name),
 			Summary:     sendMsg.Summary,
@@ -466,9 +466,9 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 		}
 	}
 
-	if receiveMsg, exists := channel.Messages["receive"]; exists {
+	if receiveMsg, exists := channel.Messages["response"]; exists {
 		operationID := g.toCamelCase(fmt.Sprintf("receive_%s", channelName))
-		messageKey := g.toCamelCase(fmt.Sprintf("%s_receive", channelName))
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_response", channelName))
 		operations[operationID] = &AsyncAPIOperation{
 			Title:       fmt.Sprintf("Receive from %s", channel.Name),
 			Summary:     receiveMsg.Summary,
@@ -493,15 +493,15 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 
 	// Convert messages to use references to components.messages
 	channelName := g.sanitizeChannelName(channel.Name)
-	if _, exists := channel.Messages["send"]; exists {
-		messageKey := g.toCamelCase(fmt.Sprintf("%s_send", channelName))
+	if _, exists := channel.Messages["request"]; exists {
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_request", channelName))
 		asyncChannel.Messages[messageKey] = &AsyncAPIMessage{
 			Ref: fmt.Sprintf("#/components/messages/%s", messageKey),
 		}
 	}
 
-	if _, exists := channel.Messages["receive"]; exists {
-		messageKey := g.toCamelCase(fmt.Sprintf("%s_receive", channelName))
+	if _, exists := channel.Messages["response"]; exists {
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_response", channelName))
 		asyncChannel.Messages[messageKey] = &AsyncAPIMessage{
 			Ref: fmt.Sprintf("#/components/messages/%s", messageKey),
 		}
@@ -515,12 +515,12 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 	componentMessages := make(map[string]*AsyncAPIMessage)
 	channelName := g.sanitizeChannelName(channel.Name)
 
-	if sendMsg, exists := channel.Messages["send"]; exists {
+	if sendMsg, exists := channel.Messages["request"]; exists {
 		// Convert the payload and ensure params object has required fields populated
 		payload := g.convertToAsyncAPISchema(sendMsg.Payload)
 		g.populateParamsRequired(payload, channel.Parameters)
 
-		messageKey := g.toCamelCase(fmt.Sprintf("%s_send", channelName))
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_request", channelName))
 		asyncMessage := &AsyncAPIMessage{
 			Name:        sendMsg.Title,
 			Title:       sendMsg.Title,
@@ -540,8 +540,8 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 		componentMessages[messageKey] = asyncMessage
 	}
 
-	if receiveMsg, exists := channel.Messages["receive"]; exists {
-		messageKey := g.toCamelCase(fmt.Sprintf("%s_receive", channelName))
+	if receiveMsg, exists := channel.Messages["response"]; exists {
+		messageKey := g.toCamelCase(fmt.Sprintf("%s_response", channelName))
 		asyncMessage := &AsyncAPIMessage{
 			Name:        receiveMsg.Title,
 			Title:       receiveMsg.Title,

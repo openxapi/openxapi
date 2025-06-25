@@ -17,10 +17,10 @@ channels:
             - If no condition is specified, the most recent trades are returned.
             - The time between startTime and endTime can't be longer than 24 hours.
         messages:
-            myTradesReceive:
-                $ref: '#/components/messages/myTradesReceive'
-            myTradesSend:
-                $ref: '#/components/messages/myTradesSend'
+            myTradesRequest:
+                $ref: '#/components/messages/myTradesRequest'
+            myTradesResponse:
+                $ref: '#/components/messages/myTradesResponse'
 operations:
     receiveMytrades:
         title: Receive from myTrades
@@ -29,7 +29,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/myTradesReceive'
+            - $ref: '#/channels/spot/messages/myTradesResponse'
     sendMytrades:
         title: Send to myTrades
         description: Send a myTrades request
@@ -37,10 +37,65 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/myTradesSend'
+            - $ref: '#/channels/spot/messages/myTradesRequest'
 components:
     messages:
-        myTradesReceive:
+        myTradesRequest:
+            name: Account trade history (USER_DATA) Request
+            title: Account trade history (USER_DATA) Request
+            description: Send a myTrades request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: f4ce6a53-a29d-4f70-823b-4ab59391d6e8
+                    method:
+                        type: string
+                        description: method property
+                        example: myTrades
+                        enum:
+                            - myTrades
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            endTime:
+                                type: string
+                            fromId:
+                                type: integer
+                                format: int64
+                                description: First trade ID to query
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            orderId:
+                                type: integer
+                                format: int64
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            startTime:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - symbol
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        myTradesResponse:
             name: Account trade history (USER_DATA) Response
             title: Account trade history (USER_DATA) Response
             description: Receive response from myTrades
@@ -146,61 +201,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        myTradesSend:
-            name: Account trade history (USER_DATA) Request
-            title: Account trade history (USER_DATA) Request
-            description: Send a myTrades request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: f4ce6a53-a29d-4f70-823b-4ab59391d6e8
-                    method:
-                        type: string
-                        description: method property
-                        example: myTrades
-                        enum:
-                            - myTrades
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            endTime:
-                                type: string
-                            fromId:
-                                type: integer
-                                format: int64
-                                description: First trade ID to query
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            orderId:
-                                type: integer
-                                format: int64
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            startTime:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

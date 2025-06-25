@@ -8,10 +8,10 @@ channels:
         title: Channel allOrderLists
         description: Query information about all your order lists, filtered by time range.
         messages:
-            allOrderListsReceive:
-                $ref: '#/components/messages/allOrderListsReceive'
-            allOrderListsSend:
-                $ref: '#/components/messages/allOrderListsSend'
+            allOrderListsRequest:
+                $ref: '#/components/messages/allOrderListsRequest'
+            allOrderListsResponse:
+                $ref: '#/components/messages/allOrderListsResponse'
 operations:
     receiveAllorderlists:
         title: Receive from allOrderLists
@@ -20,7 +20,7 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/allOrderListsReceive'
+            - $ref: '#/channels/spot/messages/allOrderListsResponse'
     sendAllorderlists:
         title: Send to allOrderLists
         description: Send a allOrderLists request
@@ -28,10 +28,59 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/allOrderListsSend'
+            - $ref: '#/channels/spot/messages/allOrderListsRequest'
 components:
     messages:
-        allOrderListsReceive:
+        allOrderListsRequest:
+            name: Account order list history (USER_DATA) Request
+            title: Account order list history (USER_DATA) Request
+            description: Send a allOrderLists request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 8617b7b3-1b3d-4dec-94cd-eefd929b8ceb
+                    method:
+                        type: string
+                        description: method property
+                        example: allOrderLists
+                        enum:
+                            - allOrderLists
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            endTime:
+                                type: string
+                            fromId:
+                                type: integer
+                                format: int64
+                                description: Order list ID to begin at
+                            limit:
+                                type: integer
+                                description: 'Default: 500; Maximum: 1000'
+                            recvWindow:
+                                type: string
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            startTime:
+                                type: string
+                            timestamp:
+                                type: string
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        allOrderListsResponse:
             name: Account order list history (USER_DATA) Response
             title: Account order list history (USER_DATA) Response
             description: Receive response from allOrderLists
@@ -131,55 +180,6 @@ components:
                         type: integer
                         description: status property
                         example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        allOrderListsSend:
-            name: Account order list history (USER_DATA) Request
-            title: Account order list history (USER_DATA) Request
-            description: Send a allOrderLists request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 8617b7b3-1b3d-4dec-94cd-eefd929b8ceb
-                    method:
-                        type: string
-                        description: method property
-                        example: allOrderLists
-                        enum:
-                            - allOrderLists
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            endTime:
-                                type: string
-                            fromId:
-                                type: integer
-                                format: int64
-                                description: Order list ID to begin at
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            startTime:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - apiKey
-                            - signature
-                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
