@@ -86,7 +86,7 @@ function generateEventHandler(message, channel) {
   handler += `\t\t\tvar eventDataToUnmarshal interface{}\n`;
   handler += `\t\t\t\n`;
   handler += `\t\t\t// Check if this map contains an "event" field (nested structure)\n`;
-  handler += `\t\t\tif nestedEvent, hasEvent := mapData["event"]; hasEvent {\n`;
+  handler += `\t\t\tif _, hasEvent := mapData["event"]; hasEvent {\n`;
   handler += `\t\t\t\t// This is a full message with nested event object\n`;
   handler += `\t\t\t\t// Use the entire message structure for parsing\n`;
   handler += `\t\t\t\teventDataToUnmarshal = mapData\n`;
@@ -148,8 +148,8 @@ function generateTypedRequestMethod(operation) {
   }
   
   // Generate struct names based on the actual model naming convention
-  const requestStructName = getModelStructName('', sendMessage.name() || sendMessage.id());
-  const responseStructName = receiveMessage ? getModelStructName('', receiveMessage.name() || receiveMessage.id()) : 'interface{}';
+  const requestStructName = getModelStructName('', sendMessage.id() || sendMessage.name());
+  const responseStructName = receiveMessage ? getModelStructName('', receiveMessage.id() || receiveMessage.name()) : null;
   
   let handler = '';
   
@@ -171,14 +171,19 @@ function generateTypedRequestMethod(operation) {
  * Generate model struct name based on message name or ID
  */
 function getModelStructName(channelAddress, messageName) {
-  // Clean and format the message name
+  // Clean and format the message name but KEEP Send/Receive suffixes
   let cleanName = messageName
-    .replace(/Send$/, '')
-    .replace(/Receive$/, '')
-    .replace(/Request$/, '')
-    .replace(/Response$/, '');
+    // Remove authentication/description parts in parentheses
+    .replace(/\([^)]*\)/g, '')
+    // Remove any remaining special characters except dots (for nested names)
+    .replace(/[^a-zA-Z0-9.]/g, '');
   
-  // Convert to PascalCase
+  // Ensure the name starts with a letter (Go requirement)
+  if (cleanName && /^[0-9]/.test(cleanName)) {
+    cleanName = 'T' + cleanName; // Prefix with 'T' for type
+  }
+  
+  // Convert to PascalCase - this will match how IndividualModels generates the struct names
   return toPascalCase(cleanName);
 }
 
@@ -192,7 +197,9 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   let method = `// Send${methodName} sends a ${channelAddress} request using typed request/response structs\n`;
   method += `// Authentication required: ${authType}\n`;
   method += `// If request.Id is empty, a new request ID will be generated automatically\n`;
-  method += `func (c *Client) Send${methodName}(ctx context.Context, request *models.${requestStructName}, responseHandler func(*models.${responseStructName}, error) error) error {\n`;
+  // Handle response type - use interface{} if no specific response type
+  const responseType = responseStructName ? `*models.${responseStructName}` : `interface{}`;
+  method += `func (c *Client) Send${methodName}(ctx context.Context, request *models.${requestStructName}, responseHandler func(${responseType}, error) error) error {\n`;
   method += `\t// Use existing request ID or generate a new one\n`;
   method += `\tvar reqID string\n`;
   method += `\tif request.Id != "" {\n`;
@@ -239,7 +246,29 @@ function generateBasicTypedMethod(methodName, channelAddress, requestStructName,
   }
   
   method += `\t// Register typed response handler with automatic JSON parsing\n`;
-  method += `\tRegisterTypedResponseHandler[models.${responseStructName}](c, reqID, responseHandler)\n\n`;
+  if (responseStructName) {
+    // Use typed handler for specific response types
+    const genericType = `models.${responseStructName}`;
+    method += `\tRegisterTypedResponseHandler[${genericType}](c, reqID, responseHandler)\n\n`;
+  } else {
+    // Use untyped handler for interface{} responses
+    method += `\tc.responseHandlers.Store(reqID, ResponseHandler{\n`;
+    method += `\t\tRequestID: reqID,\n`;
+    method += `\t\tHandler: func(data []byte, err error) error {\n`;
+    method += `\t\t\tif err != nil {\n`;
+    method += `\t\t\t\treturn responseHandler(nil, err)\n`;
+    method += `\t\t\t}\n`;
+    method += `\t\t\t\n`;
+    method += `\t\t\t// Parse as generic interface{} \n`;
+    method += `\t\t\tvar response interface{}\n`;
+    method += `\t\t\tif err := json.Unmarshal(data, &response); err != nil {\n`;
+    method += `\t\t\t\treturn responseHandler(nil, fmt.Errorf("failed to parse response: %w", err))\n`;
+    method += `\t\t\t}\n`;
+    method += `\t\t\t\n`;
+    method += `\t\t\treturn responseHandler(response, nil)\n`;
+    method += `\t\t},\n`;
+    method += `\t})\n\n`;
+  }
   
   method += `\t// Send request\n`;
   method += `\treturn c.sendRequest(requestMap)\n`;

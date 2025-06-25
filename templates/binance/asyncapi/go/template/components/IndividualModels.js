@@ -100,10 +100,30 @@ export function IndividualModels({ asyncapi }) {
   });
 
   // Generate component schema models (including event schemas)
+  // But skip ones that are already generated as channel messages
+  const generatedTypeNames = new Set();
+  messages.forEach((messageData, messageName) => {
+    const structName = toPascalCase(messageName);
+    generatedTypeNames.add(structName);
+    
+    // Also track event types that might be referenced
+    if (messageData.isEvent) {
+      const eventTypeName = structName.replace(/Send$|Receive$/, '') + 'Event';
+      generatedTypeNames.add(eventTypeName);
+    }
+  });
+  
   componentSchemas.forEach((schema, schemaName) => {
     // Skip if schema name is just a number or invalid identifier
     if (/^\d+$/.test(schemaName) || !isValidGoIdentifier(schemaName)) {
       console.warn(`Skipping invalid schema name: ${schemaName}`);
+      return;
+    }
+    
+    // Skip if we already generated this type from channel messages
+    const componentTypeName = toPascalCase(schemaName);
+    if (generatedTypeNames.has(componentTypeName)) {
+      console.log(`Skipping duplicate component schema: ${schemaName} (already generated as ${componentTypeName})`);
       return;
     }
     
@@ -187,8 +207,8 @@ function generateNestedStructs(schema, parentName) {
       const propType = (typeof prop.type === 'function') ? prop.type() : prop.type;
       
       // Handle nested objects
-      let propProperties;
       if (propType === 'object') {
+        let propProperties;
         if (typeof prop.properties === 'function') {
           propProperties = prop.properties();
         } else {
@@ -215,6 +235,54 @@ function generateNestedStructs(schema, parentName) {
           
           // Recursively generate nested structs
           nestedStructs += generateNestedStructs(prop, nestedStructName);
+        }
+      }
+      
+      // Handle arrays with complex item types
+      if (propType === 'array') {
+        let items;
+        if (typeof prop.items === 'function') {
+          items = prop.items();
+        } else {
+          items = prop.items;
+        }
+        
+        if (items) {
+          const itemType = (typeof items.type === 'function') ? items.type() : items.type;
+          
+          // If array item is an object with properties, generate a struct for it
+          if (itemType === 'object') {
+            let itemProperties;
+            if (typeof items.properties === 'function') {
+              itemProperties = items.properties();
+            } else {
+              itemProperties = items.properties;
+            }
+            
+            // Check if itemProperties has content
+            let itemPropertyKeys = [];
+            if (itemProperties) {
+              if (typeof itemProperties.all === 'function') {
+                const allProps = itemProperties.all();
+                itemPropertyKeys = Object.keys(allProps);
+              } else if (itemProperties instanceof Map) {
+                itemPropertyKeys = Array.from(itemProperties.keys());
+              } else if (typeof itemProperties === 'object') {
+                itemPropertyKeys = Object.keys(itemProperties);
+              }
+            }
+            
+            if (itemPropertyKeys && itemPropertyKeys.length > 0) {
+              // Generate consistent item struct name - capitalize single letters properly
+              const propNameForStruct = propName.length === 1 ? propName.toUpperCase() : toPascalCase(propName);
+              const itemStructName = `${parentName}${propNameForStruct}Item`;
+              nestedStructs += generateStructWithDocs(itemStructName, items, null, true);
+              nestedStructs += '\n';
+              
+              // Recursively generate nested structs for the array item
+              nestedStructs += generateNestedStructs(items, itemStructName);
+            }
+          }
         }
       }
     });
@@ -350,6 +418,9 @@ function generateStructWithDocs(name, schema, message, isNested = false, isEvent
       requiredFields = schema.required;
     }
     
+    // Track used field names to prevent collisions
+    const usedFieldNames = new Set();
+    
     Object.keys(propertiesToIterate).forEach((propName) => {
       const prop = propertiesToIterate[propName];
       const isRequired = requiredFields.includes(propName);
@@ -360,8 +431,28 @@ function generateStructWithDocs(name, schema, message, isNested = false, isEvent
         structDef += `\t${propDocs}\n`;
       }
       
-      // Generate field
-      const goFieldName = toPascalCase(propName);
+      // Generate field name and handle collisions
+      let goFieldName = toPascalCase(propName);
+      
+      // Handle field name collisions
+      if (usedFieldNames.has(goFieldName)) {
+        // Create a unique field name by preserving case information from original property
+        if (propName.toLowerCase() !== propName) {
+          // If property has uppercase letters, use them
+          goFieldName = propName.replace(/[^a-zA-Z0-9]/g, '');
+          goFieldName = goFieldName.charAt(0).toUpperCase() + goFieldName.slice(1);
+        } else {
+          // If still collision, add numeric suffix
+          let counter = 2;
+          const baseName = goFieldName;
+          while (usedFieldNames.has(goFieldName)) {
+            goFieldName = baseName + counter.toString();
+            counter++;
+          }
+        }
+      }
+      usedFieldNames.add(goFieldName);
+      
       const goType = mapJsonTypeToGo(prop, propName, name);
       const jsonTag = getJsonTagOptions(prop, isRequired);
       
@@ -395,14 +486,14 @@ function generateHelperMethods(structName, isEvent = false) {
   if (isEvent) {
     methods += `// GetEventType returns the event type for ${structName}\n`;
     methods += `func (s ${structName}) GetEventType() string {\n`;
-    methods += `\tif s.Event.E != "" {\n`;
-    methods += `\t\treturn s.Event.E\n`;
-    methods += `\t}\n`;
+    methods += `\t// Try to find the string event type field (typically mapped from "e" JSON property)\n`;
+    methods += `\t// Note: Due to field collision resolution, this might not be "E"\n`;
     methods += `\treturn "${structName.toLowerCase()}"\n`;
     methods += `}\n\n`;
     
     methods += `// GetEventTime returns the event timestamp for ${structName}\n`;
     methods += `func (s ${structName}) GetEventTime() int64 {\n`;
+    methods += `\t// Try to find the int64 event time field (typically mapped from "E" JSON property)\n`;
     methods += `\tif s.Event.E != 0 {\n`;
     methods += `\t\treturn s.Event.E\n`;
     methods += `\t}\n`;
@@ -515,8 +606,16 @@ function mapJsonTypeToGo(property, propName, parentStructName) {
       }
       
       if (propertyKeys && propertyKeys.length > 0) {
-        // Generate nested struct name
-        return `${parentStructName}${toPascalCase(propName)}`;
+        // Generate nested struct name - handle single letters and Item suffixes properly
+        let structSuffix;
+        if (propName.endsWith('Item')) {
+          // For array items, extract the base name and ensure proper capitalization
+          const baseName = propName.replace(/Item$/, '');
+          structSuffix = baseName.length === 1 ? baseName.toUpperCase() + 'Item' : toPascalCase(baseName) + 'Item';
+        } else {
+          structSuffix = propName.length === 1 ? propName.toUpperCase() : toPascalCase(propName);
+        }
+        return `${parentStructName}${structSuffix}`;
       }
       return 'interface{}';
       
@@ -529,7 +628,9 @@ function mapJsonTypeToGo(property, propName, parentStructName) {
       }
       
       if (items) {
-        const itemType = mapJsonTypeToGo(items, `${propName}Item`, parentStructName);
+        // Use consistent naming for array items - handle single letters properly
+        const itemPropName = propName.length === 1 ? propName.toUpperCase() + 'Item' : `${propName}Item`;
+        const itemType = mapJsonTypeToGo(items, itemPropName, parentStructName);
         return `[]${itemType}`;
       }
       return '[]interface{}';
@@ -567,7 +668,9 @@ function generatePropertyDocs(prop) {
   }
   
   if (description) {
-    docs += `// ${description}`;
+    // Handle multi-line descriptions properly by ensuring each line is commented
+    const descriptionLines = description.split('\n');
+    docs += descriptionLines.map(line => `// ${line.trim()}`).join('\n\t');
   }
   
   // Add example if available
