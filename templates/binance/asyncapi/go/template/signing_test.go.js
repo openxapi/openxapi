@@ -13,6 +13,8 @@ export default function ({ asyncapi, params }) {
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 )`}
       </Text>
 
@@ -103,7 +105,8 @@ export default function ({ asyncapi, params }) {
 
       <Text newLines={2}>
         {`func TestHMACSignature(t *testing.T) {
-	creds := NewHMACCredentials("test-api-key", "test-secret-key")
+	creds := NewAuth("test-api-key")
+	creds.SetSecretKey("test-secret-key")
 	signer := NewRequestSigner(creds)
 
 	params := map[string]interface{}{
@@ -146,7 +149,18 @@ export default function ({ asyncapi, params }) {
 		t.Fatalf("Failed to generate RSA key: %v", err)
 	}
 
-	creds := NewRSACredentials("test-api-key", privateKey)
+	// Convert to PEM format
+	privKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	pemBlock := &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: privKeyBytes,
+	}
+	pemData := pem.EncodeToMemory(pemBlock)
+
+	creds := NewAuth("test-api-key")
+	if err := creds.SetPrivateKey(pemData); err != nil {
+		t.Fatalf("Failed to set RSA private key: %v", err)
+	}
 	signer := NewRequestSigner(creds)
 
 	params := map[string]interface{}{
@@ -181,7 +195,21 @@ export default function ({ asyncapi, params }) {
 		t.Fatalf("Failed to generate Ed25519 key: %v", err)
 	}
 
-	creds := NewEd25519Credentials("test-api-key", privateKey)
+	// Convert to PKCS8 PEM format
+	privKeyBytes, err := x509.MarshalPKCS8PrivateKey(privateKey)
+	if err != nil {
+		t.Fatalf("Failed to marshal Ed25519 private key: %v", err)
+	}
+	pemBlock := &pem.Block{
+		Type:  "PRIVATE KEY",
+		Bytes: privKeyBytes,
+	}
+	pemData := pem.EncodeToMemory(pemBlock)
+
+	creds := NewAuth("test-api-key")
+	if err := creds.SetPrivateKey(pemData); err != nil {
+		t.Fatalf("Failed to set Ed25519 private key: %v", err)
+	}
 	signer := NewRequestSigner(creds)
 
 	params := map[string]interface{}{
@@ -210,7 +238,8 @@ export default function ({ asyncapi, params }) {
 
       <Text newLines={2}>
         {`func TestSignRequestWithNoCredentials(t *testing.T) {
-	var signer *RequestSigner
+	// Test with nil auth instead of nil signer
+	signer := NewRequestSigner(nil)
 
 	params := map[string]interface{}{
 		"symbol": "BTCUSDT",
@@ -218,14 +247,15 @@ export default function ({ asyncapi, params }) {
 
 	err := signer.SignRequest(params, AuthTypeTrade)
 	if err == nil {
-		t.Error("SignRequest() should return error when signer is nil")
+		t.Error("SignRequest() should return error when auth is nil")
 	}
 }`}
       </Text>
 
       <Text newLines={2}>
         {`func TestNoneAuthType(t *testing.T) {
-	creds := NewHMACCredentials("test-api-key", "test-secret-key")
+	creds := NewAuth("test-api-key")
+	creds.SetSecretKey("test-secret-key")
 	signer := NewRequestSigner(creds)
 
 	params := map[string]interface{}{
@@ -251,7 +281,8 @@ export default function ({ asyncapi, params }) {
 
       <Text newLines={2}>
         {`func BenchmarkHMACSignature(b *testing.B) {
-	creds := NewHMACCredentials("test-api-key", "test-secret-key")
+	creds := NewAuth("test-api-key")
+	creds.SetSecretKey("test-secret-key")
 	signer := NewRequestSigner(creds)
 
 	params := map[string]interface{}{

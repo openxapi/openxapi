@@ -335,7 +335,7 @@ function generateStructDefinition(name, schema) {
       usedFieldNames.add(fieldName);
       
       const isRequired = requiredFields.includes(propName);
-      const jsonTag = `\`json:"${propName}${getJsonTagOptions(prop, isRequired)}"\``;
+      const jsonTag = getJsonTagOptions(prop, isRequired);
       
       if (prop.description) {
         // Handle multi-line descriptions by splitting and prefixing each line with //
@@ -354,7 +354,7 @@ function generateStructDefinition(name, schema) {
       if (prop.examples && prop.examples.length > 0) {
         structDef += `\t// Example: ${prop.examples[0]}\n`;
       }
-      structDef += `\t${fieldName} ${goType} ${jsonTag}\n`;
+      structDef += `\t${fieldName} ${goType} \`json:"${propName}${jsonTag}"\`\n`;
     });
   }
 
@@ -456,7 +456,7 @@ function generateStructWithDocs(name, schema, message, isNested = false, isEvent
       const goType = mapJsonTypeToGo(prop, propName, name);
       const jsonTag = getJsonTagOptions(prop, isRequired);
       
-      structDef += `\t${goFieldName} ${goType} \`json:"${propName}"${jsonTag}\`\n`;
+      structDef += `\t${goFieldName} ${goType} \`json:"${propName}${jsonTag}"\`\n`;
     });
   }
   
@@ -944,4 +944,4 @@ function isGoKeyword(name) {
     'var'
   ];
   return goKeywords.includes(name);
-} 
+}
