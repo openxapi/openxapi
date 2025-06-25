@@ -1,14 +1,17 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
 
 export default function ({ asyncapi, params }) {
-  const moduleName = params.moduleName || 'binance-websocket-client';
+  const moduleName = params.moduleName || 'github.com/openxapi/binance-go/ws';
+  const packageName = params.packageName || 'spot';
+  const version = params.version || '0.1.0';
+  const author = params.author || 'openxapi';
 
   return (
     <File name="README.md">
       <Text>
-{`# Binance WebSocket API Client with Authentication
+{`# Binance WebSocket API Client with Enhanced Authentication
 
-This Go client provides comprehensive support for Binance's WebSocket API with built-in authentication for all security types, enhanced error handling, and automatic JSON parsing.
+This Go client provides comprehensive support for Binance's WebSocket API with built-in authentication for all security types, enhanced error handling, automatic JSON parsing, and high-performance event processing.
 
 ## Features
 
@@ -16,12 +19,14 @@ This Go client provides comprehensive support for Binance's WebSocket API with b
 - ✅ **Context-Based Authentication**: Per-request authentication via Go's context.Context
 - ✅ **Automatic Authentication**: Detects authentication requirements from API specifications
 - ✅ **Flexible Auth Strategy**: Client-level or per-request authentication
-- ✅ **Enhanced Error Handling**: Comprehensive API error handling with status codes
+- ✅ **Enhanced Error Handling**: Comprehensive API error handling with HTTP-like status codes
 - ✅ **Automatic JSON Parsing**: Response handlers receive parsed objects, not raw bytes
-- ✅ **Type-Safe**: Generated Go structs with proper types
-- ✅ **Concurrent-Safe**: Thread-safe operations with proper locking
-- ✅ **OneOf Support**: Automatic handling of multiple response types
-- ✅ **Comprehensive Testing**: Unit tests and benchmarks included
+- ✅ **Type-Safe**: Generated Go structs with proper types and validation
+- ✅ **High-Performance**: Optimized with sync.Map, pre-allocated buffers, and concurrent-safe operations
+- ✅ **OneOf Support**: Automatic handling of multiple response types in single endpoints
+- ✅ **Event-Driven Architecture**: Advanced event handling with global handlers and history tracking
+- ✅ **Comprehensive Testing**: Unit tests, benchmarks, and integration examples included
+- ✅ **Thread-Safe**: All operations are concurrent-safe with proper locking mechanisms
 
 ## Authentication Types
 
@@ -421,6 +426,87 @@ func main() {
 }
 \`\`\`
 
+## Event Handling and OneOf Support
+
+### Setting Up Event Handlers
+
+\`\`\`go
+package main
+
+import (
+    "context"
+    "log"
+    "${moduleName}"
+)
+
+func main() {
+    client := NewClient()
+    
+    ctx := context.Background()
+    if err := client.Connect(ctx); err != nil {
+        log.Fatalf("Failed to connect: %v", err)
+    }
+    defer client.Disconnect()
+    
+    // Setup individual event handlers for different event types
+    client.HandleExecutionReportEvent(func(event *models.ExecutionReportEvent) error {
+        log.Printf("Order update: Symbol=%s, Side=%s, Status=%s", event.S, event.Side, event.X)
+        return nil
+    })
+    
+    client.HandleBalanceUpdateEvent(func(event *models.BalanceUpdateEvent) error {
+        log.Printf("Balance update: Asset=%s, Delta=%s", event.A, event.D)
+        return nil
+    })
+    
+    client.HandleOutboundAccountPositionEvent(func(event *models.OutboundAccountPositionEvent) error {
+        log.Printf("Account position update: Event time=%d", event.E)
+        return nil
+    })
+    
+    // Or setup all default handlers at once
+    client.SetupDefaultUserDataStreamHandlers()
+    
+    // Subscribe to user data stream (requires authentication)
+    auth := NewAuth("your-api-key")
+    auth.SetSecretKey("your-secret-key")
+    authCtx, _ := auth.ContextWithValue(context.Background())
+    
+    request := &models.UserDataStreamSubscribeRequest{}
+    err := client.SendUserDataStreamSubscribe(authCtx, request, func(response *models.UserDataStreamSubscribeResponse, err error) error {
+        if err != nil {
+            if apiErr, ok := IsAPIError(err); ok {
+                log.Printf("UserDataStream error: %s", apiErr.Error())
+                return nil
+            }
+            return err
+        }
+        
+        log.Printf("UserDataStream subscribed: %+v", response.Result)
+        return nil
+    })
+    if err != nil {
+        log.Printf("Error subscribing to user data stream: %v", err)
+    }
+}
+\`\`\`
+
+### Response History Management
+
+\`\`\`go
+// Get all received responses
+history := client.GetResponseHistory()
+log.Printf("Received %d responses", len(history))
+
+// Clear history when needed
+client.ClearResponseHistory()
+
+// Access specific responses
+for i, response := range history {
+    log.Printf("Response %d: %+v", i+1, response)
+}
+\`\`\`
+
 ## Authentication Flow
 
 The client automatically handles authentication for you:
@@ -595,6 +681,26 @@ client.SendAccountCommission(authCtx, request, func(response *models.AccountComm
 })
 \`\`\`
 
+## High-Performance Features
+
+### Optimized Client Architecture
+
+The client is designed for high-performance scenarios:
+
+- **Pre-allocated Buffers**: JSON parsing uses pre-allocated buffers to reduce garbage collection
+- **sync.Map**: Response handlers use sync.Map for better concurrent performance
+- **Separate Mutexes**: Response list and client state use separate mutexes to reduce contention
+- **Capacity Pre-allocation**: Response lists are pre-allocated with capacity to minimize reallocations
+
+### Concurrent Safety
+
+All client operations are thread-safe:
+
+- Response handlers use RWMutex for concurrent access
+- Response history is protected with mutex
+- Global response registry uses locks for safe registration
+- Event handlers support concurrent registration and execution
+
 ## Security Best Practices
 
 1. **Store Keys Securely**: Never hardcode API keys in your source code
@@ -709,6 +815,13 @@ Run the included tests to verify everything works:
 go test -v
 go test -bench=. # Run benchmarks
 \`\`\`
+
+## Package Information
+
+- **Module**: ${moduleName}
+- **Package**: ${packageName}
+- **Version**: ${version}
+- **Author**: ${author}
 
 ## Support
 
