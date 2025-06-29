@@ -433,20 +433,20 @@ func (c *Client) SetAuth(auth *Auth) {
         {`// Server Management Methods
 
 // AddServer adds a new server to the client
-func (c *Client) AddServer(name string, url string, title string, description string) error {
+func (c *Client) AddServer(name string, serverURL string, title string, description string) error {
 	if c.conn != nil {
 		return fmt.Errorf("cannot add server while connected - please disconnect first")
 	}
 	
 	// Parse URL to extract components
-	parsedURL, err := url.Parse(url)
+	parsedURL, err := url.Parse(serverURL)
 	if err != nil {
 		return fmt.Errorf("invalid URL format: %w", err)
 	}
 	
 	server := &ServerInfo{
 		Name:        name,
-		URL:         url,
+		URL:         serverURL,
 		Host:        parsedURL.Host,
 		Pathname:    parsedURL.Path,
 		Protocol:    parsedURL.Scheme,
@@ -460,20 +460,20 @@ func (c *Client) AddServer(name string, url string, title string, description st
 }
 
 // AddOrUpdateServer adds a new server or updates an existing one
-func (c *Client) AddOrUpdateServer(name string, url string, title string, description string) error {
+func (c *Client) AddOrUpdateServer(name string, serverURL string, title string, description string) error {
 	if c.conn != nil {
 		return fmt.Errorf("cannot add/update server while connected - please disconnect first")
 	}
 	
 	// Parse URL to extract components
-	parsedURL, err := url.Parse(url)
+	parsedURL, err := url.Parse(serverURL)
 	if err != nil {
 		return fmt.Errorf("invalid URL format: %w", err)
 	}
 	
 	server := &ServerInfo{
 		Name:        name,
-		URL:         url,
+		URL:         serverURL,
 		Host:        parsedURL.Host,
 		Pathname:    parsedURL.Path,
 		Protocol:    parsedURL.Scheme,
@@ -496,20 +496,20 @@ func (c *Client) RemoveServer(name string) error {
 }
 
 // UpdateServer updates an existing server's configuration
-func (c *Client) UpdateServer(name string, url string, title string, description string) error {
+func (c *Client) UpdateServer(name string, serverURL string, title string, description string) error {
 	if c.conn != nil {
 		return fmt.Errorf("cannot update server while connected - please disconnect first")
 	}
 	
 	// Parse URL to extract components
-	parsedURL, err := url.Parse(url)
+	parsedURL, err := url.Parse(serverURL)
 	if err != nil {
 		return fmt.Errorf("invalid URL format: %w", err)
 	}
 	
 	server := &ServerInfo{
 		Name:        name,
-		URL:         url,
+		URL:         serverURL,
 		Host:        parsedURL.Host,
 		Pathname:    parsedURL.Path,
 		Protocol:    parsedURL.Scheme,
