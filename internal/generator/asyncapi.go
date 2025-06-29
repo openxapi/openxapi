@@ -253,27 +253,33 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 }
 
 // GenerateWebSocket creates an AsyncAPI 3.0.0 specification from parsed WebSocket channels
-func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, servers []string) error {
+func (g *Generator) GenerateWebSocket(exchange, version, title, apiType string, servers map[string][]string) error {
 	if len(servers) == 0 {
 		return fmt.Errorf("no servers found for %s %s WebSocket API", exchange, apiType)
 	}
 
 	// Create servers using AsyncAPI 3.0.0 format
 	asyncServers := make(map[string]*AsyncAPIServer)
-	for i, server := range servers {
-		serverName := fmt.Sprintf("server%d", i+1)
-		if i == 0 {
-			serverName = "production"
-		}
+	for groupName, serverList := range servers {
+		for i, server := range serverList {
+			var serverName string
+			if len(serverList) == 1 {
+				// If only one server in the group, use the group name directly
+				serverName = groupName
+			} else {
+				// If multiple servers in the group, append index
+				serverName = fmt.Sprintf("%s%d", groupName, i+1)
+			}
 
-		host, pathname, protocol := g.parseServerURL(server)
-		asyncServers[serverName] = &AsyncAPIServer{
-			Host:        host,
-			Pathname:    pathname,
-			Protocol:    protocol,
-			Title:       fmt.Sprintf("%s Server", strings.Title(exchange)),
-			Summary:     fmt.Sprintf("%s %s WebSocket API Server", strings.Title(exchange), strings.Title(apiType)),
-			Description: fmt.Sprintf("WebSocket server for %s exchange %s API", exchange, apiType),
+			host, pathname, protocol := g.parseServerURL(server)
+			asyncServers[serverName] = &AsyncAPIServer{
+				Host:        host,
+				Pathname:    pathname,
+				Protocol:    protocol,
+				Title:       fmt.Sprintf("%s %s Server", strings.Title(exchange), strings.Title(groupName)),
+				Summary:     fmt.Sprintf("%s %s WebSocket API Server (%s)", strings.Title(exchange), strings.Title(apiType), strings.Title(groupName)),
+				Description: fmt.Sprintf("WebSocket server for %s exchange %s API (%s environment)", exchange, apiType, groupName),
+			}
 		}
 	}
 

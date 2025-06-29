@@ -39,11 +39,11 @@ type Documentation struct {
 }
 
 type AsyncDocumentation struct {
-	Type             string     `yaml:"type"`
-	Description      string     `yaml:"description"`
-	Servers          []string   `yaml:"servers"`
-	URLGroups        []URLGroup `yaml:"url_groups"`
-	ProtectedMethods []string   `yaml:"protected_methods"`
+	Type             string              `yaml:"type"`
+	Description      string              `yaml:"description"`
+	Servers          map[string][]string `yaml:"servers"`
+	URLGroups        []URLGroup          `yaml:"url_groups"`
+	ProtectedMethods []string            `yaml:"protected_methods"`
 }
 
 // URLGroup is a group of URLs that are parsed by the same parser
