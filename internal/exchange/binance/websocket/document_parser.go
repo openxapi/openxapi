@@ -15,10 +15,38 @@ import (
 )
 
 // DocumentParser implements the HTTPDocumentParser interface for Binance WebSocket API
-type DocumentParser struct{}
+type DocumentParser struct {
+	docType string
+}
 
 // Parse parses the Binance WebSocket API documentation and extracts method information
 func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedMethods []string) ([]parser.Channel, error) {
+	logrus.Debugf("DocumentParser.Parse: DocType=%s, URL=%s", urlEntity.DocType, urlEntity.URL)
+	switch urlEntity.DocType {
+	case "spot":
+		sp := &SpotDocumentParser{DocumentParser: p}
+		return sp.Parse(r, urlEntity, protectedMethods)
+	case "derivatives":
+		uf := &UmfuturesDocumentParser{SpotDocumentParser: &SpotDocumentParser{DocumentParser: p}}
+		return uf.Parse(r, urlEntity, protectedMethods)
+	default:
+		// For umfutures, try derivatives parser if DocType is not set
+		if strings.Contains(urlEntity.URL, "umfutures") || strings.Contains(urlEntity.URL, "derivatives") {
+			uf := &UmfuturesDocumentParser{SpotDocumentParser: &SpotDocumentParser{DocumentParser: p}}
+			return uf.Parse(r, urlEntity, protectedMethods)
+		}
+		sp := &SpotDocumentParser{DocumentParser: p}
+		return sp.Parse(r, urlEntity, protectedMethods)
+	}
+}
+
+// SpotDocumentParser implements the HTTPDocumentParser interface for Binance Spot WebSocket API
+type SpotDocumentParser struct {
+	*DocumentParser
+}
+
+// Parse parses the Binance Spot WebSocket API documentation and extracts method information
+func (p *SpotDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedMethods []string) ([]parser.Channel, error) {
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing HTML document: %w", err)
@@ -80,7 +108,7 @@ func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protect
 	doc.Find("h3.anchor").Each(parseMethod("h3"))
 	doc.Find("h4.anchor").Each(parseMethod("h4"))
 
-	logrus.Infof("Extracted %d WebSocket API methods from Binance documentation", len(channels))
+	logrus.Debugf("Extracted %d WebSocket API methods from Binance documentation", len(channels))
 	return channels, nil
 }
 
@@ -238,7 +266,7 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 	}
 }
 
-// isResponseCodeBlock checks if a code block follows a "Response:" paragraph
+// isResponseCodeBlock checks if a code block follows a "Response:" paragraph or "Response Example" header
 func (p *DocumentParser) isResponseCodeBlock(s *goquery.Selection) bool {
 	// Look for "Response:" in the immediately preceding elements
 	prev := s.Prev()
@@ -249,7 +277,12 @@ func (p *DocumentParser) isResponseCodeBlock(s *goquery.Selection) bool {
 				return true
 			}
 		} else if prev.Is("h1, h2, h3, h4, h5, h6") {
-			// If we hit a header before finding Response:, this is likely a request
+			// Check if this is a "Response Example" header
+			prevText := strings.ToLower(cleanText(prev.Text()))
+			if strings.Contains(prevText, "response example") || strings.Contains(prevText, "response:") {
+				return true
+			}
+			// If we hit a different header, this is likely a request
 			break
 		}
 		prev = prev.Prev()
@@ -268,12 +301,23 @@ func min(a, b int) int {
 func cleanResponseLine(text string) string {
 	commentRegex := regexp.MustCompile(`(\s+|,)(//|#).*`)
 	commentRegex2 := regexp.MustCompile(`//\s+.*`)
+	// Fix missing commas before comments - this handles malformed JSON in Binance docs
+	missingCommaRegex := regexp.MustCompile(`(["}])\s+(//|#).*`)
+
 	text = cleanText(text)
+	// First fix missing commas before comments
+	text = missingCommaRegex.ReplaceAllString(text, "$1,")
+	// Then remove comments
 	text = commentRegex.ReplaceAllString(text, "$1")
 	text = commentRegex2.ReplaceAllString(text, "")
 	text = strings.ReplaceAll(text, "\t", "")
 	text = strings.ReplaceAll(text, "\u00a0", "")
 	text = strings.ReplaceAll(text, "\\", "")
+
+	// Fix trailing commas in arrays and objects - this handles malformed JSON in Binance docs
+	trailingCommaRegex := regexp.MustCompile(`,\s*([}\]])`)
+	text = trailingCommaRegex.ReplaceAllString(text, "$1")
+
 	if strings.HasPrefix(strings.TrimSpace(text), "//") {
 		return ""
 	}
@@ -753,13 +797,22 @@ func (p *DocumentParser) convertTypeToJSONSchema(name, paramType, description st
 func (p *DocumentParser) parseJSONSchema(jsonCode, schemaType string) *parser.Schema {
 	var data interface{}
 
+	logrus.Debugf("parseJSONSchema: Parsing %s JSON (length: %d)", schemaType, len(jsonCode))
+	maxLen := 500
+	if len(jsonCode) < maxLen {
+		maxLen = len(jsonCode)
+	}
+	logrus.Debugf("parseJSONSchema: JSON content: %s", jsonCode[:maxLen])
+
 	if err := json.Unmarshal([]byte(jsonCode), &data); err != nil {
+		logrus.Debugf("parseJSONSchema: JSON unmarshal failed: %v", err)
 		return &parser.Schema{
 			Type:        "object",
 			Description: fmt.Sprintf("JSON %s data", schemaType),
 		}
 	}
 
+	logrus.Debugf("parseJSONSchema: JSON unmarshal succeeded for %s", schemaType)
 	return p.convertToSchema("", data, fmt.Sprintf("%s schema", schemaType))
 }
 

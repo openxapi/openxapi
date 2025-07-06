@@ -131,7 +131,8 @@ internal/exchange/{exchange}/
 │   └── *_parser.go           # Specialized parsers (derivatives, margin, etc.)
 └── websocket/
     ├── parser.go              # WebSocket parser
-    └── document_parser.go     # WebSocket documentation parsing
+    ├── document_parser.go     # WebSocket documentation parsing (factory pattern)
+    └── *_document_parser.go   # Specialized parsers (umfutures, etc.)
 ```
 
 ### Parser Interface Implementation
@@ -199,8 +200,15 @@ samples/{exchange}/{api_type}/
 ### Logging Levels
 - **Error**: Critical failures that stop processing
 - **Warn**: Issues that don't stop processing but need attention
-- **Info**: General operational information
-- **Debug**: Detailed debugging information
+- **Info**: General operational information (high-level progress, completion status)
+- **Debug**: Detailed debugging information (method-level processing, response parsing details)
+
+**Guidelines for Log Levels:**
+- Use `logrus.Infof` for high-level progress that users want to see during normal operation
+- Use `logrus.Debugf` for detailed processing information that's only useful during debugging
+- Avoid repetitive INFO messages - if a message repeats many times, consider using DEBUG level
+- Examples of appropriate INFO logs: "Processing WebSocket API type: umfutures", "Successfully generated WebSocket OpenAPI spec"
+- Examples of DEBUG logs: "Method X has response message: true", "Extracted Y methods from URL Z"
 
 ### Error Wrapping Pattern
 ```go
@@ -471,6 +479,15 @@ if (requestMap["method"] == "userDataStream.subscribe" || requestMap["method"] =
 
 ### Binance WebSocket API Specific Issues
 
+#### umfutures Response Detection Issue (FIXED)
+**Problem**: umfutures WebSocket AsyncAPI specs were missing response messages entirely
+**Root Cause**: umfutures documentation uses `<h2>Response Example</h2>` structure while spot documentation uses `<p><strong>Response:</strong></p>` structure. The umfutures parser was calling the spot parser's `collectElementContent` method which didn't recognize the umfutures response pattern.
+**Solution**: Added umfutures-specific response detection in the `collectElementContent` method:
+- `isUmfuturesResponseElement()` - detects response sections in umfutures HTML structure
+- `extractUmfuturesResponseContent()` - extracts JSON from umfutures response sections  
+- `extractCodeBlockJSON()` - parses JSON from code block elements
+The fix ensures response content is properly detected and converted to JSON for schema generation.
+
 #### PERCENT_PRICE_BY_SIDE Filter
 **Error**: "Filter failure: PERCENT_PRICE_BY_SIDE" (error -1013)
 **Cause**: Order price is too far from current market price
@@ -510,5 +527,137 @@ The error "ed25519: bad private key length: 48" indicated a PEM-encoded key that
 **Error**: "WebSocket session not authenticated. Recommendation: use 'session.logon'" (error -1193)
 **Cause**: UserDataStream subscribe/unsubscribe requires session.logon which only works with Ed25519 keys
 **Solution**: Skip UserDataStream tests when using HMAC/RSA keys, or use Ed25519 keys for WebSocket session authentication
+
+## CRITICAL DEVELOPMENT RULES
+
+### Spec Generation Principle
+**NEVER modify generated specification files directly.** All changes must be made in parser code so they are automatically generated.
+
+**Key Guidelines:**
+1. **Generated specs are OUTPUT ONLY** - Never manually edit files in `specs/` directory
+2. **Fix parser code instead** - All spec corrections must be implemented in parser logic
+3. **Regenerate after changes** - Always run generation commands after parser modifications
+4. **Automation is key** - Specs must be reproducible and consistent through automated generation
+
+### Malformed JSON Handling Principle
+**ALWAYS clean malformed JSON through parser code first.** When encountering JSON parsing errors, follow this systematic approach:
+
+**Key Guidelines:**
+1. **Parser cleaning first** - Use and enhance the `cleanResponseLine` function in `internal/exchange/binance/websocket/document_parser.go`
+2. **Apply comprehensive cleaning** - Ensure JSON cleaning handles missing commas, trailing commas, comments, and invalid characters  
+3. **Multi-stage cleaning** - Apply JSON cleaning at both HTML extraction and schema parsing stages
+4. **Find invalid characters** - If parser code cannot fix malformed JSON, identify the specific invalid characters or syntax errors
+5. **Manual documentation fixes ONLY as last resort** - Only manually fix JSON in API documentation samples if parser-based cleaning fails
+6. **Always verify with user** - Double-check any manual documentation fixes before applying them
+7. **Update parser for future issues** - Enhance cleaning logic to handle similar malformed JSON patterns automatically
+
+**Example Cleaning Pipeline:**
+```go
+// Stage 1: During HTML extraction
+text := cleanResponseLine(child.Text())
+
+// Stage 2: Before JSON parsing  
+jsonCode := strings.TrimPrefix(line, "JSON:")
+jsonCode = cleanResponseLine(jsonCode) // Additional cleaning
+responseSchema = p.parseJSONSchema(jsonCode, "response")
+```
+
+**Common Binance JSON Issues to Handle:**
+- Missing commas before comments: `"field": "value" // comment "nextField": "value"`
+- Trailing commas in arrays/objects: `["item1", "item2",]` or `{"key": "value",}`
+- Comments in JSON: `// This is a comment` or `# This is also a comment`
+- Invisible Unicode characters and escape sequences
+
+### Module Isolation Principle
+**NEVER modify shared code that affects existing working modules.** When adding support for new modules (like umfutures), ensure changes are isolated and do not impact existing functionality (like spot).
+
+**Key Guidelines:**
+1. **Spot module is COMPLETE** - Do not modify any code that could affect spot AsyncAPI spec generation
+2. **Use inheritance and overrides** - Create specialized parsers that inherit from base classes but override specific methods
+3. **Parse from documentation first** - Extract parameter types from official API documentation rather than hardcoding type mappings
+4. **Module-specific implementations** - Add umfutures-specific logic only in umfutures-specific files
+5. **Validate isolation** - Always test that changes don't affect existing spec generation
+
+### Before Making Changes
+1. Identify if the change affects shared code (document_parser.go, base classes)
+2. If yes, create module-specific overrides instead
+3. Test that existing specs remain unchanged
+4. Parse actual API documentation to understand correct types and parameters
+5. **CRITICAL**: Only modify parser code, never generated spec files
+
+## WebSocket Parser Implementation for USD-M Futures (umfutures)
+
+### Factory Pattern for WebSocket Document Parsers
+
+The WebSocket parser now uses a factory pattern similar to the REST parser to handle different API types:
+
+```go
+func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedMethods []string) ([]parser.Channel, error) {
+    switch urlEntity.DocType {
+    case "spot":
+        sp := &SpotDocumentParser{DocumentParser: p}
+        return sp.Parse(r, urlEntity, protectedMethods)
+    case "derivatives":
+        uf := &UmfuturesDocumentParser{SpotDocumentParser: &SpotDocumentParser{DocumentParser: p}}
+        return uf.Parse(r, urlEntity, protectedMethods)
+    default:
+        sp := &SpotDocumentParser{DocumentParser: p}
+        return sp.Parse(r, urlEntity, protectedMethods)
+    }
+}
+```
+
+### UmfuturesDocumentParser Implementation
+
+**Location**: `internal/exchange/binance/websocket/umfutures_document_parser.go`
+
+The UmfuturesDocumentParser extends SpotDocumentParser and adds derivatives-specific parsing logic:
+
+1. **Inheritance Pattern**: Inherits from SpotDocumentParser to reuse common WebSocket parsing logic
+2. **Header Detection**: Handles different header patterns (h1, h2) common in derivatives documentation
+3. **General Description Filtering**: Skips general documentation headers like "Introduction", "Overview", etc.
+4. **Derivatives-Specific Content**: Handles API Description and Request Weight sections
+5. **Method Reuse**: Leverages parent methods for extracting parameters, JSON schemas, and correlation IDs
+
+### Configuration Updates
+
+**File**: `configs/exchanges/binance/websocket.yaml`
+
+Added protected methods for umfutures module:
+```yaml
+protected_methods:
+  # Market data methods that may require authentication in some contexts
+  - ticker.price
+  - ticker.bookTicker
+  # Trading methods that require authentication
+  - order.place
+  - order.cancel
+  - order.modify
+  - order.status
+  - account.balance
+  - account.status
+  - position.status
+  # User data stream methods
+  - userDataStream.start
+  - userDataStream.ping
+  - userDataStream.stop
+```
+
+### Generated Outputs
+
+The implementation successfully generates:
+- `specs/binance/asyncapi/umfutures.yaml` - Main AsyncAPI specification
+- `specs/binance/asyncapi/umfutures/` - Individual method specifications
+- Complete AsyncAPI 3.0 compliant specifications for all USD-M Futures WebSocket methods
+
+### Testing Commands
+
+```bash
+# Generate WebSocket specs including umfutures
+make generate-ws-spec EXCHANGE=binance
+
+# Generate SDK for umfutures WebSocket API
+make generate-ws-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=${PWD}/../binance-go/ws
+```
 
 This guide provides the essential context for understanding and contributing to the OpenXAPI project. For specific implementation details, refer to the source code and existing tests. 
