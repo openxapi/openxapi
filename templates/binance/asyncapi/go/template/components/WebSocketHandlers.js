@@ -125,24 +125,42 @@ function generateTypedRequestMethod(operation, asyncapi) {
   const operationId = operation.id();
   // Clean the method name - remove 'send' prefix if present
   const cleanedOperationId = operationId.replace(/^send/, '');
-  const methodName = capitalizeFirst(toPascalCase(cleanedOperationId));
+  
+  // Extract the actual method value from the send message to use for the Go method name
+  const sendMessage = operation.messages().find(msg => {
+    const msgId = msg.id();
+    return msgId && (msgId.includes('Request') || msg.name().includes('Request'));
+  });
+  
+  let methodName;
+  if (sendMessage) {
+    const actualMethod = extractMethodFromMessage(sendMessage);
+    if (actualMethod) {
+      // Use the actual method value for the Go method name (this preserves proper casing)
+      // Convert dots to camelCase for valid Go method names
+      methodName = actualMethod.split('.').map((part, index) => {
+        if (index === 0) {
+          return capitalizeFirst(part);
+        } else {
+          return capitalizeFirst(part);
+        }
+      }).join('');
+    } else {
+      // Fallback to operation ID
+      methodName = capitalizeFirst(toPascalCase(cleanedOperationId));
+    }
+  } else {
+    // Fallback to operation ID
+    methodName = capitalizeFirst(toPascalCase(cleanedOperationId));
+  }
   const channel = operation.channels()[0];
   const channelAddress = channel.address();
   
   // Get the messages for this operation
   const messages = operation.messages();
-  let sendMessage = null;
   let receiveMessage = null;
   
-  // Find send message in current operation
-  messages.forEach((message) => {
-    const messageName = message.name() || message.id();
-    const messageId = message.id();
-    
-    if (messageId.includes('Request') || messageName.includes('Request')) {
-      sendMessage = message;
-    }
-  });
+  // sendMessage was already found above, now we just need receiveMessage
   
   // Find corresponding receive operation and response message
   // Look for operations with matching base name but 'receive' action
@@ -576,7 +594,11 @@ function extractParameterInfo(sendMessage) {
 function generateParameterValidation(sendMessage, actualMethod) {
   const requiredParams = extractRequiredParameters(sendMessage);
   
-  if (requiredParams.length === 0) {
+  // Filter out authentication parameters that are automatically added by the signing system
+  const authParams = ['apiKey', 'signature', 'timestamp'];
+  const userParams = requiredParams.filter(param => !authParams.includes(param));
+  
+  if (userParams.length === 0) {
     return '';
   }
   
@@ -588,7 +610,7 @@ function generateParameterValidation(sendMessage, actualMethod) {
   
   let validation = `\t// Validate required parameters\n`;
   validation += `\tif request.Params == nil {\n`;
-  validation += `\t\treturn fmt.Errorf("method ${actualMethod} requires parameters but none provided: %v", []string{${requiredParams.map(p => `"${p}"`).join(', ')}})\n`;
+  validation += `\t\treturn fmt.Errorf("method ${actualMethod} requires parameters but none provided: %v", []string{${userParams.map(p => `"${p}"`).join(', ')}})\n`;
   validation += `\t}\n\n`;
   
   // Skip individual field validation for now
@@ -648,12 +670,18 @@ function generateBasicTypedMethod(methodName, actualMethod, requestStructName, r
     method += `\t\t}\n`;
     method += `\t\trequestMap["params"] = params\n`;
     method += `\t} else {\n`;
-    method += `\t\t// Create params if it doesn't exist\n`;
-    method += `\t\tparams := make(map[string]interface{})\n`;
-    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+    method += `\t\t// Special case: userDataStream methods don't need params at all\n`;
+    method += `\t\tif requestMap["method"] == "userDataStream.subscribe" || requestMap["method"] == "userDataStream.unsubscribe" {\n`;
+    method += `\t\t\t// These methods require authentication but don't accept any parameters\n`;
+    method += `\t\t\t// Skip params creation - authentication is handled at the WebSocket connection level\n`;
+    method += `\t\t} else {\n`;
+    method += `\t\t\t// Create params if it doesn't exist for other methods\n`;
+    method += `\t\t\tparams := make(map[string]interface{})\n`;
+    method += `\t\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+    method += `\t\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+    method += `\t\t\t}\n`;
+    method += `\t\t\trequestMap["params"] = params\n`;
     method += `\t\t}\n`;
-    method += `\t\trequestMap["params"] = params\n`;
     method += `\t}\n\n`;
   }
   
@@ -746,11 +774,17 @@ function extractAuthTypeFromMessage(sendMessage) {
   }
   
   if (messageId) {
-    if (messageId.includes('account') || messageId.includes('order') || messageId.includes('trade')) {
+    // Only check for account and order patterns, NOT trades
+    // trades.aggregate and trades.historical are public endpoints
+    if (messageId.includes('account') || messageId.includes('order')) {
       return 'USER_DATA';
     }
     if (messageId.includes('userDataStream')) {
       return 'USER_STREAM';
+    }
+    // More specific trading patterns that require auth (not just any "trade")
+    if (messageId.includes('myTrades') || messageId.includes('order.place') || messageId.includes('order.cancel')) {
+      return 'USER_DATA';
     }
   }
   
@@ -834,12 +868,18 @@ function generateOneOfHandlerMethod(methodName, actualMethod, requestStructName,
     method += `\t\t}\n`;
     method += `\t\trequestMap["params"] = params\n`;
     method += `\t} else {\n`;
-    method += `\t\t// Create params if it doesn't exist\n`;
-    method += `\t\tparams := make(map[string]interface{})\n`;
-    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+    method += `\t\t// Special case: userDataStream methods don't need params at all\n`;
+    method += `\t\tif requestMap["method"] == "userDataStream.subscribe" || requestMap["method"] == "userDataStream.unsubscribe" {\n`;
+    method += `\t\t\t// These methods require authentication but don't accept any parameters\n`;
+    method += `\t\t\t// Skip params creation - authentication is handled at the WebSocket connection level\n`;
+    method += `\t\t} else {\n`;
+    method += `\t\t\t// Create params if it doesn't exist for other methods\n`;
+    method += `\t\t\tparams := make(map[string]interface{})\n`;
+    method += `\t\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+    method += `\t\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+    method += `\t\t\t}\n`;
+    method += `\t\t\trequestMap["params"] = params\n`;
     method += `\t\t}\n`;
-    method += `\t\trequestMap["params"] = params\n`;
     method += `\t}\n\n`;
   }
   
@@ -913,19 +953,46 @@ function generateOneOfHelperMethods(asyncapi) {
   helpers += `\t})\n`;
   helpers += `}\n\n`;
   
-  helpers += `// structToMap converts a struct to a map[string]interface{}\n`;
+  helpers += `// structToMap converts a struct to a map[string]interface{} while preserving number precision\n`;
   helpers += `func structToMap(v interface{}) (map[string]interface{}, error) {\n`;
   helpers += `\tdata, err := json.Marshal(v)\n`;
   helpers += `\tif err != nil {\n`;
   helpers += `\t\treturn nil, err\n`;
   helpers += `\t}\n`;
   helpers += `\t\n`;
+  helpers += `\t// Use a decoder that preserves number precision\n`;
+  helpers += `\tdecoder := json.NewDecoder(strings.NewReader(string(data)))\n`;
+  helpers += `\tdecoder.UseNumber()\n`;
+  helpers += `\t\n`;
   helpers += `\tvar result map[string]interface{}\n`;
-  helpers += `\tif err := json.Unmarshal(data, &result); err != nil {\n`;
+  helpers += `\tif err := decoder.Decode(&result); err != nil {\n`;
   helpers += `\t\treturn nil, err\n`;
   helpers += `\t}\n`;
   helpers += `\t\n`;
+  helpers += `\t// Convert json.Number to appropriate types\n`;
+  helpers += `\tconvertJSONNumbers(result)\n`;
+  helpers += `\t\n`;
   helpers += `\treturn result, nil\n`;
+  helpers += `}\n\n`;
+  helpers += `// convertJSONNumbers recursively converts json.Number values to appropriate types\n`;
+  helpers += `func convertJSONNumbers(m map[string]interface{}) {\n`;
+  helpers += `\tfor k, v := range m {\n`;
+  helpers += `\t\tswitch val := v.(type) {\n`;
+  helpers += `\t\tcase json.Number:\n`;
+  helpers += `\t\t\t// Try to convert to int64 first, then fall back to float64\n`;
+  helpers += `\t\t\tif intVal, err := val.Int64(); err == nil {\n`;
+  helpers += `\t\t\t\tm[k] = intVal\n`;
+  helpers += `\t\t\t} else if floatVal, err := val.Float64(); err == nil {\n`;
+  helpers += `\t\t\t\tm[k] = floatVal\n`;
+  helpers += `\t\t\t} else {\n`;
+  helpers += `\t\t\t\t// Keep as string if conversion fails\n`;
+  helpers += `\t\t\t\tm[k] = string(val)\n`;
+  helpers += `\t\t\t}\n`;
+  helpers += `\t\tcase map[string]interface{}:\n`;
+  helpers += `\t\t\t// Recursively convert nested maps\n`;
+  helpers += `\t\t\tconvertJSONNumbers(val)\n`;
+  helpers += `\t\t}\n`;
+  helpers += `\t}\n`;
   helpers += `}\n\n`;
   
   return helpers;
@@ -1009,16 +1076,30 @@ function getGoType(type) {
 function toPascalCase(str) {
   if (!str) return '';
   
-  // Handle special cases with dots, underscores, and camelCase
+  // If the string is already in PascalCase (starts with uppercase and contains more uppercase letters), preserve it
+  if (/^[A-Z]/.test(str) && /[A-Z]/.test(str.slice(1))) {
+    return str;
+  }
+  
+  // Handle camelCase strings by preserving internal capital letters
+  // Split on dots, underscores, and dashes first
   return str
     .split(/[._-]/)
     .map(word => {
       if (!word) return '';
-      // Handle camelCase words by splitting on uppercase letters
-      return word.replace(/([a-z])([A-Z])/g, '$1 $2')
-        .split(' ')
-        .map(subWord => subWord.charAt(0).toUpperCase() + subWord.slice(1).toLowerCase())
-        .join('');
+      
+      // For words that contain camelCase (have uppercase letters in the middle),
+      // split them carefully to preserve the original casing
+      if (/[a-z][A-Z]/.test(word)) {
+        // Split on camelCase boundaries but preserve the case of each part
+        const parts = word.replace(/([a-z])([A-Z])/g, '$1 $2').split(' ');
+        return parts
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+          .join('');
+      } else {
+        // For words without camelCase, just capitalize the first letter
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
     })
     .join('')
     .replace(/\s+/g, ''); // Remove any remaining spaces

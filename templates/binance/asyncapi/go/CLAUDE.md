@@ -119,7 +119,58 @@ Parameters can be configured through:
 - **Ed25519**: Modern elliptic curve signing
 - **Environment Variables**: Configurable authentication credentials
 
-## Troubleshooting Common Issues
+## Debugging Test Failures: Systematic Approach
+
+When integration tests fail, follow this systematic debugging order to identify root causes:
+
+### 1. Check Original API Documentation
+**Location**: `samples/binance/websocket/spot/` 
+- Verify parameter requirements from official Binance WebSocket API docs
+- Identify mandatory vs optional parameters
+- Confirm expected parameter count for each endpoint
+- Check for parameter format requirements (STRING, INT, ENUM, etc.)
+
+### 2. Verify AsyncAPI Specification Generation  
+**Location**: `specs/binance/asyncapi/spot/`
+- Ensure AsyncAPI specs correctly reflect the API documentation
+- Validate parameter definitions match source documentation
+- Check for missing or extra parameters in the spec
+- Verify parameter types and constraints are accurate
+
+### 3. Inspect Generated Client Code
+**Location**: `templates/binance/asyncapi/go/`
+- Review generated Go models for correct parameter structures
+- Check if template generation is adding/omitting parameters incorrectly
+- Verify request serialization logic in client templates
+- Ensure authentication parameter handling is correct
+
+### 4. Fix Integration Test Code
+**Location**: Test files and integration tests
+- Only after confirming steps 1-3 are correct
+- Update test parameter usage to match API requirements
+- Fix request construction and parameter passing
+
+### Common Test Failure Patterns
+
+#### Parameter Count Mismatches
+**Symptom**: "Not all sent parameters were read; read 'X' parameter(s) but was sent 'Y'"
+**Root Cause**: Usually template serialization issue - check if client is sending extra fields like `id`, `method` in `params`
+**Debug**: 
+1. Check API docs for exact parameter count
+2. Verify AsyncAPI spec parameter definitions  
+3. Inspect generated request serialization logic
+
+#### Authentication Parameter Issues
+**Symptom**: "method X requires parameters but none provided: [apiKey signature timestamp]"
+**Root Cause**: Empty params object prevents authentication system from adding required fields
+**Solution**: Initialize empty params structure so auth system can populate it
+
+#### Missing Required Parameters
+**Symptom**: "Parameter 'X' was empty" or validation errors
+**Root Cause**: Test not setting required parameters
+**Debug**: Check API docs for mandatory parameter list
+
+### Troubleshooting Common Issues
 
 ### Template Issues
 - **AsyncAPI CLI not found**: Install with `npm install -g @asyncapi/cli`

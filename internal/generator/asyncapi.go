@@ -658,6 +658,7 @@ func (g *Generator) writeAsyncAPISpec(spec *AsyncAPISpec, path string) error {
 }
 
 // toCamelCase converts a string with underscores to camelCase
+// Preserves existing camelCase within word parts
 func (g *Generator) toCamelCase(s string) string {
 	parts := strings.Split(s, "_")
 	if len(parts) == 0 {
@@ -668,7 +669,8 @@ func (g *Generator) toCamelCase(s string) string {
 	result := parts[0]
 	for i := 1; i < len(parts); i++ {
 		if len(parts[i]) > 0 {
-			result += strings.ToUpper(parts[i][:1]) + strings.ToLower(parts[i][1:])
+			// Preserve existing camelCase within the part
+			result += strings.ToUpper(parts[i][:1]) + parts[i][1:]
 		}
 	}
 	return result

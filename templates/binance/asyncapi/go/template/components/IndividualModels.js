@@ -1250,13 +1250,13 @@ function generateGoFieldName(propName, property, isEvent = false) {
         .trim();
       
       if (cleanedDescription) {
-        // Convert cleaned description to PascalCase
+        // Convert cleaned description to PascalCase, ensuring spaces are handled
         return toPascalCase(cleanedDescription);
       }
     }
   }
   
-  // Fallback to using property name
+  // Fallback to using property name, ensure it's properly formatted
   return toPascalCase(propName);
 }
 
@@ -1268,19 +1268,33 @@ function generateGoFieldName(propName, property, isEvent = false) {
 function toPascalCase(str) {
   if (!str) return '';
   
-  // Handle special cases with dots, underscores, and camelCase
+  // Only preserve the string if it's already in valid PascalCase without spaces/separators
+  // Valid PascalCase: starts with uppercase, no spaces/dots/underscores/dashes, may contain uppercase letters
+  if (/^[A-Z][a-zA-Z0-9]*$/.test(str) && !/[\s._\-]/.test(str)) {
+    return str;
+  }
+  
+  // Handle camelCase strings by preserving internal capital letters
+  // Split on dots, underscores, dashes, and spaces first
   return str
-    .split(/[._-]/)
+    .split(/[._\-\s]+/)
     .map(word => {
       if (!word) return '';
-      // Handle camelCase words by splitting on uppercase letters
-      return word.replace(/([a-z])([A-Z])/g, '$1 $2')
-        .split(' ')
-        .map(subWord => subWord.charAt(0).toUpperCase() + subWord.slice(1).toLowerCase())
-        .join('');
+      
+      // For words that contain camelCase (have uppercase letters in the middle),
+      // split them carefully to preserve the original casing
+      if (/[a-z][A-Z]/.test(word)) {
+        // Split on camelCase boundaries but preserve the case of each part
+        const parts = word.replace(/([a-z])([A-Z])/g, '$1 $2').split(' ');
+        return parts
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+          .join('');
+      } else {
+        // For words without camelCase, just capitalize the first letter
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
     })
-    .join('')
-    .replace(/\s+/g, ''); // Remove any remaining spaces
+    .join('');
 }
 
 /*

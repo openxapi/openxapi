@@ -222,6 +222,78 @@ if err != nil {
 - Mock external HTTP calls in unit tests
 - Validate generated specs against OpenAPI/AsyncAPI 3.0 schemas
 
+## Debugging WebSocket Integration Test Failures
+
+When WebSocket integration tests fail, follow this systematic debugging approach to identify root causes for binance exchange and websocket spot module:
+
+### 1. Check Original API Documentation
+**Location**: `samples/binance/websocket/spot/` 
+- Verify parameter requirements from official Binance WebSocket API docs
+- Identify mandatory vs optional parameters  
+- Confirm expected parameter count for each endpoint
+- Check for parameter format requirements (STRING, INT, ENUM, etc.)
+
+### 2. Verify AsyncAPI Specification Generation  
+**Location**: `specs/binance/asyncapi/spot/`
+- Ensure AsyncAPI specs correctly reflect the API documentation
+- Validate parameter definitions match source documentation
+- Check for missing or extra parameters in the spec
+- Verify parameter types and constraints are accurate
+
+### 3. Inspect Generated Client Code
+**Location**: `templates/binance/asyncapi/go/`
+- Review generated Go models for correct parameter structures
+- Check if template generation is adding/omitting parameters incorrectly
+- Verify request serialization logic in client templates
+- Ensure authentication parameter handling is correct
+- **Critical**: Check `structToMap` function for number precision issues (int64 values becoming scientific notation)
+
+### 4. Fix Integration Test Code
+**Location**: Test files and integration tests
+- Only after confirming steps 1-3 are correct
+- Update test parameter usage to match API requirements
+- Fix request construction and parameter passing
+
+### Common Test Failure Patterns
+
+#### Parameter Count Mismatches
+**Symptom**: "Not all sent parameters were read; read 'X' parameter(s) but was sent 'Y'"
+**Root Causes**: 
+- Template serialization issue - check if client is sending extra fields like `id`, `method` in `params`
+- Number precision loss in `structToMap` conversion
+**Debug**: 
+1. Check API docs for exact parameter count
+2. Verify AsyncAPI spec parameter definitions  
+3. Inspect generated request serialization logic
+
+#### Signature Validation Errors (-1022)
+**Symptom**: "Signature for this request is not valid"
+**Root Causes**:
+- Number precision loss: int64 values converted to scientific notation (e.g., `1.2569099453e+10`)
+- Incorrect parameter ordering in signature payload
+- Wrong timestamp format or parameter values
+**Debug**:
+1. Check if `structToMap` is preserving int64 precision
+2. Verify signature payload parameter ordering (alphabetical)
+3. Ensure timestamp is Unix milliseconds format
+
+#### Authentication Parameter Issues
+**Symptom**: "method X requires parameters but none provided: [apiKey signature timestamp]"
+**Root Cause**: Empty params object prevents authentication system from adding required fields
+**Solution**: Initialize empty params structure so auth system can populate it
+
+#### Missing Required Parameters
+**Symptom**: "Parameter 'X' was empty" or validation errors
+**Root Cause**: Test not setting required parameters
+**Debug**: Check API docs for mandatory parameter list
+
+### Key Technical Fixes Applied
+
+#### Authentication Parameter Handling
+- Auth parameters (`apiKey`, `signature`, `timestamp`) are excluded from AsyncAPI specs
+- Parameters are automatically added by the signing system, not included in models
+- Authentication type detection improved to distinguish public vs authenticated endpoints
+
 ## Common Development Scenarios
 
 ### Adding New Exchange Support
@@ -376,5 +448,60 @@ docs(readme): update installation instructions
 - `parser.Parser` - Main parsing interface
 - `parser.HTTPDocumentParser` - Document parsing interface
 - `generator.Generator` - Specification generation
+
+## Known Issues
+
+### WebSocket UserDataStream Subscribe/Unsubscribe Error (FIXED)
+**Error**: "Not all sent parameters were read; read '0' parameter(s) but was sent '1'"
+**Cause**: The UserDataStream.subscribe and UserDataStream.unsubscribe methods don't accept any parameters, but the generated client was creating an empty params field for authentication.
+**Solution**: Fixed in WebSocketHandlers.js template to skip params creation for userDataStream methods. Template now includes special case handling:
+```javascript
+if (requestMap["method"] == "userDataStream.subscribe" || requestMap["method"] == "userDataStream.unsubscribe") {
+    // These methods require authentication but don't accept any parameters
+    // Skip params creation - authentication is handled at the WebSocket connection level
+}
+```
+
+### Binance WebSocket API Specific Issues
+
+#### PERCENT_PRICE_BY_SIDE Filter
+**Error**: "Filter failure: PERCENT_PRICE_BY_SIDE" (error -1013)
+**Cause**: Order price is too far from current market price
+**Solution**: Fetch current market price and place orders within acceptable percentage range (e.g., 5% from current price)
+
+#### SessionLogon Authentication
+**Error**: "Signature for this request is not valid" (error -1022)
+**Cause**: WebSocket session.logon requires Ed25519 keys with proper signature generation, not HMAC-SHA256
+**Solution**: Implement Ed25519 signature generation for session.logon requests. The test code was incorrectly using HMAC-SHA256 for all key types. Fixed by updating generateSignature function to handle Ed25519 keys:
+
+```go
+case KeyTypeED25519:
+    // Load Ed25519 private key from file and decode (hex or base64)
+    privateKey := ed25519.PrivateKey(privateKeyBytes)
+    signature := ed25519.Sign(privateKey, []byte(queryString))
+    return hex.EncodeToString(signature), nil
+```
+
+The fix handles multiple Ed25519 key formats:
+- PEM-encoded PKCS8 keys (parsed with x509.ParsePKCS8PrivateKey)
+- 32-byte seed format (hex/base64) using ed25519.NewKeyFromSeed
+- 64-byte full key format (hex/base64) used directly as ed25519.PrivateKey
+
+The error "ed25519: bad private key length: 48" indicated a PEM-encoded key that needed proper parsing rather than raw byte decoding.
+
+#### OCO Order Parameters
+**Error**: "Parameter 'aboveTimeInForce' sent when not required" (error -1106)
+**Cause**: LIMIT_MAKER orders don't require timeInForce parameter
+**Solution**: Only send timeInForce for order types that require it (e.g., STOP_LOSS_LIMIT)
+
+#### OCO Order Price Rules
+**Error**: "A limit order in a buy OCO must be below" (error -1165)
+**Cause**: For buy OCO orders, limit price must be below current market price, stop price must be above
+**Solution**: Fetch current market price and set limit price below it, stop price above it
+
+#### UserDataStream Authentication
+**Error**: "WebSocket session not authenticated. Recommendation: use 'session.logon'" (error -1193)
+**Cause**: UserDataStream subscribe/unsubscribe requires session.logon which only works with Ed25519 keys
+**Solution**: Skip UserDataStream tests when using HMAC/RSA keys, or use Ed25519 keys for WebSocket session authentication
 
 This guide provides the essential context for understanding and contributing to the OpenXAPI project. For specific implementation details, refer to the source code and existing tests. 

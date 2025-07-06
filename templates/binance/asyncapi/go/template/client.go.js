@@ -22,6 +22,7 @@ export default function ({ asyncapi, params }) {
 	"fmt"
 	"log"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
