@@ -145,6 +145,8 @@ generate-ws-sdk:
 				OUTPUT_DIR=${OUTPUT_DIR}/$$subdir \
 				ASYNCAPI_CLI=${ASYNCAPI_CLI:-asyncapi} \
 				npm run generate:module); \
+				echo "Post-processing integration tests for $$subdir"; \
+				node templates/${EXCHANGE}/asyncapi/${LANGUAGE}/post-generate.js ${OUTPUT_DIR}/$$subdir; \
 			done \
 		fi \
 	fi
