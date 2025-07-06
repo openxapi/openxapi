@@ -11,30 +11,30 @@ channels:
             This adds 0 orders to the EXCHANGE_MAX_ORDERS filter and the MAX_NUM_ORDERS filter.
             Read Order Amend Keep Priority FAQ to learn more.
         messages:
-            orderAmendKeeppriorityRequest:
-                $ref: '#/components/messages/orderAmendKeeppriorityRequest'
-            orderAmendKeeppriorityResponse:
-                $ref: '#/components/messages/orderAmendKeeppriorityResponse'
+            orderAmendKeepPriorityRequest:
+                $ref: '#/components/messages/orderAmendKeepPriorityRequest'
+            orderAmendKeepPriorityResponse:
+                $ref: '#/components/messages/orderAmendKeepPriorityResponse'
 operations:
-    receiveOrderAmendKeeppriority:
+    receiveOrderAmendKeepPriority:
         title: Receive from order.amend.keepPriority
         description: Receive response from order.amend.keepPriority
         action: receive
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityResponse'
-    sendOrderAmendKeeppriority:
+            - $ref: '#/channels/spot/messages/orderAmendKeepPriorityResponse'
+    sendOrderAmendKeepPriority:
         title: Send to order.amend.keepPriority
         description: Send a order.amend.keepPriority request
         action: send
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityRequest'
+            - $ref: '#/channels/spot/messages/orderAmendKeepPriorityRequest'
 components:
     messages:
-        orderAmendKeeppriorityRequest:
+        orderAmendKeepPriorityRequest:
             name: Order Amend Keep Priority (TRADE) Request
             title: Order Amend Keep Priority (TRADE) Request
             description: Send a order.amend.keepPriority request
@@ -63,18 +63,21 @@ components:
                                 type: string
                                 description: newQty must be greater than 0 and less than the order's quantity.
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: orderId or origClientOrderId must be sent
                             origClientOrderId:
                                 type: string
                                 description: orderId or origClientOrderId must be sent
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000.
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - newQty
@@ -82,7 +85,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        orderAmendKeeppriorityResponse:
+        orderAmendKeepPriorityResponse:
             name: Order Amend Keep Priority (TRADE) Response
             title: Order Amend Keep Priority (TRADE) Response
             description: Receive response from order.amend.keepPriority

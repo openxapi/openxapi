@@ -4,13 +4,34 @@ info:
     version: 0.1.0
     description: AsyncAPI specification for Binance exchange - Spot WebSocket API
 servers:
-    production:
-        host: ws-api.binance.com:443
+    mainnet1:
+        host: ws-api.binance.com
         pathname: /ws-api/v3
         protocol: wss
-        title: Binance Server
-        summary: Binance Spot WebSocket API Server
-        description: WebSocket server for binance exchange spot API
+        title: Binance Mainnet Server
+        summary: Binance Spot WebSocket API Server (Mainnet)
+        description: WebSocket server for binance exchange spot API (mainnet environment)
+    mainnet2:
+        host: ws-api.binance.com:9443
+        pathname: /ws-api/v3
+        protocol: wss
+        title: Binance Mainnet Server
+        summary: Binance Spot WebSocket API Server (Mainnet)
+        description: WebSocket server for binance exchange spot API (mainnet environment)
+    testnet1:
+        host: ws-api.testnet.binance.vision
+        pathname: /ws-api/v3
+        protocol: wss
+        title: Binance Testnet Server
+        summary: Binance Spot WebSocket API Server (Testnet)
+        description: WebSocket server for binance exchange spot API (testnet environment)
+    testnet2:
+        host: ws-api.testnet.binance.vision:9443
+        pathname: /ws-api/v3
+        protocol: wss
+        title: Binance Testnet Server
+        summary: Binance Spot WebSocket API Server (Testnet)
+        description: WebSocket server for binance exchange spot API (testnet environment)
 channels:
     spot:
         address: /
@@ -21,10 +42,10 @@ channels:
                 $ref: '#/components/messages/accountCommissionRequest'
             accountCommissionResponse:
                 $ref: '#/components/messages/accountCommissionResponse'
-            accountRatelimitsOrdersRequest:
-                $ref: '#/components/messages/accountRatelimitsOrdersRequest'
-            accountRatelimitsOrdersResponse:
-                $ref: '#/components/messages/accountRatelimitsOrdersResponse'
+            accountRateLimitsOrdersRequest:
+                $ref: '#/components/messages/accountRateLimitsOrdersRequest'
+            accountRateLimitsOrdersResponse:
+                $ref: '#/components/messages/accountRateLimitsOrdersResponse'
             accountStatusRequest:
                 $ref: '#/components/messages/accountStatusRequest'
             accountStatusResponse:
@@ -51,6 +72,12 @@ channels:
                 $ref: '#/components/messages/depthRequest'
             depthResponse:
                 $ref: '#/components/messages/depthResponse'
+            eventStreamTerminated:
+                name: Event Stream Terminated Event
+                title: Event Stream Terminated Event
+                description: Sent when User Data Stream is stopped (WebSocket API only)
+                payload:
+                    $ref: '#/components/schemas/EventStreamTerminatedEvent'
             exchangeInfoRequest:
                 $ref: '#/components/messages/exchangeInfoRequest'
             exchangeInfoResponse:
@@ -99,30 +126,30 @@ channels:
                 $ref: '#/components/messages/openOrderListsStatusRequest'
             openOrderListsStatusResponse:
                 $ref: '#/components/messages/openOrderListsStatusResponse'
-            openOrdersCancelallRequest:
-                $ref: '#/components/messages/openOrdersCancelallRequest'
-            openOrdersCancelallResponse:
-                $ref: '#/components/messages/openOrdersCancelallResponse'
+            openOrdersCancelAllRequest:
+                $ref: '#/components/messages/openOrdersCancelAllRequest'
+            openOrdersCancelAllResponse:
+                $ref: '#/components/messages/openOrdersCancelAllResponse'
             openOrdersStatusRequest:
                 $ref: '#/components/messages/openOrdersStatusRequest'
             openOrdersStatusResponse:
                 $ref: '#/components/messages/openOrdersStatusResponse'
-            orderAmendKeeppriorityRequest:
-                $ref: '#/components/messages/orderAmendKeeppriorityRequest'
-            orderAmendKeeppriorityResponse:
-                $ref: '#/components/messages/orderAmendKeeppriorityResponse'
+            orderAmendKeepPriorityRequest:
+                $ref: '#/components/messages/orderAmendKeepPriorityRequest'
+            orderAmendKeepPriorityResponse:
+                $ref: '#/components/messages/orderAmendKeepPriorityResponse'
             orderAmendmentsRequest:
                 $ref: '#/components/messages/orderAmendmentsRequest'
             orderAmendmentsResponse:
                 $ref: '#/components/messages/orderAmendmentsResponse'
+            orderCancelReplaceRequest:
+                $ref: '#/components/messages/orderCancelReplaceRequest'
+            orderCancelReplaceResponse:
+                $ref: '#/components/messages/orderCancelReplaceResponse'
             orderCancelRequest:
                 $ref: '#/components/messages/orderCancelRequest'
             orderCancelResponse:
                 $ref: '#/components/messages/orderCancelResponse'
-            orderCancelreplaceRequest:
-                $ref: '#/components/messages/orderCancelreplaceRequest'
-            orderCancelreplaceResponse:
-                $ref: '#/components/messages/orderCancelreplaceResponse'
             orderListCancelRequest:
                 $ref: '#/components/messages/orderListCancelRequest'
             orderListCancelResponse:
@@ -205,10 +232,10 @@ channels:
                 $ref: '#/components/messages/tickerRequest'
             tickerResponse:
                 $ref: '#/components/messages/tickerResponse'
-            tickerTradingdayRequest:
-                $ref: '#/components/messages/tickerTradingdayRequest'
-            tickerTradingdayResponse:
-                $ref: '#/components/messages/tickerTradingdayResponse'
+            tickerTradingDayRequest:
+                $ref: '#/components/messages/tickerTradingDayRequest'
+            tickerTradingDayResponse:
+                $ref: '#/components/messages/tickerTradingDayResponse'
             timeRequest:
                 $ref: '#/components/messages/timeRequest'
             timeResponse:
@@ -258,14 +285,14 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/accountCommissionResponse'
-    receiveAccountRatelimitsOrders:
+    receiveAccountRateLimitsOrders:
         title: Receive from account.rateLimits.orders
         description: Receive response from account.rateLimits.orders
         action: receive
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersResponse'
+            - $ref: '#/channels/spot/messages/accountRateLimitsOrdersResponse'
     receiveAccountStatus:
         title: Receive from account.status
         description: Receive response from account.status
@@ -274,7 +301,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/accountStatusResponse'
-    receiveAllorderlists:
+    receiveAllOrderLists:
         title: Receive from allOrderLists
         description: Receive response from allOrderLists
         action: receive
@@ -282,7 +309,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/allOrderListsResponse'
-    receiveAllorders:
+    receiveAllOrders:
         title: Receive from allOrders
         description: Receive response from allOrders
         action: receive
@@ -290,7 +317,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/allOrdersResponse'
-    receiveAvgprice:
+    receiveAvgPrice:
         title: Receive from avgPrice
         description: Receive response from avgPrice
         action: receive
@@ -306,7 +333,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/depthResponse'
-    receiveExchangeinfo:
+    receiveExchangeInfo:
         title: Receive from exchangeInfo
         description: Receive response from exchangeInfo
         action: receive
@@ -322,7 +349,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/klinesResponse'
-    receiveMyallocations:
+    receiveMyAllocations:
         title: Receive from myAllocations
         description: Receive response from myAllocations
         action: receive
@@ -330,7 +357,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/myAllocationsResponse'
-    receiveMypreventedmatches:
+    receiveMyPreventedMatches:
         title: Receive from myPreventedMatches
         description: Receive response from myPreventedMatches
         action: receive
@@ -338,7 +365,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/myPreventedMatchesResponse'
-    receiveMytrades:
+    receiveMyTrades:
         title: Receive from myTrades
         description: Receive response from myTrades
         action: receive
@@ -346,7 +373,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/myTradesResponse'
-    receiveOpenorderlistsStatus:
+    receiveOpenOrderListsStatus:
         title: Receive from openOrderLists.status
         description: Receive response from openOrderLists.status
         action: receive
@@ -354,15 +381,15 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/openOrderListsStatusResponse'
-    receiveOpenordersCancelall:
+    receiveOpenOrdersCancelAll:
         title: Receive from openOrders.cancelAll
         description: Receive response from openOrders.cancelAll
         action: receive
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/openOrdersCancelallResponse'
-    receiveOpenordersStatus:
+            - $ref: '#/channels/spot/messages/openOrdersCancelAllResponse'
+    receiveOpenOrdersStatus:
         title: Receive from openOrders.status
         description: Receive response from openOrders.status
         action: receive
@@ -370,14 +397,14 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/openOrdersStatusResponse'
-    receiveOrderAmendKeeppriority:
+    receiveOrderAmendKeepPriority:
         title: Receive from order.amend.keepPriority
         description: Receive response from order.amend.keepPriority
         action: receive
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityResponse'
+            - $ref: '#/channels/spot/messages/orderAmendKeepPriorityResponse'
     receiveOrderAmendments:
         title: Receive from order.amendments
         description: Receive response from order.amendments
@@ -394,14 +421,62 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/orderCancelResponse'
-    receiveOrderCancelreplace:
+    receiveOrderCancelReplace:
         title: Receive from order.cancelReplace
         description: Receive response from order.cancelReplace
         action: receive
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderCancelreplaceResponse'
+            - $ref: '#/channels/spot/messages/orderCancelReplaceResponse'
+    receiveOrderListCancel:
+        title: Receive from orderList.cancel
+        description: Receive response from orderList.cancel
+        action: receive
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListCancelResponse'
+    receiveOrderListPlace:
+        title: Receive from orderList.place
+        description: Receive response from orderList.place
+        action: receive
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListPlaceResponse'
+    receiveOrderListPlaceOco:
+        title: Receive from orderList.place.oco
+        description: Receive response from orderList.place.oco
+        action: receive
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListPlaceOcoResponse'
+    receiveOrderListPlaceOto:
+        title: Receive from orderList.place.oto
+        description: Receive response from orderList.place.oto
+        action: receive
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListPlaceOtoResponse'
+    receiveOrderListPlaceOtoco:
+        title: Receive from orderList.place.otoco
+        description: Receive response from orderList.place.otoco
+        action: receive
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListPlaceOtocoResponse'
+    receiveOrderListStatus:
+        title: Receive from orderList.status
+        description: Receive response from orderList.status
+        action: receive
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListStatusResponse'
     receiveOrderPlace:
         title: Receive from order.place
         description: Receive response from order.place
@@ -426,54 +501,6 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/orderTestResponse'
-    receiveOrderlistCancel:
-        title: Receive from orderList.cancel
-        description: Receive response from orderList.cancel
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListCancelResponse'
-    receiveOrderlistPlace:
-        title: Receive from orderList.place
-        description: Receive response from orderList.place
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceResponse'
-    receiveOrderlistPlaceOco:
-        title: Receive from orderList.place.oco
-        description: Receive response from orderList.place.oco
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOcoResponse'
-    receiveOrderlistPlaceOto:
-        title: Receive from orderList.place.oto
-        description: Receive response from orderList.place.oto
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtoResponse'
-    receiveOrderlistPlaceOtoco:
-        title: Receive from orderList.place.otoco
-        description: Receive response from orderList.place.otoco
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtocoResponse'
-    receiveOrderlistStatus:
-        title: Receive from orderList.status
-        description: Receive response from orderList.status
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListStatusResponse'
     receivePing:
         title: Receive from ping
         description: Receive response from ping
@@ -554,14 +581,14 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/tickerPriceResponse'
-    receiveTickerTradingday:
+    receiveTickerTradingDay:
         title: Receive from ticker.tradingDay
         description: Receive response from ticker.tradingDay
         action: receive
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerTradingdayResponse'
+            - $ref: '#/channels/spot/messages/tickerTradingDayResponse'
     receiveTime:
         title: Receive from time
         description: Receive response from time
@@ -615,7 +642,8 @@ operations:
             - $ref: '#/channels/spot/messages/listStatus'
             - $ref: '#/channels/spot/messages/listenKeyExpired'
             - $ref: '#/channels/spot/messages/externalLockUpdate'
-    receiveUserdatastreamPing:
+            - $ref: '#/channels/spot/messages/eventStreamTerminated'
+    receiveUserDataStreamPing:
         title: Receive from userDataStream.ping
         description: Receive response from userDataStream.ping
         action: receive
@@ -623,7 +651,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamPingResponse'
-    receiveUserdatastreamStart:
+    receiveUserDataStreamStart:
         title: Receive from userDataStream.start
         description: Receive response from userDataStream.start
         action: receive
@@ -631,7 +659,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamStartResponse'
-    receiveUserdatastreamStop:
+    receiveUserDataStreamStop:
         title: Receive from userDataStream.stop
         description: Receive response from userDataStream.stop
         action: receive
@@ -639,7 +667,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamStopResponse'
-    receiveUserdatastreamSubscribe:
+    receiveUserDataStreamSubscribe:
         title: Receive from userDataStream.subscribe
         description: Receive response from userDataStream.subscribe
         action: receive
@@ -647,7 +675,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamSubscribeResponse'
-    receiveUserdatastreamUnsubscribe:
+    receiveUserDataStreamUnsubscribe:
         title: Receive from userDataStream.unsubscribe
         description: Receive response from userDataStream.unsubscribe
         action: receive
@@ -663,14 +691,14 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/accountCommissionRequest'
-    sendAccountRatelimitsOrders:
+    sendAccountRateLimitsOrders:
         title: Send to account.rateLimits.orders
         description: Send a account.rateLimits.orders request
         action: send
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/accountRatelimitsOrdersRequest'
+            - $ref: '#/channels/spot/messages/accountRateLimitsOrdersRequest'
     sendAccountStatus:
         title: Send to account.status
         description: Send a account.status request
@@ -679,7 +707,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/accountStatusRequest'
-    sendAllorderlists:
+    sendAllOrderLists:
         title: Send to allOrderLists
         description: Send a allOrderLists request
         action: send
@@ -687,7 +715,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/allOrderListsRequest'
-    sendAllorders:
+    sendAllOrders:
         title: Send to allOrders
         description: Send a allOrders request
         action: send
@@ -695,7 +723,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/allOrdersRequest'
-    sendAvgprice:
+    sendAvgPrice:
         title: Send to avgPrice
         description: Send a avgPrice request
         action: send
@@ -711,7 +739,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/depthRequest'
-    sendExchangeinfo:
+    sendExchangeInfo:
         title: Send to exchangeInfo
         description: Send a exchangeInfo request
         action: send
@@ -727,7 +755,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/klinesRequest'
-    sendMyallocations:
+    sendMyAllocations:
         title: Send to myAllocations
         description: Send a myAllocations request
         action: send
@@ -735,7 +763,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/myAllocationsRequest'
-    sendMypreventedmatches:
+    sendMyPreventedMatches:
         title: Send to myPreventedMatches
         description: Send a myPreventedMatches request
         action: send
@@ -743,7 +771,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/myPreventedMatchesRequest'
-    sendMytrades:
+    sendMyTrades:
         title: Send to myTrades
         description: Send a myTrades request
         action: send
@@ -751,7 +779,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/myTradesRequest'
-    sendOpenorderlistsStatus:
+    sendOpenOrderListsStatus:
         title: Send to openOrderLists.status
         description: Send a openOrderLists.status request
         action: send
@@ -759,15 +787,15 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/openOrderListsStatusRequest'
-    sendOpenordersCancelall:
+    sendOpenOrdersCancelAll:
         title: Send to openOrders.cancelAll
         description: Send a openOrders.cancelAll request
         action: send
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/openOrdersCancelallRequest'
-    sendOpenordersStatus:
+            - $ref: '#/channels/spot/messages/openOrdersCancelAllRequest'
+    sendOpenOrdersStatus:
         title: Send to openOrders.status
         description: Send a openOrders.status request
         action: send
@@ -775,14 +803,14 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/openOrdersStatusRequest'
-    sendOrderAmendKeeppriority:
+    sendOrderAmendKeepPriority:
         title: Send to order.amend.keepPriority
         description: Send a order.amend.keepPriority request
         action: send
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderAmendKeeppriorityRequest'
+            - $ref: '#/channels/spot/messages/orderAmendKeepPriorityRequest'
     sendOrderAmendments:
         title: Send to order.amendments
         description: Send a order.amendments request
@@ -799,14 +827,62 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/orderCancelRequest'
-    sendOrderCancelreplace:
+    sendOrderCancelReplace:
         title: Send to order.cancelReplace
         description: Send a order.cancelReplace request
         action: send
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/orderCancelreplaceRequest'
+            - $ref: '#/channels/spot/messages/orderCancelReplaceRequest'
+    sendOrderListCancel:
+        title: Send to orderList.cancel
+        description: Send a orderList.cancel request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListCancelRequest'
+    sendOrderListPlace:
+        title: Send to orderList.place
+        description: Send a orderList.place request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListPlaceRequest'
+    sendOrderListPlaceOco:
+        title: Send to orderList.place.oco
+        description: Send a orderList.place.oco request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListPlaceOcoRequest'
+    sendOrderListPlaceOto:
+        title: Send to orderList.place.oto
+        description: Send a orderList.place.oto request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListPlaceOtoRequest'
+    sendOrderListPlaceOtoco:
+        title: Send to orderList.place.otoco
+        description: Send a orderList.place.otoco request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListPlaceOtocoRequest'
+    sendOrderListStatus:
+        title: Send to orderList.status
+        description: Send a orderList.status request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/orderListStatusRequest'
     sendOrderPlace:
         title: Send to order.place
         description: Send a order.place request
@@ -831,54 +907,6 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/orderTestRequest'
-    sendOrderlistCancel:
-        title: Send to orderList.cancel
-        description: Send a orderList.cancel request
-        action: send
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListCancelRequest'
-    sendOrderlistPlace:
-        title: Send to orderList.place
-        description: Send a orderList.place request
-        action: send
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceRequest'
-    sendOrderlistPlaceOco:
-        title: Send to orderList.place.oco
-        description: Send a orderList.place.oco request
-        action: send
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOcoRequest'
-    sendOrderlistPlaceOto:
-        title: Send to orderList.place.oto
-        description: Send a orderList.place.oto request
-        action: send
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtoRequest'
-    sendOrderlistPlaceOtoco:
-        title: Send to orderList.place.otoco
-        description: Send a orderList.place.otoco request
-        action: send
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtocoRequest'
-    sendOrderlistStatus:
-        title: Send to orderList.status
-        description: Send a orderList.status request
-        action: send
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListStatusRequest'
     sendPing:
         title: Send to ping
         description: Send a ping request
@@ -959,14 +987,14 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/tickerPriceRequest'
-    sendTickerTradingday:
+    sendTickerTradingDay:
         title: Send to ticker.tradingDay
         description: Send a ticker.tradingDay request
         action: send
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/tickerTradingdayRequest'
+            - $ref: '#/channels/spot/messages/tickerTradingDayRequest'
     sendTime:
         title: Send to time
         description: Send a time request
@@ -1007,7 +1035,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/uiKlinesRequest'
-    sendUserdatastreamPing:
+    sendUserDataStreamPing:
         title: Send to userDataStream.ping
         description: Send a userDataStream.ping request
         action: send
@@ -1015,7 +1043,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamPingRequest'
-    sendUserdatastreamStart:
+    sendUserDataStreamStart:
         title: Send to userDataStream.start
         description: Send a userDataStream.start request
         action: send
@@ -1023,7 +1051,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamStartRequest'
-    sendUserdatastreamStop:
+    sendUserDataStreamStop:
         title: Send to userDataStream.stop
         description: Send a userDataStream.stop request
         action: send
@@ -1031,7 +1059,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamStopRequest'
-    sendUserdatastreamSubscribe:
+    sendUserDataStreamSubscribe:
         title: Send to userDataStream.subscribe
         description: Send a userDataStream.subscribe request
         action: send
@@ -1039,7 +1067,7 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamSubscribeRequest'
-    sendUserdatastreamUnsubscribe:
+    sendUserDataStreamUnsubscribe:
         title: Send to userDataStream.unsubscribe
         description: Send a userDataStream.unsubscribe request
         action: send
@@ -1253,7 +1281,7 @@ components:
                             example: "0.00000000"
                         m:
                             type: boolean
-                            description: Is this trade the maker side?
+                            description: Maker side
                             example: false
                         "n":
                             type: string
@@ -1318,7 +1346,7 @@ components:
                             example: 3
                         w:
                             type: boolean
-                            description: Is the order on the book?
+                            description: Order on the book
                             example: true
                         x:
                             type: string
@@ -1637,7 +1665,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        accountRatelimitsOrdersRequest:
+        accountRateLimitsOrdersRequest:
             name: Unfilled Order Count (USER_DATA) Request
             title: Unfilled Order Count (USER_DATA) Request
             description: Send a account.rateLimits.orders request
@@ -1662,12 +1690,14 @@ components:
                             apiKey:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - apiKey
                             - signature
@@ -1675,7 +1705,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        accountRatelimitsOrdersResponse:
+        accountRateLimitsOrdersResponse:
             name: Unfilled Order Count (USER_DATA) Response
             title: Unfilled Order Count (USER_DATA) Response
             description: Receive response from account.rateLimits.orders
@@ -1776,12 +1806,14 @@ components:
                                 type: boolean
                                 description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - apiKey
                             - signature
@@ -1963,7 +1995,8 @@ components:
                             apiKey:
                                 type: string
                             endTime:
-                                type: string
+                                type: integer
+                                format: int64
                             fromId:
                                 type: integer
                                 format: int64
@@ -1972,14 +2005,17 @@ components:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             startTime:
-                                type: string
+                                type: integer
+                                format: int64
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - apiKey
                             - signature
@@ -2115,7 +2151,8 @@ components:
                             apiKey:
                                 type: string
                             endTime:
-                                type: string
+                                type: integer
+                                format: int64
                             limit:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
@@ -2124,16 +2161,19 @@ components:
                                 format: int64
                                 description: Order ID to begin at
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             startTime:
-                                type: string
+                                type: integer
+                                format: int64
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - apiKey
@@ -2895,7 +2935,8 @@ components:
                         description: params property
                         properties:
                             endTime:
-                                type: string
+                                type: integer
+                                format: int64
                             fromAllocationId:
                                 type: integer
                                 format: int64
@@ -2903,16 +2944,20 @@ components:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             startTime:
-                                type: string
+                                type: integer
+                                format: int64
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
             correlationId:
@@ -3054,21 +3099,26 @@ components:
                         description: params property
                         properties:
                             fromPreventedMatchId:
-                                type: string
+                                type: integer
+                                format: int64
                             limit:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
                             preventedMatchId:
-                                type: string
+                                type: integer
+                                format: int64
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - timestamp
@@ -3198,7 +3248,8 @@ components:
                             apiKey:
                                 type: string
                             endTime:
-                                type: string
+                                type: integer
+                                format: int64
                             fromId:
                                 type: integer
                                 format: int64
@@ -3210,16 +3261,19 @@ components:
                                 type: integer
                                 format: int64
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             startTime:
-                                type: string
+                                type: integer
+                                format: int64
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - apiKey
@@ -3362,12 +3416,14 @@ components:
                             apiKey:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - apiKey
                             - signature
@@ -3478,7 +3534,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        openOrdersCancelallRequest:
+        openOrdersCancelAllRequest:
             name: Cancel open orders (TRADE) Request
             title: Cancel open orders (TRADE) Request
             description: Send a openOrders.cancelAll request
@@ -3503,14 +3559,16 @@ components:
                             apiKey:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - apiKey
@@ -3519,7 +3577,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        openOrdersCancelallResponse:
+        openOrdersCancelAllResponse:
             name: Cancel open orders (TRADE) Response
             title: Cancel open orders (TRADE) Response
             description: Receive response from openOrders.cancelAll
@@ -3690,7 +3748,8 @@ components:
                             apiKey:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
@@ -3698,7 +3757,8 @@ components:
                                 type: string
                                 description: If omitted, open orders for all symbols are returned
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - apiKey
                             - signature
@@ -3844,7 +3904,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        orderAmendKeeppriorityRequest:
+        orderAmendKeepPriorityRequest:
             name: Order Amend Keep Priority (TRADE) Request
             title: Order Amend Keep Priority (TRADE) Request
             description: Send a order.amend.keepPriority request
@@ -3873,18 +3933,21 @@ components:
                                 type: string
                                 description: newQty must be greater than 0 and less than the order's quantity.
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: orderId or origClientOrderId must be sent
                             origClientOrderId:
                                 type: string
                                 description: orderId or origClientOrderId must be sent
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000.
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - newQty
@@ -3892,7 +3955,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        orderAmendKeeppriorityResponse:
+        orderAmendKeepPriorityResponse:
             name: Order Amend Keep Priority (TRADE) Response
             title: Order Amend Keep Priority (TRADE) Response
             description: Receive response from order.amend.keepPriority
@@ -4050,19 +4113,23 @@ components:
                         description: params property
                         properties:
                             fromExecutionId:
-                                type: string
+                                type: integer
+                                format: int64
                             limit:
                                 type: integer
                                 description: 'Default:500; Maximum: 1000'
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000.
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - orderId
@@ -4158,200 +4225,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        orderCancelRequest:
-            name: Cancel order (TRADE) Request
-            title: Cancel order (TRADE) Request
-            description: Send a order.cancel request
-            payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
-                    method:
-                        type: string
-                        description: method property
-                        example: order.cancel
-                        enum:
-                            - order.cancel
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            cancelRestrictions:
-                                type: string
-                                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED.'
-                            newClientOrderId:
-                                type: string
-                                description: New ID for the canceled order. Automatically generated if not sent
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: Cancel order by orderId
-                            origClientOrderId:
-                                type: string
-                                description: Cancel order by clientOrderId
-                            recvWindow:
-                                type: string
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: string
-                        required:
-                            - symbol
-                            - orderId
-                            - apiKey
-                            - signature
-                            - timestamp
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderCancelResponse:
-            name: Cancel order (TRADE) Response
-            title: Cancel order (TRADE) Response
-            description: Receive response from order.cancel
-            payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 1
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            clientOrderId:
-                                type: string
-                                description: clientOrderId property
-                                example: 91fe37ce9e69c90d6358c0
-                            cummulativeQuoteQty:
-                                type: string
-                                description: cummulativeQuoteQty property
-                                example: "0.23416100"
-                            executedQty:
-                                type: string
-                                description: executedQty property
-                                example: "0.00001000"
-                            icebergQty:
-                                type: string
-                                description: icebergQty property
-                                example: "0.00000000"
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: orderId property
-                                example: 12569099453
-                            orderListId:
-                                type: integer
-                                format: int64
-                                description: orderListId property
-                                example: -1
-                            origClientOrderId:
-                                type: string
-                                description: origClientOrderId property
-                                example: 4d96324ff9d44481926157
-                            origQty:
-                                type: string
-                                description: origQty property
-                                example: "0.00847000"
-                            origQuoteOrderQty:
-                                type: string
-                                description: origQuoteOrderQty property
-                                example: "0.000000"
-                            price:
-                                type: string
-                                description: price property
-                                example: "23416.10000000"
-                            selfTradePreventionMode:
-                                type: string
-                                description: selfTradePreventionMode property
-                                example: NONE
-                            side:
-                                type: string
-                                description: side property
-                                example: SELL
-                            status:
-                                type: string
-                                description: status property
-                                example: CANCELED
-                            stopPrice:
-                                type: string
-                                description: stopPrice property
-                                example: "0.00000000"
-                            strategyId:
-                                type: integer
-                                format: int64
-                                description: strategyId property
-                                example: 37463720
-                            strategyType:
-                                type: integer
-                                description: strategyType property
-                                example: 1000000
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSDT
-                            timeInForce:
-                                type: string
-                                description: timeInForce property
-                                example: GTC
-                            trailingDelta:
-                                type: integer
-                                description: trailingDelta property
-                                example: 0
-                            transactTime:
-                                type: integer
-                                format: int64
-                                description: transactTime property
-                                example: 1684804350068
-                            type:
-                                type: string
-                                description: type property
-                                example: LIMIT
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
-            correlationId:
-                location: $message.payload#/id
-                description: Message correlation ID
-        orderCancelreplaceRequest:
+        orderCancelReplaceRequest:
             name: Cancel and replace order (TRADE) Request
             title: Cancel and replace order (TRADE) Request
             description: Send a order.cancelReplace request
@@ -4408,7 +4282,8 @@ components:
                             quoteOrderQty:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             selfTradePreventionMode:
                                 type: string
@@ -4423,7 +4298,8 @@ components:
                             stopPrice:
                                 type: string
                             strategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the order within an order strategy.
                             strategyType:
                                 type: integer
@@ -4435,7 +4311,8 @@ components:
                             timeInForce:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                             trailingDelta:
                                 type: string
                                 description: See Trailing Stop order FAQ
@@ -4453,7 +4330,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        orderCancelreplaceResponse:
+        orderCancelReplaceResponse:
             name: Cancel and replace order (TRADE) Response
             title: Cancel and replace order (TRADE) Response
             description: Receive response from order.cancelReplace
@@ -4649,6 +4526,201 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
+        orderCancelRequest:
+            name: Cancel order (TRADE) Request
+            title: Cancel order (TRADE) Request
+            description: Send a order.cancel request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
+                    method:
+                        type: string
+                        description: method property
+                        example: order.cancel
+                        enum:
+                            - order.cancel
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                            cancelRestrictions:
+                                type: string
+                                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED.'
+                            newClientOrderId:
+                                type: string
+                                description: New ID for the canceled order. Automatically generated if not sent
+                            orderId:
+                                type: integer
+                                format: int64
+                                description: Cancel order by orderId
+                            origClientOrderId:
+                                type: string
+                                description: Cancel order by clientOrderId
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            symbol:
+                                type: string
+                            timestamp:
+                                type: integer
+                                format: int64
+                        required:
+                            - symbol
+                            - orderId
+                            - apiKey
+                            - signature
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        orderCancelResponse:
+            name: Cancel order (TRADE) Response
+            title: Cancel order (TRADE) Response
+            description: Receive response from order.cancel
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 1
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 6000
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            clientOrderId:
+                                type: string
+                                description: clientOrderId property
+                                example: 91fe37ce9e69c90d6358c0
+                            cummulativeQuoteQty:
+                                type: string
+                                description: cummulativeQuoteQty property
+                                example: "0.23416100"
+                            executedQty:
+                                type: string
+                                description: executedQty property
+                                example: "0.00001000"
+                            icebergQty:
+                                type: string
+                                description: icebergQty property
+                                example: "0.00000000"
+                            orderId:
+                                type: integer
+                                format: int64
+                                description: orderId property
+                                example: 12569099453
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: orderListId property
+                                example: -1
+                            origClientOrderId:
+                                type: string
+                                description: origClientOrderId property
+                                example: 4d96324ff9d44481926157
+                            origQty:
+                                type: string
+                                description: origQty property
+                                example: "0.00847000"
+                            origQuoteOrderQty:
+                                type: string
+                                description: origQuoteOrderQty property
+                                example: "0.000000"
+                            price:
+                                type: string
+                                description: price property
+                                example: "23416.10000000"
+                            selfTradePreventionMode:
+                                type: string
+                                description: selfTradePreventionMode property
+                                example: NONE
+                            side:
+                                type: string
+                                description: side property
+                                example: SELL
+                            status:
+                                type: string
+                                description: status property
+                                example: CANCELED
+                            stopPrice:
+                                type: string
+                                description: stopPrice property
+                                example: "0.00000000"
+                            strategyId:
+                                type: integer
+                                format: int64
+                                description: strategyId property
+                                example: 37463720
+                            strategyType:
+                                type: integer
+                                description: strategyType property
+                                example: 1000000
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            timeInForce:
+                                type: string
+                                description: timeInForce property
+                                example: GTC
+                            trailingDelta:
+                                type: integer
+                                description: trailingDelta property
+                                example: 0
+                            transactTime:
+                                type: integer
+                                format: int64
+                                description: transactTime property
+                                example: 1684804350068
+                            type:
+                                type: string
+                                description: type property
+                                example: LIMIT
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
         orderListCancelRequest:
             name: Cancel Order list (TRADE) Request
             title: Cancel Order list (TRADE) Request
@@ -4684,14 +4756,16 @@ components:
                                 format: int64
                                 description: Cancel order list by orderListId
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - orderListId
@@ -4901,7 +4975,8 @@ components:
                                 type: string
                                 description: Arbitrary unique ID among open orders for the above order. Automatically generated if not sent
                             aboveIcebergQty:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Note that this can only be used if aboveTimeInForce is GTC.
                             abovePrice:
                                 type: string
@@ -4910,7 +4985,8 @@ components:
                                 type: string
                                 description: Can be used if aboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT. Either aboveStopPrice or aboveTrailingDelta or both, must be specified.
                             aboveStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the above order within an order strategy.
                             aboveStrategyType:
                                 type: integer
@@ -4919,7 +4995,8 @@ components:
                                 type: string
                                 description: Required if aboveType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT.
                             aboveTrailingDelta:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: See Trailing Stop order FAQ.
                             aboveType:
                                 type: string
@@ -4929,7 +5006,8 @@ components:
                             belowClientOrderId:
                                 type: string
                             belowIcebergQty:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Note that this can only be used if belowTimeInForce is GTC.
                             belowPrice:
                                 type: string
@@ -4938,7 +5016,8 @@ components:
                                 type: string
                                 description: Can be used if belowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either belowStopPrice or belowTrailingDelta or both, must be specified.
                             belowStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the below order within an order strategy.
                             belowStrategyType:
                                 type: integer
@@ -4947,7 +5026,8 @@ components:
                                 type: string
                                 description: Required if belowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT
                             belowTrailingDelta:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: See Trailing Stop order FAQ.
                             belowType:
                                 type: string
@@ -4962,7 +5042,8 @@ components:
                                 type: string
                                 description: Quantity for both orders of the order list.
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000.
                             selfTradePreventionMode:
                                 type: string
@@ -4975,7 +5056,8 @@ components:
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - side
@@ -5212,7 +5294,8 @@ components:
                             pendingStopPrice:
                                 type: string
                             pendingStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the pending order within an order strategy.
                             pendingStrategyType:
                                 type: integer
@@ -5226,7 +5309,8 @@ components:
                                 type: string
                                 description: 'Supported values: Order types.  Note that MARKET orders using quoteOrderQty are not supported.'
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000.
                             selfTradePreventionMode:
                                 type: string
@@ -5236,7 +5320,8 @@ components:
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                             workingClientOrderId:
                                 type: string
                                 description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
@@ -5252,7 +5337,8 @@ components:
                                 type: string
                                 description: 'Supported values: Order side'
                             workingStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the working order within an order strategy.
                             workingStrategyType:
                                 type: integer
@@ -5493,7 +5579,8 @@ components:
                                 type: string
                                 description: Can be used if pendingAboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT
                             pendingAboveStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the pending above order within an order strategy.
                             pendingAboveStrategyType:
                                 type: integer
@@ -5519,7 +5606,8 @@ components:
                                 type: string
                                 description: Can be used if pendingBelowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either pendingBelowStopPrice or pendingBelowTrailingDelta or both, must be specified.
                             pendingBelowStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the pending below order within an order strategy.
                             pendingBelowStrategyType:
                                 type: integer
@@ -5538,7 +5626,8 @@ components:
                                 type: string
                                 description: 'Supported values: Order Side'
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000.
                             selfTradePreventionMode:
                                 type: string
@@ -5548,7 +5637,8 @@ components:
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                             workingClientOrderId:
                                 type: string
                                 description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
@@ -5563,7 +5653,8 @@ components:
                                 type: string
                                 description: 'Supported values: Order Side'
                             workingStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the working order within an order strategy.
                             workingStrategyType:
                                 type: integer
@@ -5793,7 +5884,8 @@ components:
                             limitIcebergQty:
                                 type: string
                             limitStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the limit order within an order strategy.
                             limitStrategyType:
                                 type: integer
@@ -5810,7 +5902,8 @@ components:
                             quantity:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             selfTradePreventionMode:
                                 type: string
@@ -5834,7 +5927,8 @@ components:
                                 type: string
                                 description: Either stopPrice or trailingDelta, or both must be specified
                             stopStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the stop order within an order strategy.
                             stopStrategyType:
                                 type: integer
@@ -5842,7 +5936,8 @@ components:
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                             trailingDelta:
                                 type: integer
                                 description: See Trailing Stop order FAQ
@@ -6070,12 +6165,14 @@ components:
                                 type: string
                                 description: Query order list by listClientOrderId.orderListId or origClientOrderId must be provided.
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -6218,7 +6315,8 @@ components:
                             quoteOrderQty:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             selfTradePreventionMode:
                                 type: string
@@ -6231,7 +6329,8 @@ components:
                             stopPrice:
                                 type: string
                             strategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the order within an order strategy.
                             strategyType:
                                 type: integer
@@ -6241,7 +6340,8 @@ components:
                             timeInForce:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                             trailingDelta:
                                 type: integer
                                 description: See Trailing Stop order FAQ
@@ -6362,17 +6462,18 @@ components:
                                 type: string
                                 description: Lookup order by clientOrderId
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             symbol:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - symbol
-                            - orderId
                             - apiKey
                             - signature
                             - timestamp
@@ -6747,12 +6848,14 @@ components:
                             apiKey:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             signature:
                                 type: string
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                         required:
                             - apiKey
                             - signature
@@ -6982,7 +7085,8 @@ components:
                             quantity:
                                 type: string
                             recvWindow:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: The value cannot be greater than 60000
                             selfTradePreventionMode:
                                 type: string
@@ -6993,7 +7097,8 @@ components:
                             signature:
                                 type: string
                             strategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the order within an order strategy.
                             strategyType:
                                 type: integer
@@ -7004,7 +7109,8 @@ components:
                                 type: string
                                 description: Applicable only to LIMIT order type
                             timestamp:
-                                type: string
+                                type: integer
+                                format: int64
                             type:
                                 type: string
                         required:
@@ -7703,11 +7809,6 @@ components:
                             windowSize:
                                 type: string
                                 description: Default 1d
-                        required:
-                            - symbol
-                            - symbols
-                            - type
-                            - windowSize
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -7825,7 +7926,7 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        tickerTradingdayRequest:
+        tickerTradingDayRequest:
             name: Trading Day Ticker Request
             title: Trading Day Ticker Request
             description: Send a ticker.tradingDay request
@@ -7862,15 +7963,10 @@ components:
                             type:
                                 type: string
                                 description: 'Supported values: FULL or MINI. If none provided, the default is FULL'
-                        required:
-                            - symbol
-                            - symbols
-                            - timeZone
-                            - type
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-        tickerTradingdayResponse:
+        tickerTradingDayResponse:
             name: Trading Day Ticker Response
             title: Trading Day Ticker Response
             description: Receive response from ticker.tradingDay
@@ -8083,7 +8179,8 @@ components:
                         description: params property
                         properties:
                             endTime:
-                                type: string
+                                type: integer
+                                format: int64
                             fromId:
                                 type: integer
                                 format: int64
@@ -8092,7 +8189,8 @@ components:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
                             startTime:
-                                type: string
+                                type: integer
+                                format: int64
                             symbol:
                                 type: string
                         required:
@@ -8508,7 +8606,7 @@ components:
                             type: array
                             description: array item
                             items:
-                                type: integer
+                                type: object
                                 description: array item
                                 example: 1655971200000
                     status:

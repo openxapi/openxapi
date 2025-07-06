@@ -24,6 +24,9 @@ export function WebSocketHandlers({ asyncapi }) {
   // Generate UserDataStream convenience methods
   handlers += generateUserDataStreamConvenienceMethods();
 
+  // Generate parameter validation helper methods
+  handlers += generateParameterValidationHelpers();
+
   return handlers;
 }
 
@@ -46,7 +49,8 @@ function generateEventHandlers(asyncapi) {
                                        messageId.includes('listStatus') ||
                                        messageId.includes('listenKeyExpired') ||
                                        messageId.includes('outboundAccountPosition') ||
-                                       messageId.includes('externalLockUpdate'));
+                                       messageId.includes('externalLockUpdate') ||
+                                       messageId.includes('eventStreamTerminated'));
       
       if (isEventMessage) {
         eventHandlers += generateEventHandler(message, asyncapi);
@@ -122,24 +126,42 @@ function generateTypedRequestMethod(operation, asyncapi) {
   const operationId = operation.id();
   // Clean the method name - remove 'send' prefix if present
   const cleanedOperationId = operationId.replace(/^send/, '');
-  const methodName = capitalizeFirst(toPascalCase(cleanedOperationId));
+  
+  // Extract the actual method value from the send message to use for the Go method name
+  const sendMessage = operation.messages().find(msg => {
+    const msgId = msg.id();
+    return msgId && (msgId.includes('Request') || msg.name().includes('Request'));
+  });
+  
+  let methodName;
+  if (sendMessage) {
+    const actualMethod = extractMethodFromMessage(sendMessage);
+    if (actualMethod) {
+      // Use the actual method value for the Go method name (this preserves proper casing)
+      // Convert dots to camelCase for valid Go method names
+      methodName = actualMethod.split('.').map((part, index) => {
+        if (index === 0) {
+          return capitalizeFirst(part);
+        } else {
+          return capitalizeFirst(part);
+        }
+      }).join('');
+    } else {
+      // Fallback to operation ID
+      methodName = capitalizeFirst(toPascalCase(cleanedOperationId));
+    }
+  } else {
+    // Fallback to operation ID
+    methodName = capitalizeFirst(toPascalCase(cleanedOperationId));
+  }
   const channel = operation.channels()[0];
   const channelAddress = channel.address();
   
   // Get the messages for this operation
   const messages = operation.messages();
-  let sendMessage = null;
   let receiveMessage = null;
   
-  // Find send message in current operation
-  messages.forEach((message) => {
-    const messageName = message.name() || message.id();
-    const messageId = message.id();
-    
-    if (messageId.includes('Request') || messageName.includes('Request')) {
-      sendMessage = message;
-    }
-  });
+  // sendMessage was already found above, now we just need receiveMessage
   
   // Find corresponding receive operation and response message
   // Look for operations with matching base name but 'receive' action
@@ -228,18 +250,26 @@ function generateTypedRequestMethod(operation, asyncapi) {
  * Extract the actual method value from send message payload
  */
 function extractMethodFromMessage(sendMessage) {
-  if (!sendMessage || !sendMessage.payload()) {
+  if (!sendMessage || !sendMessage.payload || typeof sendMessage.payload !== 'function') {
     return null;
   }
   
   const payload = sendMessage.payload();
+  if (!payload) {
+    return null;
+  }
   
   // Handle AsyncAPI objects - properties might be a function
   let properties;
-  if (typeof payload.properties === 'function') {
-    properties = payload.properties();
-  } else {
-    properties = payload.properties;
+  try {
+    if (typeof payload.properties === 'function') {
+      properties = payload.properties();
+    } else {
+      properties = payload.properties;
+    }
+  } catch (e) {
+    console.warn('Error accessing payload properties for method extraction:', e.message);
+    return null;
   }
   
   if (!properties) {
@@ -248,16 +278,21 @@ function extractMethodFromMessage(sendMessage) {
   
   // Handle AsyncAPI Map-like objects for properties
   let methodProperty;
-  if (typeof properties.all === 'function') {
-    // AsyncAPI Map-like object
-    const allProperties = properties.all();
-    methodProperty = allProperties.method;
-  } else if (properties instanceof Map) {
-    // Map object
-    methodProperty = properties.get('method');
-  } else {
-    // Regular object
-    methodProperty = properties.method;
+  try {
+    if (typeof properties.all === 'function') {
+      // AsyncAPI Map-like object
+      const allProperties = properties.all();
+      methodProperty = allProperties && allProperties.method;
+    } else if (properties instanceof Map) {
+      // Map object
+      methodProperty = properties.get('method');
+    } else if (typeof properties === 'object') {
+      // Regular object
+      methodProperty = properties.method;
+    }
+  } catch (e) {
+    console.warn('Error accessing method property:', e.message);
+    return null;
   }
   
   if (!methodProperty) {
@@ -266,10 +301,15 @@ function extractMethodFromMessage(sendMessage) {
   
   // Extract enum value from method property
   let enumValues;
-  if (typeof methodProperty.enum === 'function') {
-    enumValues = methodProperty.enum();
-  } else {
-    enumValues = methodProperty.enum;
+  try {
+    if (typeof methodProperty.enum === 'function') {
+      enumValues = methodProperty.enum();
+    } else {
+      enumValues = methodProperty.enum;
+    }
+  } catch (e) {
+    console.warn('Error accessing method enum:', e.message);
+    enumValues = null;
   }
   
   if (enumValues && Array.isArray(enumValues) && enumValues.length > 0) {
@@ -279,10 +319,15 @@ function extractMethodFromMessage(sendMessage) {
   
   // Fall back to example if no enum found
   let example;
-  if (typeof methodProperty.example === 'function') {
-    example = methodProperty.example();
-  } else {
-    example = methodProperty.example;
+  try {
+    if (typeof methodProperty.example === 'function') {
+      example = methodProperty.example();
+    } else {
+      example = methodProperty.example;
+    }
+  } catch (e) {
+    console.warn('Error accessing method example:', e.message);
+    example = null;
   }
   
   if (example) {
@@ -379,6 +424,204 @@ function getModelStructName(channelAddress, messageName) {
 }
 
 /*
+ * Extract required parameters from send message
+ */
+function extractRequiredParameters(sendMessage) {
+  if (!sendMessage || !sendMessage.payload || typeof sendMessage.payload !== 'function') {
+    return [];
+  }
+  
+  const payload = sendMessage.payload();
+  if (!payload) {
+    return [];
+  }
+  
+  // Handle AsyncAPI objects - properties might be a function
+  let properties;
+  try {
+    if (typeof payload.properties === 'function') {
+      properties = payload.properties();
+    } else {
+      properties = payload.properties;
+    }
+  } catch (e) {
+    console.warn('Error accessing payload properties:', e.message);
+    return [];
+  }
+  
+  if (!properties) {
+    return [];
+  }
+  
+  // Handle AsyncAPI Map-like objects for properties
+  let paramsProperty;
+  try {
+    if (typeof properties.all === 'function') {
+      // AsyncAPI Map-like object
+      const allProperties = properties.all();
+      paramsProperty = allProperties && allProperties.params;
+    } else if (properties instanceof Map) {
+      // Map object
+      paramsProperty = properties.get('params');
+    } else if (typeof properties === 'object') {
+      // Regular object
+      paramsProperty = properties.params;
+    }
+  } catch (e) {
+    console.warn('Error accessing properties:', e.message);
+    return [];
+  }
+  
+  if (!paramsProperty) {
+    return [];
+  }
+  
+  // Extract required array from params property
+  let required = [];
+  try {
+    if (typeof paramsProperty.required === 'function') {
+      required = paramsProperty.required();
+    } else if (paramsProperty.required) {
+      required = paramsProperty.required;
+    }
+  } catch (e) {
+    console.warn('Error accessing required parameters:', e.message);
+    return [];
+  }
+  
+  return Array.isArray(required) ? required : [];
+}
+
+/*
+ * Extract parameter information including types from send message
+ */
+function extractParameterInfo(sendMessage) {
+  if (!sendMessage || !sendMessage.payload || typeof sendMessage.payload !== 'function') {
+    return {};
+  }
+  
+  const payload = sendMessage.payload();
+  if (!payload) {
+    return {};
+  }
+  
+  // Handle AsyncAPI objects - properties might be a function
+  let properties;
+  try {
+    if (typeof payload.properties === 'function') {
+      properties = payload.properties();
+    } else {
+      properties = payload.properties;
+    }
+  } catch (e) {
+    console.warn('Error accessing payload properties:', e.message);
+    return {};
+  }
+  
+  if (!properties) {
+    return {};
+  }
+  
+  // Handle AsyncAPI Map-like objects for properties
+  let paramsProperty;
+  try {
+    if (typeof properties.all === 'function') {
+      // AsyncAPI Map-like object
+      const allProperties = properties.all();
+      paramsProperty = allProperties && allProperties.params;
+    } else if (properties instanceof Map) {
+      // Map object
+      paramsProperty = properties.get('params');
+    } else if (typeof properties === 'object') {
+      // Regular object
+      paramsProperty = properties.params;
+    }
+  } catch (e) {
+    console.warn('Error accessing properties:', e.message);
+    return {};
+  }
+  
+  if (!paramsProperty) {
+    return {};
+  }
+  
+  // Extract properties of params
+  let paramsProperties = {};
+  try {
+    if (typeof paramsProperty.properties === 'function') {
+      paramsProperties = paramsProperty.properties();
+    } else if (paramsProperty.properties) {
+      paramsProperties = paramsProperty.properties;
+    }
+  } catch (e) {
+    console.warn('Error accessing params properties:', e.message);
+    return {};
+  }
+  
+  // Build parameter info with types
+  const paramInfo = {};
+  if (typeof paramsProperties.all === 'function') {
+    const allProps = paramsProperties.all();
+    Object.keys(allProps).forEach(key => {
+      const prop = allProps[key];
+      paramInfo[key] = {
+        type: prop.type || 'string',
+        format: prop.format
+      };
+    });
+  } else if (paramsProperties instanceof Map) {
+    paramsProperties.forEach((prop, key) => {
+      paramInfo[key] = {
+        type: prop.type || 'string',
+        format: prop.format
+      };
+    });
+  } else if (typeof paramsProperties === 'object') {
+    Object.keys(paramsProperties).forEach(key => {
+      const prop = paramsProperties[key];
+      paramInfo[key] = {
+        type: prop.type || 'string',
+        format: prop.format
+      };
+    });
+  }
+  
+  return paramInfo;
+}
+
+/*
+ * Generate parameter validation code for a request
+ */
+function generateParameterValidation(sendMessage, actualMethod) {
+  const requiredParams = extractRequiredParameters(sendMessage);
+  
+  // Authentication parameters are automatically added by the signing system
+  // but are included in the spec for completeness. We exclude them from validation
+  // error messages since they will be added automatically.
+  const authParams = ['apiKey', 'signature', 'timestamp'];
+  const userParams = requiredParams.filter(param => !authParams.includes(param));
+  
+  if (userParams.length === 0) {
+    return '';
+  }
+  
+  // For now, we'll skip parameter validation entirely to avoid type mismatch issues
+  // A proper implementation would need to:
+  // 1. Correctly extract type information from the AsyncAPI spec
+  // 2. Generate appropriate validation based on the field type
+  // 3. Use pointers for optional numeric fields to allow nil checks
+  
+  let validation = `\t// Validate required parameters (excluding auth parameters that are auto-added)\n`;
+  validation += `\tif request.Params == nil {\n`;
+  validation += `\t\treturn fmt.Errorf("method ${actualMethod} requires parameters but none provided: %v", []string{${userParams.map(p => `"${p}"`).join(', ')}})\n`;
+  validation += `\t}\n\n`;
+  
+  // Skip individual field validation for now
+  
+  return validation;
+}
+
+/*
  * Generate basic typed method that takes request struct
  */
 function generateBasicTypedMethod(methodName, actualMethod, requestStructName, responseStructName, sendMessage) {
@@ -401,6 +644,9 @@ function generateBasicTypedMethod(methodName, actualMethod, requestStructName, r
   method += `\t}\n`;
   method += `\trequest.Method = "${actualMethod}"\n\n`;
   
+  // Add parameter validation
+  method += generateParameterValidation(sendMessage, actualMethod);
+  
   method += `\t// Convert struct to map for WebSocket sending\n`;
   method += `\trequestMap, err := structToMap(request)\n`;
   method += `\tif err != nil {\n`;
@@ -409,31 +655,40 @@ function generateBasicTypedMethod(methodName, actualMethod, requestStructName, r
   
   // Add authentication logic using context
   if (authType !== 'NONE') {
-    method += `\t// Get authentication from context or fall back to client auth\n`;
-    method += `\tvar auth *Auth\n`;
-    method += `\tif contextAuth, ok := ctx.Value(ContextBinanceAuth).(Auth); ok {\n`;
-    method += `\t\tauth = &contextAuth\n`;
-    method += `\t} else if c.auth != nil {\n`;
-    method += `\t\tauth = c.auth\n`;
-    method += `\t} else {\n`;
-    method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth provided in context or client")\n`;
-    method += `\t}\n\n`;
+    // Check if this is a userDataStream method at template generation time
+    const isUserDataStreamMethod = actualMethod === 'userDataStream.subscribe' || actualMethod === 'userDataStream.unsubscribe';
     
-    method += `\t// Create signer and sign the request parameters\n`;
-    method += `\tsigner := NewRequestSigner(auth)\n`;
-    method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
-    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
-    method += `\t\t}\n`;
-    method += `\t\trequestMap["params"] = params\n`;
-    method += `\t} else {\n`;
-    method += `\t\t// Create params if it doesn't exist\n`;
-    method += `\t\tparams := make(map[string]interface{})\n`;
-    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
-    method += `\t\t}\n`;
-    method += `\t\trequestMap["params"] = params\n`;
-    method += `\t}\n\n`;
+    if (isUserDataStreamMethod) {
+      // For userDataStream methods, skip params creation entirely
+      method += `\t// userDataStream methods don't need params - authentication is handled at the WebSocket connection level\n`;
+    } else {
+      // For other methods, handle params normally
+      method += `\t// Get authentication from context or fall back to client auth\n`;
+      method += `\tvar auth *Auth\n`;
+      method += `\tif contextAuth, ok := ctx.Value(ContextBinanceAuth).(Auth); ok {\n`;
+      method += `\t\tauth = &contextAuth\n`;
+      method += `\t} else if c.auth != nil {\n`;
+      method += `\t\tauth = c.auth\n`;
+      method += `\t} else {\n`;
+      method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth provided in context or client")\n`;
+      method += `\t}\n\n`;
+      method += `\t// Create signer and sign the request parameters\n`;
+      method += `\tsigner := NewRequestSigner(auth)\n`;
+      method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
+      method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+      method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+      method += `\t\t}\n`;
+      method += `\t\trequestMap["params"] = params\n`;
+      method += `\t} else {\n`;
+      method += `\t\t// Create params if it doesn't exist\n`;
+      method += `\t\tparams := make(map[string]interface{})\n`;
+      method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+      method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+      method += `\t\t}\n`;
+      method += `\t\trequestMap["params"] = params\n`;
+      method += `\t}\n`;
+    }
+    method += `\n`;
   }
   
   method += `\t// Register typed response handler with automatic JSON parsing\n`;
@@ -472,12 +727,31 @@ function generateBasicTypedMethod(methodName, actualMethod, requestStructName, r
  * Extract authentication type from send message
  */
 function extractAuthTypeFromMessage(sendMessage) {
-  if (!sendMessage || !sendMessage.name()) {
+  if (!sendMessage) {
     return 'NONE';
   }
   
-  const messageName = sendMessage.name();
-  const description = sendMessage.description ? sendMessage.description() : '';
+  let messageName = '';
+  try {
+    if (typeof sendMessage.name === 'function') {
+      messageName = sendMessage.name() || '';
+    } else if (sendMessage.name) {
+      messageName = sendMessage.name;
+    }
+  } catch (e) {
+    console.warn('Error accessing message name:', e.message);
+  }
+  
+  let description = '';
+  try {
+    if (typeof sendMessage.description === 'function') {
+      description = sendMessage.description() || '';
+    } else if (sendMessage.description) {
+      description = sendMessage.description;
+    }
+  } catch (e) {
+    console.warn('Error accessing message description:', e.message);
+  }
   
   // Check message name and description for auth type indicators
   if (messageName.includes('(USER_DATA)') || description.includes('USER_DATA')) {
@@ -494,13 +768,29 @@ function extractAuthTypeFromMessage(sendMessage) {
   }
   
   // Check for specific method patterns that typically require authentication
-  const messageId = sendMessage.id();
+  let messageId = '';
+  try {
+    if (typeof sendMessage.id === 'function') {
+      messageId = sendMessage.id() || '';
+    } else if (sendMessage.id) {
+      messageId = sendMessage.id;
+    }
+  } catch (e) {
+    console.warn('Error accessing message id:', e.message);
+  }
+  
   if (messageId) {
-    if (messageId.includes('account') || messageId.includes('order') || messageId.includes('trade')) {
+    // Only check for account and order patterns, NOT trades
+    // trades.aggregate and trades.historical are public endpoints
+    if (messageId.includes('account') || messageId.includes('order')) {
       return 'USER_DATA';
     }
     if (messageId.includes('userDataStream')) {
       return 'USER_STREAM';
+    }
+    // More specific trading patterns that require auth (not just any "trade")
+    if (messageId.includes('myTrades') || messageId.includes('order.place') || messageId.includes('order.cancel')) {
+      return 'USER_DATA';
     }
   }
   
@@ -555,6 +845,9 @@ function generateOneOfHandlerMethod(methodName, actualMethod, requestStructName,
   method += `\t}\n`;
   method += `\trequest.Method = "${actualMethod}"\n\n`;
   
+  // Add parameter validation
+  method += generateParameterValidation(sendMessage, actualMethod);
+  
   method += `\t// Convert struct to map for WebSocket sending\n`;
   method += `\trequestMap, err := structToMap(request)\n`;
   method += `\tif err != nil {\n`;
@@ -573,21 +866,31 @@ function generateOneOfHandlerMethod(methodName, actualMethod, requestStructName,
     method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth provided in context or client")\n`;
     method += `\t}\n\n`;
     
-    method += `\t// Create signer and sign the request parameters\n`;
-    method += `\tsigner := NewRequestSigner(auth)\n`;
-    method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
-    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
-    method += `\t\t}\n`;
-    method += `\t\trequestMap["params"] = params\n`;
-    method += `\t} else {\n`;
-    method += `\t\t// Create params if it doesn't exist\n`;
-    method += `\t\tparams := make(map[string]interface{})\n`;
-    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
-    method += `\t\t}\n`;
-    method += `\t\trequestMap["params"] = params\n`;
-    method += `\t}\n\n`;
+    // Check if this is a userDataStream method at template generation time
+    const isUserDataStreamMethod = actualMethod === 'userDataStream.subscribe' || actualMethod === 'userDataStream.unsubscribe';
+    
+    if (isUserDataStreamMethod) {
+      // For userDataStream methods, skip params creation entirely
+      method += `\t// userDataStream methods don't need params - authentication is handled at the WebSocket connection level\n`;
+    } else {
+      // For other methods, handle params normally
+      method += `\t// Create signer and sign the request parameters\n`;
+      method += `\tsigner := NewRequestSigner(auth)\n`;
+      method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
+      method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+      method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+      method += `\t\t}\n`;
+      method += `\t\trequestMap["params"] = params\n`;
+      method += `\t} else {\n`;
+      method += `\t\t// Create params if it doesn't exist\n`;
+      method += `\t\tparams := make(map[string]interface{})\n`;
+      method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+      method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+      method += `\t\t}\n`;
+      method += `\t\trequestMap["params"] = params\n`;
+      method += `\t}\n`;
+    }
+    method += `\n`;
   }
   
   method += `\t// Register generic response handler for oneOf handling\n`;
@@ -660,19 +963,46 @@ function generateOneOfHelperMethods(asyncapi) {
   helpers += `\t})\n`;
   helpers += `}\n\n`;
   
-  helpers += `// structToMap converts a struct to a map[string]interface{}\n`;
+  helpers += `// structToMap converts a struct to a map[string]interface{} while preserving number precision\n`;
   helpers += `func structToMap(v interface{}) (map[string]interface{}, error) {\n`;
   helpers += `\tdata, err := json.Marshal(v)\n`;
   helpers += `\tif err != nil {\n`;
   helpers += `\t\treturn nil, err\n`;
   helpers += `\t}\n`;
   helpers += `\t\n`;
+  helpers += `\t// Use a decoder that preserves number precision\n`;
+  helpers += `\tdecoder := json.NewDecoder(strings.NewReader(string(data)))\n`;
+  helpers += `\tdecoder.UseNumber()\n`;
+  helpers += `\t\n`;
   helpers += `\tvar result map[string]interface{}\n`;
-  helpers += `\tif err := json.Unmarshal(data, &result); err != nil {\n`;
+  helpers += `\tif err := decoder.Decode(&result); err != nil {\n`;
   helpers += `\t\treturn nil, err\n`;
   helpers += `\t}\n`;
   helpers += `\t\n`;
+  helpers += `\t// Convert json.Number to appropriate types\n`;
+  helpers += `\tconvertJSONNumbers(result)\n`;
+  helpers += `\t\n`;
   helpers += `\treturn result, nil\n`;
+  helpers += `}\n\n`;
+  helpers += `// convertJSONNumbers recursively converts json.Number values to appropriate types\n`;
+  helpers += `func convertJSONNumbers(m map[string]interface{}) {\n`;
+  helpers += `\tfor k, v := range m {\n`;
+  helpers += `\t\tswitch val := v.(type) {\n`;
+  helpers += `\t\tcase json.Number:\n`;
+  helpers += `\t\t\t// Try to convert to int64 first, then fall back to float64\n`;
+  helpers += `\t\t\tif intVal, err := val.Int64(); err == nil {\n`;
+  helpers += `\t\t\t\tm[k] = intVal\n`;
+  helpers += `\t\t\t} else if floatVal, err := val.Float64(); err == nil {\n`;
+  helpers += `\t\t\t\tm[k] = floatVal\n`;
+  helpers += `\t\t\t} else {\n`;
+  helpers += `\t\t\t\t// Keep as string if conversion fails\n`;
+  helpers += `\t\t\t\tm[k] = string(val)\n`;
+  helpers += `\t\t\t}\n`;
+  helpers += `\t\tcase map[string]interface{}:\n`;
+  helpers += `\t\t\t// Recursively convert nested maps\n`;
+  helpers += `\t\t\tconvertJSONNumbers(val)\n`;
+  helpers += `\t\t}\n`;
+  helpers += `\t}\n`;
   helpers += `}\n\n`;
   
   return helpers;
@@ -756,16 +1086,30 @@ function getGoType(type) {
 function toPascalCase(str) {
   if (!str) return '';
   
-  // Handle special cases with dots, underscores, and camelCase
+  // If the string is already in PascalCase (starts with uppercase and contains more uppercase letters), preserve it
+  if (/^[A-Z]/.test(str) && /[A-Z]/.test(str.slice(1))) {
+    return str;
+  }
+  
+  // Handle camelCase strings by preserving internal capital letters
+  // Split on dots, underscores, and dashes first
   return str
     .split(/[._-]/)
     .map(word => {
       if (!word) return '';
-      // Handle camelCase words by splitting on uppercase letters
-      return word.replace(/([a-z])([A-Z])/g, '$1 $2')
-        .split(' ')
-        .map(subWord => subWord.charAt(0).toUpperCase() + subWord.slice(1).toLowerCase())
-        .join('');
+      
+      // For words that contain camelCase (have uppercase letters in the middle),
+      // split them carefully to preserve the original casing
+      if (/[a-z][A-Z]/.test(word)) {
+        // Split on camelCase boundaries but preserve the case of each part
+        const parts = word.replace(/([a-z])([A-Z])/g, '$1 $2').split(' ');
+        return parts
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+          .join('');
+      } else {
+        // For words without camelCase, just capitalize the first letter
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
     })
     .join('')
     .replace(/\s+/g, ''); // Remove any remaining spaces
@@ -777,4 +1121,13 @@ function toPascalCase(str) {
 function capitalizeFirst(str) {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/*
+ * Generate parameter validation helper methods
+ */
+function generateParameterValidationHelpers() {
+  // These helper methods are now generated in generateOneOfHelperMethods
+  // Return empty string to avoid duplicate declarations
+  return '';
 } 

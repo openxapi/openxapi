@@ -551,6 +551,7 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 
 	var mandatoryFromRowspan string
 	var isFirstDataRow bool = true
+	var eitherOrGroup []string // Track parameters that are in "either/or" groups
 
 	doc.Find("tr").Each(func(i int, row *goquery.Selection) {
 		if i == 0 { // Skip header row
@@ -575,6 +576,8 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 			// Check if this cell has rowspan by looking for the rowspan attribute
 			if rowspanAttr, exists := cells.Eq(2).Attr("rowspan"); exists && rowspanAttr != "" {
 				mandatoryFromRowspan = mandatory
+				// If there's a rowspan on mandatory column, it indicates an either/or requirement
+				eitherOrGroup = append(eitherOrGroup, name)
 			}
 			if cells.Length() > 3 {
 				description = cleanText(cells.Eq(3).Text())
@@ -584,6 +587,8 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 			// For subsequent rows, use the rowspan value if available, otherwise try to get from current row
 			if mandatoryFromRowspan != "" {
 				mandatory = mandatoryFromRowspan
+				// If we're still using rowspan value, this parameter is part of the either/or group
+				eitherOrGroup = append(eitherOrGroup, name)
 			} else if cells.Length() >= 3 {
 				mandatory = cleanText(cells.Eq(2).Text())
 			}
@@ -598,11 +603,14 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 			return
 		}
 
+		// Determine if parameter is required based on mandatory field and rowspan logic
+		isRequired := p.determineParameterRequirement(mandatory, name, eitherOrGroup)
+
 		param := &parser.Parameter{
 			Name:        name,
 			Description: description,
 			Location:    "body",
-			Required:    p.isMandatoryParameter(mandatory),
+			Required:    isRequired,
 			Schema:      p.convertTypeToJSONSchema(name, paramType, description),
 		}
 
@@ -610,6 +618,36 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 	})
 
 	return nil
+}
+
+// contains checks if a slice contains a string
+func contains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// determineParameterRequirement determines if a parameter is required based on mandatory field and context
+func (p *DocumentParser) determineParameterRequirement(mandatory, paramName string, eitherOrGroup []string) bool {
+	mandatory = strings.TrimSpace(strings.ToLower(mandatory))
+
+	// Handle explicit mandatory indicators
+	if p.isMandatoryParameter(mandatory) {
+		// If this parameter is part of an either/or group (detected by rowspan)
+		// we should NOT mark any individual parameter as required since they're mutually exclusive
+		// The AsyncAPI generator will need to handle this at the schema level
+		if len(eitherOrGroup) > 1 && contains(eitherOrGroup, paramName) {
+			// For either/or groups, mark all as optional since the requirement is at the group level
+			// The validation logic should ensure at least one is provided
+			return false
+		}
+		return true
+	}
+
+	return false
 }
 
 // isMandatoryParameter determines if a parameter is mandatory based on the mandatory field value
@@ -682,11 +720,14 @@ func (p *DocumentParser) convertTypeToJSONSchema(name, paramType, description st
 			Type:        "boolean",
 			Description: description,
 		}
-	case strings.Contains(paramType, "number") || strings.Contains(paramType, "integer") || strings.Contains(paramType, "int"):
+	case strings.Contains(paramType, "number") || strings.Contains(paramType, "integer") || strings.Contains(paramType, "int") || strings.Contains(paramType, "long"):
 		logrus.Debugf("convertTypeToJSONSchema: %s, %s, %s", name, paramType, description)
 		schema := &parser.Schema{
 			Type:        "integer",
 			Description: description,
+		}
+		if strings.Contains(paramType, "long") {
+			schema.Format = "int64"
 		}
 		if name == "timestamp" || strings.HasSuffix(name, "Time") || strings.HasSuffix(name, "Id") || name == "id" {
 			logrus.Debugf("Setting format int64 for parameter: %s", name)
@@ -802,6 +843,40 @@ func (p *DocumentParser) convertToSchema(key string, data interface{}, descripti
 			Description: description,
 		}
 	}
+}
+
+// isFinancialField checks if a field name represents a financial value that should be treated as string
+func isFinancialField(key string) bool {
+	// Convert to lowercase for case-insensitive comparison
+	lowerKey := strings.ToLower(key)
+
+	// Financial field patterns that should always be strings to preserve precision
+	financialFields := []string{
+		"price", "quantity", "amount", "fee", "commission", "balance", "volume",
+		"qty", "quoteqty", "quotevolume", "quoteasset", "executedqty", "cummulativequoteqty",
+		"origqty", "origquoteorderqty", "stopPrice", "icebergqty", "lastexecutedprice",
+		"lastquoteasset", "weightedavgprice", "prevday", "change", "low", "high", "open",
+		"weightedavg", "bidprice", "askprice", "bidqty", "askqty", "lastprice", "lastqty",
+		"delta", "free", "locked", "available", "total", "borrowed", "interest",
+		"pricechange", "pricechangepercent", "tradingday", "percentchange", "value",
+	}
+
+	// Check exact matches and partial matches (e.g., "bidPrice", "askQty", etc.)
+	for _, field := range financialFields {
+		if lowerKey == field || strings.Contains(lowerKey, field) {
+			return true
+		}
+	}
+
+	// Check common financial field suffixes
+	financialSuffixes := []string{"price", "qty", "amount", "fee", "commission", "balance", "volume"}
+	for _, suffix := range financialSuffixes {
+		if strings.HasSuffix(lowerKey, suffix) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // processMethod processes the method and adds authentication information
