@@ -660,4 +660,19 @@ make generate-ws-spec EXCHANGE=binance
 make generate-ws-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=${PWD}/../binance-go/ws
 ```
 
+### AI Assistant Development Rule: Loop Detection
+**NEVER repeat the same command or action multiple times without progress.** If you find yourself stuck in a loop executing the same command repeatedly, STOP immediately and rethink your approach.
+
+**Key Guidelines:**
+1. **Recognize repetition patterns** - If you've run the same command 2-3 times with the same result, stop and analyze
+2. **Change approach immediately** - Try a different command, check a different file, or ask for clarification
+3. **Debug systematically** - Use different tools (LS, Read, Bash) to gather new information
+4. **Break the cycle** - Step back and reconsider the problem from a different angle
+5. **Ask for help** - If stuck, explain what you've tried and ask the user for guidance
+
+**Example of breaking a loop:**
+- Instead of repeating `cat go.mod` multiple times, try `pwd` to check location
+- Instead of running the same npm command, check package.json or try a different approach
+- Instead of reading the same file repeatedly, read a different related file
+
 This guide provides the essential context for understanding and contributing to the OpenXAPI project. For specific implementation details, refer to the source code and existing tests. 
