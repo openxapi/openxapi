@@ -6,7 +6,7 @@ GOBUILD=$(GOCMD) build
 GOTEST=$(GOCMD) test
 GOGET=$(GOCMD) get
 GOVET=$(GOCMD) vet
-GOLIST=$(GOCMD) list ./... | grep -v 'test/project'
+GOLIST=$(GOCMD) list ./... | grep -v 'test/project' | grep -v 'templates/.*/tests/integration'
 BIN_DIR=bin
 BINARY_NAME=$(BIN_DIR)/openxapi
 
@@ -173,8 +173,8 @@ clean:
 	@rm -f coverage.out
 
 format:
-	@gofmt -s -w .
-	@$(GOCMD) mod tidy
+	@find . -name "*.go" -not -path "*/templates/*/tests/integration/*" -not -path "*/test/project/*" -exec gofmt -s -w {} +
+	@cd . && GOPROXY=direct $(GOCMD) mod tidy -e
 
 lint:
 	@if command -v golangci-lint >/dev/null 2>&1; then \
