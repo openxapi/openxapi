@@ -1,5 +1,5 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
-import { WebSocketHandlers } from './components/WebSocketHandlers';
+import { WebSocketHandlers } from '../components/WebSocketHandlers';
 
 export default function ({ asyncapi, params }) {
   const packageName = params.packageName || 'main';
