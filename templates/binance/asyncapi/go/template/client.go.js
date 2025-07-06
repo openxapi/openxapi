@@ -377,7 +377,7 @@ func (e *EventHandler) RegisterHandler(responseType string, handler func(interfa
 // HandleResponse processes a event based on its type with optimized lookup
 func (e *EventHandler) HandleResponse(eventType string, data []byte) error {
 	if handler, ok := e.handlers.Load(eventType); ok {
-		if h, ok := handler.(func([]byte) error); ok {
+		if h, ok := handler.(func(interface{}) error); ok {
 			return h(data)
 		}
 	}
@@ -648,6 +648,16 @@ func (c *Client) readMessages() {
 		default:
 			_, message, err := c.conn.ReadMessage()
 			if err != nil {
+				// Check if the error is due to connection being closed
+				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					// Normal close - no need to log as error
+					return
+				}
+				// Check if this is a network connection closed error (also normal during shutdown)
+				if strings.Contains(err.Error(), "use of closed network connection") {
+					// Normal network close - no need to log as error
+					return
+				}
 				log.Printf("Error reading message: %v", err)
 				return
 			}

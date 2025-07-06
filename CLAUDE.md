@@ -290,9 +290,16 @@ When WebSocket integration tests fail, follow this systematic debugging approach
 ### Key Technical Fixes Applied
 
 #### Authentication Parameter Handling
-- Auth parameters (`apiKey`, `signature`, `timestamp`) are excluded from AsyncAPI specs
-- Parameters are automatically added by the signing system, not included in models
+- Auth parameters (`apiKey`, `signature`, `timestamp`) are included in AsyncAPI specs as documented in the official API documentation
+- Parameters are automatically added by the signing system during request processing
 - Authentication type detection improved to distinguish public vs authenticated endpoints
+- Parameter validation excludes auth parameters from error messages since they are auto-added
+
+#### Type Conversion and Precision Handling
+- `LONG` types from API documentation are now correctly converted to `integer` with `int64` format in AsyncAPI specs
+- `timestamp` and `recvWindow` parameters are properly typed as integers instead of strings
+- Go client uses `structToMap` with `json.UseNumber()` to preserve integer precision without scientific notation
+- Signing logic correctly generates Unix millisecond timestamps as `int64` values
 
 ## Common Development Scenarios
 

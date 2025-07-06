@@ -169,7 +169,7 @@ import (
   content += nestedStructs;
 
   content += generateStructWithDocs(structName, schema, message, false, isEvent, isRequestMessage);
-  content += generateHelperMethods(structName, isEvent);
+  content += generateHelperMethods(structName, isEvent, isRequestMessage);
   
   // Generate SetXxx methods for request messages
   if (isRequestMessage) {
@@ -923,8 +923,16 @@ function generateStructWithDocs(name, schema, message, isNested = false, isEvent
 /*
  * Generate helper methods for struct (including event-specific methods)
  */
-function generateHelperMethods(structName, isEvent = false) {
+function generateHelperMethods(structName, isEvent = false, isRequestMessage = false) {
   let methods = '';
+  
+  // Generate constructor for request messages
+  if (isRequestMessage) {
+    methods += `// New${structName} creates a new ${structName} instance\n`;
+    methods += `func New${structName}() *${structName} {\n`;
+    methods += `\treturn &${structName}{}\n`;
+    methods += `}\n\n`;
+  }
   
   // Standard JSON marshaling methods
   methods += `// String returns string representation of ${structName}\n`;
@@ -1432,6 +1440,7 @@ import (
 function generateComponentSchemaFile(schemaName, schema) {
   const structName = toPascalCase(schemaName);
   const needsTime = hasTimeFields(schema);
+  const isRequestMessage = structName.toLowerCase().includes('request');
   
   let content = `package models
 
@@ -1454,7 +1463,12 @@ import (
 
   content += `// ${structName} represents ${schema.description || schemaName}\n`;
   content += generateStructDefinition(structName, schema);
-  content += generateHelperMethods(structName, schema.isEvent || false);
+  content += generateHelperMethods(structName, schema.isEvent || false, isRequestMessage);
+  
+  // Generate SetXxx methods for request messages in component schemas
+  if (isRequestMessage) {
+    content += generateSetterMethods(structName, schema);
+  }
   
   return content;
 }

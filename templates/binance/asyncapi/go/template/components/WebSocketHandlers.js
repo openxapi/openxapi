@@ -49,7 +49,8 @@ function generateEventHandlers(asyncapi) {
                                        messageId.includes('listStatus') ||
                                        messageId.includes('listenKeyExpired') ||
                                        messageId.includes('outboundAccountPosition') ||
-                                       messageId.includes('externalLockUpdate'));
+                                       messageId.includes('externalLockUpdate') ||
+                                       messageId.includes('eventStreamTerminated'));
       
       if (isEventMessage) {
         eventHandlers += generateEventHandler(message, asyncapi);
@@ -594,7 +595,9 @@ function extractParameterInfo(sendMessage) {
 function generateParameterValidation(sendMessage, actualMethod) {
   const requiredParams = extractRequiredParameters(sendMessage);
   
-  // Filter out authentication parameters that are automatically added by the signing system
+  // Authentication parameters are automatically added by the signing system
+  // but are included in the spec for completeness. We exclude them from validation
+  // error messages since they will be added automatically.
   const authParams = ['apiKey', 'signature', 'timestamp'];
   const userParams = requiredParams.filter(param => !authParams.includes(param));
   
@@ -608,7 +611,7 @@ function generateParameterValidation(sendMessage, actualMethod) {
   // 2. Generate appropriate validation based on the field type
   // 3. Use pointers for optional numeric fields to allow nil checks
   
-  let validation = `\t// Validate required parameters\n`;
+  let validation = `\t// Validate required parameters (excluding auth parameters that are auto-added)\n`;
   validation += `\tif request.Params == nil {\n`;
   validation += `\t\treturn fmt.Errorf("method ${actualMethod} requires parameters but none provided: %v", []string{${userParams.map(p => `"${p}"`).join(', ')}})\n`;
   validation += `\t}\n\n`;
@@ -652,37 +655,40 @@ function generateBasicTypedMethod(methodName, actualMethod, requestStructName, r
   
   // Add authentication logic using context
   if (authType !== 'NONE') {
-    method += `\t// Get authentication from context or fall back to client auth\n`;
-    method += `\tvar auth *Auth\n`;
-    method += `\tif contextAuth, ok := ctx.Value(ContextBinanceAuth).(Auth); ok {\n`;
-    method += `\t\tauth = &contextAuth\n`;
-    method += `\t} else if c.auth != nil {\n`;
-    method += `\t\tauth = c.auth\n`;
-    method += `\t} else {\n`;
-    method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth provided in context or client")\n`;
-    method += `\t}\n\n`;
+    // Check if this is a userDataStream method at template generation time
+    const isUserDataStreamMethod = actualMethod === 'userDataStream.subscribe' || actualMethod === 'userDataStream.unsubscribe';
     
-    method += `\t// Create signer and sign the request parameters\n`;
-    method += `\tsigner := NewRequestSigner(auth)\n`;
-    method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
-    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
-    method += `\t\t}\n`;
-    method += `\t\trequestMap["params"] = params\n`;
-    method += `\t} else {\n`;
-    method += `\t\t// Special case: userDataStream methods don't need params at all\n`;
-    method += `\t\tif requestMap["method"] == "userDataStream.subscribe" || requestMap["method"] == "userDataStream.unsubscribe" {\n`;
-    method += `\t\t\t// These methods require authentication but don't accept any parameters\n`;
-    method += `\t\t\t// Skip params creation - authentication is handled at the WebSocket connection level\n`;
-    method += `\t\t} else {\n`;
-    method += `\t\t\t// Create params if it doesn't exist for other methods\n`;
-    method += `\t\t\tparams := make(map[string]interface{})\n`;
-    method += `\t\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
-    method += `\t\t\t}\n`;
-    method += `\t\t\trequestMap["params"] = params\n`;
-    method += `\t\t}\n`;
-    method += `\t}\n\n`;
+    if (isUserDataStreamMethod) {
+      // For userDataStream methods, skip params creation entirely
+      method += `\t// userDataStream methods don't need params - authentication is handled at the WebSocket connection level\n`;
+    } else {
+      // For other methods, handle params normally
+      method += `\t// Get authentication from context or fall back to client auth\n`;
+      method += `\tvar auth *Auth\n`;
+      method += `\tif contextAuth, ok := ctx.Value(ContextBinanceAuth).(Auth); ok {\n`;
+      method += `\t\tauth = &contextAuth\n`;
+      method += `\t} else if c.auth != nil {\n`;
+      method += `\t\tauth = c.auth\n`;
+      method += `\t} else {\n`;
+      method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth provided in context or client")\n`;
+      method += `\t}\n\n`;
+      method += `\t// Create signer and sign the request parameters\n`;
+      method += `\tsigner := NewRequestSigner(auth)\n`;
+      method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
+      method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+      method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+      method += `\t\t}\n`;
+      method += `\t\trequestMap["params"] = params\n`;
+      method += `\t} else {\n`;
+      method += `\t\t// Create params if it doesn't exist\n`;
+      method += `\t\tparams := make(map[string]interface{})\n`;
+      method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+      method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+      method += `\t\t}\n`;
+      method += `\t\trequestMap["params"] = params\n`;
+      method += `\t}\n`;
+    }
+    method += `\n`;
   }
   
   method += `\t// Register typed response handler with automatic JSON parsing\n`;
@@ -860,27 +866,31 @@ function generateOneOfHandlerMethod(methodName, actualMethod, requestStructName,
     method += `\t\treturn fmt.Errorf("authentication required for ${authType} request but no auth provided in context or client")\n`;
     method += `\t}\n\n`;
     
-    method += `\t// Create signer and sign the request parameters\n`;
-    method += `\tsigner := NewRequestSigner(auth)\n`;
-    method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
-    method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
-    method += `\t\t}\n`;
-    method += `\t\trequestMap["params"] = params\n`;
-    method += `\t} else {\n`;
-    method += `\t\t// Special case: userDataStream methods don't need params at all\n`;
-    method += `\t\tif requestMap["method"] == "userDataStream.subscribe" || requestMap["method"] == "userDataStream.unsubscribe" {\n`;
-    method += `\t\t\t// These methods require authentication but don't accept any parameters\n`;
-    method += `\t\t\t// Skip params creation - authentication is handled at the WebSocket connection level\n`;
-    method += `\t\t} else {\n`;
-    method += `\t\t\t// Create params if it doesn't exist for other methods\n`;
-    method += `\t\t\tparams := make(map[string]interface{})\n`;
-    method += `\t\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
-    method += `\t\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
-    method += `\t\t\t}\n`;
-    method += `\t\t\trequestMap["params"] = params\n`;
-    method += `\t\t}\n`;
-    method += `\t}\n\n`;
+    // Check if this is a userDataStream method at template generation time
+    const isUserDataStreamMethod = actualMethod === 'userDataStream.subscribe' || actualMethod === 'userDataStream.unsubscribe';
+    
+    if (isUserDataStreamMethod) {
+      // For userDataStream methods, skip params creation entirely
+      method += `\t// userDataStream methods don't need params - authentication is handled at the WebSocket connection level\n`;
+    } else {
+      // For other methods, handle params normally
+      method += `\t// Create signer and sign the request parameters\n`;
+      method += `\tsigner := NewRequestSigner(auth)\n`;
+      method += `\tif params, ok := requestMap["params"].(map[string]interface{}); ok {\n`;
+      method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+      method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+      method += `\t\t}\n`;
+      method += `\t\trequestMap["params"] = params\n`;
+      method += `\t} else {\n`;
+      method += `\t\t// Create params if it doesn't exist\n`;
+      method += `\t\tparams := make(map[string]interface{})\n`;
+      method += `\t\tif err := signer.SignRequest(params, ${transformAuthTypeToGoConstant(authType)}); err != nil {\n`;
+      method += `\t\t\treturn fmt.Errorf("failed to sign request: %w", err)\n`;
+      method += `\t\t}\n`;
+      method += `\t\trequestMap["params"] = params\n`;
+      method += `\t}\n`;
+    }
+    method += `\n`;
   }
   
   method += `\t// Register generic response handler for oneOf handling\n`;

@@ -606,12 +606,6 @@ func (p *DocumentParser) parseParameterTable(channel *parser.Channel, tableConte
 		// Determine if parameter is required based on mandatory field and rowspan logic
 		isRequired := p.determineParameterRequirement(mandatory, name, eitherOrGroup)
 
-		// Skip authentication parameters - they are handled automatically by the signing system
-		authParams := []string{"apiKey", "signature", "timestamp", "recvWindow"}
-		if contains(authParams, name) {
-			return // Skip this parameter
-		}
-
 		param := &parser.Parameter{
 			Name:        name,
 			Description: description,
@@ -726,11 +720,14 @@ func (p *DocumentParser) convertTypeToJSONSchema(name, paramType, description st
 			Type:        "boolean",
 			Description: description,
 		}
-	case strings.Contains(paramType, "number") || strings.Contains(paramType, "integer") || strings.Contains(paramType, "int"):
+	case strings.Contains(paramType, "number") || strings.Contains(paramType, "integer") || strings.Contains(paramType, "int") || strings.Contains(paramType, "long"):
 		logrus.Debugf("convertTypeToJSONSchema: %s, %s, %s", name, paramType, description)
 		schema := &parser.Schema{
 			Type:        "integer",
 			Description: description,
+		}
+		if strings.Contains(paramType, "long") {
+			schema.Format = "int64"
 		}
 		if name == "timestamp" || strings.HasSuffix(name, "Time") || strings.HasSuffix(name, "Id") || name == "id" {
 			logrus.Debugf("Setting format int64 for parameter: %s", name)

@@ -72,6 +72,12 @@ channels:
                 $ref: '#/components/messages/depthRequest'
             depthResponse:
                 $ref: '#/components/messages/depthResponse'
+            eventStreamTerminated:
+                name: Event Stream Terminated Event
+                title: Event Stream Terminated Event
+                description: Sent when User Data Stream is stopped (WebSocket API only)
+                payload:
+                    $ref: '#/components/schemas/EventStreamTerminatedEvent'
             exchangeInfoRequest:
                 $ref: '#/components/messages/exchangeInfoRequest'
             exchangeInfoResponse:
@@ -636,6 +642,7 @@ operations:
             - $ref: '#/channels/spot/messages/listStatus'
             - $ref: '#/channels/spot/messages/listenKeyExpired'
             - $ref: '#/channels/spot/messages/externalLockUpdate'
+            - $ref: '#/channels/spot/messages/eventStreamTerminated'
     receiveUserDataStreamPing:
         title: Receive from userDataStream.ping
         description: Receive response from userDataStream.ping
@@ -1682,17 +1689,19 @@ components:
                         properties:
                             apiKey:
                                 type: string
-                                description: apiKey property
-                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             signature:
                                 type: string
-                                description: signature property
-                                example: 76289424d6e288f4dc47d167ac824e859dabf78736f4348abbbac848d719eb94
                             timestamp:
                                 type: integer
                                 format: int64
-                                description: timestamp property
-                                example: 1660801839500
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -1791,9 +1800,24 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             omitZeroBalances:
                                 type: boolean
                                 description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            timestamp:
+                                type: integer
+                                format: int64
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -1968,8 +1992,11 @@ components:
                         type: object
                         description: params property
                         properties:
-                            endTime:
+                            apiKey:
                                 type: string
+                            endTime:
+                                type: integer
+                                format: int64
                             fromId:
                                 type: integer
                                 format: int64
@@ -1977,8 +2004,22 @@ components:
                             limit:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
-                            startTime:
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
                                 type: string
+                            startTime:
+                                type: integer
+                                format: int64
+                            timestamp:
+                                type: integer
+                                format: int64
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -2107,8 +2148,11 @@ components:
                         type: object
                         description: params property
                         properties:
-                            endTime:
+                            apiKey:
                                 type: string
+                            endTime:
+                                type: integer
+                                format: int64
                             limit:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
@@ -2116,12 +2160,25 @@ components:
                                 type: integer
                                 format: int64
                                 description: Order ID to begin at
-                            startTime:
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
                                 type: string
+                            startTime:
+                                type: integer
+                                format: int64
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -2878,7 +2935,8 @@ components:
                         description: params property
                         properties:
                             endTime:
-                                type: string
+                                type: integer
+                                format: int64
                             fromAllocationId:
                                 type: integer
                                 format: int64
@@ -2886,11 +2944,20 @@ components:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             startTime:
-                                type: string
+                                type: integer
+                                format: int64
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
             correlationId:
@@ -3032,18 +3099,29 @@ components:
                         description: params property
                         properties:
                             fromPreventedMatchId:
-                                type: string
+                                type: integer
+                                format: int64
                             limit:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
                             preventedMatchId:
-                                type: string
+                                type: integer
+                                format: int64
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -3167,8 +3245,11 @@ components:
                         type: object
                         description: params property
                         properties:
-                            endTime:
+                            apiKey:
                                 type: string
+                            endTime:
+                                type: integer
+                                format: int64
                             fromId:
                                 type: integer
                                 format: int64
@@ -3179,12 +3260,25 @@ components:
                             orderId:
                                 type: integer
                                 format: int64
-                            startTime:
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
                                 type: string
+                            startTime:
+                                type: integer
+                                format: int64
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -3321,17 +3415,19 @@ components:
                         properties:
                             apiKey:
                                 type: string
-                                description: apiKey property
-                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             signature:
                                 type: string
-                                description: signature property
-                                example: 1bea8b157dd78c3da30359bddcd999e4049749fe50b828e620e12f64e8b433c9
                             timestamp:
                                 type: integer
                                 format: int64
-                                description: timestamp property
-                                example: 1660801713831
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -3460,10 +3556,24 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -3635,9 +3745,24 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
                             symbol:
                                 type: string
                                 description: If omitted, open orders for all symbols are returned
+                            timestamp:
+                                type: integer
+                                format: int64
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -3808,16 +3933,25 @@ components:
                                 type: string
                                 description: newQty must be greater than 0 and less than the order's quantity.
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: orderId or origClientOrderId must be sent
                             origClientOrderId:
                                 type: string
                                 description: orderId or origClientOrderId must be sent
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000.
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - newQty
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -3979,17 +4113,27 @@ components:
                         description: params property
                         properties:
                             fromExecutionId:
-                                type: string
+                                type: integer
+                                format: int64
                             limit:
                                 type: integer
                                 description: 'Default:500; Maximum: 1000'
                             orderId:
-                                type: string
+                                type: integer
+                                format: int64
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000.
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - orderId
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -4103,6 +4247,8 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             cancelNewClientOrderId:
                                 type: string
                                 description: New ID for the canceled order. Automatically generated if not sent
@@ -4135,6 +4281,10 @@ components:
                                 type: string
                             quoteOrderQty:
                                 type: string
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             selfTradePreventionMode:
                                 type: string
                                 description: |-
@@ -4143,10 +4293,13 @@ components:
                             side:
                                 type: string
                                 description: BUY or SELL
+                            signature:
+                                type: string
                             stopPrice:
                                 type: string
                             strategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the order within an order strategy.
                             strategyType:
                                 type: integer
@@ -4157,6 +4310,9 @@ components:
                                 type: string
                             timeInForce:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                             trailingDelta:
                                 type: string
                                 description: See Trailing Stop order FAQ
@@ -4168,6 +4324,9 @@ components:
                             - cancelOrderId
                             - side
                             - type
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -4389,6 +4548,8 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             cancelRestrictions:
                                 type: string
                                 description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED.'
@@ -4402,11 +4563,23 @@ components:
                             origClientOrderId:
                                 type: string
                                 description: Cancel order by clientOrderId
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - orderId
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -4570,6 +4743,8 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             listClientOrderId:
                                 type: string
                                 description: Cancel order list by listClientId
@@ -4580,11 +4755,23 @@ components:
                                 type: integer
                                 format: int64
                                 description: Cancel order list by orderListId
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - orderListId
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -4788,7 +4975,8 @@ components:
                                 type: string
                                 description: Arbitrary unique ID among open orders for the above order. Automatically generated if not sent
                             aboveIcebergQty:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Note that this can only be used if aboveTimeInForce is GTC.
                             abovePrice:
                                 type: string
@@ -4797,7 +4985,8 @@ components:
                                 type: string
                                 description: Can be used if aboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT. Either aboveStopPrice or aboveTrailingDelta or both, must be specified.
                             aboveStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the above order within an order strategy.
                             aboveStrategyType:
                                 type: integer
@@ -4806,15 +4995,19 @@ components:
                                 type: string
                                 description: Required if aboveType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT.
                             aboveTrailingDelta:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: See Trailing Stop order FAQ.
                             aboveType:
                                 type: string
                                 description: 'Supported values: STOP_LOSS_LIMIT, STOP_LOSS, LIMIT_MAKER, TAKE_PROFIT, TAKE_PROFIT_LIMIT'
+                            apiKey:
+                                type: string
                             belowClientOrderId:
                                 type: string
                             belowIcebergQty:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Note that this can only be used if belowTimeInForce is GTC.
                             belowPrice:
                                 type: string
@@ -4823,7 +5016,8 @@ components:
                                 type: string
                                 description: Can be used if belowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either belowStopPrice or belowTrailingDelta or both, must be specified.
                             belowStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the below order within an order strategy.
                             belowStrategyType:
                                 type: integer
@@ -4832,7 +5026,8 @@ components:
                                 type: string
                                 description: Required if belowType is STOP_LOSS_LIMIT or TAKE_PROFIT_LIMIT
                             belowTrailingDelta:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: See Trailing Stop order FAQ.
                             belowType:
                                 type: string
@@ -4846,20 +5041,32 @@ components:
                             quantity:
                                 type: string
                                 description: Quantity for both orders of the order list.
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000.
                             selfTradePreventionMode:
                                 type: string
                                 description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
                             side:
                                 type: string
                                 description: BUY or SELL
+                            signature:
+                                type: string
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
                             - side
                             - quantity
                             - aboveType
                             - belowType
+                            - apiKey
+                            - timestamp
+                            - signature
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -5087,7 +5294,8 @@ components:
                             pendingStopPrice:
                                 type: string
                             pendingStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the pending order within an order strategy.
                             pendingStrategyType:
                                 type: integer
@@ -5100,11 +5308,20 @@ components:
                             pendingType:
                                 type: string
                                 description: 'Supported values: Order types.  Note that MARKET orders using quoteOrderQty are not supported.'
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000.
                             selfTradePreventionMode:
                                 type: string
                                 description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
+                            signature:
+                                type: string
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                             workingClientOrderId:
                                 type: string
                                 description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
@@ -5120,7 +5337,8 @@ components:
                                 type: string
                                 description: 'Supported values: Order side'
                             workingStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the working order within an order strategy.
                             workingStrategyType:
                                 type: integer
@@ -5140,6 +5358,8 @@ components:
                             - pendingType
                             - pendingSide
                             - pendingQuantity
+                            - timestamp
+                            - signature
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -5359,7 +5579,8 @@ components:
                                 type: string
                                 description: Can be used if pendingAboveType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT, TAKE_PROFIT_LIMIT
                             pendingAboveStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the pending above order within an order strategy.
                             pendingAboveStrategyType:
                                 type: integer
@@ -5385,7 +5606,8 @@ components:
                                 type: string
                                 description: Can be used if pendingBelowType is STOP_LOSS, STOP_LOSS_LIMIT, TAKE_PROFIT or TAKE_PROFIT_LIMIT. Either pendingBelowStopPrice or pendingBelowTrailingDelta or both, must be specified.
                             pendingBelowStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the pending below order within an order strategy.
                             pendingBelowStrategyType:
                                 type: integer
@@ -5403,11 +5625,20 @@ components:
                             pendingSide:
                                 type: string
                                 description: 'Supported values: Order Side'
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000.
                             selfTradePreventionMode:
                                 type: string
                                 description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
+                            signature:
+                                type: string
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                             workingClientOrderId:
                                 type: string
                                 description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
@@ -5422,7 +5653,8 @@ components:
                                 type: string
                                 description: 'Supported values: Order Side'
                             workingStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the working order within an order strategy.
                             workingStrategyType:
                                 type: integer
@@ -5442,6 +5674,8 @@ components:
                             - pendingSide
                             - pendingQuantity
                             - pendingAboveType
+                            - timestamp
+                            - signature
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -5642,13 +5876,16 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             limitClientOrderId:
                                 type: string
                                 description: Arbitrary unique ID among open orders for the limit order. Automatically generated if not sent
                             limitIcebergQty:
                                 type: string
                             limitStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the limit order within an order strategy.
                             limitStrategyType:
                                 type: integer
@@ -5664,12 +5901,18 @@ components:
                                 description: Price for the limit order
                             quantity:
                                 type: string
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             selfTradePreventionMode:
                                 type: string
                                 description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes'
                             side:
                                 type: string
                                 description: BUY or SELL
+                            signature:
+                                type: string
                             stopClientOrderId:
                                 type: string
                                 description: Arbitrary unique ID among open orders for the stop order. Automatically generated if not sent
@@ -5684,13 +5927,17 @@ components:
                                 type: string
                                 description: Either stopPrice or trailingDelta, or both must be specified
                             stopStrategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the stop order within an order strategy.
                             stopStrategyType:
                                 type: integer
                                 description: Arbitrary numeric value identifying the stop order strategy.Values smaller than 1000000 are reserved and cannot be used.
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                             trailingDelta:
                                 type: integer
                                 description: See Trailing Stop order FAQ
@@ -5701,6 +5948,9 @@ components:
                             - quantity
                             - stopPrice
                             - trailingDelta
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -5905,6 +6155,8 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             orderListId:
                                 type: integer
                                 format: int64
@@ -5912,6 +6164,15 @@ components:
                             origClientOrderId:
                                 type: string
                                 description: Query order list by listClientOrderId.orderListId or origClientOrderId must be provided.
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
+                            timestamp:
+                                type: integer
+                                format: int64
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -6037,6 +6298,8 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             icebergQty:
                                 type: string
                             newClientOrderId:
@@ -6051,16 +6314,23 @@ components:
                                 type: string
                             quoteOrderQty:
                                 type: string
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             selfTradePreventionMode:
                                 type: string
                                 description: 'The allowed enums is dependent on what is configured on the symbol. Supported values: STP Modes'
                             side:
                                 type: string
                                 description: BUY or SELL
+                            signature:
+                                type: string
                             stopPrice:
                                 type: string
                             strategyId:
-                                type: string
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the order within an order strategy.
                             strategyType:
                                 type: integer
@@ -6069,6 +6339,9 @@ components:
                                 type: string
                             timeInForce:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                             trailingDelta:
                                 type: integer
                                 description: See Trailing Stop order FAQ
@@ -6078,6 +6351,9 @@ components:
                             - symbol
                             - side
                             - type
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -6176,6 +6452,8 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             orderId:
                                 type: integer
                                 format: int64
@@ -6183,10 +6461,22 @@ components:
                             origClientOrderId:
                                 type: string
                                 description: Lookup order by clientOrderId
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
+                            signature:
+                                type: string
                             symbol:
                                 type: string
+                            timestamp:
+                                type: integer
+                                format: int64
                         required:
                             - symbol
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -6557,17 +6847,19 @@ components:
                         properties:
                             apiKey:
                                 type: string
-                                description: apiKey property
-                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             signature:
                                 type: string
-                                description: signature property
-                                example: 1cf54395b336b0a9727ef27d5d98987962bc47aca6e13fe978612d0adee066ed
                             timestamp:
                                 type: integer
                                 format: int64
-                                description: timestamp property
-                                example: 1649729878532
+                        required:
+                            - apiKey
+                            - signature
+                            - timestamp
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -6777,6 +7069,8 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             icebergQty:
                                 type: string
                             newClientOrderId:
@@ -6790,14 +7084,21 @@ components:
                                 description: Applicable only to LIMIT order type
                             quantity:
                                 type: string
+                            recvWindow:
+                                type: integer
+                                format: int64
+                                description: The value cannot be greater than 60000
                             selfTradePreventionMode:
                                 type: string
                                 description: 'The allowed enums is dependent on what is configured on the symbol. The possible supported values are: STP Modes.'
                             side:
                                 type: string
                                 description: BUY or SELL
-                            strategyId:
+                            signature:
                                 type: string
+                            strategyId:
+                                type: integer
+                                format: int64
                                 description: Arbitrary numeric value identifying the order within an order strategy.
                             strategyType:
                                 type: integer
@@ -6807,6 +7108,9 @@ components:
                             timeInForce:
                                 type: string
                                 description: Applicable only to LIMIT order type
+                            timestamp:
+                                type: integer
+                                format: int64
                             type:
                                 type: string
                         required:
@@ -6814,6 +7118,9 @@ components:
                             - side
                             - type
                             - quantity
+                            - apiKey
+                            - timestamp
+                            - signature
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -7872,7 +8179,8 @@ components:
                         description: params property
                         properties:
                             endTime:
-                                type: string
+                                type: integer
+                                format: int64
                             fromId:
                                 type: integer
                                 format: int64
@@ -7881,7 +8189,8 @@ components:
                                 type: integer
                                 description: 'Default: 500; Maximum: 1000'
                             startTime:
-                                type: string
+                                type: integer
+                                format: int64
                             symbol:
                                 type: string
                         required:
@@ -8329,10 +8638,13 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             listenKey:
                                 type: string
                         required:
                             - listenKey
+                            - apiKey
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -8409,8 +8721,8 @@ components:
                         properties:
                             apiKey:
                                 type: string
-                                description: apiKey property
-                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                        required:
+                            - apiKey
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -8490,10 +8802,13 @@ components:
                         type: object
                         description: params property
                         properties:
+                            apiKey:
+                                type: string
                             listenKey:
                                 type: string
                         required:
                             - listenKey
+                            - apiKey
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
