@@ -444,6 +444,7 @@ func (p *UmfuturesDocumentParser) extractContent(channel *parser.Channel, conten
 					logrus.Infof("Successfully parsed response schema for channel %s with %d properties", channel.Name, len(responseSchema.Properties))
 				} else {
 					logrus.Warnf("Failed to parse response schema for channel %s, using fallback", channel.Name)
+					logrus.Warnf("Failed JSON for %s: %s", channel.Name, jsonCode)
 					// Log the JSON that failed to parse
 					if len(jsonCode) < 1000 {
 						logrus.Infof("Failed JSON for %s: %s", channel.Name, jsonCode)
