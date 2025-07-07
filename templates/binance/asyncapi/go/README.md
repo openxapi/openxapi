@@ -173,6 +173,24 @@ npm run test:build
 npm run example
 ```
 
+### Integration Tests
+
+Integration tests have been moved to a dedicated repository:
+- **Repository**: [github.com/openxapi/integration-tests](https://github.com/openxapi/integration-tests)
+- **Location**: `binance/asyncapi/` for Binance WebSocket tests
+
+To run integration tests:
+```bash
+# Clone the integration tests repository
+git clone https://github.com/openxapi/integration-tests.git
+cd integration-tests
+
+# Run specific tests
+make test-spot        # Binance Spot WebSocket tests
+make test-umfutures   # Binance USD-M Futures WebSocket tests
+make test-all         # All integration tests
+```
+
 ## Available npm Scripts
 
 | Script | Description |

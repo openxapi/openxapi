@@ -138,14 +138,17 @@ function generateTypedRequestMethod(operation, asyncapi) {
     const actualMethod = extractMethodFromMessage(sendMessage);
     if (actualMethod) {
       // Use the actual method value for the Go method name (this preserves proper casing)
-      // Convert dots to camelCase for valid Go method names
-      methodName = actualMethod.split('.').map((part, index) => {
-        if (index === 0) {
-          return capitalizeFirst(part);
-        } else {
-          return capitalizeFirst(part);
-        }
-      }).join('');
+      // Convert dots and slashes to camelCase for valid Go method names
+      // Handle both "v2/account.balance" style and "account.balance" style methods
+      methodName = actualMethod
+        .replace(/\//g, '.') // Convert slashes to dots first
+        .split('.').map((part, index) => {
+          if (index === 0) {
+            return capitalizeFirst(part);
+          } else {
+            return capitalizeFirst(part);
+          }
+        }).join('');
     } else {
       // Fallback to operation ID
       methodName = capitalizeFirst(toPascalCase(cleanedOperationId));

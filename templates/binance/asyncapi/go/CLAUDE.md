@@ -24,7 +24,9 @@ templates/binance/asyncapi/go/
 │   ├── client.go.js       # Main WebSocket client template
 │   ├── models/            # Data model templates
 │   └── components/        # Reusable component templates
-└── test/                  # Test utilities and examples
+└── components/            # Template helper components
+
+Note: Integration tests have been moved to github.com/openxapi/integration-tests
 ```
 
 ### Generation Flow
@@ -145,7 +147,9 @@ When integration tests fail, follow this systematic debugging order to identify 
 - Ensure authentication parameter handling is correct
 
 ### 4. Fix Integration Test Code
-**Location**: Test files and integration tests
+**Location**: Integration tests repository at `github.com/openxapi/integration-tests`
+- Integration tests are now in a separate repository
+- Located at `/Users/adam/Work/go/src/github.com/openxapi/integration-tests`
 - Only after confirming steps 1-3 are correct
 - Update test parameter usage to match API requirements
 - Fix request construction and parameter passing
