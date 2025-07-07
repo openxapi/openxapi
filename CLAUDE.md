@@ -220,8 +220,8 @@ if err != nil {
 ## Testing Strategy
 
 ### Test Categories
-1. **Unit Tests**: Individual component testing
-2. **Integration Tests**: End-to-end workflow testing
+1. **Unit Tests**: Individual component testing (in main repository)
+2. **Integration Tests**: End-to-end workflow testing (in `github.com/openxapi/integration-tests`)
 3. **Parser Tests**: Documentation parsing validation
 4. **Generation Tests**: Spec generation verification
 
@@ -230,9 +230,16 @@ if err != nil {
 - Mock external HTTP calls in unit tests
 - Validate generated specs against OpenAPI/AsyncAPI 3.0 schemas
 
+### Integration Tests Repository
+Integration tests have been moved to a dedicated repository:
+- **Repository**: `github.com/openxapi/integration-tests`
+- **Structure**: Organized by exchange and API type
+- **Benefits**: Better separation of concerns, independent test execution
+- **Usage**: Clone and run tests independently from main OpenXAPI project
+
 ## Debugging WebSocket Integration Test Failures
 
-When WebSocket integration tests fail, follow this systematic debugging approach to identify root causes for binance exchange and websocket spot module:
+When WebSocket integration tests fail, follow this systematic debugging approach to identify root causes for `binance` exchange and websocket `spot` module:
 
 ### 1. Check Original API Documentation
 **Location**: `samples/binance/websocket/spot/` 
@@ -257,7 +264,9 @@ When WebSocket integration tests fail, follow this systematic debugging approach
 - **Critical**: Check `structToMap` function for number precision issues (int64 values becoming scientific notation)
 
 ### 4. Fix Integration Test Code
-**Location**: Test files and integration tests
+**Location**: Integration tests repository at `github.com/openxapi/integration-tests`
+- Integration tests have been moved to a dedicated repository
+- Clone from: `https://github.com/openxapi/integration-tests`
 - Only after confirming steps 1-3 are correct
 - Update test parameter usage to match API requirements
 - Fix request construction and parameter passing
@@ -585,6 +594,66 @@ responseSchema = p.parseJSONSchema(jsonCode, "response")
 4. Parse actual API documentation to understand correct types and parameters
 5. **CRITICAL**: Only modify parser code, never generated spec files
 
+### WebSocket Response Detection Principle
+**NEVER use hardcoded specific CSS class names for HTML parsing.** When implementing response detection logic, use general CSS class patterns and heuristics that work across different documentation formats.
+
+**Key Guidelines:**
+1. **Use general CSS patterns** - Detect method headers using general class patterns (e.g., "anchor", "sticky", "nav") rather than specific class names
+2. **Implement heuristics** - Use multiple criteria to distinguish real method headers from descriptive sub-headers
+3. **Avoid hardcoded specific class names** - Never check for specific CSS class names like `anchorWithStickyNavbar_fMI7`
+4. **Use pattern matching for classes** - Look for class name patterns (e.g., classes containing "sticky" or "nav") instead of exact matches
+5. **Test across exchanges** - Ensure detection logic works for different exchange documentation formats
+6. **Document patterns** - Clearly document the heuristics used for future maintainability
+
+**Example General Detection Pattern:**
+```go
+// General method header detection using CSS patterns and text heuristics
+func (p *DocumentParser) isRealMethodHeader(headerElement *goquery.Selection, headerText string) bool {
+    // Check if header has anchor class (general method header indicator)
+    hasAnchor := headerElement.HasClass("anchor")
+    
+    // Check for any sticky navigation classes (general pattern, not specific class names)
+    hasStickyNav := false
+    classList, exists := headerElement.Attr("class")
+    if exists {
+        classLower := strings.ToLower(classList)
+        if strings.Contains(classLower, "sticky") || strings.Contains(classLower, "nav") {
+            hasStickyNav = true
+        }
+    }
+    
+    // Real method headers typically have both anchor and navigation classes
+    if hasAnchor && hasStickyNav {
+        if strings.Contains(headerText, ".") || strings.Contains(headerText, "(") {
+            return true
+        }
+    }
+    
+    // Check for method-like patterns in text
+    if strings.Contains(headerText, ".") && !strings.Contains(headerText, " ") {
+        return true
+    }
+    
+    return false
+}
+```
+
+**Common Method Header Patterns:**
+- Method names with dots: `order.place`, `ticker.24hr`
+- Method names with parentheses: `New Order (TRADE)`
+- Simple single words: `allOrders`, `klines`
+- Headers with anchor and navigation-related classes
+
+**Good CSS Class Detection Patterns:**
+- General class checks: `HasClass("anchor")`
+- Pattern matching in class lists: `strings.Contains(classList, "sticky")`
+- Multiple class combination validation: `hasAnchor && hasStickyNav`
+
+**Anti-patterns to Avoid:**
+- Hardcoded specific class checks: `HasClass("anchorWithStickyNavbar_fMI7")`
+- Exchange-specific class names that break cross-exchange compatibility
+- Brittle detection logic that depends on exact class name matches
+
 ## WebSocket Parser Implementation for USD-M Futures (umfutures)
 
 ### Factory Pattern for WebSocket Document Parsers
@@ -618,30 +687,6 @@ The UmfuturesDocumentParser extends SpotDocumentParser and adds derivatives-spec
 3. **General Description Filtering**: Skips general documentation headers like "Introduction", "Overview", etc.
 4. **Derivatives-Specific Content**: Handles API Description and Request Weight sections
 5. **Method Reuse**: Leverages parent methods for extracting parameters, JSON schemas, and correlation IDs
-
-### Configuration Updates
-
-**File**: `configs/exchanges/binance/websocket.yaml`
-
-Added protected methods for umfutures module:
-```yaml
-protected_methods:
-  # Market data methods that may require authentication in some contexts
-  - ticker.price
-  - ticker.bookTicker
-  # Trading methods that require authentication
-  - order.place
-  - order.cancel
-  - order.modify
-  - order.status
-  - account.balance
-  - account.status
-  - position.status
-  # User data stream methods
-  - userDataStream.start
-  - userDataStream.ping
-  - userDataStream.stop
-```
 
 ### Generated Outputs
 

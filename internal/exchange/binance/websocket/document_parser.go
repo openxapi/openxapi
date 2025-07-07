@@ -491,6 +491,9 @@ func (p *DocumentParser) extractJSONFromTokens(codeElement *goquery.Selection) s
 			// Get token text
 			tokenText := token.Text()
 			if tokenText != "" {
+				// Replace tabs with spaces to preserve JSON structure
+				tokenText = strings.ReplaceAll(tokenText, "\t", " ")
+				tokenText = strings.ReplaceAll(tokenText, "\\t", " ")
 				lineTokens = append(lineTokens, tokenText)
 			}
 		})
@@ -554,8 +557,9 @@ func cleanResponseLine(text string) string {
 
 	logrus.Debugf("cleanResponseLine: After comment removal: %d (removed %d chars)", len(text), beforeCommentRemoval-len(text))
 
-	text = strings.ReplaceAll(text, "\t", "")
-	text = strings.ReplaceAll(text, "\u00a0", "")
+	text = strings.ReplaceAll(text, "\t", " ")
+	text = strings.ReplaceAll(text, "\u00a0", " ")
+	text = strings.ReplaceAll(text, "\\t", " ")
 	text = strings.ReplaceAll(text, "\\", "")
 
 	// Fix trailing commas in arrays and objects - this handles malformed JSON in Binance docs

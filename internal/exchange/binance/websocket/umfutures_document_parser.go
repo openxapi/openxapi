@@ -65,6 +65,20 @@ func (p *UmfuturesDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity
 				p.collectElementContent(el, &content)
 			}
 
+			// Debug: log content collected for each method
+			if strings.Contains(headerText, "Account Balance") {
+				logrus.Debugf("Content collected for %s:", headerText)
+				for idx, line := range content {
+					if strings.HasPrefix(line, "JSON:") {
+						logrus.Debugf("  [%d] JSON content (length %d)", idx, len(line)-5)
+					} else if strings.HasPrefix(line, "CODE:") {
+						logrus.Debugf("  [%d] CODE content (length %d)", idx, len(line)-5)
+					} else {
+						logrus.Debugf("  [%d] %s", idx, line)
+					}
+				}
+			}
+
 			// Process the collected content to extract method information
 			channelData, valid := p.extractMethod(content, category)
 
@@ -94,11 +108,11 @@ func (p *UmfuturesDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity
 	}
 
 	// Find all API method sections using different header patterns for derivatives docs
-	// Try h1 headers first (used in some derivative docs)
+	// For umfutures, h1 headers are the main method headers
+	// h2 headers are section headers within methods (like "Response Example")
+	// so we should NOT process h2 as methods
 	doc.Find("h1").Each(parseMethod("h1"))
-	// Then h2 headers
-	doc.Find("h2").Each(parseMethod("h2"))
-	// Finally h3 and h4 headers like in spot
+	// Also check for h3/h4 headers in case some pages use them
 	doc.Find("h3.anchor").Each(parseMethod("h3"))
 	doc.Find("h4.anchor").Each(parseMethod("h4"))
 
@@ -124,7 +138,7 @@ func (p *UmfuturesDocumentParser) isGeneralDescriptionHeader(text string) bool {
 		"Response Format",
 		"Authentication",
 		"How to sign",
-		"Response Example",
+		// Removed "Response Example" - it's a valid section header within methods
 		"Request Weight",
 		"Request Parameters",
 	}
@@ -183,10 +197,99 @@ func (p *UmfuturesDocumentParser) convertParameterTypeToJSONSchema(name, paramTy
 	}
 }
 
+// cleanUmfuturesJSON cleans JSON specifically for umfutures documentation
+func (p *UmfuturesDocumentParser) cleanUmfuturesJSON(text string) string {
+	originalText := text
+
+	// Log the original text for debugging
+	logrus.Debugf("=== cleanUmfuturesJSON BEFORE CLEANING ===")
+	logrus.Debugf("Original text length: %d", len(originalText))
+	lines := strings.Split(originalText, "\n")
+	for i, line := range lines {
+		logrus.Debugf("  Before Line %d: %s", i+1, line)
+	}
+
+	// First clean using base cleanText function
+	text = cleanText(text)
+
+	// Replace tabs with spaces to preserve JSON structure
+	text = strings.ReplaceAll(text, "\t", " ")
+	text = strings.ReplaceAll(text, "\\t", " ")
+
+	// Fix missing commas before comments - critical for umfutures JSON
+	// Match patterns like: "value"  // comment  (missing comma after "value")
+	missingCommaRegex := regexp.MustCompile(`(["}\]0-9a-zA-Z]|true|false)\s+(//[^\r\n]*)`)
+	text = missingCommaRegex.ReplaceAllString(text, "$1, $2")
+
+	// Also fix missing commas when comment text appears without // prefix
+	// Match patterns like: "value" comment text
+	missingCommaNoSlashRegex := regexp.MustCompile(`(["}\]0-9a-zA-Z]|true|false)\s+([a-zA-Z][^"]*?)(?:\s*")`)
+	text = missingCommaNoSlashRegex.ReplaceAllString(text, `$1, //$2"`)
+
+	// Remove comments while preserving JSON structure
+	commentRegex := regexp.MustCompile(`\s*//[^"]*?(?:\s|$)`)
+	text = commentRegex.ReplaceAllString(text, " ")
+
+	// Fix trailing commas
+	trailingCommaRegex := regexp.MustCompile(`,\s*([}\]])`)
+	text = trailingCommaRegex.ReplaceAllString(text, "$1")
+
+	cleanedText := strings.TrimSpace(text)
+
+	// Log the cleaned text for debugging
+	logrus.Debugf("=== cleanUmfuturesJSON AFTER CLEANING ===")
+	logrus.Debugf("Cleaned text length: %d", len(cleanedText))
+	cleanedLines := strings.Split(cleanedText, "\n")
+	for i, line := range cleanedLines {
+		logrus.Debugf("  After Line %d: %s", i+1, line)
+	}
+
+	return cleanedText
+}
+
 // collectElementContent extracts content from HTML elements, adapted for derivatives documentation structure
 func (p *UmfuturesDocumentParser) collectElementContent(s *goquery.Selection, content *[]string) {
-	// Use the base document parser implementation first
-	p.SpotDocumentParser.DocumentParser.collectElementContent(s, content)
+	// For JSON extraction, handle umfutures-specific cleaning
+	if s.Is(".language-javascript") || s.Is(".theme-code-block") {
+		code := s.Find("code")
+		if code.Length() == 0 {
+			code = s.Find(".prism-code")
+		}
+
+		if code.Length() > 0 {
+			// Try smart token extraction first to properly filter out comments
+			cleanedText := p.SpotDocumentParser.DocumentParser.extractJSONFromTokens(code)
+
+			// If smart extraction fails, fallback to raw text extraction
+			if cleanedText == "" {
+				rawText := code.Text()
+				// Apply umfutures-specific JSON cleaning
+				cleanedText = p.cleanUmfuturesJSON(rawText)
+			}
+
+			if cleanedText != "" {
+				// Check if this is a response
+				isResponse := p.SpotDocumentParser.DocumentParser.isResponseCodeBlock(s)
+
+				logrus.Debugf("umfutures: Checking if code block is response: %v", isResponse)
+
+				if isResponse {
+					*content = append(*content, "JSON:"+cleanedText)
+					logrus.Debugf("umfutures: Extracted response JSON (length: %d)", len(cleanedText))
+				} else {
+					*content = append(*content, "CODE:"+cleanedText)
+					logrus.Debugf("umfutures: Extracted request JSON (length: %d)", len(cleanedText))
+				}
+				return // Don't process this element again in base implementation
+			}
+		}
+	}
+
+	// For non-JSON content, use the base implementation
+	// But skip if this is a code block we already tried to process
+	if !s.Is(".language-javascript") && !s.Is(".theme-code-block") {
+		p.SpotDocumentParser.DocumentParser.collectElementContent(s, content)
+	}
 
 	// Add additional handling for derivatives-specific patterns only
 
@@ -223,9 +326,6 @@ func (p *UmfuturesDocumentParser) collectElementContent(s *goquery.Selection, co
 			}
 		})
 	}
-
-	// NOTE: Removed umfutures-specific JSON extraction logic that was interfering with base parser
-	// The base spot parser's collectElementContent should handle all JSON extraction properly
 }
 
 // extractMethod processes the content following a method header to extract method information
@@ -328,16 +428,28 @@ func (p *UmfuturesDocumentParser) extractContent(channel *parser.Channel, conten
 		// Extract JSON examples
 		if strings.HasPrefix(line, "JSON:") {
 			jsonCode := strings.TrimPrefix(line, "JSON:")
-			// Apply additional cleaning to ensure trailing commas and other issues are fixed
-			jsonCode = cleanResponseLine(jsonCode)
-			logrus.Debugf("Processing JSON response for channel %s", channel.Name)
+			// Don't apply additional cleaning here - it's already been cleaned in collectElementContent
+			logrus.Debugf("Processing JSON response for channel %s, JSON length: %d", channel.Name, len(jsonCode))
+
 			if responseSchema == nil {
+				logrus.Infof("Attempting to parse response JSON for channel %s", channel.Name)
+				maxLen := 500
+				if len(jsonCode) < maxLen {
+					maxLen = len(jsonCode)
+				}
+				logrus.Infof("JSON to parse (first %d chars): %s", maxLen, jsonCode[:maxLen])
 				responseSchema = p.SpotDocumentParser.DocumentParser.parseJSONSchema(jsonCode, "response")
 				// Check if the schema was parsed successfully by checking the description
-				if responseSchema != nil && responseSchema.Description != "JSON response data" {
-					logrus.Debugf("Successfully parsed response schema for channel %s", channel.Name)
+				if responseSchema != nil && responseSchema.Type != "" && len(responseSchema.Properties) > 0 {
+					logrus.Infof("Successfully parsed response schema for channel %s with %d properties", channel.Name, len(responseSchema.Properties))
 				} else {
-					logrus.Debugf("Failed to parse response schema for channel %s, using fallback", channel.Name)
+					logrus.Warnf("Failed to parse response schema for channel %s, using fallback", channel.Name)
+					// Log the JSON that failed to parse
+					if len(jsonCode) < 1000 {
+						logrus.Infof("Failed JSON for %s: %s", channel.Name, jsonCode)
+					} else {
+						logrus.Infof("Failed JSON for %s (first 1000 chars): %s", channel.Name, jsonCode[:1000])
+					}
 				}
 			}
 		}
