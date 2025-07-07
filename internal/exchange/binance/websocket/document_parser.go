@@ -161,8 +161,30 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 			if smartText != "" {
 				logrus.Debugf("collectElementContent: Smart token extraction succeeded (length: %d): %s", len(smartText), smartText[:min(200, len(smartText))])
 
-				// Check if this follows a "Response:" paragraph
-				isResponse := p.isResponseCodeBlock(s)
+				// Determine if this is a request or response based on content
+				isResponse := false
+
+				// Parse JSON to check fields
+				var jsonMap map[string]interface{}
+				if err := json.Unmarshal([]byte(smartText), &jsonMap); err == nil {
+					_, hasStatus := jsonMap["status"]
+					_, hasResult := jsonMap["result"]
+					_, hasMethod := jsonMap["method"]
+
+					// If it has method field, it's definitely a request
+					if hasMethod {
+						isResponse = false
+					} else if hasStatus || hasResult {
+						// If it has status/result, it's likely a response
+						isResponse = true
+					} else {
+						// Otherwise, check context
+						isResponse = p.isResponseCodeBlock(s)
+					}
+				} else {
+					// If JSON parsing fails, fall back to context check
+					isResponse = p.isResponseCodeBlock(s)
+				}
 
 				if isResponse {
 					*content = append(*content, "JSON:"+smartText)
@@ -290,20 +312,29 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 func (p *DocumentParser) isResponseCodeBlock(s *goquery.Selection) bool {
 	// Look for "Response:" in the preceding elements, allowing for intervening paragraphs
 	prev := s.Prev()
-	maxLookBack := 15 // Increased search depth
+	maxLookBack := 5 // Reduced search depth to avoid crossing method boundaries
 	count := 0
 
-	// Get some context about which code block we're checking
-	codePreview := ""
+	// Get the full code content to check
+	codeText := ""
 	if code := s.Find("code").First(); code.Length() > 0 {
-		text := cleanText(code.Text())
-		if len(text) > 100 {
-			codePreview = text[:100]
-		} else {
-			codePreview = text
-		}
+		codeText = cleanText(code.Text())
+	} else if code := s.Find(".prism-code").First(); code.Length() > 0 {
+		codeText = cleanText(code.Text())
+	}
+
+	// Get preview for logging
+	codePreview := codeText
+	if len(codeText) > 100 {
+		codePreview = codeText[:100]
 	}
 	logrus.Debugf("isResponseCodeBlock: Checking code block: %s", codePreview)
+
+	// Quick check: if this code block contains "method" field, it's likely a request
+	if strings.Contains(codeText, "\"method\"") {
+		logrus.Debugf("isResponseCodeBlock: Code block contains 'method' field - likely a request, returning false")
+		return false
+	}
 
 	for prev.Length() > 0 && count < maxLookBack {
 		if prev.Is("p") {
@@ -376,6 +407,11 @@ func (p *DocumentParser) isRealMethodHeader(headerElement *goquery.Selection, he
 			"cancel order",
 			"query order",
 			"get account",
+			"ticker",       // ticker methods
+			"24hr",         // 24hr ticker
+			"price change", // price change statistics
+			"order book",   // order book ticker
+			"symbol",       // symbol-related methods
 		}
 
 		for _, pattern := range knownPatterns {
@@ -693,20 +729,11 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 			continue
 		}
 
-		// Extract JSON from code blocks (both CODE: and JSON: prefixes)
-		if strings.HasPrefix(line, "CODE:") || strings.HasPrefix(line, "JSON:") {
-			jsonCode := ""
-			if strings.HasPrefix(line, "CODE:") {
-				jsonCode = strings.TrimPrefix(line, "CODE:")
-			} else {
-				jsonCode = strings.TrimPrefix(line, "JSON:")
-			}
+		// Extract request JSON from CODE blocks
+		if strings.HasPrefix(line, "CODE:") {
+			jsonCode := strings.TrimPrefix(line, "CODE:")
 
-			if strings.Contains(channel.Summary, "24hr") {
-				logrus.Infof("Processing JSON block for 24hr method, jsonCode length: %d", len(jsonCode))
-			}
-
-			// Try to extract method name from JSON
+			// Try to extract method name from request JSON
 			methodName := p.extractMethodNameFromJSON(jsonCode)
 			if methodName != "" {
 				logrus.Debugf("Setting channel name from JSON: '%s' (was: '%s')", methodName, channel.Name)
@@ -714,17 +741,49 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 				foundMethod = true
 			}
 
-			// Parse schema if this is a request (not response)
-			if requestSchema == nil && strings.HasPrefix(line, "CODE:") {
+			// Parse request schema
+			if requestSchema == nil {
 				requestSchema = p.parseJSONSchema(jsonCode, "request")
 			}
 		}
 
-		// Extract JSON examples
+		// Extract response JSON examples
 		if strings.HasPrefix(line, "JSON:") {
 			jsonCode := strings.TrimPrefix(line, "JSON:")
-			if responseSchema == nil {
+
+			// Check if this JSON has typical response fields (status, result)
+			var jsonMap map[string]interface{}
+			isValidResponse := false
+			hasStatus := false
+			hasResult := false
+			hasMethod := false
+
+			if err := json.Unmarshal([]byte(jsonCode), &jsonMap); err == nil {
+				_, hasStatus = jsonMap["status"]
+				_, hasResult = jsonMap["result"]
+				_, hasMethod = jsonMap["method"]
+
+				// A valid response should have status/result but not method
+				isValidResponse = (hasStatus || hasResult) && !hasMethod
+			}
+
+			// Only try to extract method name if we haven't found one yet
+			// Some response examples may have method field for documentation purposes
+			if channel.Name == "" && !isValidResponse {
+				methodName := p.extractMethodNameFromJSON(jsonCode)
+				if methodName != "" {
+					logrus.Debugf("Setting channel name from JSON: '%s'", methodName)
+					channel.Name = methodName
+					foundMethod = true
+				}
+			}
+
+			// Parse response schema only if it's a valid response
+			if responseSchema == nil && isValidResponse {
+				logrus.Debugf("Parsing valid response schema (has status: %v, has result: %v)", hasStatus, hasResult)
 				responseSchema = p.parseJSONSchema(jsonCode, "response")
+			} else if responseSchema == nil {
+				logrus.Debugf("Skipping response schema - not a valid response (has method: %v, has status: %v, has result: %v)", hasMethod, hasStatus, hasResult)
 			}
 		}
 
