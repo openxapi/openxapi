@@ -3,6 +3,58 @@
  * As input it requires the AsyncAPI document
  * Now supports AsyncAPI 3.0 with event messages and improved authentication handling
  */
+
+/*
+ * Check if an operation with a specific method name exists in the spec
+ */
+function hasOperation(asyncapi, methodName) {
+  const operations = asyncapi.operations();
+  let found = false;
+  
+  operations.forEach((operation) => {
+    const messages = operation.messages();
+    messages.forEach((message) => {
+      try {
+        const payload = message.payload();
+        if (payload && payload.properties) {
+          let props;
+          if (typeof payload.properties === 'function') {
+            props = payload.properties();
+          } else {
+            props = payload.properties;
+          }
+          
+          // Check if props is a Map-like object with a get method
+          let methodProp;
+          if (props && typeof props.get === 'function') {
+            methodProp = props.get('method');
+          } else if (props && props.method) {
+            methodProp = props.method;
+          }
+          
+          // Check if the method property has a const value matching our target
+          if (methodProp) {
+            let constValue;
+            if (typeof methodProp.const === 'function') {
+              constValue = methodProp.const();
+            } else if (methodProp.const) {
+              constValue = methodProp.const;
+            }
+            
+            if (constValue === methodName) {
+              found = true;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore errors and continue checking other messages
+      }
+    });
+  });
+  
+  return found;
+}
+
 export function WebSocketHandlers({ asyncapi }) {
   const operations = asyncapi.operations();
   let handlers = '';
@@ -21,8 +73,13 @@ export function WebSocketHandlers({ asyncapi }) {
   // Generate helper methods for oneOf response handling
   handlers += generateOneOfHelperMethods(asyncapi);
   
-  // Generate UserDataStream convenience methods
-  handlers += generateUserDataStreamConvenienceMethods();
+  // Generate UserDataStream convenience methods only if the required types exist
+  const hasUserDataStreamSubscribe = hasOperation(asyncapi, 'userDataStream.subscribe');
+  const hasUserDataStreamUnsubscribe = hasOperation(asyncapi, 'userDataStream.unsubscribe');
+  
+  if (hasUserDataStreamSubscribe || hasUserDataStreamUnsubscribe) {
+    handlers += generateUserDataStreamConvenienceMethods();
+  }
 
   // Generate parameter validation helper methods
   handlers += generateParameterValidationHelpers();
