@@ -432,16 +432,16 @@ func (p *UmfuturesDocumentParser) extractContent(channel *parser.Channel, conten
 			logrus.Debugf("Processing JSON response for channel %s, JSON length: %d", channel.Name, len(jsonCode))
 
 			if responseSchema == nil {
-				logrus.Infof("Attempting to parse response JSON for channel %s", channel.Name)
+				logrus.Debugf("Attempting to parse response JSON for channel %s", channel.Name)
 				maxLen := 500
 				if len(jsonCode) < maxLen {
 					maxLen = len(jsonCode)
 				}
-				logrus.Infof("JSON to parse (first %d chars): %s", maxLen, jsonCode[:maxLen])
+				logrus.Debugf("JSON to parse (first %d chars): %s", maxLen, jsonCode[:maxLen])
 				responseSchema = p.SpotDocumentParser.DocumentParser.parseJSONSchema(jsonCode, "response")
 				// Check if the schema was parsed successfully by checking the description
 				if responseSchema != nil && responseSchema.Type != "" && len(responseSchema.Properties) > 0 {
-					logrus.Infof("Successfully parsed response schema for channel %s with %d properties", channel.Name, len(responseSchema.Properties))
+					logrus.Debugf("Successfully parsed response schema for channel %s with %d properties", channel.Name, len(responseSchema.Properties))
 				} else {
 					logrus.Errorf("Failed to parse response schema for channel %s", channel.Name)
 					logrus.Errorf("Failed JSON for %s: %s", channel.Name, jsonCode)

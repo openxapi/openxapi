@@ -137,14 +137,14 @@ generate-ws-sdk:
 	@if [ "${EXCHANGE}" == "binance" ]; then \
 		if [ "${LANGUAGE}" == "go" ]; then \
 			for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
-				echo "Generating ${EXCHANGE} go ws SDK for $$file"; \
 				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
+				echo "Generating ${EXCHANGE} ${LANGUAGE} WebSocket SDK for module: $$subdir"; \
 				rm -rf ${OUTPUT_DIR}/$$subdir; \
 				(cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
 				MODULE=$$subdir \
 				OUTPUT_DIR=${OUTPUT_DIR}/$$subdir \
 				ASYNCAPI_CLI=${ASYNCAPI_CLI:-asyncapi} \
-				npm run generate:module); \
+				npm run --silent generate:module 2>&1 | grep -v "ExperimentalWarning: CommonJS module" | grep -v "Support for loading ES Module in require()" | grep -v "Use \`node --trace-warnings"); \
 			done \
 		fi \
 	fi
