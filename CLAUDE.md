@@ -761,4 +761,58 @@ DEBUG: JSON line: "{'field': 'value'}"                        // Wrong quotes
 - Add the new cleaning pattern to handle similar issues automatically in the future
 - The same malformed JSON patterns often appear in both REST and WebSocket documentation
 
+### Adding New Module Support (e.g., cmfutures for Binance)
+
+**When adding support for a new module**, follow these systematic steps to ensure proper integration:
+
+**Step-by-Step Process:**
+
+1. **Add Configuration** (`configs/exchanges/binance/websocket.yaml`):
+   - Group modules by the same server URL for efficient organization
+   - Add `url_group` for the new module with all relevant documentation URLs
+   - Include appropriate `doc_type` if it differs from default (e.g., `derivatives` for futures)
+   - Example:
+   ```yaml
+   - type: cmfutures
+     servers:
+       mainnet:
+         - wss://dstream.binancefuture.com/ws
+       testnet:
+         - wss://testnet.binancefuture.com/ws
+     url_groups:
+       - name: coin_futures
+         description: COIN-M Futures API
+         doc_type: derivatives
+         urls:
+           - https://developers.binance.com/docs/derivatives/coin-margined-futures/...
+   ```
+
+2. **Generate Specs with Current Parser**:
+   - Run: `make generate-ws-spec EXCHANGE=binance`
+   - Check if specs are generated in `specs/binance/asyncapi/{module_name}/`
+   - If parser needs modifications, create module-specific parser following the factory pattern
+
+3. **Verify Spec Content**:
+   - Compare generated specs with API documentation
+   - Ensure all methods, parameters, and response schemas match exactly
+   - Check for missing response fields (may indicate malformed JSON in docs)
+   - Validate parameter types and requirements
+
+4. **Add Templates** (`templates/binance/asyncapi/go/`):
+   - Copy existing module templates as a starting point
+   - Customize for module-specific requirements
+   - Ensure proper server naming and configuration
+
+5. **Generate and Validate SDK**:
+   - Run: `make generate-ws-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=${PWD}/../binance-go/ws`
+   - Check for compilation errors
+   - Verify SDK content matches spec definitions
+   - Test authentication methods if applicable
+
+**Important Considerations:**
+- Always check if existing parsers can handle the new module before creating custom ones
+- Group modules with the same server URL to avoid duplication
+- Ensure `doc_type` is set correctly for specialized parsing (e.g., `derivatives`)
+- Test thoroughly to ensure no impact on existing modules
+
 This guide provides the essential context for understanding and contributing to the OpenXAPI project. For specific implementation details, refer to the source code and existing tests. 
