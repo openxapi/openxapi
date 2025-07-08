@@ -127,7 +127,7 @@ export function IndividualModels({ asyncapi }) {
     // Skip if we already generated this type from channel messages
     const componentTypeName = toPascalCase(schemaName);
     if (generatedTypeNames.has(componentTypeName)) {
-      console.log(`Skipping duplicate component schema: ${schemaName} (already generated as ${componentTypeName})`);
+      // Skip duplicate - already generated as ${componentTypeName}
       return;
     }
     
