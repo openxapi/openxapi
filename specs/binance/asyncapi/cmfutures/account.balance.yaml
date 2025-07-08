@@ -1,0 +1,154 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    cmfutures:
+        address: /
+        title: Channel account.balance
+        description: |-
+            Query account balance info
+            account.balance
+        messages:
+            accountBalanceRequest:
+                $ref: '#/components/messages/accountBalanceRequest'
+            accountBalanceResponse:
+                $ref: '#/components/messages/accountBalanceResponse'
+operations:
+    receiveAccountBalance:
+        title: Receive from account.balance
+        description: Receive response from account.balance
+        action: receive
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/accountBalanceResponse'
+    sendAccountBalance:
+        title: Send to account.balance
+        description: Send a account.balance request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/accountBalanceRequest'
+components:
+    messages:
+        accountBalanceRequest:
+            name: Futures Account Balance(USER_DATA) Request
+            title: Futures Account Balance(USER_DATA) Request
+            description: Send a account.balance request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 9328e612-1560-4108-979e-283bf85b5acb
+                    method:
+                        type: string
+                        description: method property
+                        example: account.balance
+                        enum:
+                            - account.balance
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            recvWindow:
+                                type: integer
+                                format: int64
+                            timestamp:
+                                type: integer
+                                format: int64
+                        required:
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        accountBalanceResponse:
+            name: Futures Account Balance(USER_DATA) Response
+            title: Futures Account Balance(USER_DATA) Response
+            description: Receive response from account.balance
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 9328e612-1560-4108-979e-283bf85b5acb
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 10
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 2400
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: array
+                        description: result property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                accountAlias:
+                                    type: string
+                                    description: accountAlias property
+                                    example: fWAuTiuXoCuXmY
+                                asset:
+                                    type: string
+                                    description: asset property
+                                    example: WLD
+                                availableBalance:
+                                    type: string
+                                    description: availableBalance property
+                                    example: "0.00000000"
+                                balance:
+                                    type: string
+                                    description: balance property
+                                    example: "0.00000000"
+                                crossUnPnl:
+                                    type: string
+                                    description: crossUnPnl property
+                                    example: "0.00000000"
+                                crossWalletBalance:
+                                    type: string
+                                    description: crossWalletBalance property
+                                    example: "0.00000000"
+                                updateTime:
+                                    type: integer
+                                    format: int64
+                                    description: updateTime property
+                                    example: 0
+                                withdrawAvailable:
+                                    type: string
+                                    description: withdrawAvailable property
+                                    example: "0.00000000"
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

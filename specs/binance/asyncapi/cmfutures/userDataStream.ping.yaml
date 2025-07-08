@@ -1,0 +1,117 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    cmfutures:
+        address: /
+        title: Channel userDataStream.ping
+        description: |-
+            Keepalive a user data stream to prevent a time out. User data streams will close after 60 minutes. It's recommended to send a ping about every 60 minutes.
+            userDataStream.ping
+        messages:
+            userDataStreamPingRequest:
+                $ref: '#/components/messages/userDataStreamPingRequest'
+            userDataStreamPingResponse:
+                $ref: '#/components/messages/userDataStreamPingResponse'
+operations:
+    receiveUserDataStreamPing:
+        title: Receive from userDataStream.ping
+        description: Receive response from userDataStream.ping
+        action: receive
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/userDataStreamPingResponse'
+    sendUserDataStreamPing:
+        title: Send to userDataStream.ping
+        description: Send a userDataStream.ping request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/userDataStreamPingRequest'
+components:
+    messages:
+        userDataStreamPingRequest:
+            name: Keepalive User Data Stream (USER_STREAM) Request
+            title: Keepalive User Data Stream (USER_STREAM) Request
+            description: Send a userDataStream.ping request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 815d5fce-0880-4287-a567-80badf004c74
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.ping
+                        enum:
+                            - userDataStream.ping
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                                description: Required if session is not authenticated via session.logon
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamPingResponse:
+            name: Keepalive User Data Stream (USER_STREAM) Response
+            title: Keepalive User Data Stream (USER_STREAM) Response
+            description: Receive response from userDataStream.ping
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 815d5fce-0880-4287-a567-80badf004c74
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 2
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 2400
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            listenKey:
+                                type: string
+                                description: listenKey property
+                                example: 3HBntNTepshgEdjIwSUIBgB9keLyOCg5qv3n6bYAtktG8ejcaW5HXz9Vx1JgIieg
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

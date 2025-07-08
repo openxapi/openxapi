@@ -1102,11 +1102,9 @@ func (p *DocumentParser) parseJSONSchema(jsonCode, schemaType string) *parser.Sc
 	logrus.Debugf("parseJSONSchema: JSON content: %s", jsonCode[:maxLen])
 
 	if err := json.Unmarshal([]byte(jsonCode), &data); err != nil {
-		logrus.Debugf("parseJSONSchema: JSON unmarshal failed: %v", err)
-		return &parser.Schema{
-			Type:        "object",
-			Description: fmt.Sprintf("JSON %s data", schemaType),
-		}
+		logrus.Errorf("parseJSONSchema: JSON unmarshal failed for %s: %v", schemaType, err)
+		logrus.Errorf("Malformed JSON content (length %d): %s", len(jsonCode), jsonCode)
+		logrus.Fatalf("Malformed JSON in API documentation prevents proper parsing. Please fix the JSON syntax in the %s schema", schemaType)
 	}
 
 	logrus.Debugf("parseJSONSchema: JSON unmarshal succeeded for %s", schemaType)

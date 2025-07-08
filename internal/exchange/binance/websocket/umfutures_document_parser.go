@@ -443,14 +443,15 @@ func (p *UmfuturesDocumentParser) extractContent(channel *parser.Channel, conten
 				if responseSchema != nil && responseSchema.Type != "" && len(responseSchema.Properties) > 0 {
 					logrus.Infof("Successfully parsed response schema for channel %s with %d properties", channel.Name, len(responseSchema.Properties))
 				} else {
-					logrus.Warnf("Failed to parse response schema for channel %s, using fallback", channel.Name)
-					logrus.Warnf("Failed JSON for %s: %s", channel.Name, jsonCode)
+					logrus.Errorf("Failed to parse response schema for channel %s", channel.Name)
+					logrus.Errorf("Failed JSON for %s: %s", channel.Name, jsonCode)
 					// Log the JSON that failed to parse
 					if len(jsonCode) < 1000 {
-						logrus.Infof("Failed JSON for %s: %s", channel.Name, jsonCode)
+						logrus.Errorf("Failed JSON for %s: %s", channel.Name, jsonCode)
 					} else {
-						logrus.Infof("Failed JSON for %s (first 1000 chars): %s", channel.Name, jsonCode[:1000])
+						logrus.Errorf("Failed JSON for %s (first 1000 chars): %s", channel.Name, jsonCode[:1000])
 					}
+					logrus.Fatalf("Malformed JSON in API documentation prevents proper parsing. Please fix the JSON syntax in the documentation for channel %s", channel.Name)
 				}
 			}
 		}
