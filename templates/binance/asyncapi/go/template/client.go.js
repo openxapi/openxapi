@@ -72,14 +72,16 @@ func NewServerManager() *ServerManager {
 	// Initialize with predefined servers from AsyncAPI spec
 	// Using direct assignment since this is initialization (no risk of conflicts)
 	${serverList.map(server => {
-		const name = server.id();
+		const rawName = server.id();
+		// Always append '1' to server names if they don't already end with a number
+		const name = rawName.match(/\d+$/) ? rawName : rawName + '1';
 		const protocol = server.protocol();
 		const host = server.host();
 		const pathname = server.pathname() || '';
 		const url = `${protocol}://${host}${pathname}`;
-		const title = server.title() || `${name.charAt(0).toUpperCase() + name.slice(1)} Server`;
-		const summary = server.summary() || `WebSocket API Server (${name})`;
-		const description = server.description() || `WebSocket server for ${name} environment`;
+		const title = server.title() || `${rawName.charAt(0).toUpperCase() + rawName.slice(1)} Server`;
+		const summary = server.summary() || `WebSocket API Server (${rawName})`;
+		const description = server.description() || `WebSocket server for ${rawName} environment`;
 		
 		return `sm.servers["${name}"] = &ServerInfo{
 		Name:        "${name}",
@@ -95,7 +97,11 @@ func NewServerManager() *ServerManager {
 	}).join('\n\t')}
 	
 	// Set first server as active by default
-	${serverList.length > 0 ? `sm.SetActiveServer("${serverList[0].id()}")` : ''}
+	${serverList.length > 0 ? (() => {
+		const firstServerRawName = serverList[0].id();
+		const firstServerName = firstServerRawName.match(/\d+$/) ? firstServerRawName : firstServerRawName + '1';
+		return `sm.SetActiveServer("${firstServerName}")`;
+	})() : ''}
 	
 	return sm
 }

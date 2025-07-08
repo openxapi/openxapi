@@ -140,11 +140,11 @@ generate-ws-sdk:
 				echo "Generating ${EXCHANGE} go ws SDK for $$file"; \
 				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
 				rm -rf ${OUTPUT_DIR}/$$subdir; \
-				cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
+				(cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
 				MODULE=$$subdir \
 				OUTPUT_DIR=${OUTPUT_DIR}/$$subdir \
 				ASYNCAPI_CLI=${ASYNCAPI_CLI:-asyncapi} \
-				npm run generate:module; \
+				npm run generate:module); \
 			done \
 		fi \
 	fi

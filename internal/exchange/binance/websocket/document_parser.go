@@ -15,10 +15,38 @@ import (
 )
 
 // DocumentParser implements the HTTPDocumentParser interface for Binance WebSocket API
-type DocumentParser struct{}
+type DocumentParser struct {
+	docType string
+}
 
 // Parse parses the Binance WebSocket API documentation and extracts method information
 func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedMethods []string) ([]parser.Channel, error) {
+	logrus.Debugf("DocumentParser.Parse: DocType=%s, URL=%s", urlEntity.DocType, urlEntity.URL)
+	switch urlEntity.DocType {
+	case "spot":
+		sp := &SpotDocumentParser{DocumentParser: p}
+		return sp.Parse(r, urlEntity, protectedMethods)
+	case "derivatives":
+		uf := &UmfuturesDocumentParser{SpotDocumentParser: &SpotDocumentParser{DocumentParser: p}}
+		return uf.Parse(r, urlEntity, protectedMethods)
+	default:
+		// For umfutures, try derivatives parser if DocType is not set
+		if strings.Contains(urlEntity.URL, "umfutures") || strings.Contains(urlEntity.URL, "derivatives") {
+			uf := &UmfuturesDocumentParser{SpotDocumentParser: &SpotDocumentParser{DocumentParser: p}}
+			return uf.Parse(r, urlEntity, protectedMethods)
+		}
+		sp := &SpotDocumentParser{DocumentParser: p}
+		return sp.Parse(r, urlEntity, protectedMethods)
+	}
+}
+
+// SpotDocumentParser implements the HTTPDocumentParser interface for Binance Spot WebSocket API
+type SpotDocumentParser struct {
+	*DocumentParser
+}
+
+// Parse parses the Binance Spot WebSocket API documentation and extracts method information
+func (p *SpotDocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protectedMethods []string) ([]parser.Channel, error) {
 	doc, err := goquery.NewDocumentFromReader(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing HTML document: %w", err)
@@ -80,7 +108,7 @@ func (p *DocumentParser) Parse(r io.Reader, urlEntity *config.URLEntity, protect
 	doc.Find("h3.anchor").Each(parseMethod("h3"))
 	doc.Find("h4.anchor").Each(parseMethod("h4"))
 
-	logrus.Infof("Extracted %d WebSocket API methods from Binance documentation", len(channels))
+	logrus.Debugf("Extracted %d WebSocket API methods from Binance documentation", len(channels))
 	return channels, nil
 }
 
@@ -124,28 +152,70 @@ func cleanText(text string) string {
 
 // collectElementContent extracts content from HTML elements (adapted from REST implementation)
 func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]string) {
-	// Extract response examples from code blocks (REST implementation approach - try this first)
+	// Extract response examples from code blocks (improved approach)
 	if s.HasClass("language-javascript") || s.HasClass("language-json") {
-		var lines []string
 		code := s.Find("code")
-		// for each child of code, get the text
-		code.Children().Each(func(i int, child *goquery.Selection) {
-			text := cleanResponseLine(child.Text())
-			if text != "" {
-				lines = append(lines, text)
-			}
-		})
-		responseText := strings.Join(lines, " ")
-		if responseText != "" {
-			// Check if this follows a "Response:" paragraph
-			isResponse := p.isResponseCodeBlock(s)
+		if code.Length() > 0 {
+			// Try smart token extraction first to filter out comments
+			smartText := p.extractJSONFromTokens(code)
+			if smartText != "" {
+				logrus.Debugf("collectElementContent: Smart token extraction succeeded (length: %d): %s", len(smartText), smartText[:min(200, len(smartText))])
 
-			if isResponse {
-				*content = append(*content, "JSON:"+responseText)
-			} else {
-				*content = append(*content, "CODE:"+responseText)
+				// Determine if this is a request or response based on content
+				isResponse := false
+
+				// Parse JSON to check fields
+				var jsonMap map[string]interface{}
+				if err := json.Unmarshal([]byte(smartText), &jsonMap); err == nil {
+					_, hasStatus := jsonMap["status"]
+					_, hasResult := jsonMap["result"]
+					_, hasMethod := jsonMap["method"]
+
+					// If it has method field, it's definitely a request
+					if hasMethod {
+						isResponse = false
+					} else if hasStatus || hasResult {
+						// If it has status/result, it's likely a response
+						isResponse = true
+					} else {
+						// Otherwise, check context
+						isResponse = p.isResponseCodeBlock(s)
+					}
+				} else {
+					// If JSON parsing fails, fall back to context check
+					isResponse = p.isResponseCodeBlock(s)
+				}
+
+				if isResponse {
+					*content = append(*content, "JSON:"+smartText)
+					logrus.Debugf("collectElementContent: Extracted response JSON via smart tokens (length: %d)", len(smartText))
+				} else {
+					*content = append(*content, "CODE:"+smartText)
+					logrus.Debugf("collectElementContent: Extracted request JSON via smart tokens (length: %d)", len(smartText))
+				}
+				return // Exit early to avoid double processing
 			}
-			return // Exit early to avoid double processing
+
+			// Fallback to original approach if smart extraction fails
+			rawText := code.Text()
+			logrus.Debugf("collectElementContent: Raw text from HTML (length: %d): %s", len(rawText), rawText[:min(200, len(rawText))])
+
+			fullText := cleanResponseLine(rawText)
+			logrus.Debugf("collectElementContent: After cleaning (length: %d): %s", len(fullText), fullText[:min(200, len(fullText))])
+
+			if fullText != "" {
+				// Check if this follows a "Response:" paragraph
+				isResponse := p.isResponseCodeBlock(s)
+
+				if isResponse {
+					*content = append(*content, "JSON:"+fullText)
+					logrus.Debugf("collectElementContent: Extracted response JSON (length: %d)", len(fullText))
+				} else {
+					*content = append(*content, "CODE:"+fullText)
+					logrus.Debugf("collectElementContent: Extracted request JSON (length: %d)", len(fullText))
+				}
+				return // Exit early to avoid double processing
+			}
 		}
 	}
 
@@ -238,22 +308,154 @@ func (p *DocumentParser) collectElementContent(s *goquery.Selection, content *[]
 	}
 }
 
-// isResponseCodeBlock checks if a code block follows a "Response:" paragraph
+// isResponseCodeBlock checks if a code block follows a "Response:" paragraph or "Response Example" header
 func (p *DocumentParser) isResponseCodeBlock(s *goquery.Selection) bool {
-	// Look for "Response:" in the immediately preceding elements
+	// Look for "Response:" in the preceding elements, allowing for intervening paragraphs
 	prev := s.Prev()
-	for prev.Length() > 0 {
+	maxLookBack := 5 // Reduced search depth to avoid crossing method boundaries
+	count := 0
+
+	// Get the full code content to check
+	codeText := ""
+	if code := s.Find("code").First(); code.Length() > 0 {
+		codeText = cleanText(code.Text())
+	} else if code := s.Find(".prism-code").First(); code.Length() > 0 {
+		codeText = cleanText(code.Text())
+	}
+
+	// Get preview for logging
+	codePreview := codeText
+	if len(codeText) > 100 {
+		codePreview = codeText[:100]
+	}
+	logrus.Debugf("isResponseCodeBlock: Checking code block: %s", codePreview)
+
+	// Quick check: if this code block contains "method" field, it's likely a request
+	if strings.Contains(codeText, "\"method\"") {
+		logrus.Debugf("isResponseCodeBlock: Code block contains 'method' field - likely a request, returning false")
+		return false
+	}
+
+	for prev.Length() > 0 && count < maxLookBack {
 		if prev.Is("p") {
 			prevText := strings.ToLower(cleanText(prev.Text()))
+			logrus.Debugf("isResponseCodeBlock: Found paragraph [%d]: %s", count, prevText)
 			if strings.HasPrefix(prevText, "response:") {
+				logrus.Debugf("isResponseCodeBlock: FOUND 'response:' paragraph - returning true")
 				return true
 			}
+			// Continue searching through paragraphs - they might be explanatory text
 		} else if prev.Is("h1, h2, h3, h4, h5, h6") {
-			// If we hit a header before finding Response:, this is likely a request
-			break
+			// Check if this is a "Response Example" header
+			prevText := strings.ToLower(cleanText(prev.Text()))
+			logrus.Debugf("isResponseCodeBlock: Found header [%d]: %s", count, prevText)
+			if strings.Contains(prevText, "response example") || strings.Contains(prevText, "response:") {
+				logrus.Debugf("isResponseCodeBlock: Found response header - returning true")
+				return true
+			}
+			// Stop searching if this is a real method header (general detection)
+			if p.isRealMethodHeader(prev, prevText) {
+				logrus.Debugf("isResponseCodeBlock: Found real method header [%s] - stopping search", prevText)
+				break
+			}
+			logrus.Debugf("isResponseCodeBlock: Found generic header - continuing search")
+		} else {
+			// Log other element types for debugging
+			tagName := goquery.NodeName(prev)
+			logrus.Debugf("isResponseCodeBlock: Found element [%d]: <%s>", count, tagName)
 		}
 		prev = prev.Prev()
+		count++
 	}
+	logrus.Debugf("isResponseCodeBlock: No response pattern found after %d elements - returning false", count)
+	return false
+}
+
+// isRealMethodHeader determines if a header element represents a real API method header
+// This uses general CSS class patterns and text heuristics
+func (p *DocumentParser) isRealMethodHeader(headerElement *goquery.Selection, headerText string) bool {
+	words := strings.Fields(headerText)
+	wordCount := len(words)
+
+	// Check if header has anchor class (general method header indicator)
+	hasAnchor := headerElement.HasClass("anchor")
+
+	// Check for any sticky navigation classes (general pattern, not specific class names)
+	hasStickyNav := false
+	classList, exists := headerElement.Attr("class")
+	if exists {
+		// Look for sticky navigation patterns in class names
+		classLower := strings.ToLower(classList)
+		if strings.Contains(classLower, "sticky") || strings.Contains(classLower, "nav") {
+			hasStickyNav = true
+		}
+	}
+
+	logrus.Debugf("isRealMethodHeader: Checking header '%s' - hasAnchor=%t, hasStickyNav=%t, wordCount=%d", headerText, hasAnchor, hasStickyNav, wordCount)
+
+	// If it has both anchor and sticky nav classes, it's likely a method header
+	if hasAnchor && hasStickyNav {
+		// Additional validation for known method names or patterns
+		headerLower := strings.ToLower(headerText)
+
+		// Check for known WebSocket API method patterns
+		knownPatterns := []string{
+			"test connectivity",    // ping method
+			"check server time",    // time method
+			"exchange information", // exchangeInfo method
+			"place order",
+			"cancel order",
+			"query order",
+			"get account",
+			"ticker",       // ticker methods
+			"24hr",         // 24hr ticker
+			"price change", // price change statistics
+			"order book",   // order book ticker
+			"symbol",       // symbol-related methods
+		}
+
+		for _, pattern := range knownPatterns {
+			if strings.Contains(headerLower, pattern) {
+				logrus.Debugf("isRealMethodHeader: Found known method pattern '%s' in header '%s'", pattern, headerText)
+				return true
+			}
+		}
+
+		// Additional validation: real method headers typically have specific patterns
+		// like containing dots (method.name) or parentheses (method (type))
+		if strings.Contains(headerText, ".") || strings.Contains(headerText, "(") {
+			logrus.Debugf("isRealMethodHeader: Found method header '%s' with CSS classes and special chars", headerText)
+			return true
+		}
+
+		// Also check if it's a simple single word that might be a method name
+		if wordCount == 1 && len(words[0]) > 2 {
+			logrus.Debugf("isRealMethodHeader: Found single-word method header '%s'", headerText)
+			return true
+		}
+
+		// For WebSocket API, headers with 2-3 words and proper CSS classes are likely method headers
+		if wordCount >= 2 && wordCount <= 3 {
+			logrus.Debugf("isRealMethodHeader: Found multi-word method header '%s' with proper CSS classes", headerText)
+			return true
+		}
+	}
+
+	// Check for method-like patterns in text (e.g., "method.name", "methodName (TYPE)")
+	if strings.Contains(headerText, ".") && !strings.Contains(headerText, " ") {
+		// This looks like a method name (e.g., "order.place", "ticker.24hr")
+		logrus.Debugf("isRealMethodHeader: Found dot-notation method header '%s'", headerText)
+		return true
+	}
+
+	// Check for headers with parentheses that indicate method types
+	if strings.Contains(headerText, "(") && strings.Contains(headerText, ")") {
+		// This could be a method with type info (e.g., "New Order (TRADE)")
+		logrus.Debugf("isRealMethodHeader: Found parentheses method header '%s' with %d words", headerText, wordCount)
+		return true
+	}
+
+	logrus.Debugf("isRealMethodHeader: Not a method header '%s'", headerText)
 	return false
 }
 
@@ -265,18 +467,113 @@ func min(a, b int) int {
 }
 
 // cleanResponseLine cleans response JSON lines (borrowed from REST implementation)
-func cleanResponseLine(text string) string {
-	commentRegex := regexp.MustCompile(`(\s+|,)(//|#).*`)
-	commentRegex2 := regexp.MustCompile(`//\s+.*`)
-	text = cleanText(text)
-	text = commentRegex.ReplaceAllString(text, "$1")
-	text = commentRegex2.ReplaceAllString(text, "")
-	text = strings.ReplaceAll(text, "\t", "")
-	text = strings.ReplaceAll(text, "\u00a0", "")
-	text = strings.ReplaceAll(text, "\\", "")
-	if strings.HasPrefix(strings.TrimSpace(text), "//") {
+// extractJSONFromTokens intelligently extracts JSON content from HTML tokens, filtering out comments
+func (p *DocumentParser) extractJSONFromTokens(codeElement *goquery.Selection) string {
+	var jsonTokens []string
+
+	// Find all token spans within the code element
+	codeElement.Find("span.token-line").Each(func(i int, line *goquery.Selection) {
+		var lineTokens []string
+
+		line.Find("span").Each(func(j int, token *goquery.Selection) {
+			// Get token class to determine if it's a comment
+			class, exists := token.Attr("class")
+			if !exists {
+				class = ""
+			}
+
+			// Skip comment tokens entirely
+			if strings.Contains(class, "comment") {
+				logrus.Debugf("extractJSONFromTokens: Skipping comment token: %s", token.Text())
+				return
+			}
+
+			// Get token text
+			tokenText := token.Text()
+			if tokenText != "" {
+				// Replace tabs with spaces to preserve JSON structure
+				tokenText = strings.ReplaceAll(tokenText, "\t", " ")
+				tokenText = strings.ReplaceAll(tokenText, "\\t", " ")
+				lineTokens = append(lineTokens, tokenText)
+			}
+		})
+
+		// Join tokens on this line with minimal spacing
+		if len(lineTokens) > 0 {
+			lineContent := strings.Join(lineTokens, "")
+			// Add line breaks only for structural elements
+			if strings.Contains(lineContent, "{") || strings.Contains(lineContent, "}") ||
+				strings.Contains(lineContent, "[") || strings.Contains(lineContent, "]") ||
+				strings.Contains(lineContent, ",") {
+				jsonTokens = append(jsonTokens, lineContent)
+			} else {
+				jsonTokens = append(jsonTokens, lineContent)
+			}
+		}
+	})
+
+	if len(jsonTokens) == 0 {
+		logrus.Debugf("extractJSONFromTokens: No tokens found, falling back to direct extraction")
 		return ""
 	}
+
+	// Join all the JSON tokens
+	result := strings.Join(jsonTokens, "")
+
+	// Final cleanup - remove any remaining issues
+	result = strings.ReplaceAll(result, "\u00a0", " ") // Non-breaking spaces
+	result = strings.TrimSpace(result)
+
+	// Validate that this looks like JSON
+	if !strings.HasPrefix(result, "{") && !strings.HasPrefix(result, "[") {
+		logrus.Debugf("extractJSONFromTokens: Result doesn't look like JSON: %s", result[:min(50, len(result))])
+		return ""
+	}
+
+	logrus.Debugf("extractJSONFromTokens: Successfully extracted JSON tokens (length: %d)", len(result))
+	return result
+}
+
+func cleanResponseLine(text string) string {
+	originalLength := len(text)
+	logrus.Debugf("cleanResponseLine: Input length: %d", originalLength)
+
+	// More precise comment detection - only match comments that are clearly on their own line or after JSON values
+	// commentRegex := regexp.MustCompile(`\s+(//|#)[^\r\n]*(?:\r?\n|$)`)
+	// commentRegex2 := regexp.MustCompile(`(?:^|\n)\s*(//|#)[^\r\n]*`)
+	// Fix missing commas before comments - this handles malformed JSON in Binance docs
+	// missingCommaRegex := regexp.MustCompile(`(["}])\s+(//|#)[^\r\n]*`)
+
+	text = cleanText(text)
+	logrus.Debugf("cleanResponseLine: After cleanText: %d (removed %d chars)", len(text), originalLength-len(text))
+
+	// Improved comment removal that handles inline comments without truncating JSON
+	beforeCommentRemoval := len(text)
+
+	// Remove comment-only tokens that are standalone
+	// Use a more conservative approach - only remove comments that are clearly separate tokens
+	commentOnlyRegex := regexp.MustCompile(`\s*//[^"]*?(?:\s|$)`)
+	text = commentOnlyRegex.ReplaceAllString(text, " ")
+
+	logrus.Debugf("cleanResponseLine: After comment removal: %d (removed %d chars)", len(text), beforeCommentRemoval-len(text))
+
+	text = strings.ReplaceAll(text, "\t", " ")
+	text = strings.ReplaceAll(text, "\u00a0", " ")
+	text = strings.ReplaceAll(text, "\\t", " ")
+	text = strings.ReplaceAll(text, "\\", "")
+
+	// Fix trailing commas in arrays and objects - this handles malformed JSON in Binance docs
+	beforeTrailingCommaFix := len(text)
+	trailingCommaRegex := regexp.MustCompile(`,\s*([}\]])`)
+	text = trailingCommaRegex.ReplaceAllString(text, "$1")
+	logrus.Debugf("cleanResponseLine: After trailing comma fix: %d (changed %d chars)", len(text), len(text)-beforeTrailingCommaFix)
+
+	if strings.HasPrefix(strings.TrimSpace(text), "//") {
+		logrus.Debugf("cleanResponseLine: Returning empty string due to comment prefix")
+		return ""
+	}
+
+	logrus.Debugf("cleanResponseLine: Final length: %d (total removed: %d chars)", len(text), originalLength-len(text))
 	return text
 }
 
@@ -413,6 +710,8 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 	// Set the summary from the first content item if available
 	if len(content) > 0 {
 		channel.Summary = content[0]
+		logrus.Debugf("Setting channel summary from first content: '%s'", channel.Summary)
+
 	}
 
 	var description strings.Builder
@@ -434,24 +733,61 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 			continue
 		}
 
-		// Extract JSON from code blocks
+		// Extract request JSON from CODE blocks
 		if strings.HasPrefix(line, "CODE:") {
 			jsonCode := strings.TrimPrefix(line, "CODE:")
+
+			// Try to extract method name from request JSON
 			methodName := p.extractMethodNameFromJSON(jsonCode)
-			if methodName != "" && channel.Name == "" {
+			if methodName != "" {
+				logrus.Debugf("Setting channel name from JSON: '%s' (was: '%s')", methodName, channel.Name)
 				channel.Name = methodName
 				foundMethod = true
 			}
+
+			// Parse request schema
 			if requestSchema == nil {
 				requestSchema = p.parseJSONSchema(jsonCode, "request")
 			}
 		}
 
-		// Extract JSON examples
+		// Extract response JSON examples
 		if strings.HasPrefix(line, "JSON:") {
 			jsonCode := strings.TrimPrefix(line, "JSON:")
-			if responseSchema == nil {
+
+			// Check if this JSON has typical response fields (status, result)
+			var jsonMap map[string]interface{}
+			isValidResponse := false
+			hasStatus := false
+			hasResult := false
+			hasMethod := false
+
+			if err := json.Unmarshal([]byte(jsonCode), &jsonMap); err == nil {
+				_, hasStatus = jsonMap["status"]
+				_, hasResult = jsonMap["result"]
+				_, hasMethod = jsonMap["method"]
+
+				// A valid response should have status/result but not method
+				isValidResponse = (hasStatus || hasResult) && !hasMethod
+			}
+
+			// Only try to extract method name if we haven't found one yet
+			// Some response examples may have method field for documentation purposes
+			if channel.Name == "" && !isValidResponse {
+				methodName := p.extractMethodNameFromJSON(jsonCode)
+				if methodName != "" {
+					logrus.Debugf("Setting channel name from JSON: '%s'", methodName)
+					channel.Name = methodName
+					foundMethod = true
+				}
+			}
+
+			// Parse response schema only if it's a valid response
+			if responseSchema == nil && isValidResponse {
+				logrus.Debugf("Parsing valid response schema (has status: %v, has result: %v)", hasStatus, hasResult)
 				responseSchema = p.parseJSONSchema(jsonCode, "response")
+			} else if responseSchema == nil {
+				logrus.Debugf("Skipping response schema - not a valid response (has method: %v, has status: %v, has result: %v)", hasMethod, hasStatus, hasResult)
 			}
 		}
 
@@ -491,7 +827,9 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 
 	// Generate method name if not found
 	if channel.Name == "" && channel.Summary != "" {
-		channel.Name = p.generateMethodName(channel.Summary)
+		generatedName := p.generateMethodName(channel.Summary)
+		logrus.Debugf("Generating method name from summary: '%s' -> '%s'", channel.Summary, generatedName)
+		channel.Name = generatedName
 		foundMethod = true
 	}
 
@@ -511,13 +849,16 @@ func getMapKeys(m map[string]*parser.Schema) []string {
 func (p *DocumentParser) extractMethodNameFromJSON(jsonCode string) string {
 	var requestJSON map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonCode), &requestJSON); err != nil {
+		logrus.Debugf("Failed to unmarshal JSON for method extraction: %v", err)
 		return ""
 	}
 
 	if method, ok := requestJSON["method"].(string); ok {
+		logrus.Debugf("Extracted method name from JSON: '%s'", method)
 		return method
 	}
 
+	logrus.Debugf("No method field found in JSON")
 	return ""
 }
 
@@ -753,13 +1094,22 @@ func (p *DocumentParser) convertTypeToJSONSchema(name, paramType, description st
 func (p *DocumentParser) parseJSONSchema(jsonCode, schemaType string) *parser.Schema {
 	var data interface{}
 
+	logrus.Debugf("parseJSONSchema: Parsing %s JSON (length: %d)", schemaType, len(jsonCode))
+	maxLen := 500
+	if len(jsonCode) < maxLen {
+		maxLen = len(jsonCode)
+	}
+	logrus.Debugf("parseJSONSchema: JSON content: %s", jsonCode[:maxLen])
+
 	if err := json.Unmarshal([]byte(jsonCode), &data); err != nil {
+		logrus.Debugf("parseJSONSchema: JSON unmarshal failed: %v", err)
 		return &parser.Schema{
 			Type:        "object",
 			Description: fmt.Sprintf("JSON %s data", schemaType),
 		}
 	}
 
+	logrus.Debugf("parseJSONSchema: JSON unmarshal succeeded for %s", schemaType)
 	return p.convertToSchema("", data, fmt.Sprintf("%s schema", schemaType))
 }
 

@@ -3,6 +3,58 @@
  * As input it requires the AsyncAPI document
  * Now supports AsyncAPI 3.0 with event messages and improved authentication handling
  */
+
+/*
+ * Check if an operation with a specific method name exists in the spec
+ */
+function hasOperation(asyncapi, methodName) {
+  const operations = asyncapi.operations();
+  let found = false;
+  
+  operations.forEach((operation) => {
+    const messages = operation.messages();
+    messages.forEach((message) => {
+      try {
+        const payload = message.payload();
+        if (payload && payload.properties) {
+          let props;
+          if (typeof payload.properties === 'function') {
+            props = payload.properties();
+          } else {
+            props = payload.properties;
+          }
+          
+          // Check if props is a Map-like object with a get method
+          let methodProp;
+          if (props && typeof props.get === 'function') {
+            methodProp = props.get('method');
+          } else if (props && props.method) {
+            methodProp = props.method;
+          }
+          
+          // Check if the method property has a const value matching our target
+          if (methodProp) {
+            let constValue;
+            if (typeof methodProp.const === 'function') {
+              constValue = methodProp.const();
+            } else if (methodProp.const) {
+              constValue = methodProp.const;
+            }
+            
+            if (constValue === methodName) {
+              found = true;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore errors and continue checking other messages
+      }
+    });
+  });
+  
+  return found;
+}
+
 export function WebSocketHandlers({ asyncapi }) {
   const operations = asyncapi.operations();
   let handlers = '';
@@ -21,8 +73,13 @@ export function WebSocketHandlers({ asyncapi }) {
   // Generate helper methods for oneOf response handling
   handlers += generateOneOfHelperMethods(asyncapi);
   
-  // Generate UserDataStream convenience methods
-  handlers += generateUserDataStreamConvenienceMethods();
+  // Generate UserDataStream convenience methods only if the required types exist
+  const hasUserDataStreamSubscribe = hasOperation(asyncapi, 'userDataStream.subscribe');
+  const hasUserDataStreamUnsubscribe = hasOperation(asyncapi, 'userDataStream.unsubscribe');
+  
+  if (hasUserDataStreamSubscribe || hasUserDataStreamUnsubscribe) {
+    handlers += generateUserDataStreamConvenienceMethods();
+  }
 
   // Generate parameter validation helper methods
   handlers += generateParameterValidationHelpers();
@@ -138,14 +195,17 @@ function generateTypedRequestMethod(operation, asyncapi) {
     const actualMethod = extractMethodFromMessage(sendMessage);
     if (actualMethod) {
       // Use the actual method value for the Go method name (this preserves proper casing)
-      // Convert dots to camelCase for valid Go method names
-      methodName = actualMethod.split('.').map((part, index) => {
-        if (index === 0) {
-          return capitalizeFirst(part);
-        } else {
-          return capitalizeFirst(part);
-        }
-      }).join('');
+      // Convert dots and slashes to camelCase for valid Go method names
+      // Handle both "v2/account.balance" style and "account.balance" style methods
+      methodName = actualMethod
+        .replace(/\//g, '.') // Convert slashes to dots first
+        .split('.').map((part, index) => {
+          if (index === 0) {
+            return capitalizeFirst(part);
+          } else {
+            return capitalizeFirst(part);
+          }
+        }).join('');
     } else {
       // Fallback to operation ID
       methodName = capitalizeFirst(toPascalCase(cleanedOperationId));

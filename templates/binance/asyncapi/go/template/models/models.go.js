@@ -147,62 +147,15 @@ func ParseOneOfResult(data []byte) (interface{}, string, error) {
 
 // mapEventTypeToStruct maps Binance event types to Go struct types
 func mapEventTypeToStruct(eventType string) string {
-\tswitch eventType {
-\tcase "outboundAccountPosition":
-\t\treturn "OutboundAccountPositionEvent"
-\tcase "balanceUpdate":
-\t\treturn "BalanceUpdateEvent"
-\tcase "executionReport":
-\t\treturn "ExecutionReportEvent"
-\tcase "listStatus":
-\t\treturn "ListStatusEvent"
-\tcase "listenKeyExpired":
-\t\treturn "ListenKeyExpiredEvent"
-\tcase "externalLockUpdate":
-\t\treturn "ExternalLockUpdateEvent"
-\tcase "eventStreamTerminated":
-\t\treturn "EventStreamTerminatedEvent"
-\tdefault:
-\t\treturn ""
-\t}
+\t// This function will be populated based on actual event types in the spec
+\t// For APIs that don't define event types (like umfutures), this returns empty string
+\treturn ""
 }
 
 // RegisterAllEventTypes registers all known event types with the global registry
 func RegisterAllEventTypes() {
-\t// Register OutboundAccountPositionEvent
-\tGlobalRegistry.RegisterType("OutboundAccountPositionEvent", 
-\t\tOutboundAccountPositionEvent{}, 
-\t\tfunc() interface{} { return &OutboundAccountPositionEvent{} })
-\t
-\t// Register BalanceUpdateEvent
-\tGlobalRegistry.RegisterType("BalanceUpdateEvent", 
-\t\tBalanceUpdateEvent{}, 
-\t\tfunc() interface{} { return &BalanceUpdateEvent{} })
-\t
-\t// Register ExecutionReportEvent
-\tGlobalRegistry.RegisterType("ExecutionReportEvent", 
-\t\tExecutionReportEvent{}, 
-\t\tfunc() interface{} { return &ExecutionReportEvent{} })
-\t
-\t// Register ListStatusEvent
-\tGlobalRegistry.RegisterType("ListStatusEvent", 
-\t\tListStatusEvent{}, 
-\t\tfunc() interface{} { return &ListStatusEvent{} })
-\t
-\t// Register ListenKeyExpiredEvent
-\tGlobalRegistry.RegisterType("ListenKeyExpiredEvent", 
-\t\tListenKeyExpiredEvent{}, 
-\t\tfunc() interface{} { return &ListenKeyExpiredEvent{} })
-\t
-\t// Register ExternalLockUpdateEvent
-\tGlobalRegistry.RegisterType("ExternalLockUpdateEvent", 
-\t\tExternalLockUpdateEvent{}, 
-\t\tfunc() interface{} { return &ExternalLockUpdateEvent{} })
-\t
-\t// Register EventStreamTerminatedEvent
-\tGlobalRegistry.RegisterType("EventStreamTerminatedEvent", 
-\t\tEventStreamTerminatedEvent{}, 
-\t\tfunc() interface{} { return &EventStreamTerminatedEvent{} })
+\t// Event types will be registered here based on what's actually defined in the AsyncAPI spec
+\t// For APIs that don't define event types (like umfutures), this is a no-op function
 }
 
 // MessageValidator interface for messages that can validate themselves

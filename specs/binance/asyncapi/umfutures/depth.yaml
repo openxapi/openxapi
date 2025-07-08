@@ -1,0 +1,154 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    umfutures:
+        address: /
+        title: Channel depth
+        description: |-
+            Get current order book. Note that this request returns limited market depth.
+            If you need to continuously monitor order book updates, please consider using Websocket Market Streams:
+            - <symbol>@depth<levels>
+            - <symbol>@depth
+            You can use depth request together with <symbol>@depth streams to maintain a local order book.
+            depth
+        messages:
+            depthRequest:
+                $ref: '#/components/messages/depthRequest'
+            depthResponse:
+                $ref: '#/components/messages/depthResponse'
+operations:
+    receiveDepth:
+        title: Receive from depth
+        description: Receive response from depth
+        action: receive
+        channel:
+            $ref: '#/channels/umfutures'
+        messages:
+            - $ref: '#/channels/umfutures/messages/depthResponse'
+    sendDepth:
+        title: Send to depth
+        description: Send a depth request
+        action: send
+        channel:
+            $ref: '#/channels/umfutures'
+        messages:
+            - $ref: '#/channels/umfutures/messages/depthRequest'
+components:
+    messages:
+        depthRequest:
+            name: Order Book Request
+            title: Order Book Request
+            description: Send a depth request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 51e2affb-0aba-4821-ba75-f2625006eb43
+                    method:
+                        type: string
+                        description: method property
+                        example: depth
+                        enum:
+                            - depth
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            limit:
+                                type: integer
+                                description: Default 500; Valid limits:[5, 10, 20, 50, 100, 500, 1000]
+                            symbol:
+                                type: string
+                        required:
+                            - symbol
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        depthResponse:
+            name: Order Book Response
+            title: Order Book Response
+            description: Receive response from depth
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 51e2affb-0aba-4821-ba75-f2625006eb43
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 5
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 2400
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            E:
+                                type: integer
+                                description: E property
+                                example: 1589436922972
+                            T:
+                                type: integer
+                                description: T property
+                                example: 1589436922959
+                            asks:
+                                type: array
+                                description: asks property
+                                items:
+                                    type: array
+                                    description: array item
+                                    items:
+                                        type: string
+                                        description: array item
+                                        example: "4.00000200"
+                            bids:
+                                type: array
+                                description: bids property
+                                items:
+                                    type: array
+                                    description: array item
+                                    items:
+                                        type: string
+                                        description: array item
+                                        example: "4.00000000"
+                            lastUpdateId:
+                                type: integer
+                                format: int64
+                                description: lastUpdateId property
+                                example: 1027024
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

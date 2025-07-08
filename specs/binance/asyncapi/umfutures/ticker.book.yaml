@@ -1,0 +1,146 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    umfutures:
+        address: /
+        title: Channel ticker.book
+        description: |-
+            Best price/qty on the order book for a symbol or symbols.
+            ticker.book
+            Weight: 2 for a single symbol;
+            5 when the symbol parameter is omitted
+            2 for a single symbol;
+            5 when the symbol parameter is omitted
+        messages:
+            tickerBookRequest:
+                $ref: '#/components/messages/tickerBookRequest'
+            tickerBookResponse:
+                $ref: '#/components/messages/tickerBookResponse'
+operations:
+    receiveTickerBook:
+        title: Receive from ticker.book
+        description: Receive response from ticker.book
+        action: receive
+        channel:
+            $ref: '#/channels/umfutures'
+        messages:
+            - $ref: '#/channels/umfutures/messages/tickerBookResponse'
+    sendTickerBook:
+        title: Send to ticker.book
+        description: Send a ticker.book request
+        action: send
+        channel:
+            $ref: '#/channels/umfutures'
+        messages:
+            - $ref: '#/channels/umfutures/messages/tickerBookRequest'
+components:
+    messages:
+        tickerBookRequest:
+            name: Symbol Order Book Ticker Request
+            title: Symbol Order Book Ticker Request
+            description: Send a ticker.book request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 9d32157c-a556-4d27-9866-66760a174b57
+                    method:
+                        type: string
+                        description: method property
+                        example: ticker.book
+                        enum:
+                            - ticker.book
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            symbol:
+                                type: string
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        tickerBookResponse:
+            name: Symbol Order Book Ticker Response
+            title: Symbol Order Book Ticker Response
+            description: Receive response from ticker.book
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 9d32157c-a556-4d27-9866-66760a174b57
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 2
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 2400
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            askPrice:
+                                type: string
+                                description: askPrice property
+                                example: "4.00000200"
+                            askQty:
+                                type: string
+                                description: askQty property
+                                example: "9.00000000"
+                            bidPrice:
+                                type: string
+                                description: bidPrice property
+                                example: "4.00000000"
+                            bidQty:
+                                type: string
+                                description: bidQty property
+                                example: "431.00000000"
+                            lastUpdateId:
+                                type: integer
+                                format: int64
+                                description: lastUpdateId property
+                                example: 1027024
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            time:
+                                type: integer
+                                format: int64
+                                description: time property
+                                example: 1589437530011
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

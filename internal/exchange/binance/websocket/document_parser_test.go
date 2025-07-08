@@ -1,12 +1,14 @@
 package binance
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/openxapi/openxapi/internal/config"
 	wsparser "github.com/openxapi/openxapi/internal/parser/websocket"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +25,7 @@ func TestDocumentParser_Parse(t *testing.T) {
 
 	urlEntity := &config.URLEntity{
 		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/general-requests",
-		DocType: "websocket-api",
+		DocType: "spot",
 	}
 
 	channels, err := parser.Parse(file, urlEntity, []string{})
@@ -70,7 +72,7 @@ func TestDocumentParser_MethodEnumConstraints(t *testing.T) {
 
 	urlEntity := &config.URLEntity{
 		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/general-requests",
-		DocType: "websocket-api",
+		DocType: "spot",
 	}
 
 	channels, err := parser.Parse(file, urlEntity, []string{})
@@ -123,6 +125,7 @@ func TestDocumentParser_MethodEnumConstraints(t *testing.T) {
 
 // TestDocumentParser_RequestResponseStructure tests that requests and responses are properly distinguished
 func TestDocumentParser_RequestResponseStructure(t *testing.T) {
+	logrus.SetLevel(logrus.DebugLevel)
 	parser := &DocumentParser{}
 
 	// Load the sample HTML file
@@ -134,7 +137,7 @@ func TestDocumentParser_RequestResponseStructure(t *testing.T) {
 
 	urlEntity := &config.URLEntity{
 		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/general-requests",
-		DocType: "websocket-api",
+		DocType: "spot",
 	}
 
 	channels, err := parser.Parse(file, urlEntity, []string{})
@@ -245,7 +248,7 @@ func TestDocumentParser_ResponseFieldDetails(t *testing.T) {
 
 	urlEntity := &config.URLEntity{
 		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/general-requests",
-		DocType: "websocket-api",
+		DocType: "spot",
 	}
 
 	channels, err := parser.Parse(file, urlEntity, []string{})
@@ -292,7 +295,7 @@ func TestDocumentParser_CorrelationId(t *testing.T) {
 
 	urlEntity := &config.URLEntity{
 		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/general-requests",
-		DocType: "websocket-api",
+		DocType: "spot",
 	}
 
 	channels, err := parser.Parse(file, urlEntity, []string{})
@@ -351,7 +354,7 @@ func TestDocumentParser_ParseExchangeInfoMethod(t *testing.T) {
 
 	urlEntity := &config.URLEntity{
 		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/general-requests",
-		DocType: "websocket-api",
+		DocType: "spot",
 	}
 
 	channels, err := parser.Parse(file, urlEntity, []string{})
@@ -560,4 +563,384 @@ func TestDocumentParser_ParseParameterTable_MandatoryHandling(t *testing.T) {
 	limitParam := paramMap["limit"]
 	assert.Equal(t, "integer", limitParam.Schema.Type, "limit should be integer type")
 	assert.Equal(t, "Default: 100; Maximum: 5000", limitParam.Description, "limit should have correct description")
+}
+
+// TestDocumentParser_ExtractMethodNameFromJSON tests JSON method name extraction
+func TestDocumentParser_ExtractMethodNameFromJSON(t *testing.T) {
+	parser := &DocumentParser{}
+
+	testCases := []struct {
+		name         string
+		jsonCode     string
+		expectedName string
+	}{
+		{
+			name:         "ticker.24hr method",
+			jsonCode:     `{"id": "93fb61ef-89f8-4d6e-b022-4f035a3fadad", "method": "ticker.24hr", "params": {"symbol": "BNBBTC"}}`,
+			expectedName: "ticker.24hr",
+		},
+		{
+			name:         "session.logout method",
+			jsonCode:     `{"id": "abc123", "method": "session.logout"}`,
+			expectedName: "session.logout",
+		},
+		{
+			name:         "ticker.book method",
+			jsonCode:     `{"id": "xyz789", "method": "ticker.book", "params": {"symbol": "BTCUSDT"}}`,
+			expectedName: "ticker.book",
+		},
+		{
+			name:         "ticker method",
+			jsonCode:     `{"id": "def456", "method": "ticker", "params": {"symbols": ["BTCUSDT", "BNBBTC"]}}`,
+			expectedName: "ticker",
+		},
+		{
+			name:         "no method field",
+			jsonCode:     `{"id": "ghi789", "params": {"symbol": "BTCUSDT"}}`,
+			expectedName: "",
+		},
+		{
+			name:         "invalid JSON",
+			jsonCode:     `{invalid json`,
+			expectedName: "",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := parser.extractMethodNameFromJSON(tc.jsonCode)
+			assert.Equal(t, tc.expectedName, result, "Expected method name %s but got %s", tc.expectedName, result)
+		})
+	}
+}
+
+// TestDocumentParser_MethodNameExtraction tests that method names are correctly extracted from JSON in content
+func TestDocumentParser_MethodNameExtraction(t *testing.T) {
+	parser := &DocumentParser{}
+
+	// Test cases with different header texts and JSON content
+	testCases := []struct {
+		name                string
+		headerText          string
+		content             []string
+		expectedChannelName string
+		expectedSummary     string
+	}{
+		{
+			name:       "24hr ticker with JSON method name",
+			headerText: "24hr ticker price change statistics",
+			content: []string{
+				"24hr ticker price change statistics",
+				"Get 24-hour rolling window price change statistics.",
+				"JSON:{\"id\": \"93fb61ef-89f8-4d6e-b022-4f035a3fadad\", \"method\": \"ticker.24hr\", \"params\": {\"symbol\": \"BNBBTC\"}}",
+			},
+			expectedChannelName: "ticker.24hr",
+			expectedSummary:     "24hr ticker price change statistics",
+		},
+		{
+			name:       "session logout with JSON method name",
+			headerText: "Log out of the session",
+			content: []string{
+				"Log out of the session",
+				"Forget the current WebSocket session.",
+				"CODE:{\"id\": \"abc123\", \"method\": \"session.logout\"}",
+			},
+			expectedChannelName: "session.logout",
+			expectedSummary:     "Log out of the session",
+		},
+		{
+			name:       "rolling window statistics with ticker method",
+			headerText: "Rolling window price change statistics",
+			content: []string{
+				"Rolling window price change statistics",
+				"Get rolling window price change statistics.",
+				"JSON:{\"id\": \"def456\", \"method\": \"ticker\", \"params\": {\"windowSize\": \"1h\"}}",
+			},
+			expectedChannelName: "ticker",
+			expectedSummary:     "Rolling window price change statistics",
+		},
+		{
+			name:       "symbol order book ticker",
+			headerText: "Symbol order book ticker",
+			content: []string{
+				"Symbol order book ticker",
+				"Get the best price/quantity on the order book.",
+				"CODE:{\"id\": \"xyz789\", \"method\": \"ticker.book\", \"params\": {\"symbol\": \"BTCUSDT\"}}",
+			},
+			expectedChannelName: "ticker.book",
+			expectedSummary:     "Symbol order book ticker",
+		},
+		{
+			name:       "no JSON method - should use generated name",
+			headerText: "Some API Method",
+			content: []string{
+				"Some API Method",
+				"This method has no JSON example.",
+			},
+			expectedChannelName: "some_api_method",
+			expectedSummary:     "Some API Method",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			channel := &wsparser.Channel{
+				Messages: make(map[string]*wsparser.Message),
+				Metadata: make(map[string]interface{}),
+			}
+
+			foundMethod, _, _ := parser.extractContent(channel, tc.content)
+
+			assert.True(t, foundMethod, "Method should be found")
+			assert.Equal(t, tc.expectedChannelName, channel.Name, "Channel name should be %s", tc.expectedChannelName)
+			assert.Equal(t, tc.expectedSummary, channel.Summary, "Channel summary should be %s", tc.expectedSummary)
+		})
+	}
+}
+
+// TestDocumentParser_Parse_MethodNames tests that actual parsing produces correct method names
+func TestDocumentParser_Parse_MethodNames(t *testing.T) {
+	parser := &DocumentParser{}
+
+	// Test with market data requests that include ticker methods
+	samplePath := filepath.Join("..", "..", "..", "..", "samples", "binance", "websocket", "spot", "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_market-data-requests.html")
+
+	file, err := os.Open(samplePath)
+	if err != nil {
+		t.Skip("Sample file not found, skipping test")
+	}
+	defer file.Close()
+
+	urlEntity := &config.URLEntity{
+		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/market-data-requests",
+		DocType: "spot",
+	}
+
+	channels, err := parser.Parse(file, urlEntity, []string{})
+	require.NoError(t, err, "Failed to parse document")
+
+	// Check for specific method names that should be extracted from JSON
+	expectedMethods := map[string]bool{
+		"ticker.24hr": false,
+		"ticker.book": false,
+		"ticker":      false,
+	}
+
+	for _, channel := range channels {
+		if _, exists := expectedMethods[channel.Name]; exists {
+			expectedMethods[channel.Name] = true
+			t.Logf("✅ Found correctly named method: %s", channel.Name)
+		}
+	}
+
+	// Verify critical methods were found with correct names
+	assert.True(t, expectedMethods["ticker.24hr"], "ticker.24hr method should be found with correct name")
+
+	// Check that we don't have incorrectly named files
+	for _, channel := range channels {
+		// These should NOT exist as they are the wrong generated names
+		assert.NotEqual(t, "24hr_ticker_price_change_statistics", channel.Name, "Should not use generated name for ticker.24hr")
+		assert.NotEqual(t, "rolling_window_price_change_statistics", channel.Name, "Should not use generated name for ticker")
+		assert.NotEqual(t, "symbol_order_book_ticker", channel.Name, "Should not use generated name for ticker.book")
+	}
+}
+
+// TestDocumentParser_RequestResponseSchemas tests that request and response schemas are correctly distinguished
+func TestDocumentParser_RequestResponseSchemas(t *testing.T) {
+	parser := &DocumentParser{}
+
+	// Test with market data requests that include ticker methods
+	samplePath := filepath.Join("..", "..", "..", "..", "samples", "binance", "websocket", "spot", "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_market-data-requests.html")
+
+	file, err := os.Open(samplePath)
+	if err != nil {
+		t.Skip("Sample file not found, skipping test")
+	}
+	defer file.Close()
+
+	urlEntity := &config.URLEntity{
+		URL:     "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/market-data-requests",
+		DocType: "spot",
+	}
+
+	channels, err := parser.Parse(file, urlEntity, []string{})
+	require.NoError(t, err, "Failed to parse document")
+
+	// Find the ticker.24hr method to test
+	var ticker24hrChannel *wsparser.Channel
+	for i := range channels {
+		if channels[i].Name == "ticker.24hr" {
+			ticker24hrChannel = &channels[i]
+			break
+		}
+	}
+
+	require.NotNil(t, ticker24hrChannel, "ticker.24hr channel should exist")
+
+	// Check request message
+	requestMsg, exists := ticker24hrChannel.Messages["request"]
+	require.True(t, exists, "Request message should exist")
+	require.NotNil(t, requestMsg.Payload, "Request payload should exist")
+
+	// Request should have method field
+	assert.Contains(t, requestMsg.Payload.Properties, "method", "Request should have method field")
+	assert.Contains(t, requestMsg.Payload.Properties, "params", "Request should have params field")
+
+	// Request should NOT have response fields
+	assert.NotContains(t, requestMsg.Payload.Properties, "status", "Request should NOT have status field")
+	assert.NotContains(t, requestMsg.Payload.Properties, "result", "Request should NOT have result field")
+	assert.NotContains(t, requestMsg.Payload.Properties, "rateLimits", "Request should NOT have rateLimits field")
+
+	// Check response message
+	responseMsg, exists := ticker24hrChannel.Messages["response"]
+	require.True(t, exists, "Response message should exist")
+	require.NotNil(t, responseMsg.Payload, "Response payload should exist")
+
+	// Response should have status and result fields
+	assert.Contains(t, responseMsg.Payload.Properties, "status", "Response should have status field")
+	assert.Contains(t, responseMsg.Payload.Properties, "result", "Response should have result field")
+	assert.Contains(t, responseMsg.Payload.Properties, "rateLimits", "Response should have rateLimits field")
+
+	// Response should NOT have method field
+	assert.NotContains(t, responseMsg.Payload.Properties, "method", "Response should NOT have method field")
+
+	// Check that result has the expected ticker fields
+	if resultField, exists := responseMsg.Payload.Properties["result"]; exists {
+		assert.Equal(t, "object", resultField.Type, "Result should be an object")
+		// Check for some expected ticker fields
+		assert.Contains(t, resultField.Properties, "symbol", "Result should have symbol field")
+		assert.Contains(t, resultField.Properties, "priceChange", "Result should have priceChange field")
+		assert.Contains(t, resultField.Properties, "priceChangePercent", "Result should have priceChangePercent field")
+	}
+
+	t.Logf("✅ ticker.24hr has correct request/response structure")
+}
+
+// TestDocumentParser_JSONClassification tests the JSON classification logic
+func TestDocumentParser_JSONClassification(t *testing.T) {
+	testCases := []struct {
+		name               string
+		jsonContent        string
+		expectedIsRequest  bool
+		expectedIsResponse bool
+	}{
+		{
+			name:               "request with method field",
+			jsonContent:        `{"id": "123", "method": "ticker.24hr", "params": {"symbol": "BTCUSDT"}}`,
+			expectedIsRequest:  true,
+			expectedIsResponse: false,
+		},
+		{
+			name:               "response with status and result",
+			jsonContent:        `{"id": "123", "status": 200, "result": {"symbol": "BTCUSDT", "price": "50000"}}`,
+			expectedIsRequest:  false,
+			expectedIsResponse: true,
+		},
+		{
+			name:               "response with only result",
+			jsonContent:        `{"id": "123", "result": [{"symbol": "BTCUSDT", "price": "50000"}]}`,
+			expectedIsRequest:  false,
+			expectedIsResponse: true,
+		},
+		{
+			name:               "ambiguous JSON with method and status",
+			jsonContent:        `{"id": "123", "method": "test", "status": 200}`,
+			expectedIsRequest:  true,
+			expectedIsResponse: false, // Method field takes precedence
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Test the classification logic
+			var jsonMap map[string]interface{}
+			err := json.Unmarshal([]byte(tc.jsonContent), &jsonMap)
+			require.NoError(t, err)
+
+			_, hasStatus := jsonMap["status"]
+			_, hasResult := jsonMap["result"]
+			_, hasMethod := jsonMap["method"]
+
+			// Request classification: has method field
+			isRequest := hasMethod
+			assert.Equal(t, tc.expectedIsRequest, isRequest, "Request classification mismatch")
+
+			// Response classification: has status/result but not method
+			isResponse := (hasStatus || hasResult) && !hasMethod
+			assert.Equal(t, tc.expectedIsResponse, isResponse, "Response classification mismatch")
+		})
+	}
+}
+
+// TestDocumentParser_ExtractContentRequestResponse tests the extractContent function with request/response classification
+func TestDocumentParser_ExtractContentRequestResponse(t *testing.T) {
+	parser := &DocumentParser{}
+
+	testCases := []struct {
+		name                    string
+		content                 []string
+		expectRequestSchema     bool
+		expectResponseSchema    bool
+		expectRequestHasMethod  bool
+		expectResponseHasStatus bool
+	}{
+		{
+			name: "content with request and response",
+			content: []string{
+				"24hr ticker price change statistics",
+				"Get 24-hour rolling window price change statistics.",
+				"CODE:{\"id\": \"93fb61ef-89f8-4d6e-b022-4f035a3fadad\", \"method\": \"ticker.24hr\", \"params\": {\"symbol\": \"BNBBTC\"}}",
+				"Weight: 2",
+				"Data Source: Database",
+				"JSON:{\"id\": \"93fb61ef-89f8-4d6e-b022-4f035a3fadad\", \"status\": 200, \"result\": {\"symbol\": \"BNBBTC\", \"priceChange\": \"0.00013900\"}}",
+			},
+			expectRequestSchema:     true,
+			expectResponseSchema:    true,
+			expectRequestHasMethod:  true,
+			expectResponseHasStatus: true,
+		},
+		{
+			name: "content with only request",
+			content: []string{
+				"Ping request",
+				"Test connectivity.",
+				"CODE:{\"id\": \"test-123\", \"method\": \"ping\"}",
+			},
+			expectRequestSchema:     true,
+			expectResponseSchema:    false,
+			expectRequestHasMethod:  true,
+			expectResponseHasStatus: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			channel := &wsparser.Channel{
+				Messages: make(map[string]*wsparser.Message),
+				Metadata: make(map[string]interface{}),
+			}
+
+			foundMethod, requestSchema, responseSchema := parser.extractContent(channel, tc.content)
+
+			assert.True(t, foundMethod, "Method should be found")
+
+			if tc.expectRequestSchema {
+				assert.NotNil(t, requestSchema, "Request schema should exist")
+				if tc.expectRequestHasMethod {
+					assert.Contains(t, requestSchema.Properties, "method", "Request should have method field")
+				}
+			} else {
+				assert.Nil(t, requestSchema, "Request schema should not exist")
+			}
+
+			if tc.expectResponseSchema {
+				assert.NotNil(t, responseSchema, "Response schema should exist")
+				if tc.expectResponseHasStatus {
+					assert.Contains(t, responseSchema.Properties, "status", "Response should have status field")
+				}
+			} else {
+				assert.Nil(t, responseSchema, "Response schema should not exist")
+			}
+		})
+	}
 }

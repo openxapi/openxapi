@@ -1,0 +1,270 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    umfutures:
+        address: /
+        title: Channel v2/account.status
+        description: |-
+            Get current account information. User in single-asset/ multi-assets mode will see different value, see comments in response section for detail.
+            v2/account.status
+        messages:
+            v2AccountStatusRequest:
+                $ref: '#/components/messages/v2AccountStatusRequest'
+            v2AccountStatusResponse:
+                $ref: '#/components/messages/v2AccountStatusResponse'
+operations:
+    receiveV2AccountStatus:
+        title: Receive from v2/account.status
+        description: Receive response from v2/account.status
+        action: receive
+        channel:
+            $ref: '#/channels/umfutures'
+        messages:
+            - $ref: '#/channels/umfutures/messages/v2AccountStatusResponse'
+    sendV2AccountStatus:
+        title: Send to v2/account.status
+        description: Send a v2/account.status request
+        action: send
+        channel:
+            $ref: '#/channels/umfutures'
+        messages:
+            - $ref: '#/channels/umfutures/messages/v2AccountStatusRequest'
+components:
+    messages:
+        v2AccountStatusRequest:
+            name: Account Information V2(USER_DATA) Request
+            title: Account Information V2(USER_DATA) Request
+            description: Send a v2/account.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
+                    method:
+                        type: string
+                        description: method property
+                        example: v2/account.status
+                        enum:
+                            - v2/account.status
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            recvWindow:
+                                type: integer
+                                format: int64
+                            timestamp:
+                                type: integer
+                                format: int64
+                        required:
+                            - timestamp
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        v2AccountStatusResponse:
+            name: Account Information V2(USER_DATA) Response
+            title: Account Information V2(USER_DATA) Response
+            description: Receive response from v2/account.status
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 20
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 2400
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            assets:
+                                type: array
+                                description: assets property
+                                items:
+                                    type: object
+                                    description: array item
+                                    properties:
+                                        asset:
+                                            type: string
+                                            description: asset property
+                                            example: USDT
+                                        availableBalance:
+                                            type: string
+                                            description: availableBalance property
+                                            example: "23.72469206"
+                                        crossUnPnl:
+                                            type: string
+                                            description: crossUnPnl property
+                                            example: "0.00000000"
+                                        crossWalletBalance:
+                                            type: string
+                                            description: crossWalletBalance property
+                                            example: "23.72469206"
+                                        initialMargin:
+                                            type: string
+                                            description: initialMargin property
+                                            example: "0.00000000"
+                                        maintMargin:
+                                            type: string
+                                            description: maintMargin property
+                                            example: "0.00000000"
+                                        marginBalance:
+                                            type: string
+                                            description: marginBalance property
+                                            example: "23.72469206"
+                                        maxWithdrawAmount:
+                                            type: string
+                                            description: maxWithdrawAmount property
+                                            example: "23.72469206"
+                                        openOrderInitialMargin:
+                                            type: string
+                                            description: openOrderInitialMargin property
+                                            example: "0.00000000"
+                                        positionInitialMargin:
+                                            type: string
+                                            description: positionInitialMargin property
+                                            example: "0.00000000"
+                                        unrealizedProfit:
+                                            type: string
+                                            description: unrealizedProfit property
+                                            example: "0.00000000"
+                                        updateTime:
+                                            type: integer
+                                            format: int64
+                                            description: updateTime property
+                                            example: 1625474304765
+                                        walletBalance:
+                                            type: string
+                                            description: walletBalance property
+                                            example: "23.72469206"
+                            availableBalance:
+                                type: string
+                                description: availableBalance property
+                                example: "103.12345678"
+                            maxWithdrawAmount:
+                                type: string
+                                description: maxWithdrawAmount property
+                                example: "103.12345678"
+                            positions:
+                                type: array
+                                description: positions property
+                                items:
+                                    type: object
+                                    description: array item
+                                    properties:
+                                        initialMargin:
+                                            type: string
+                                            description: initialMargin property
+                                            example: "0"
+                                        isolatedMargin:
+                                            type: string
+                                            description: isolatedMargin property
+                                            example: "0.00000000"
+                                        isolatedWallet:
+                                            type: string
+                                            description: isolatedWallet property
+                                            example: "0"
+                                        maintMargin:
+                                            type: string
+                                            description: maintMargin property
+                                            example: "0"
+                                        notional:
+                                            type: string
+                                            description: notional property
+                                            example: "0"
+                                        positionAmt:
+                                            type: string
+                                            description: positionAmt property
+                                            example: "1.000"
+                                        positionSide:
+                                            type: string
+                                            description: positionSide property
+                                            example: BOTH
+                                        symbol:
+                                            type: string
+                                            description: symbol property
+                                            example: BTCUSDT
+                                        unrealizedProfit:
+                                            type: string
+                                            description: unrealizedProfit property
+                                            example: "0.00000000"
+                                        updateTime:
+                                            type: integer
+                                            format: int64
+                                            description: updateTime property
+                                            example: 0
+                            totalCrossUnPnl:
+                                type: string
+                                description: totalCrossUnPnl property
+                                example: "0.00000000"
+                            totalCrossWalletBalance:
+                                type: string
+                                description: totalCrossWalletBalance property
+                                example: "103.12345678"
+                            totalInitialMargin:
+                                type: string
+                                description: totalInitialMargin property
+                                example: "0.00000000"
+                            totalMaintMargin:
+                                type: string
+                                description: totalMaintMargin property
+                                example: "0.00000000"
+                            totalMarginBalance:
+                                type: string
+                                description: totalMarginBalance property
+                                example: "103.12345678"
+                            totalOpenOrderInitialMargin:
+                                type: string
+                                description: totalOpenOrderInitialMargin property
+                                example: "0.00000000"
+                            totalPositionInitialMargin:
+                                type: string
+                                description: totalPositionInitialMargin property
+                                example: "0.00000000"
+                            totalUnrealizedProfit:
+                                type: string
+                                description: totalUnrealizedProfit property
+                                example: "0.00000000"
+                            totalWalletBalance:
+                                type: string
+                                description: totalWalletBalance property
+                                example: "103.12345678"
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
