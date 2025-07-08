@@ -720,4 +720,45 @@ make generate-ws-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=${PWD}/../binance-g
 - Instead of running the same npm command, check package.json or try a different approach
 - Instead of reading the same file repeatedly, read a different related file
 
+### Debugging Missing Response Fields in OpenAPI/AsyncAPI Specs
+**When OpenAPI or AsyncAPI YAML specs don't have response fields parsed**, and you can't find any issues in the parser code, the root cause is often malformed JSON in the Binance API documentation. This applies to both REST (OpenAPI) and WebSocket (AsyncAPI) specifications. Follow this systematic debugging approach:
+
+**Key Guidelines:**
+1. **Suspect malformed JSON first** - If response fields are missing from generated specs, check for invalid JSON syntax in the documentation
+2. **Print each JSON line for debugging** - Add debug logging to print each line of the JSON being parsed to identify syntax errors
+3. **Common JSON syntax issues to check**:
+   - Missing commas between fields: `"field1": "value1" "field2": "value2"` (missing comma)
+   - Trailing commas in objects or arrays: `{"field": "value",}` or `["item1", "item2",]`
+   - Incorrect quotes: Using single quotes `'` instead of double quotes `"`
+   - Unescaped quotes inside strings: `"field": "value with "quotes" inside"`
+   - Comments in JSON: `// comment` or `/* comment */` (JSON doesn't support comments)
+   - Invalid escape sequences or Unicode characters
+
+**Debugging Steps:**
+```go
+// For REST/OpenAPI parsers (e.g., in document_parser.go):
+logrus.Debugf("Parsing JSON line %d: %s", lineNum, line)
+
+// For WebSocket/AsyncAPI parsers (e.g., in websocket/document_parser.go):
+logrus.Debugf("Parsing response JSON: %s", jsonString)
+
+// Or temporarily add println for immediate debugging:
+fmt.Printf("DEBUG: JSON line: %q\n", jsonString)
+```
+
+**Example Debug Output to Look For:**
+```
+DEBUG: JSON line: "{"field1": "value1" "field2": "value2"}"  // Missing comma
+DEBUG: JSON line: "{"field": "value",}"                       // Trailing comma
+DEBUG: JSON line: "{'field': 'value'}"                        // Wrong quotes
+```
+
+**Resolution:**
+- Once you identify the malformed JSON, enhance the appropriate cleaning function:
+  - For REST/OpenAPI: Update cleaning logic in `internal/exchange/binance/rest/document_parser.go`
+  - For WebSocket/AsyncAPI: Update `cleanResponseLine` function in `internal/exchange/binance/websocket/document_parser.go`
+- Always fix through parser code, never manually edit the documentation samples
+- Add the new cleaning pattern to handle similar issues automatically in the future
+- The same malformed JSON patterns often appear in both REST and WebSocket documentation
+
 This guide provides the essential context for understanding and contributing to the OpenXAPI project. For specific implementation details, refer to the source code and existing tests. 
