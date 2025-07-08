@@ -1,0 +1,112 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    cmfutures:
+        address: /
+        title: Channel userDataStream.stop
+        description: |-
+            Close out a user data stream.
+            userDataStream.stop
+        messages:
+            userDataStreamStopRequest:
+                $ref: '#/components/messages/userDataStreamStopRequest'
+            userDataStreamStopResponse:
+                $ref: '#/components/messages/userDataStreamStopResponse'
+operations:
+    receiveUserDataStreamStop:
+        title: Receive from userDataStream.stop
+        description: Receive response from userDataStream.stop
+        action: receive
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/userDataStreamStopResponse'
+    sendUserDataStreamStop:
+        title: Send to userDataStream.stop
+        description: Send a userDataStream.stop request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/userDataStreamStopRequest'
+components:
+    messages:
+        userDataStreamStopRequest:
+            name: Close User Data Stream (USER_STREAM) Request
+            title: Close User Data Stream (USER_STREAM) Request
+            description: Send a userDataStream.stop request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 819e1b1b-8c06-485b-a13e-131326c69599
+                    method:
+                        type: string
+                        description: method property
+                        example: userDataStream.stop
+                        enum:
+                            - userDataStream.stop
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                                description: Required if session is not authenticated via session.logon
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamStopResponse:
+            name: Close User Data Stream (USER_STREAM) Response
+            title: Close User Data Stream (USER_STREAM) Response
+            description: Receive response from userDataStream.stop
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: 819e1b1b-8c06-485b-a13e-131326c69599
+                    rateLimits:
+                        type: array
+                        description: rateLimits property
+                        items:
+                            type: object
+                            description: array item
+                            properties:
+                                count:
+                                    type: integer
+                                    description: count property
+                                    example: 2
+                                interval:
+                                    type: string
+                                    description: interval property
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: intervalNum property
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: limit property
+                                    example: 2400
+                                rateLimitType:
+                                    type: string
+                                    description: rateLimitType property
+                                    example: REQUEST_WEIGHT
+                    result:
+                        type: object
+                        description: result property
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
