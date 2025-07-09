@@ -1,9 +1,13 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
 import { ModularWebSocketHandlers } from '../components/ModularWebSocketHandlers';
+import { detectModuleName } from '../components/ModuleRegistry';
 
 export default function ({ asyncapi, params }) {
   const packageName = params.packageName || 'main';
   const moduleName = params.moduleName || 'binance-websocket-client';
+  
+  // Detect the module type
+  const detectedModule = detectModuleName(asyncapi, { packageName, moduleName });
   
   // Get all servers from AsyncAPI spec
   const servers = asyncapi.servers();
@@ -11,6 +15,10 @@ export default function ({ asyncapi, params }) {
 
   // Get all channels to generate handler methods
   const channels = asyncapi.channels();
+  
+  // Generate handlers and check if they use models
+  const handlersCode = ModularWebSocketHandlers({ asyncapi, context: { packageName, moduleName } });
+  const usesModels = handlersCode && handlersCode.includes('models.');
 
   return (
     <File name="client.go">
@@ -27,8 +35,8 @@ export default function ({ asyncapi, params }) {
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
-	"${moduleName}/models"
+	"github.com/gorilla/websocket"${usesModels ? `
+	"${moduleName}/models"` : ''}
 )`}
       </Text>
 
@@ -404,6 +412,8 @@ type Client struct {
 	responseListMu   sync.RWMutex     // Separate mutex for response list
 	auth             *Auth            // Authentication configuration
 	done             chan struct{}
+	isConnected      bool             // Connection status flag
+	handlers         eventHandlers    // Event handlers registry
 	
 	// Pre-allocated buffer for JSON parsing to reduce allocations
 	jsonBuffer []byte
@@ -606,6 +616,7 @@ func (c *Client) Connect(ctx context.Context) error {
 	}
 
 	c.conn = conn
+	c.isConnected = true
 	go c.readMessages()
 	return nil
 }
@@ -623,6 +634,7 @@ func (c *Client) ConnectToServer(ctx context.Context, serverName string) error {
       <Text newLines={2}>
         {`// Disconnect closes the WebSocket connection
 func (c *Client) Disconnect() error {
+	c.isConnected = false
 	close(c.done)
 	if c.conn != nil {
 		return c.conn.Close()
@@ -642,6 +654,7 @@ func GenerateRequestID() string {
         {`// readMessages reads messages from the WebSocket connection
 func (c *Client) readMessages() {
 	defer func() {
+		c.isConnected = false
 		if c.conn != nil {
 			c.conn.Close()
 		}
@@ -728,9 +741,21 @@ func (c *Client) handleMessage(data []byte) error {
 		}
 	}
 
-	// If we can't determine the message type, log it
-	log.Printf("Unknown message type: %s", string(data))
-	return nil
+	${detectedModule === 'spot-streams' ? 
+		`// For spot-streams, always try processStreamMessage for any non-request message
+		// This handles both standard events (with "e" field) and special events (BookTicker, PartialDepth)
+		return c.processStreamMessage(data)` : 
+		`// Check for direct event type field (stream messages)
+		if eventType, hasEventType := genericMessage["e"]; hasEventType {
+			if eventTypeStr, ok := eventType.(string); ok {
+				return c.handleEventMessage(eventTypeStr, data)
+			}
+		}
+
+		// If we can't determine the message type, log it
+		log.Printf("Unknown message type: %s", string(data))
+		return nil`
+	}
 }`}
       </Text>
 
@@ -807,7 +832,7 @@ func (c *Client) ClearResponseList() {
       <Text newLines={2}>
         {`// Health check and utility methods
 func (c *Client) IsConnected() bool {
-	return c.conn != nil
+	return c.isConnected && c.conn != nil
 }
 
 // Deprecated: Use GetCurrentURL() instead

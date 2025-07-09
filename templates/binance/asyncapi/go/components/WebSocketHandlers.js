@@ -59,6 +59,9 @@ export function WebSocketHandlers({ asyncapi }) {
   const operations = asyncapi.operations();
   let handlers = '';
 
+  // Generate eventHandlers type for Client struct
+  handlers += generateEventHandlersType(asyncapi);
+
   // Generate handlers for send operations (request methods)
   operations.forEach((operation) => {
     if (operation.action() === 'send') {
@@ -1190,4 +1193,18 @@ function generateParameterValidationHelpers() {
   // These helper methods are now generated in generateOneOfHelperMethods
   // Return empty string to avoid duplicate declarations
   return '';
+}
+
+/*
+ * Generate eventHandlers type for Client struct
+ */
+function generateEventHandlersType(asyncapi) {
+  return `
+// Event handler registry placeholder type
+type eventHandlers struct {
+	// This struct will be populated by module-specific handlers
+	// It serves as a placeholder to satisfy the Client struct definition
+}
+
+`;
 } 

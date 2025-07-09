@@ -8,6 +8,10 @@ import { WebSocketHandlers } from './WebSocketHandlers.js';
 import { IndividualModels } from './IndividualModels.js';
 import { MessageStructs } from './MessageStructs.js';
 
+// Import dedicated spot-streams components
+import { SpotStreamsWebSocketHandlers } from './SpotStreamsWebSocketHandlers.js';
+import { SpotStreamsIndividualModels } from './SpotStreamsIndividualModels.js';
+
 // Registry of module-specific configurations and handlers
 const moduleRegistry = new Map();
 
@@ -146,6 +150,25 @@ registerModule('cmfutures', {
   }
 });
 
+registerModule('spot-streams', {
+  handlers: {
+    webSocketHandlers: spotStreamsWebSocketHandlersGenerator,
+    individualModels: spotStreamsIndividualModelsGenerator,
+    messageStructs: spotStreamsMessageStructsGenerator
+  },
+  authentication: {
+    supportedTypes: [], // Spot streams are public, no authentication required
+    defaultType: null
+  },
+  specialMethods: {
+    // Spot streams use subscription model, not request-response
+    subscriptions: {
+      requiresAuth: false,
+      useStreamFormat: true
+    }
+  }
+});
+
 /*
  * Module-specific generator functions
  * These can be customized for each module's specific needs
@@ -237,15 +260,49 @@ function cmfuturesMessageStructsGenerator(asyncapi, moduleConfig) {
   }
 }
 
+// Spot-Streams module generators (market data streams, no authentication)
+function spotStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
+  try {
+    return SpotStreamsWebSocketHandlers({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load SpotStreamsWebSocketHandlers for spot-streams:', error.message);
+    return '// SpotStreamsWebSocketHandlers component not available for spot-streams\n';
+  }
+}
+
+function spotStreamsIndividualModelsGenerator(asyncapi, moduleConfig) {
+  try {
+    return SpotStreamsIndividualModels({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load SpotStreamsIndividualModels for spot-streams:', error.message);
+    return [];
+  }
+}
+
+function spotStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
+  try {
+    return MessageStructs({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load MessageStructs for spot-streams:', error.message);
+    return '// MessageStructs component not available for spot-streams\n';
+  }
+}
+
 /*
  * Utility function to determine module name from AsyncAPI spec or context
  */
 export function detectModuleName(asyncapi, context = {}) {
   // Try to detect module name from various sources
   
-  // 1. Check context parameters first
+  // 1. Check context parameters first (but extract just the module name, not full path)
   if (context.moduleName) {
-    return context.moduleName;
+    // Extract just the module name from full path like github.com/openxapi/binance-go/ws/spot-streams
+    const parts = context.moduleName.split('/');
+    const lastPart = parts[parts.length - 1];
+    // If it looks like a known module, return it
+    if (['spot', 'umfutures', 'cmfutures', 'spot-streams'].includes(lastPart)) {
+      return lastPart;
+    }
   }
   
   // 2. Check package name
@@ -259,6 +316,7 @@ export function detectModuleName(asyncapi, context = {}) {
     const title = typeof info.title === 'function' ? info.title() : info.title;
     if (title) {
       const titleLower = title.toLowerCase();
+      if (titleLower.includes('spot') && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'spot-streams';
       if (titleLower.includes('spot')) return 'spot';
       if (titleLower.includes('umfutures') || titleLower.includes('usd-m')) return 'umfutures';
       if (titleLower.includes('cmfutures') || titleLower.includes('coin-m')) return 'cmfutures';
@@ -277,7 +335,8 @@ export function detectModuleName(asyncapi, context = {}) {
       
       if (serverUrls.includes('dstream')) return 'cmfutures';
       if (serverUrls.includes('fstream')) return 'umfutures';
-      if (serverUrls.includes('stream.binance')) return 'spot';
+      if (serverUrls.includes('stream.binance') || serverUrls.includes('data-stream.binance')) return 'spot-streams';
+      if (serverUrls.includes('ws-api.binance')) return 'spot';
     }
   }
   
