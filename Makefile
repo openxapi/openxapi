@@ -69,13 +69,9 @@ validate-ws-spec:
 		exit 1; \
 	fi
 	@echo "Checking for AsyncAPI spec in ${EXCHANGE} specs"
-	@if [ -z "${ASYNCAPI_CLI}" ]; then \
-		echo "ASYNCAPI_CLI is not set. Please set it to the path of the asyncapi-cli executable."; \
-		exit 1; \
-	fi
 	@for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
 		echo "Validating ${EXCHANGE} spec for $$file"; \
-		$(ASYNCAPI_CLI) validate $$file; \
+		$${ASYNCAPI_CLI:-asyncapi} validate $$file; \
 	done
 
 generate-rest-sdk:

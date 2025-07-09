@@ -1,14 +1,14 @@
 # Binance AsyncAPI Go WebSocket Client Template
 
-This is an AsyncAPI template for generating **Go WebSocket clients** for Binance WebSocket API. The template is based on AsyncAPI 3.0 specifications and supports generating type-safe, high-performance Go WebSocket client code.
+This is an AsyncAPI template for generating **Go WebSocket clients** for Binance WebSocket API. The template is based on AsyncAPI 3.0 specifications and supports generating type-safe, high-performance Go WebSocket client code with **modular architecture** for different trading modules (spot, umfutures, cmfutures).
 
 ## Quick Start
 
 ### Prerequisites
 
-- Node.js 16+ 
-- AsyncAPI CLI
-- Go 1.19+
+- Node.js 22+ (LTS recommended for ES module compatibility)
+- AsyncAPI CLI v2.8+
+- Go 1.21+
 
 Install AsyncAPI CLI:
 
@@ -31,11 +31,15 @@ This will generate the Go client using default parameters:
 ### Module-Based Generation
 
 ```bash
-# Generate specific module (spot, futures, options, etc.)
+# Generate specific module (spot, umfutures, cmfutures)
 MODULE=spot npm run generate:module
+MODULE=umfutures npm run generate:module
+MODULE=cmfutures npm run generate:module
 
 # Test specific module
 MODULE=spot npm run test:module
+MODULE=umfutures npm run test:module
+MODULE=cmfutures npm run test:module
 ```
 
 ### Custom Generation
@@ -88,7 +92,22 @@ The template supports the following parameters:
 | `version` | Client version | `0.1.0` | No |
 | `author` | Author name | `openxapi` | No |
 
-## Module Configuration
+## Modular Architecture
+
+The template uses a **modular component system** that provides module-specific generation while maintaining code reusability:
+
+### Module Detection
+The template automatically detects the target module from:
+1. AsyncAPI specification title (e.g., "Binance Spot WebSocket API")
+2. Server URLs (e.g., `fstream` for umfutures, `dstream` for cmfutures)
+3. Context parameters passed during generation
+
+### Supported Modules
+- **spot**: Binance Spot WebSocket API (~3,400 lines, 106 models)
+- **umfutures**: Binance USD-M Futures WebSocket API (~1,600 lines, 33 models)
+- **cmfutures**: Binance COIN-M Futures WebSocket API (~1,400 lines, 21 models)
+
+### Module Configuration
 
 The template supports module-based generation using JSON configuration files located in `generator-configs/binance/asyncapi/go/`:
 
@@ -188,8 +207,25 @@ cd integration-tests
 # Run specific tests
 make test-spot        # Binance Spot WebSocket tests
 make test-umfutures   # Binance USD-M Futures WebSocket tests
+make test-cmfutures   # Binance COIN-M Futures WebSocket tests
 make test-all         # All integration tests
+
+# Run individual test categories
+cd src/binance/go/ws/spot
+go test -v -run "TestPing|TestServerTime" -short  # Basic public endpoint tests
+go test -v -run "TestExchangeInfo|TestTickerPrice" -short  # Market data tests
 ```
+
+### Integration Test Results
+
+The generated SDK has been verified to work with integration tests:
+
+- ✅ **TestPing**: WebSocket connectivity test (211ms)
+- ✅ **TestServerTime**: Server time endpoint (211ms)  
+- ✅ **TestExchangeInfo**: Exchange information (1.5s)
+- ✅ **TestTickerPrice**: Price ticker data (210ms)
+
+All public endpoints are fully functional and the SDK integrates seamlessly with the existing test framework.
 
 ## Available npm Scripts
 
@@ -239,6 +275,7 @@ asyncapi generate fromTemplate \
 The generated Go client includes the following features:
 
 - ✅ **AsyncAPI 3.0 Compatible**: Full support for AsyncAPI 3.0 specifications
+- ✅ **Modular Architecture**: Module-specific generation with isolation (spot, umfutures, cmfutures)
 - ✅ **OneOf Support**: Automatic handling of multiple response types in a single endpoint
 - ✅ **High-Performance Architecture**: Optimized with sync.Map, pre-allocated buffers, and concurrent-safe operations
 - ✅ **Enhanced Error Handling**: Comprehensive API error handling with HTTP-like status codes
@@ -251,6 +288,8 @@ The generated Go client includes the following features:
 - ✅ **Context-Based Authentication**: Per-request authentication via Go's context.Context
 - ✅ **Multiple Authentication Methods**: HMAC-SHA256, RSA, and Ed25519 signing
 - ✅ **Environment Variable Support**: Configurable via environment variables
+- ✅ **ES Module Compatible**: Modern JavaScript module system for template components
+- ✅ **Integration Test Ready**: Works seamlessly with existing integration test frameworks
 
 ## AsyncAPI Specification Requirements
 
@@ -307,6 +346,26 @@ For module path issues, update the module name:
 ```bash
 MODULE_NAME=github.com/your-org/your-client npm run generate
 ```
+
+### ES Module Issues
+
+If you encounter ES module compatibility issues:
+
+```bash
+# Use Node.js LTS for better ES module support
+nvm use --lts
+
+# Ensure all template components use ES module syntax
+npm run test  # This will validate the template components
+```
+
+### Modular Component Issues
+
+The template uses modular components for module-specific generation. If you encounter issues:
+
+1. **Module Detection Problems**: Check AsyncAPI spec title and server URLs
+2. **Component Loading Errors**: Ensure all imports use ES module syntax
+3. **Generation Failures**: Verify the module registry is properly configured
 
 ## Dependencies
 

@@ -1,9 +1,13 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
-import { WebSocketHandlers } from '../components/WebSocketHandlers';
+import { ModularWebSocketHandlers } from '../components/ModularWebSocketHandlers';
+import { detectModuleName } from '../components/ModuleRegistry';
 
 export default function ({ asyncapi, params }) {
   const packageName = params.packageName || 'main';
   const moduleName = params.moduleName || 'binance-websocket-client';
+  
+  // Detect the module type
+  const detectedModule = detectModuleName(asyncapi, { packageName, moduleName });
   
   // Get all servers from AsyncAPI spec
   const servers = asyncapi.servers();
@@ -11,6 +15,10 @@ export default function ({ asyncapi, params }) {
 
   // Get all channels to generate handler methods
   const channels = asyncapi.channels();
+  
+  // Generate handlers and check if they use models
+  const handlersCode = ModularWebSocketHandlers({ asyncapi, context: { packageName, moduleName } });
+  const usesModels = handlersCode && handlersCode.includes('models.');
 
   return (
     <File name="client.go">
@@ -27,8 +35,8 @@ export default function ({ asyncapi, params }) {
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/websocket"
-	"${moduleName}/models"
+	"github.com/gorilla/websocket"${usesModels ? `
+	"${moduleName}/models"` : ''}
 )`}
       </Text>
 
@@ -77,8 +85,19 @@ func NewServerManager() *ServerManager {
 		const name = rawName.match(/\d+$/) ? rawName : rawName + '1';
 		const protocol = server.protocol();
 		const host = server.host();
-		const pathname = server.pathname() || '';
-		const url = `${protocol}://${host}${pathname}`;
+		// Handle server variables for pathname
+		let pathname = server.pathname() || '';
+		let url;
+		
+		// Check if server has variables (specifically streamPath)
+		const serverJson = server.json ? server.json() : (server._json || {});
+		if (serverJson.variables && serverJson.variables.streamPath) {
+			// Use default value from streamPath variable
+			const defaultStreamPath = serverJson.variables.streamPath.default || 'ws';
+			pathname = pathname.replace('{streamPath}', defaultStreamPath);
+		}
+		
+		url = `${protocol}://${host}${pathname}`;
 		const title = server.title() || `${rawName.charAt(0).toUpperCase() + rawName.slice(1)} Server`;
 		const summary = server.summary() || `WebSocket API Server (${rawName})`;
 		const description = server.description() || `WebSocket server for ${rawName} environment`;
@@ -208,6 +227,28 @@ func (sm *ServerManager) UpdateServer(name string, server *ServerInfo) error {
 	server.Name = name
 	server.Active = (sm.activeServer == name)
 	sm.servers[name] = server
+	
+	return nil
+}
+
+// UpdateServerPathname updates the pathname of an existing server
+func (sm *ServerManager) UpdateServerPathname(name string, pathname string) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	
+	server, exists := sm.servers[name]
+	if !exists {
+		return fmt.Errorf("server '%s' not found", name)
+	}
+	
+	// Update pathname and rebuild URL
+	server.Pathname = pathname
+	server.URL = fmt.Sprintf("%s://%s%s", server.Protocol, server.Host, pathname)
+	
+	// Validate the new URL
+	if _, err := url.Parse(server.URL); err != nil {
+		return fmt.Errorf("invalid server URL '%s': %w", server.URL, err)
+	}
 	
 	return nil
 }
@@ -404,6 +445,8 @@ type Client struct {
 	responseListMu   sync.RWMutex     // Separate mutex for response list
 	auth             *Auth            // Authentication configuration
 	done             chan struct{}
+	isConnected      bool             // Connection status flag
+	handlers         eventHandlers    // Event handlers registry
 	
 	// Pre-allocated buffer for JSON parsing to reduce allocations
 	jsonBuffer []byte
@@ -606,6 +649,7 @@ func (c *Client) Connect(ctx context.Context) error {
 	}
 
 	c.conn = conn
+	c.isConnected = true
 	go c.readMessages()
 	return nil
 }
@@ -623,6 +667,7 @@ func (c *Client) ConnectToServer(ctx context.Context, serverName string) error {
       <Text newLines={2}>
         {`// Disconnect closes the WebSocket connection
 func (c *Client) Disconnect() error {
+	c.isConnected = false
 	close(c.done)
 	if c.conn != nil {
 		return c.conn.Close()
@@ -642,6 +687,7 @@ func GenerateRequestID() string {
         {`// readMessages reads messages from the WebSocket connection
 func (c *Client) readMessages() {
 	defer func() {
+		c.isConnected = false
 		if c.conn != nil {
 			c.conn.Close()
 		}
@@ -728,9 +774,21 @@ func (c *Client) handleMessage(data []byte) error {
 		}
 	}
 
-	// If we can't determine the message type, log it
-	log.Printf("Unknown message type: %s", string(data))
-	return nil
+	${detectedModule === 'spot-streams' ? 
+		`// For spot-streams, always try processStreamMessage for any non-request message
+		// This handles both standard events (with "e" field) and special events (BookTicker, PartialDepth)
+		return c.processStreamMessage(data)` : 
+		`// Check for direct event type field (stream messages)
+		if eventType, hasEventType := genericMessage["e"]; hasEventType {
+			if eventTypeStr, ok := eventType.(string); ok {
+				return c.handleEventMessage(eventTypeStr, data)
+			}
+		}
+
+		// If we can't determine the message type, log it
+		log.Printf("Unknown message type: %s", string(data))
+		return nil`
+	}
 }`}
       </Text>
 
@@ -807,7 +865,7 @@ func (c *Client) ClearResponseList() {
       <Text newLines={2}>
         {`// Health check and utility methods
 func (c *Client) IsConnected() bool {
-	return c.conn != nil
+	return c.isConnected && c.conn != nil
 }
 
 // Deprecated: Use GetCurrentURL() instead
@@ -817,7 +875,7 @@ func (c *Client) GetURL() string {
       </Text>
 
       <Text newLines={2}>
-        {WebSocketHandlers({ asyncapi })}
+        {ModularWebSocketHandlers({ asyncapi, context: { packageName, moduleName } })}
       </Text>
     </File>
   );
