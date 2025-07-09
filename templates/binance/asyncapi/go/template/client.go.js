@@ -85,8 +85,19 @@ func NewServerManager() *ServerManager {
 		const name = rawName.match(/\d+$/) ? rawName : rawName + '1';
 		const protocol = server.protocol();
 		const host = server.host();
-		const pathname = server.pathname() || '';
-		const url = `${protocol}://${host}${pathname}`;
+		// Handle server variables for pathname
+		let pathname = server.pathname() || '';
+		let url;
+		
+		// Check if server has variables (specifically streamPath)
+		const serverJson = server.json ? server.json() : (server._json || {});
+		if (serverJson.variables && serverJson.variables.streamPath) {
+			// Use default value from streamPath variable
+			const defaultStreamPath = serverJson.variables.streamPath.default || 'ws';
+			pathname = pathname.replace('{streamPath}', defaultStreamPath);
+		}
+		
+		url = `${protocol}://${host}${pathname}`;
 		const title = server.title() || `${rawName.charAt(0).toUpperCase() + rawName.slice(1)} Server`;
 		const summary = server.summary() || `WebSocket API Server (${rawName})`;
 		const description = server.description() || `WebSocket server for ${rawName} environment`;
@@ -216,6 +227,28 @@ func (sm *ServerManager) UpdateServer(name string, server *ServerInfo) error {
 	server.Name = name
 	server.Active = (sm.activeServer == name)
 	sm.servers[name] = server
+	
+	return nil
+}
+
+// UpdateServerPathname updates the pathname of an existing server
+func (sm *ServerManager) UpdateServerPathname(name string, pathname string) error {
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	
+	server, exists := sm.servers[name]
+	if !exists {
+		return fmt.Errorf("server '%s' not found", name)
+	}
+	
+	// Update pathname and rebuild URL
+	server.Pathname = pathname
+	server.URL = fmt.Sprintf("%s://%s%s", server.Protocol, server.Host, pathname)
+	
+	// Validate the new URL
+	if _, err := url.Parse(server.URL); err != nil {
+		return fmt.Errorf("invalid server URL '%s': %w", server.URL, err)
+	}
 	
 	return nil
 }

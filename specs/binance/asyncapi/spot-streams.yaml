@@ -8,50 +8,144 @@ info:
     WebSocket Streams provide real-time spot market data without authentication.
     These are different from WebSocket API and User Data Streams.
     
-    Stream naming conventions:
+    ## Connection Types
+    
+    ### Single Streams
+    - **Connection**: Connect to `/ws` first, then use SUBSCRIBE to add streams
+    - **Data Format**: Direct stream data (not wrapped)
+    - **Property**: `combined = false`
+    - **Example**: `wss://stream.binance.com:9443/ws` → SUBSCRIBE to `btcusdt@aggTrade`
+    
+    ### Combined Streams (Multiple Streams)  
+    - **Connection**: Connect to `/stream` first, then use SUBSCRIBE to add streams
+    - **Data Format**: Wrapped as `{"stream":"<streamName>","data":<rawPayload>}`
+    - **Property**: `combined = true`
+    - **Max Streams**: 1024 streams per connection
+    - **Example**: `wss://stream.binance.com:9443/stream` → SUBSCRIBE to multiple streams
+    - **Optional**: Add `?timeUnit=MICROSECOND` for microsecond precision
+    
+    ## Connection Management
+    
+    ### Initial Connection
+    - Connect to `/ws` for single streams or `/stream` for combined streams
+    - No streams are active initially
+    - Use SUBSCRIBE method to add streams dynamically
+    
+    ### Heartbeat
+    - Server sends ping frame every 20 seconds
+    - Client must respond with pong within 1 minute
+    - Connection will be disconnected if no pong received
+    
+    ### Limits and Validity
+    - **Connection Validity**: 24 hours maximum
+    - **Rate Limit**: 5 incoming messages per second
+    - **Streams per Connection**: Maximum 1024 streams
+    - **Connections per IP**: Maximum 300 connections per 5 minutes
+    
+    ### Stream Naming Conventions
     - All symbols must be provided in lowercase
     - All stream names are lowercase
     - Multiple streams can be combined in a single connection
+    - Update speeds: Standard (1000ms) or Fast (@100ms suffix)
 
 servers:
   mainnet1:
     host: stream.binance.com:9443
-    pathname: /ws
     protocol: wss
+    pathname: /{streamPath}
     title: Binance Mainnet Server
     summary: Binance Spot WebSocket Streams Server (Mainnet)
     description: WebSocket server for binance exchange spot market data streams (mainnet environment)
+    variables:
+      streamPath:
+        description: |
+          WebSocket stream path for different connection types.
+          
+          - Single Stream: 'ws' - Connect to individual stream endpoint
+          - Combined Stream: 'stream' - Connect to combined stream endpoint
+        enum: ['ws', 'stream']
+        default: 'ws'
+        examples:
+          - ws
+          - stream
       
   mainnet2:
     host: stream.binance.com:443
-    pathname: /ws
     protocol: wss
-    title: Binance Mainnet Server
-    summary: Binance Spot WebSocket Streams Server (Mainnet)
-    description: WebSocket server for binance exchange spot market data streams (mainnet environment)
+    pathname: /{streamPath}
+    title: Binance Mainnet Server (Alternative)
+    summary: Binance Spot WebSocket Streams Server (Mainnet Alternative)
+    description: Alternative WebSocket server for binance exchange spot market data streams (mainnet environment)
+    variables:
+      streamPath:
+        description: |
+          WebSocket stream path for different connection types.
+          
+          - Single Stream: 'ws' - Connect to individual stream endpoint
+          - Combined Stream: 'stream' - Connect to combined stream endpoint
+        enum: ['ws', 'stream']
+        default: 'ws'
+        examples:
+          - ws
+          - stream
     
   mainnet3:
     host: data-stream.binance.vision
-    pathname: /ws
     protocol: wss
-    title: Binance Mainnet Server
-    summary: Binance Spot WebSocket Streams Server (Mainnet)
-    description: WebSocket server for binance exchange spot market data streams (mainnet environment)
+    pathname: /{streamPath}
+    title: Binance Mainnet Server (Market Data Only)
+    summary: Binance Spot WebSocket Streams Server (Market Data Only)
+    description: WebSocket server for binance exchange spot market data streams (mainnet environment, market data only)
+    variables:
+      streamPath:
+        description: |
+          WebSocket stream path for different connection types.
+          
+          - Single Stream: 'ws' - Connect to individual stream endpoint
+          - Combined Stream: 'stream' - Connect to combined stream endpoint
+        enum: ['ws', 'stream']
+        default: 'ws'
+        examples:
+          - ws
+          - stream
     
   testnet1:
     host: stream.testnet.binance.vision
-    pathname: /ws
     protocol: wss
+    pathname: /{streamPath}
     title: Binance Testnet Server
     summary: Binance Spot WebSocket Streams Server (Testnet)
     description: WebSocket server for binance exchange spot market data streams (testnet environment)
+    variables:
+      streamPath:
+        description: |
+          WebSocket stream path for different connection types.
+          
+          - Single Stream: 'ws' - Connect to individual stream endpoint
+          - Combined Stream: 'stream' - Connect to combined stream endpoint
+        enum: ['ws', 'stream']
+        default: 'ws'
+        examples:
+          - ws
+          - stream
 
 channels:
-  # Control channel for subscriptions
-  control:
-    address: /
-    title: Stream Control Channel
-    description: Channel for managing stream subscriptions and receiving subscription responses
+  # Single stream connection (connect to /ws first, then subscribe)
+  singleStreamConnection:
+    address: /ws{timeUnit}
+    title: Single Stream Connection
+    description: |
+      Initial connection endpoint for single streams. Connect here first, then use
+      SUBSCRIBE method to add individual streams. Each stream returns direct data.
+      
+      Optional timeUnit parameter for microsecond precision: ?timeUnit=MICROSECOND
+    parameters:
+      timeUnit:
+        description: |
+          Optional parameter to specify time unit for timestamps.
+          Default is milliseconds if not specified.
+        enum: ['', '?timeUnit=MICROSECOND', '?timeUnit=microsecond', '?timeUnit=millisecond']
+        default: ''
     messages:
       subscribe:
         $ref: '#/components/messages/subscribeRequest'
@@ -67,324 +161,183 @@ channels:
         $ref: '#/components/messages/listSubscriptionsResponse'
       error:
         $ref: '#/components/messages/errorMessage'
-
-  # Individual stream channels
-  aggTradeStream:
-    address: /{symbol}@aggTrade
-    title: Aggregate Trade Stream
-    description: Real-time aggregate trade data for a symbol
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase (e.g., btcusdt)
-    messages:
+      # Single stream data messages (direct, not wrapped)
       aggTrade:
         $ref: '#/components/messages/aggregateTradeMessage'
-
-  tradeStream:
-    address: /{symbol}@trade
-    title: Trade Stream
-    description: Real-time individual trade data for a symbol
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-    messages:
       trade:
         $ref: '#/components/messages/tradeMessage'
-
-  klineStream:
-    address: /{symbol}@kline_{interval}
-    title: Kline/Candlestick Stream
-    description: Real-time kline/candlestick data for a symbol
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-      interval:
-        description: Kline interval
-        enum: ['1s','1m','3m','5m','15m','30m','1h','2h','4h','6h','8h','12h','1d','3d','1w','1M']
-    messages:
       kline:
         $ref: '#/components/messages/klineMessage'
-
-  klineStreamUtc8:
-    address: /{symbol}@kline_{interval}@+08:00
-    title: Kline/Candlestick Stream (UTC+8)
-    description: Real-time kline/candlestick data in UTC+8 timezone
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-      interval:
-        description: Kline interval
-        enum: ['1d','3d','1w','1M']
-    messages:
-      kline:
-        $ref: '#/components/messages/klineMessage'
-
-  miniTickerStream:
-    address: /{symbol}@miniTicker
-    title: Individual Symbol Mini Ticker Stream
-    description: 24hr rolling window mini-ticker statistics
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-    messages:
       miniTicker:
         $ref: '#/components/messages/miniTickerMessage'
-
-  allMiniTickerStream:
-    address: /!miniTicker@arr
-    title: All Market Mini Tickers Stream
-    description: 24hr rolling window mini-ticker statistics for all symbols
-    messages:
       allMiniTickers:
         $ref: '#/components/messages/allMiniTickersMessage'
-
-  tickerStream:
-    address: /{symbol}@ticker
-    title: Individual Symbol Ticker Stream
-    description: 24hr rolling window ticker statistics
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-    messages:
       ticker:
         $ref: '#/components/messages/tickerMessage'
-
-  allTickerStream:
-    address: /!ticker@arr
-    title: All Market Tickers Stream
-    description: 24hr rolling window ticker statistics for all symbols
-    messages:
       allTickers:
         $ref: '#/components/messages/allTickersMessage'
-
-  rollingWindowStream:
-    address: /{symbol}@ticker_{window_size}
-    title: Rolling Window Statistics Stream
-    description: Rolling window ticker statistics
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-      window_size:
-        description: Window size (1h or 4h)
-        enum: ['1h','4h']
-    messages:
       rollingWindowTicker:
         $ref: '#/components/messages/rollingWindowTickerMessage'
-
-  allRollingWindowStream:
-    address: /!ticker_{window_size}@arr
-    title: All Market Rolling Window Statistics Stream
-    description: Rolling window ticker statistics for all symbols
-    parameters:
-      window_size:
-        description: Window size (1h or 4h)
-        enum: ['1h','4h']
-    messages:
       allRollingWindowTickers:
         $ref: '#/components/messages/allRollingWindowTickersMessage'
-
-  bookTickerStream:
-    address: /{symbol}@bookTicker
-    title: Individual Symbol Book Ticker Stream
-    description: Best bid/ask price and quantity
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-    messages:
       bookTicker:
         $ref: '#/components/messages/bookTickerMessage'
-
-  allBookTickerStream:
-    address: /!bookTicker
-    title: All Book Tickers Stream
-    description: Best bid/ask for all symbols
-    messages:
-      bookTicker:
-        $ref: '#/components/messages/bookTickerMessage'
-
-  avgPriceStream:
-    address: /{symbol}@avgPrice
-    title: Average Price Stream
-    description: Average price for a symbol
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-    messages:
       avgPrice:
         $ref: '#/components/messages/avgPriceMessage'
-
-  partialBookDepthStream:
-    address: /{symbol}@depth{levels}{updateSpeed}
-    title: Partial Book Depth Stream
-    description: Partial book depth information with configurable update frequency
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-      levels:
-        description: Number of levels (5, 10, or 20)
-        enum: ['5','10','20']
-      updateSpeed:
-        description: Update frequency (optional, defaults to 1000ms)
-        enum: ['', '@100ms']
-        default: ''
-    messages:
-      depthUpdate:
+      partialDepth:
         $ref: '#/components/messages/partialDepthMessage'
-
-  diffDepthStream:
-    address: /{symbol}@depth{updateSpeed}
-    title: Diff Depth Stream
-    description: Order book price and quantity depth updates with configurable frequency
-    parameters:
-      symbol:
-        description: Trading symbol in lowercase
-      updateSpeed:
-        description: Update frequency (optional, defaults to 1000ms)
-        enum: ['', '@100ms']
-        default: ''
-    messages:
-      depthUpdate:
+      diffDepth:
         $ref: '#/components/messages/diffDepthMessage'
 
-  # Combined streams channel
-  combinedStream:
-    address: /stream
-    title: Combined Streams Channel
+  # Combined stream connection (connect to /stream first, then subscribe)
+  combinedStreamConnection:
+    address: /stream{timeUnit}
+    title: Combined Stream Connection
     description: |
-      Combined streams allow subscribing to multiple streams in a single connection.
-      Connect to /stream?streams=stream1/stream2/stream3
+      Initial connection endpoint for combined streams. Connect here first, then use
+      SUBSCRIBE method to add multiple streams. Each stream returns wrapped data
+      with format: {"stream":"<streamName>","data":<rawPayload>}
+      
+      Optional timeUnit parameter for microsecond precision: ?timeUnit=MICROSECOND
+    parameters:
+      timeUnit:
+        description: |
+          Optional parameter to specify time unit for timestamps.
+          Default is milliseconds if not specified.
+        enum: ['', '?timeUnit=MICROSECOND', '?timeUnit=microsecond', '?timeUnit=millisecond']
+        default: ''
     messages:
+      subscribe:
+        $ref: '#/components/messages/subscribeRequest'
+      unsubscribe:
+        $ref: '#/components/messages/unsubscribeRequest'
+      subscribeResponse:
+        $ref: '#/components/messages/subscriptionResponse'
+      unsubscribeResponse:
+        $ref: '#/components/messages/subscriptionResponse'
+      listSubscriptions:
+        $ref: '#/components/messages/listSubscriptionsRequest'
+      listSubscriptionsResponse:
+        $ref: '#/components/messages/listSubscriptionsResponse'
+      error:
+        $ref: '#/components/messages/errorMessage'
+      # Combined stream data messages (wrapped format)
       combinedData:
         $ref: '#/components/messages/combinedStreamMessage'
 
 operations:
-  # Subscription operations
-  subscribeToStreams:
-    title: Subscribe to Streams
-    summary: Subscribe to one or more data streams
+  # Single stream operations
+  subscribeToSingleStreams:
+    title: Subscribe to Single Streams
+    summary: Subscribe to streams on single connection
     description: |
-      Subscribe to market data streams. Maximum 1024 streams per connection.
-      Rate limit: 5 incoming messages per second.
+      Subscribe to market data streams on single connection. Each stream returns
+      direct data without wrapping. Maximum 1024 streams per connection.
     action: send
     channel:
-      $ref: '#/channels/control'
+      $ref: '#/channels/singleStreamConnection'
     messages:
-      - $ref: '#/channels/control/messages/subscribe'
+      - $ref: '#/channels/singleStreamConnection/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/control'
+        $ref: '#/channels/singleStreamConnection'
       messages:
-        - $ref: '#/channels/control/messages/subscribeResponse'
+        - $ref: '#/channels/singleStreamConnection/messages/subscribeResponse'
 
-  unsubscribeFromStreams:
-    title: Unsubscribe from Streams
-    summary: Unsubscribe from data streams
+  unsubscribeFromSingleStreams:
+    title: Unsubscribe from Single Streams
+    summary: Unsubscribe from streams on single connection
     action: send
     channel:
-      $ref: '#/channels/control'
+      $ref: '#/channels/singleStreamConnection'
     messages:
-      - $ref: '#/channels/control/messages/unsubscribe'
+      - $ref: '#/channels/singleStreamConnection/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/control'
+        $ref: '#/channels/singleStreamConnection'
       messages:
-        - $ref: '#/channels/control/messages/unsubscribeResponse'
+        - $ref: '#/channels/singleStreamConnection/messages/unsubscribeResponse'
 
-  listActiveSubscriptions:
-    title: List Subscriptions
-    summary: Get list of active subscriptions
+  listSingleSubscriptions:
+    title: List Single Stream Subscriptions
+    summary: Get list of active single stream subscriptions
     action: send
     channel:
-      $ref: '#/channels/control'
+      $ref: '#/channels/singleStreamConnection'
     messages:
-      - $ref: '#/channels/control/messages/listSubscriptions'
+      - $ref: '#/channels/singleStreamConnection/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/control'
+        $ref: '#/channels/singleStreamConnection'
       messages:
-        - $ref: '#/channels/control/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/singleStreamConnection/messages/listSubscriptionsResponse'
 
-  # Receive operations for each stream type
-  receiveAggTrades:
-    title: Receive Aggregate Trades
-    summary: Receive aggregate trade updates
+  receiveSingleStreamData:
+    title: Receive Single Stream Data
+    summary: Receive direct stream data from single connection
+    description: |
+      Receive market data from subscribed streams. Data is returned directly
+      without wrapping. Stream type can be determined by the event structure.
     action: receive
     channel:
-      $ref: '#/channels/aggTradeStream'
-    messages:
-      - $ref: '#/channels/aggTradeStream/messages/aggTrade'
+      $ref: '#/channels/singleStreamConnection'
 
-  receiveTrades:
-    title: Receive Trades
-    summary: Receive individual trade updates
-    action: receive
+  # Combined stream operations
+    
+  subscribeToCombinedStreams:
+    title: Subscribe to Combined Streams
+    summary: Subscribe to streams on combined connection
+    description: |
+      Subscribe to market data streams on combined connection. Each stream returns
+      wrapped data with stream name identifier. Maximum 1024 streams per connection.
+    action: send
     channel:
-      $ref: '#/channels/tradeStream'
+      $ref: '#/channels/combinedStreamConnection'
     messages:
-      - $ref: '#/channels/tradeStream/messages/trade'
+      - $ref: '#/channels/combinedStreamConnection/messages/subscribe'
+    reply:
+      channel:
+        $ref: '#/channels/combinedStreamConnection'
+      messages:
+        - $ref: '#/channels/combinedStreamConnection/messages/subscribeResponse'
 
-  receiveKlines:
-    title: Receive Klines
-    summary: Receive kline/candlestick updates
-    action: receive
+  unsubscribeFromCombinedStreams:
+    title: Unsubscribe from Combined Streams
+    summary: Unsubscribe from streams on combined connection
+    action: send
     channel:
-      $ref: '#/channels/klineStream'
+      $ref: '#/channels/combinedStreamConnection'
     messages:
-      - $ref: '#/channels/klineStream/messages/kline'
+      - $ref: '#/channels/combinedStreamConnection/messages/unsubscribe'
+    reply:
+      channel:
+        $ref: '#/channels/combinedStreamConnection'
+      messages:
+        - $ref: '#/channels/combinedStreamConnection/messages/unsubscribeResponse'
 
-  receiveMiniTickers:
-    title: Receive Mini Tickers
-    summary: Receive mini ticker updates
-    action: receive
+  listCombinedSubscriptions:
+    title: List Combined Stream Subscriptions
+    summary: Get list of active combined stream subscriptions
+    action: send
     channel:
-      $ref: '#/channels/miniTickerStream'
+      $ref: '#/channels/combinedStreamConnection'
     messages:
-      - $ref: '#/channels/miniTickerStream/messages/miniTicker'
+      - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptions'
+    reply:
+      channel:
+        $ref: '#/channels/combinedStreamConnection'
+      messages:
+        - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptionsResponse'
 
-  receiveTickers:
-    title: Receive Tickers
-    summary: Receive 24hr ticker updates
-    action: receive
-    channel:
-      $ref: '#/channels/tickerStream'
-    messages:
-      - $ref: '#/channels/tickerStream/messages/ticker'
-
-  receiveBookTickers:
-    title: Receive Book Tickers
-    summary: Receive best bid/ask updates
-    action: receive
-    channel:
-      $ref: '#/channels/bookTickerStream'
-    messages:
-      - $ref: '#/channels/bookTickerStream/messages/bookTicker'
-
-  receivePartialDepth:
-    title: Receive Partial Book Depth
-    summary: Receive partial book depth updates
-    action: receive
-    channel:
-      $ref: '#/channels/partialBookDepthStream'
-    messages:
-      - $ref: '#/channels/partialBookDepthStream/messages/depthUpdate'
-
-  receiveDiffDepth:
-    title: Receive Diff Depth
-    summary: Receive order book depth updates
-    action: receive
-    channel:
-      $ref: '#/channels/diffDepthStream'
-    messages:
-      - $ref: '#/channels/diffDepthStream/messages/depthUpdate'
-
-  receiveCombinedData:
+  receiveCombinedStreamData:
     title: Receive Combined Stream Data
-    summary: Receive data from multiple streams
+    summary: Receive wrapped stream data from combined connection
+    description: |
+      Receive market data from subscribed streams. Each message is wrapped with
+      stream name and original data: {"stream":"<streamName>","data":<rawPayload>}
     action: receive
     channel:
-      $ref: '#/channels/combinedStream'
-    messages:
-      - $ref: '#/channels/combinedStream/messages/combinedData'
+      $ref: '#/channels/combinedStreamConnection'
 
 components:
   messages:
@@ -437,7 +390,7 @@ components:
       payload:
         $ref: '#/components/schemas/ErrorResponse'
 
-    # Stream data messages
+    # Stream data messages (raw format)
     aggregateTradeMessage:
       name: Aggregate Trade
       title: Aggregate Trade Event
@@ -548,6 +501,7 @@ components:
       payload:
         $ref: '#/components/schemas/DiffDepthEvent'
 
+    # Combined stream message (wrapped format)
     combinedStreamMessage:
       name: Combined Stream Data
       title: Combined Stream Wrapper
@@ -560,6 +514,15 @@ components:
     # Control schemas
     SubscribeRequest:
       type: object
+      description: |
+        Request to subscribe to one or more streams. Stream names should follow
+        Binance naming conventions (lowercase, with @ separators).
+        
+        Supported stream patterns:
+        - Symbol streams: {symbol}@{streamType} (e.g., "btcusdt@aggTrade")
+        - All market streams: !{streamType}@arr (e.g., "!ticker@arr")
+        - Depth streams: {symbol}@depth{levels}{speed} (e.g., "btcusdt@depth5@100ms")
+        - Kline streams: {symbol}@kline_{interval} (e.g., "btcusdt@kline_1m")
       required:
         - method
         - params
@@ -574,7 +537,12 @@ components:
           description: Array of stream names to subscribe to
           items:
             type: string
-          example: ["btcusdt@aggTrade", "btcusdt@depth"]
+            pattern: '^[a-z0-9!@._]+$'
+          examples:
+            - ["btcusdt@aggTrade"]
+            - ["btcusdt@aggTrade", "btcusdt@depth5@100ms"]
+            - ["!ticker@arr"]
+            - ["ethusdt@kline_1m", "btcusdt@trade"]
         id:
           type: integer
           description: Request ID
@@ -1326,16 +1294,29 @@ components:
 
     CombinedStreamEvent:
       type: object
+      description: |
+        Wrapper for combined stream data. When connecting to combined streams,
+        all events are wrapped with this structure to identify the source stream.
+        
+        The 'stream' field contains the original stream name, and 'data' contains
+        the original event data that would be received from an individual stream.
       required:
         - stream
         - data
       properties:
         stream:
           type: string
-          description: Stream name
-          example: btcusdt@aggTrade
+          description: Original stream name that generated this event
+          examples:
+            - "btcusdt@aggTrade"
+            - "btcusdt@depth5@100ms"
+            - "ethusdt@ticker"
+            - "!ticker@arr"
         data:
-          description: Stream data (can be any stream event type)
+          description: |
+            Original stream event data (unwrapped). This is exactly the same data
+            that would be received when connecting to the individual stream directly.
+            The event type can be determined by examining the 'stream' field.
           oneOf:
             - $ref: '#/components/schemas/AggregateTradeEvent'
             - $ref: '#/components/schemas/TradeEvent'
@@ -1347,3 +1328,16 @@ components:
             - $ref: '#/components/schemas/AvgPriceEvent'
             - $ref: '#/components/schemas/PartialDepthEvent'
             - $ref: '#/components/schemas/DiffDepthEvent'
+      example:
+        stream: "btcusdt@aggTrade"
+        data:
+          e: "aggTrade"
+          E: 1672304050123
+          s: "BTCUSDT"
+          a: 12345
+          p: "16800.50000000"
+          q: "0.01234000"
+          f: 100
+          l: 105
+          T: 1672304050120
+          m: false

@@ -140,8 +140,15 @@ function generateSpotStreamsStruct(structName, payload, message) {
 `;
   
   if (message.description()) {
-    structDef += `// ${message.description()}
+    // Format description as proper Go comments
+    const description = message.description();
+    if (description && typeof description === 'string') {
+      const descriptionLines = description.split('\n');
+      descriptionLines.forEach(line => {
+        structDef += `// ${line.trim()}
 `;
+      });
+    }
   }
   
   structDef += `type ${structName} struct {
@@ -174,8 +181,14 @@ function generateSpotStreamsStruct(structName, payload, message) {
     // Generate field documentation
     if (prop.description) {
       const description = typeof prop.description === 'function' ? prop.description() : prop.description;
-      structDef += `\t// ${description}
+      if (description && typeof description === 'string') {
+        // Format description as proper Go comments, handling multi-line descriptions
+        const descriptionLines = description.split('\n');
+        descriptionLines.forEach(line => {
+          structDef += `\t// ${line.trim()}
 `;
+        });
+      }
     }
     
     // Generate field type
@@ -200,8 +213,15 @@ function generateSpotStreamsStructFromSchema(structName, schemaData) {
 `;
   
   if (schemaData.description) {
-    structDef += `// ${schemaData.description}
+    // Format description as proper Go comments
+    const description = schemaData.description;
+    if (description && typeof description === 'string') {
+      const descriptionLines = description.split('\n');
+      descriptionLines.forEach(line => {
+        structDef += `// ${line.trim()}
 `;
+      });
+    }
   }
   
   structDef += `type ${structName} struct {
@@ -221,8 +241,14 @@ function generateSpotStreamsStructFromSchema(structName, schemaData) {
     
     // Generate field documentation
     if (prop.description) {
-      structDef += `\t// ${prop.description}
+      // Format description as proper Go comments, handling multi-line descriptions
+      if (prop.description && typeof prop.description === 'string') {
+        const descriptionLines = prop.description.split('\n');
+        descriptionLines.forEach(line => {
+          structDef += `\t// ${line.trim()}
 `;
+        });
+      }
     }
     
     // Generate field type
@@ -245,34 +271,7 @@ function generateSpotStreamsStructFromSchema(structName, schemaData) {
 function generateSpotStreamsFieldName(propName, property, usedFieldNames) {
   let fieldName;
   
-  // Try to use description first
-  if (property && property.description) {
-    const description = typeof property.description === 'function' ? property.description() : property.description;
-    if (description && typeof description === 'string') {
-      // Clean and convert description to field name
-      fieldName = description
-        .replace(/\s*\([^)]*\)\s*/g, '') // Remove (xxx) patterns
-        .replace(/[^\w\s]/g, '') // Remove punctuation
-        .trim()
-        .split(/\s+/) // Split on whitespace
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join('');
-      
-      // Ensure it starts with uppercase and is valid Go identifier
-      if (fieldName && /^[A-Z][a-zA-Z0-9]*$/.test(fieldName)) {
-        // Handle collisions
-        let finalFieldName = fieldName;
-        let counter = 2;
-        while (usedFieldNames.has(finalFieldName)) {
-          finalFieldName = fieldName + counter.toString();
-          counter++;
-        }
-        return finalFieldName;
-      }
-    }
-  }
-  
-  // Fallback to mapping common single letter fields
+  // Check for common field mappings first (this takes priority)
   const commonFieldMappings = {
     'e': 'EventType',
     'E': 'EventTime', 
@@ -306,13 +305,43 @@ function generateSpotStreamsFieldName(propName, property, usedFieldNames) {
     'P': 'PriceChangePercent',
     'F': 'FirstTradeId',
     'C': 'CloseTime',
-    'O': 'OpenTime'
+    'O': 'OpenTime',
+    // Combined stream specific fields
+    'stream': 'StreamName',
+    'data': 'StreamData'
   };
 
   if (commonFieldMappings[propName]) {
     fieldName = commonFieldMappings[propName];
   } else {
-    // Convert property name to PascalCase
+    // Try to use description only if no mapping exists
+    if (property && property.description) {
+      const description = typeof property.description === 'function' ? property.description() : property.description;
+      if (description && typeof description === 'string') {
+        // Clean and convert description to field name
+        fieldName = description
+          .replace(/\s*\([^)]*\)\s*/g, '') // Remove (xxx) patterns
+          .replace(/[^\w\s]/g, '') // Remove punctuation
+          .trim()
+          .split(/\s+/) // Split on whitespace
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join('');
+        
+        // Ensure it starts with uppercase and is valid Go identifier
+        if (fieldName && /^[A-Z][a-zA-Z0-9]*$/.test(fieldName)) {
+          // Handle collisions
+          let finalFieldName = fieldName;
+          let counter = 2;
+          while (usedFieldNames.has(finalFieldName)) {
+            finalFieldName = fieldName + counter.toString();
+            counter++;
+          }
+          return finalFieldName;
+        }
+      }
+    }
+    
+    // Convert property name to PascalCase as final fallback
     fieldName = toPascalCase(propName);
   }
   

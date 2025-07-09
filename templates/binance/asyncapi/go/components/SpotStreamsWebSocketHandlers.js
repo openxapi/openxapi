@@ -113,6 +113,174 @@ func (c *Client) ListSubscriptions(ctx context.Context) error {
 	return c.sendRequest(request)
 }
 
+// ConnectToSingleStreams connects to single stream endpoint with optional timeUnit parameter
+func (c *Client) ConnectToSingleStreams(ctx context.Context, timeUnit string) error {
+	if c.isConnected {
+		return fmt.Errorf("already connected to websocket")
+	}
+	
+	// Set server variable to single stream path
+	if err := c.setStreamPath("ws"); err != nil {
+		return fmt.Errorf("failed to set stream path: %w", err)
+	}
+	
+	// Build endpoint URL with timeUnit parameter
+	endpoint := "/ws"
+	if timeUnit != "" {
+		endpoint += timeUnit // timeUnit should be formatted like "?timeUnit=MICROSECOND"
+	}
+	
+	return c.connect(ctx, endpoint, false) // false = not combined stream
+}
+
+// ConnectToCombinedStreams connects to combined stream endpoint with optional timeUnit parameter
+func (c *Client) ConnectToCombinedStreams(ctx context.Context, timeUnit string) error {
+	if c.isConnected {
+		return fmt.Errorf("already connected to websocket")
+	}
+	
+	// Set server variable to combined stream path
+	if err := c.setStreamPath("stream"); err != nil {
+		return fmt.Errorf("failed to set stream path: %w", err)
+	}
+	
+	// Build endpoint URL with timeUnit parameter
+	endpoint := "/stream"
+	if timeUnit != "" {
+		endpoint += timeUnit // timeUnit should be formatted like "?timeUnit=MICROSECOND"
+	}
+	
+	return c.connect(ctx, endpoint, true) // true = combined stream
+}
+
+// ConnectToSingleStreamsMicrosecond connects to single stream endpoint with microsecond precision
+func (c *Client) ConnectToSingleStreamsMicrosecond(ctx context.Context) error {
+	return c.ConnectToSingleStreams(ctx, "?timeUnit=MICROSECOND")
+}
+
+// ConnectToCombinedStreamsMicrosecond connects to combined stream endpoint with microsecond precision
+func (c *Client) ConnectToCombinedStreamsMicrosecond(ctx context.Context) error {
+	return c.ConnectToCombinedStreams(ctx, "?timeUnit=MICROSECOND")
+}
+
+// setStreamPath sets the server variable for stream path selection
+func (c *Client) setStreamPath(streamPath string) error {
+	activeServer := c.serverManager.GetActiveServer()
+	if activeServer == nil {
+		return fmt.Errorf("no active server configured")
+	}
+	
+	// Update the server's pathname to use the specified stream path
+	updatedPathname := "/" + streamPath
+	return c.serverManager.UpdateServerPathname(activeServer.Name, updatedPathname)
+}
+
+// connect establishes a WebSocket connection to a specific endpoint (for spot-streams)
+func (c *Client) connect(ctx context.Context, endpoint string, isCombined bool) error {
+	if c.isConnected {
+		return fmt.Errorf("websocket already connected")
+	}
+	
+	activeServer := c.serverManager.GetActiveServer()
+	if activeServer == nil {
+		return fmt.Errorf("no active server configured")
+	}
+	
+	// Build the WebSocket URL with the specific endpoint
+	serverURL := fmt.Sprintf("%s://%s%s", activeServer.Protocol, activeServer.Host, endpoint)
+	
+	u, err := url.Parse(serverURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	dialer := websocket.DefaultDialer
+	dialer.HandshakeTimeout = 10 * time.Second
+
+	conn, _, err := dialer.DialContext(ctx, u.String(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s: %w", serverURL, err)
+	}
+
+	c.conn = conn
+	c.isConnected = true
+	
+	// Start message processing based on connection type
+	if isCombined {
+		go c.readCombinedStreamMessages()
+	} else {
+		go c.readSingleStreamMessages()
+	}
+	
+	return nil
+}
+
+// readSingleStreamMessages processes messages from single stream connections
+func (c *Client) readSingleStreamMessages() {
+	defer func() {
+		c.isConnected = false
+		if c.conn != nil {
+			c.conn.Close()
+		}
+	}()
+
+	for {
+		select {
+		case <-c.done:
+			return
+		default:
+			_, message, err := c.conn.ReadMessage()
+			if err != nil {
+				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					return
+				}
+				if strings.Contains(err.Error(), "use of closed network connection") {
+					return
+				}
+				log.Printf("Error reading message: %v", err)
+				return
+			}
+
+			if err := c.processStreamMessage(message); err != nil {
+				log.Printf("Error processing stream message: %v", err)
+			}
+		}
+	}
+}
+
+// readCombinedStreamMessages processes messages from combined stream connections
+func (c *Client) readCombinedStreamMessages() {
+	defer func() {
+		c.isConnected = false
+		if c.conn != nil {
+			c.conn.Close()
+		}
+	}()
+
+	for {
+		select {
+		case <-c.done:
+			return
+		default:
+			_, message, err := c.conn.ReadMessage()
+			if err != nil {
+				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+					return
+				}
+				if strings.Contains(err.Error(), "use of closed network connection") {
+					return
+				}
+				log.Printf("Error reading message: %v", err)
+				return
+			}
+
+			if err := c.processStreamMessage(message); err != nil {
+				log.Printf("Error processing stream message: %v", err)
+			}
+		}
+	}
+}
+
 `;
 }
 
