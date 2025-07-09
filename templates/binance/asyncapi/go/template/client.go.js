@@ -1,5 +1,5 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
-import { WebSocketHandlers } from '../components/WebSocketHandlers';
+import { ModularWebSocketHandlers } from '../components/ModularWebSocketHandlers';
 
 export default function ({ asyncapi, params }) {
   const packageName = params.packageName || 'main';
@@ -817,7 +817,7 @@ func (c *Client) GetURL() string {
       </Text>
 
       <Text newLines={2}>
-        {WebSocketHandlers({ asyncapi })}
+        {ModularWebSocketHandlers({ asyncapi, context: { packageName, moduleName } })}
       </Text>
     </File>
   );
