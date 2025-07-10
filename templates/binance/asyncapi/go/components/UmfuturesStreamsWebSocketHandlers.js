@@ -336,6 +336,7 @@ func (c *Client) readCombinedStreamMessages() {
 function generateDynamicStreamEventHandlers(eventTypes) {
   // Create a mapping of event types to model names
   // Include comprehensive mapping for all common futures stream event types
+  // Only include event types that have corresponding models in umfutures-streams
   const eventToModelMap = {
     'aggTrade': 'AggregateTradeEvent',
     'markPriceUpdate': 'MarkPriceEvent', 
@@ -349,22 +350,29 @@ function generateDynamicStreamEventHandlers(eventTypes) {
     'compositeIndex': 'CompositeIndexEvent',
     'contractInfo': 'ContractInfoEvent',
     'assetIndex': 'AssetIndexEvent',
-    // Additional common event types that might be present but not in spec
-    'trade': 'TradeEvent',
-    'ticker': 'TickerEvent',
-    'miniTicker': 'MiniTickerEvent',
-    'liquidation': 'LiquidationEvent'
+    'assetIndexUpdate': 'AssetIndexEvent' // Real event type from Binance API
+    // Note: 'trade', 'ticker', 'miniTicker', 'liquidation' removed as they create duplicates
+    // The futures-specific event types above cover the actual umfutures-streams API
   };
+
+  // Add all mapped event types to ensure they're included in generation
+  // This includes both spec-defined and real API event types
+  const allEventTypes = new Set([...eventTypes]);
+  Object.keys(eventToModelMap).forEach(eventType => {
+    allEventTypes.add(eventType);
+  });
 
   let code = `
 // Stream event handler functions
 type (
 `;
 
-  // Generate handler types for actual event types
-  eventTypes.forEach(eventType => {
+  // Generate handler types for actual event types (deduplicate by model name)
+  const generatedHandlerTypes = new Set();
+  allEventTypes.forEach(eventType => {
     const modelName = eventToModelMap[eventType];
-    if (modelName) {
+    if (modelName && !generatedHandlerTypes.has(modelName)) {
+      generatedHandlerTypes.add(modelName);
       const handlerName = modelName.replace('Event', 'Handler');
       code += `\t// ${modelName} Handler\n`;
       code += `\t${handlerName} func(*models.${modelName}) error\n\t\n`;
@@ -385,8 +393,8 @@ type (
 type eventHandlers struct {
 `;
 
-  // Generate handler registry fields
-  eventTypes.forEach(eventType => {
+  // Generate handler registry fields (one field per event type, not per model)
+  allEventTypes.forEach(eventType => {
     const modelName = eventToModelMap[eventType];
     if (modelName) {
       let fieldName = eventType.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
@@ -407,21 +415,34 @@ type eventHandlers struct {
 // Register event handlers
 `;
 
-  // Generate registration methods
-  eventTypes.forEach(eventType => {
+  // Generate registration methods for each unique model
+  // For models that handle multiple event types, generate methods that set all relevant handlers
+  const generatedMethods = new Set();
+  allEventTypes.forEach(eventType => {
     const modelName = eventToModelMap[eventType];
-    if (modelName) {
+    if (modelName && !generatedMethods.has(modelName)) {
+      generatedMethods.add(modelName);
       const methodName = `On${modelName}`;
       const handlerName = modelName.replace('Event', 'Handler');
-      let fieldName = eventType.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      // Fix field names that start with numbers (invalid in Go)
-      if (/^\d/.test(fieldName)) {
-        fieldName = 'h' + fieldName; // prefix with 'h' for handler
-      }
+      
+      // Find all event types that map to this model
+      const relatedEventTypes = Array.from(allEventTypes).filter(et => eventToModelMap[et] === modelName);
       
       code += `func (c *Client) ${methodName}(handler ${handlerName}) {
-\tc.handlers.${fieldName} = handler
-}
+`;
+      
+      // Set the handler for all related event types
+      relatedEventTypes.forEach(relatedEventType => {
+        let fieldName = relatedEventType.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+        // Fix field names that start with numbers (invalid in Go)
+        if (/^\d/.test(fieldName)) {
+          fieldName = 'h' + fieldName; // prefix with 'h' for handler
+        }
+        code += `\tc.handlers.${fieldName} = handler
+`;
+      });
+      
+      code += `}
 
 `;
     }
@@ -522,7 +543,7 @@ func (c *Client) processSingleStreamEvent(data []byte) error {
 `;
 
   // Generate switch cases for each event type
-  eventTypes.forEach(eventType => {
+  allEventTypes.forEach(eventType => {
     const modelName = eventToModelMap[eventType];
     if (modelName) {
       let fieldName = eventType.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();

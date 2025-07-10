@@ -40,20 +40,48 @@ export function SpotStreamsIndividualModels({ asyncapi }) {
   // Generate model files
   const modelFiles = [];
   
-  // Generate message models
+  // First, collect all schema names to prioritize them over message models
+  const schemaModelNames = new Set();
+  componentSchemas.forEach((schemaData, schemaName) => {
+    schemaModelNames.add(toSnakeCase(schemaName));
+  });
+
+  // Generate message models (but skip if we have a corresponding schema model)
   messages.forEach((messageData, messageName) => {
+    const messageFileName = toSnakeCase(messageName);
+    
+    // Check if we have a corresponding schema model that should take priority
+    const hasCorrespondingSchema = Array.from(schemaModelNames).some(schemaFileName => {
+      // Check for exact match
+      if (schemaFileName === messageFileName) {
+        return true;
+      }
+      
+      // Check for Event suffix patterns (e.g., "liquidation" message vs "liquidation_event" schema)
+      const baseMessageName = messageFileName.replace(/_/g, '');
+      const baseSchemaName = schemaFileName.replace(/_event$/, '').replace(/_/g, '');
+      return baseMessageName === baseSchemaName && schemaFileName.endsWith('_event');
+    });
+    
+    if (hasCorrespondingSchema) {
+      console.log(`Skipping message model: ${messageName} (schema model takes priority)`);
+      return;
+    }
+    
     const modelContent = generateSpotStreamsModelFile(messageName, messageData.payload, messageData.message, componentSchemas);
     modelFiles.push({
-      name: `${toSnakeCase(messageName)}.go`,
+      name: `${messageFileName}.go`,
       content: modelContent
     });
   });
 
-  // Generate component schema models
+  // Generate component schema models (these take priority)
   componentSchemas.forEach((schemaData, schemaName) => {
+    const schemaFileName = toSnakeCase(schemaName);
+    
     const modelContent = generateSpotStreamsSchemaFile(schemaName, schemaData);
     modelFiles.push({
-      name: `${toSnakeCase(schemaName)}.go`,
+      name: `${schemaFileName}.go`,
       content: modelContent
     });
   });
