@@ -518,7 +518,7 @@ components:
         - All market streams: !{streamType}@arr (e.g., "!markPrice@arr")
         - Depth streams: {symbol}@depth{levels}{speed} (e.g., "btcusdt@depth5@100ms")
         - Kline streams: {symbol}@kline_{interval} (e.g., "btcusdt@kline_1m")
-        - Continuous kline: {pair}@continuousKline_{contractType}_{interval}
+        - Continuous kline: {pair}_{contractType}@continuousKline_{interval}
         - Mark price: {symbol}@markPrice or !markPrice@arr
         - Liquidation: {symbol}@forceOrder or !forceOrder@arr
         - Asset index: {asset}@assetIndex or !assetIndex@arr
@@ -536,13 +536,13 @@ components:
           description: Array of stream names to subscribe to
           items:
             type: string
-            pattern: '^[a-z0-9!@._]+$'
+            pattern: '^[a-zA-Z0-9!@._]+$'
           examples:
             - ["btcusdt@aggTrade"]
             - ["btcusdt@aggTrade", "btcusdt@depth5@100ms"]
             - ["!markPrice@arr"]
             - ["ethusdt@kline_1m", "btcusdt@miniTicker"]
-            - ["btcusdt@continuousKline_perpetual_1m"]
+            - ["BTCUSDT_PERPETUAL@continuousKline_1m"]
             - ["btcusdt@forceOrder", "!contractInfo"]
         id:
           type: integer
@@ -774,6 +774,7 @@ components:
             - q
             - V
             - Q
+            - B
           properties:
             t:
               type: integer
@@ -843,6 +844,10 @@ components:
               type: string
               description: Taker buy quote asset volume
               example: "1008300.00000000"
+            B:
+              type: string
+              description: Ignore field
+              example: "0"
 
     ContinuousKlineEvent:
       type: object
@@ -889,6 +894,7 @@ components:
             - q
             - V
             - Q
+            - B
           properties:
             t:
               type: integer
@@ -954,6 +960,10 @@ components:
               type: string
               description: Taker buy quote asset volume
               example: "1008300.00000000"
+            B:
+              type: string
+              description: Ignore field
+              example: "0"
 
     MiniTickerEvent:
       type: object
@@ -1241,18 +1251,20 @@ components:
     PartialDepthEvent:
       type: object
       required:
-        - lastUpdateId
+        - e
         - E
         - T
         - s
-        - bids
-        - asks
+        - U
+        - u
+        - pu
+        - b
+        - a
       properties:
-        lastUpdateId:
-          type: integer
-          format: int64
-          description: Last update ID
-          example: 160
+        e:
+          type: string
+          description: Event type
+          const: depthUpdate
         E:
           type: integer
           format: int64
@@ -1267,7 +1279,22 @@ components:
           type: string
           description: Symbol
           example: BTCUSDT
-        bids:
+        U:
+          type: integer
+          format: int64
+          description: First update ID in event
+          example: 157
+        u:
+          type: integer
+          format: int64
+          description: Final update ID in event
+          example: 160
+        pu:
+          type: integer
+          format: int64
+          description: Final update ID in last stream
+          example: 156
+        b:
           type: array
           description: Bids
           items:
@@ -1277,7 +1304,7 @@ components:
             minItems: 2
             maxItems: 2
           example: [["16804.90000000", "5.00000000"], ["16804.80000000", "10.00000000"]]
-        asks:
+        a:
           type: array
           description: Asks
           items:
@@ -1362,6 +1389,7 @@ components:
         - E
         - s
         - p
+        - C
         - c
       properties:
         e:
@@ -1372,15 +1400,19 @@ components:
           type: integer
           format: int64
           description: Event time
-          example: 1672304050123
+          example: 1602310596000
         s:
           type: string
           description: Symbol
-          example: BTCUSDT
+          example: DEFIUSDT
         p:
           type: string
           description: Price
-          example: "16800.50000000"
+          example: "554.41604065"
+        C:
+          type: string
+          description: Asset type
+          example: baseAsset
         c:
           type: array
           description: Composition
@@ -1388,21 +1420,31 @@ components:
             type: object
             required:
               - b
+              - q
               - w
               - W
+              - i
             properties:
               b:
                 type: string
                 description: Base asset
-                example: BTC
+                example: BAL
+              q:
+                type: string
+                description: Quote asset
+                example: USDT
               w:
                 type: string
-                description: Quote asset weight
-                example: "0.50000000"
+                description: Weight in quantity
+                example: "1.04884844"
               W:
                 type: string
-                description: Weight in quantity
-                example: "0.02970000"
+                description: Weight in percentage
+                example: "0.01457800"
+              i:
+                type: string
+                description: Index price
+                example: "24.33521021"
 
     ContractInfoEvent:
       type: object
@@ -1512,7 +1554,7 @@ components:
             - "btcusdt@depth5"
             - "btcusdt@markPrice"
             - "!markPrice@arr"
-            - "btcusdt@continuousKline_perpetual_1m"
+            - "BTCUSDT_PERPETUAL@continuousKline_1m"
             - "btcusdt@forceOrder"
             - "!contractInfo"
             - "btc@assetIndex"

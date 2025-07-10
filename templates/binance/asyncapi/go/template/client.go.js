@@ -820,8 +820,9 @@ func (c *Client) handleRequestResponse(requestID string, data []byte, err error)
       <Text newLines={2}>
         {`// handleEventMessage handles event messages (like balance updates, execution reports, etc.)
 func (c *Client) handleEventMessage(eventType string, data []byte) error {
-	// Handle with event handler
-	return c.eventHandler.HandleResponse(eventType, data)
+	// For stream modules, use the dedicated stream processing logic
+	${detectedModule.includes('-streams') ? `return c.processStreamMessage(data)` : `// Handle with event handler
+	return c.eventHandler.HandleResponse(eventType, data)`}
 }`}
       </Text>
 
