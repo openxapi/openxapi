@@ -725,6 +725,14 @@ func (c *Client) readMessages() {
       <Text newLines={2}>
         {`// handleMessage processes incoming WebSocket messages
 func (c *Client) handleMessage(data []byte) error {
+	// First check if this is an array stream (like !assetIndex@arr)
+	// by trying to parse as an array first
+	var arrayData []interface{}
+	if err := json.Unmarshal(data, &arrayData); err == nil {
+		// This is an array stream - delegate to stream processing logic
+		${detectedModule.includes('-streams') ? `return c.processStreamMessage(data)` : `return c.handleEventMessage("arrayStream", data)`}
+	}
+	
 	// Parse the message to determine its type
 	var genericMessage map[string]interface{}
 	if err := json.Unmarshal(data, &genericMessage); err != nil {

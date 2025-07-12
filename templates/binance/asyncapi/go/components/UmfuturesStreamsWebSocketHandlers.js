@@ -462,7 +462,15 @@ func (c *Client) OnStreamError(handler StreamErrorHandler) {
 
 // processStreamMessage processes incoming stream messages
 func (c *Client) processStreamMessage(data []byte) error {
-\t// Parse message to determine type
+\t// First check if this is an array stream (like !assetIndex@arr)
+\t// by trying to parse as an array first
+\tvar arrayData []interface{}
+\tif err := json.Unmarshal(data, &arrayData); err == nil {
+\t\t// This is an array stream - process as array of events
+\t\treturn c.processArrayStreamEvent(data, arrayData)
+\t}
+\t
+\t// Parse message as object to determine type
 \tvar baseMsg map[string]interface{}
 \tif err := json.Unmarshal(data, &baseMsg); err != nil {
 \t\treturn fmt.Errorf("failed to parse message: %w", err)
@@ -510,6 +518,31 @@ func (c *Client) processStreamMessage(data []byte) error {
 
 \t// Process as single stream event
 \treturn c.processSingleStreamEvent(data)
+}
+
+// processArrayStreamEvent processes array stream events (like !assetIndex@arr)
+func (c *Client) processArrayStreamEvent(data []byte, arrayData []interface{}) error {
+\t// Array streams contain multiple events of the same type
+\t// Process each element in the array individually
+\tif len(arrayData) == 0 {
+\t\treturn nil // Empty array, nothing to process
+\t}
+\t
+\t// Process each element in the array
+\tfor i, element := range arrayData {
+\t\telementBytes, err := json.Marshal(element)
+\t\tif err != nil {
+\t\t\tlog.Printf("Failed to marshal array element %d: %v", i, err)
+\t\t\tcontinue
+\t\t}
+\t\t
+\t\tif err := c.processSingleStreamEvent(elementBytes); err != nil {
+\t\t\tlog.Printf("Failed to process array element %d: %v", i, err)
+\t\t\t// Continue processing other elements even if one fails
+\t\t}
+\t}
+\t
+\treturn nil
 }
 
 // processSingleStreamEvent processes individual stream events
