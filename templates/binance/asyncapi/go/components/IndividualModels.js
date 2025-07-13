@@ -311,9 +311,9 @@ function generateNestedStructs(schema, parentName) {
         }
         
         if (itemType === 'object' && itemProperties) {
-          const itemPropName = `${propName}Item`;
-          const itemFieldName = generateGoFieldName(itemPropName, { description: itemDescription }, parentName.includes('Event'));
-          const itemStructName = `${parentName}${itemFieldName}`;
+          // Use the property name to create unique array item types
+          const propertyFieldName = generateGoFieldName(propName, null, parentName.includes('Event'));
+          const itemStructName = `${parentName}${propertyFieldName}Item`;
           
           // Create a schema-like object for generateNestedStructDefinition
           const itemSchema = {
@@ -982,6 +982,36 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
     return 'interface{}';
   }
   
+  // Handle oneOf with simple types first (before processing type)
+  let propertyOneOf;
+  try {
+    if (typeof property.oneOf === 'function') {
+      propertyOneOf = property.oneOf();
+    } else {
+      propertyOneOf = property.oneOf;
+    }
+  } catch (e) {
+    // Property might not have oneOf
+    propertyOneOf = null;
+  }
+  
+  if (propertyOneOf && Array.isArray(propertyOneOf)) {
+    // Check if this is a oneOf with simple types (int, string, null)
+    const simpleTypes = propertyOneOf.filter(item => {
+      if (typeof item === 'object' && item.type) {
+        return ['integer', 'string', 'null'].includes(item.type);
+      }
+      return false;
+    });
+    
+    // If all oneOf items are simple types, use interface{} for flexibility
+    if (simpleTypes.length === propertyOneOf.length && simpleTypes.length > 1) {
+      const shouldUsePointer = (isRequestMessage && !isRequired && propName !== 'id' && propName !== 'method') ||
+                              (!isRequired && propName !== 'id' && propName !== 'method');
+      return shouldUsePointer ? '*interface{}' : 'interface{}';
+    }
+  }
+  
   // Handle both AsyncAPI objects and plain objects
   let propType;
   try {
@@ -1190,9 +1220,9 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
           
           if (itemProperties && (typeof itemProperties === 'object' && Object.keys(itemProperties).length > 0)) {
             // For arrays of objects with properties, use the same naming convention as nested struct generation
-            const itemPropName = `${propName}Item`;
-            const itemFieldName = generateGoFieldName(itemPropName, { description: 'Array item' }, parentStructName.includes('Event'));
-            itemType = `${parentStructName}${itemFieldName}`;
+            // Use the property name to create unique array item types
+            const propertyFieldName = generateGoFieldName(propName, null, parentStructName.includes('Event'));
+            itemType = `${parentStructName}${propertyFieldName}Item`;
           } else {
             // For arrays of objects without defined properties, use interface{}
             itemType = 'interface{}';
@@ -1325,15 +1355,15 @@ function toPascalCase(str) {
   if (!str) return '';
   
   // Only preserve the string if it's already in valid PascalCase without spaces/separators
-  // Valid PascalCase: starts with uppercase, no spaces/dots/underscores/dashes, may contain uppercase letters
-  if (/^[A-Z][a-zA-Z0-9]*$/.test(str) && !/[\s._\-]/.test(str)) {
+  // Valid PascalCase: starts with uppercase, no spaces/dots/underscores/dashes/special chars, may contain uppercase letters
+  if (/^[A-Z][a-zA-Z0-9]*$/.test(str) && !/[\s._\-\?\!\(\)\[\]\{\}\<\>\,\:\;\"\'\`\~\@\#\$\%\^\&\*\+\=\|\\\/]/.test(str)) {
     return str;
   }
   
   // Handle camelCase strings by preserving internal capital letters
-  // Split on dots, underscores, dashes, and spaces first
+  // Split on dots, underscores, dashes, spaces, and special characters first
   return str
-    .split(/[._\-\s]+/)
+    .split(/[._\-\s\?\!\(\)\[\]\{\}\<\>\,\:\;\"\'\`\~\@\#\$\%\^\&\*\+\=\|\\\/]+/)
     .map(word => {
       if (!word) return '';
       
