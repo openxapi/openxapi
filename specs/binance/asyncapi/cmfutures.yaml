@@ -36,6 +36,8 @@ channels:
                 $ref: '#/components/messages/accountStatusRequest'
             accountStatusResponse:
                 $ref: '#/components/messages/accountStatusResponse'
+            logOutOfTheSessionRequest:
+                $ref: '#/components/messages/logOutOfTheSessionRequest'
             orderCancelRequest:
                 $ref: '#/components/messages/orderCancelRequest'
             orderCancelResponse:
@@ -52,6 +54,12 @@ channels:
                 $ref: '#/components/messages/orderStatusRequest'
             orderStatusResponse:
                 $ref: '#/components/messages/orderStatusResponse'
+            sessionLogonRequest:
+                $ref: '#/components/messages/sessionLogonRequest'
+            sessionLogoutRequest:
+                $ref: '#/components/messages/sessionLogoutRequest'
+            sessionStatusRequest:
+                $ref: '#/components/messages/sessionStatusRequest'
             userDataStreamPingRequest:
                 $ref: '#/components/messages/userDataStreamPingRequest'
             userDataStreamPingResponse:
@@ -169,6 +177,14 @@ operations:
             $ref: '#/channels/cmfutures'
         messages:
             - $ref: '#/channels/cmfutures/messages/accountStatusRequest'
+    sendLogOutOfTheSession:
+        title: Send to log_out_of_the_session
+        description: Send a log_out_of_the_session request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/logOutOfTheSessionRequest'
     sendOrderCancel:
         title: Send to order.cancel
         description: Send a order.cancel request
@@ -201,6 +217,30 @@ operations:
             $ref: '#/channels/cmfutures'
         messages:
             - $ref: '#/channels/cmfutures/messages/orderStatusRequest'
+    sendSessionLogon:
+        title: Send to session.logon
+        description: Send a session.logon request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/sessionLogonRequest'
+    sendSessionLogout:
+        title: Send to session.logout
+        description: Send a session.logout request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/sessionLogoutRequest'
+    sendSessionStatus:
+        title: Send to session.status
+        description: Send a session.status request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/sessionStatusRequest'
     sendUserDataStreamPing:
         title: Send to userDataStream.ping
         description: Send a userDataStream.ping request
@@ -737,6 +777,32 @@ components:
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
+        logOutOfTheSessionRequest:
+            name: Log out of the session Request
+            title: Log out of the session Request
+            description: Send a log_out_of_the_session request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            price:
+                                type: string
+                            quantity:
+                                type: string
+                            side:
+                                type: string
+                            symbol:
+                                type: string
+                            timeInForce:
+                                type: string
+                            timestamp:
+                                type: string
+                            type:
+                                type: string
         orderCancelRequest:
             name: Cancel Order (TRADE) Request
             title: Cancel Order (TRADE) Request
@@ -1525,6 +1591,86 @@ components:
                         type: integer
                         description: status property
                         example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionLogonRequest:
+            name: Log in with API key (SIGNED) Request
+            title: Log in with API key (SIGNED) Request
+            description: Send a session.logon request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: c174a2b1-3f51-4580-b200-8528bd237cb7
+                    method:
+                        type: string
+                        description: method property
+                        example: session.logon
+                        enum:
+                            - session.logon
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                                description: apiKey property
+                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                            signature:
+                                type: string
+                                description: signature property
+                                example: 1cf54395b336b0a9727ef27d5d98987962bc47aca6e13fe978612d0adee066ed
+                            timestamp:
+                                type: integer
+                                format: int64
+                                description: timestamp property
+                                example: 1649729878532
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionLogoutRequest:
+            name: SIGNED request example (Ed25519) Request
+            title: SIGNED request example (Ed25519) Request
+            description: Send a session.logout request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: c174a2b1-3f51-4580-b200-8528bd237cb7
+                    method:
+                        type: string
+                        description: method property
+                        example: session.logout
+                        enum:
+                            - session.logout
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionStatusRequest:
+            name: Query session status Request
+            title: Query session status Request
+            description: Send a session.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
+                    method:
+                        type: string
+                        description: method property
+                        example: session.status
+                        enum:
+                            - session.status
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

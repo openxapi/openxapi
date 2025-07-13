@@ -1,0 +1,44 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    cmfutures:
+        address: /
+        title: Channel session.status
+        description: Query the status of the WebSocket connection, inspecting which API key (if any) is used to authorize requests.
+        messages:
+            sessionStatusRequest:
+                $ref: '#/components/messages/sessionStatusRequest'
+operations:
+    sendSessionStatus:
+        title: Send to session.status
+        description: Send a session.status request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/sessionStatusRequest'
+components:
+    messages:
+        sessionStatusRequest:
+            name: Query session status Request
+            title: Query session status Request
+            description: Send a session.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
+                    method:
+                        type: string
+                        description: method property
+                        example: session.status
+                        enum:
+                            - session.status
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

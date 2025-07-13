@@ -1,0 +1,60 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    cmfutures:
+        address: /
+        title: Channel session.logon
+        messages:
+            sessionLogonRequest:
+                $ref: '#/components/messages/sessionLogonRequest'
+operations:
+    sendSessionLogon:
+        title: Send to session.logon
+        description: Send a session.logon request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/sessionLogonRequest'
+components:
+    messages:
+        sessionLogonRequest:
+            name: Log in with API key (SIGNED) Request
+            title: Log in with API key (SIGNED) Request
+            description: Send a session.logon request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: c174a2b1-3f51-4580-b200-8528bd237cb7
+                    method:
+                        type: string
+                        description: method property
+                        example: session.logon
+                        enum:
+                            - session.logon
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                                description: apiKey property
+                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                            signature:
+                                type: string
+                                description: signature property
+                                example: 1cf54395b336b0a9727ef27d5d98987962bc47aca6e13fe978612d0adee066ed
+                            timestamp:
+                                type: integer
+                                format: int64
+                                description: timestamp property
+                                example: 1649729878532
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
