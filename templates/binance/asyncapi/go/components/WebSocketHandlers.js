@@ -829,6 +829,9 @@ function extractAuthTypeFromMessage(sendMessage) {
   if (messageName.includes('(MARKET_DATA)') || description.includes('MARKET_DATA')) {
     return 'MARKET_DATA';
   }
+  if (messageName.includes('(SIGNED)') || description.includes('SIGNED')) {
+    return 'SIGNED';
+  }
   
   // Check for specific method patterns that typically require authentication
   let messageId = '';
@@ -873,6 +876,8 @@ function transformAuthTypeToGoConstant(authType) {
       return 'AuthTypeUserStream';
     case 'MARKET_DATA':
       return 'AuthTypeMarketData';
+    case 'SIGNED':
+      return 'AuthTypeSigned';
     case 'NONE':
     default:
       return 'AuthTypeNone';

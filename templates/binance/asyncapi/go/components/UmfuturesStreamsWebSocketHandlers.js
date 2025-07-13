@@ -338,6 +338,7 @@ function generateDynamicStreamEventHandlers(eventTypes) {
   // Include comprehensive mapping for all common futures stream event types
   // Only include event types that have corresponding models in umfutures-streams
   const eventToModelMap = {
+    // Market data stream events (ONLY include market data events for streams module)
     'aggTrade': 'AggregateTradeEvent',
     'markPriceUpdate': 'MarkPriceEvent', 
     'kline': 'KlineEvent',
@@ -351,8 +352,8 @@ function generateDynamicStreamEventHandlers(eventTypes) {
     'contractInfo': 'ContractInfoEvent',
     'assetIndex': 'AssetIndexEvent',
     'assetIndexUpdate': 'AssetIndexEvent' // Real event type from Binance API
-    // Note: 'trade', 'ticker', 'miniTicker', 'liquidation' removed as they create duplicates
-    // The futures-specific event types above cover the actual umfutures-streams API
+    // Note: User data stream events are NOT included here as they belong to the WebSocket API module,
+    // not the market data streams module. The streams module only handles market data.
   };
 
   // Add all mapped event types to ensure they're included in generation

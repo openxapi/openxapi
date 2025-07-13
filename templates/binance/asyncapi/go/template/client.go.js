@@ -89,12 +89,20 @@ func NewServerManager() *ServerManager {
 		let pathname = server.pathname() || '';
 		let url;
 		
-		// Check if server has variables (specifically streamPath)
+		// Handle server variables (streamPath, listenKey, etc.)
 		const serverJson = server.json ? server.json() : (server._json || {});
-		if (serverJson.variables && serverJson.variables.streamPath) {
-			// Use default value from streamPath variable
-			const defaultStreamPath = serverJson.variables.streamPath.default || 'ws';
-			pathname = pathname.replace('{streamPath}', defaultStreamPath);
+		if (serverJson.variables) {
+			// Handle streamPath variable
+			if (serverJson.variables.streamPath) {
+				const defaultStreamPath = serverJson.variables.streamPath.default || 'ws';
+				pathname = pathname.replace('{streamPath}', defaultStreamPath);
+			}
+			
+			// Handle listenKey variable - leave as template for runtime replacement
+			if (pathname.includes('{listenKey}')) {
+				// Keep {listenKey} as template - it will be replaced at runtime
+				// This is intentional for user data stream URLs
+			}
 		}
 		
 		url = `${protocol}://${host}${pathname}`;
@@ -245,12 +253,40 @@ func (sm *ServerManager) UpdateServerPathname(name string, pathname string) erro
 	server.Pathname = pathname
 	server.URL = fmt.Sprintf("%s://%s%s", server.Protocol, server.Host, pathname)
 	
-	// Validate the new URL
-	if _, err := url.Parse(server.URL); err != nil {
-		return fmt.Errorf("invalid server URL '%s': %w", server.URL, err)
+	// Validate the new URL (skip validation if it contains template variables)
+	if !strings.Contains(server.URL, "{") {
+		if _, err := url.Parse(server.URL); err != nil {
+			return fmt.Errorf("invalid server URL '%s': %w", server.URL, err)
+		}
 	}
 	
 	return nil
+}
+
+// ResolveServerURL resolves template variables in server URL
+func (sm *ServerManager) ResolveServerURL(name string, variables map[string]string) (string, error) {
+	sm.mu.RLock()
+	defer sm.mu.RUnlock()
+	
+	server, exists := sm.servers[name]
+	if !exists {
+		return "", fmt.Errorf("server '%s' not found", name)
+	}
+	
+	resolvedURL := server.URL
+	
+	// Replace template variables
+	for key, value := range variables {
+		placeholder := fmt.Sprintf("{%s}", key)
+		resolvedURL = strings.ReplaceAll(resolvedURL, placeholder, value)
+	}
+	
+	// Validate the resolved URL
+	if _, err := url.Parse(resolvedURL); err != nil {
+		return "", fmt.Errorf("invalid resolved URL '%s': %w", resolvedURL, err)
+	}
+	
+	return resolvedURL, nil
 }
 
 // SetActiveServer sets the active server
@@ -665,10 +701,18 @@ func (c *Client) ConnectToServer(ctx context.Context, serverName string) error {
       </Text>
 
       <Text newLines={2}>
-        {`// Disconnect closes the WebSocket connection
+        {`// Disconnect closes the WebSocket connection safely
 func (c *Client) Disconnect() error {
 	c.isConnected = false
-	close(c.done)
+	
+	// Safely close the done channel only once
+	select {
+	case <-c.done:
+		// Channel already closed, do nothing
+	default:
+		close(c.done)
+	}
+	
 	if c.conn != nil {
 		return c.conn.Close()
 	}
