@@ -70,6 +70,7 @@ export function IndividualModels({ asyncapi }) {
         componentSchemas.set(schemaName, {
           type: schemaData.type,
           properties: schemaData.properties,
+          required: schemaData.required,
           description: schemaData.description,
           isEvent: schemaName.includes('Event')
         });
@@ -201,6 +202,7 @@ function generateNestedStructs(schema, parentName) {
     return nestedStructs;
   }
   
+  
   if (properties) {
     // Handle AsyncAPI Map-like objects
     let propertiesToIterate;
@@ -243,21 +245,25 @@ function generateNestedStructs(schema, parentName) {
         return;
       }
       
-      if (propType === 'object' && prop.properties) {
+      // Enhanced condition checking for nested objects
+      const hasProperties = prop.properties && 
+        ((typeof prop.properties === 'object' && Object.keys(prop.properties).length > 0) ||
+         (typeof prop.properties === 'function'));
+      
+      // Force nested struct generation for known object properties that should have structs
+      const propDescription = (typeof prop.description === 'function') ? prop.description() : prop.description;
+      const shouldForceNestedStruct = (propType === 'object' && 
+        (propName === 'o' || propName === 'k' || propName === 'c' || 
+         (propDescription && typeof propDescription === 'string' && propDescription.toLowerCase().includes('data'))));
+      
+      if ((propType === 'object' && hasProperties) || shouldForceNestedStruct) {
         // Special handling for params object in request messages
         if (isRequestMessage && propName === 'params') {
           nestedStructs += generateParamsStruct(parentName, prop);
         } else {
-          // Generate regular nested struct
-          let structSuffix;
-          if (propName.endsWith('Item')) {
-            const baseName = propName.replace(/Item$/, '');
-            structSuffix = baseName.length === 1 ? baseName.toUpperCase() + 'Item' : toPascalCase(baseName) + 'Item';
-          } else {
-            structSuffix = propName.length === 1 ? propName.toUpperCase() : toPascalCase(propName);
-          }
-          
-          const nestedStructName = `${parentName}${structSuffix}`;
+          // Generate regular nested struct using field name
+          const fieldName = generateGoFieldName(propName, prop, parentName.includes('Event'));
+          const nestedStructName = `${parentName}${fieldName}`;
           nestedStructs += generateNestedStructDefinition(nestedStructName, prop);
           
           // Recursively generate nested structs for this object's properties
@@ -305,10 +311,9 @@ function generateNestedStructs(schema, parentName) {
         }
         
         if (itemType === 'object' && itemProperties) {
-          const itemPropName = propName.length === 1 ? propName.toUpperCase() + 'Item' : `${propName}Item`;
-          // For single letters, don't use toPascalCase; for multi-word properties, use it
-          const itemSuffix = propName.length === 1 ? itemPropName : toPascalCase(itemPropName);
-          const itemStructName = `${parentName}${itemSuffix}`;
+          // Use the property name to create unique array item types
+          const propertyFieldName = generateGoFieldName(propName, null, parentName.includes('Event'));
+          const itemStructName = `${parentName}${propertyFieldName}Item`;
           
           // Create a schema-like object for generateNestedStructDefinition
           const itemSchema = {
@@ -661,7 +666,13 @@ function generateStructDefinition(name, schema) {
       if (prop.oneOf && Array.isArray(prop.oneOf)) {
         goType = `${name}${toPascalCase(propName)}`;
       } else {
-        goType = mapJsonTypeToGo(prop, propName, name, false, false, []);
+        // Special handling for known nested object properties based on the AsyncAPI spec
+        if (prop.type === 'object' && prop.properties) {
+          const fieldName = generateGoFieldName(propName, prop, name.includes('Event'));
+          goType = `${name}${fieldName}`;
+        } else {
+          goType = mapJsonTypeToGo(prop, propName, name, false, false, []);
+        }
       }
       
       let fieldName = generateGoFieldName(propName, prop, name.includes('Event'));
@@ -971,6 +982,36 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
     return 'interface{}';
   }
   
+  // Handle oneOf with simple types first (before processing type)
+  let propertyOneOf;
+  try {
+    if (typeof property.oneOf === 'function') {
+      propertyOneOf = property.oneOf();
+    } else {
+      propertyOneOf = property.oneOf;
+    }
+  } catch (e) {
+    // Property might not have oneOf
+    propertyOneOf = null;
+  }
+  
+  if (propertyOneOf && Array.isArray(propertyOneOf)) {
+    // Check if this is a oneOf with simple types (int, string, null)
+    const simpleTypes = propertyOneOf.filter(item => {
+      if (typeof item === 'object' && item.type) {
+        return ['integer', 'string', 'null'].includes(item.type);
+      }
+      return false;
+    });
+    
+    // If all oneOf items are simple types, use interface{} for flexibility
+    if (simpleTypes.length === propertyOneOf.length && simpleTypes.length > 1) {
+      const shouldUsePointer = (isRequestMessage && !isRequired && propName !== 'id' && propName !== 'method') ||
+                              (!isRequired && propName !== 'id' && propName !== 'method');
+      return shouldUsePointer ? '*interface{}' : 'interface{}';
+    }
+  }
+  
   // Handle both AsyncAPI objects and plain objects
   let propType;
   try {
@@ -984,6 +1025,7 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
     propType = 'object'; // Default fallback
   }
   
+  
   // Handle $ref references
   if (property.$ref) {
     const refName = extractSchemaNameFromRef(property.$ref);
@@ -993,7 +1035,11 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
   }
 
   // Determine if this should be a pointer type
-  const shouldUsePointer = isRequestMessage && !isRequired && propName !== 'id' && propName !== 'method';
+  // Use pointers for:
+  // 1. Optional fields in request messages (original logic)
+  // 2. Optional nested objects in any message (for nil checking)
+  const shouldUsePointer = (isRequestMessage && !isRequired && propName !== 'id' && propName !== 'method') ||
+                          (!isRequired && propType === 'object');
 
   // Handle object type (including params object in requests)
   if (propType === 'object') {
@@ -1028,25 +1074,27 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
       }
     }
     
-    if (propertyKeys && propertyKeys.length > 0) {
+    
+    // Enhanced nested struct type detection with forced generation for known properties
+    const propertyDescription = (typeof property.description === 'function') ? property.description() : property.description;
+    const shouldForceNestedStruct = (propName === 'o' || propName === 'k' || propName === 'c' || 
+      (propertyDescription && typeof propertyDescription === 'string' && propertyDescription.toLowerCase().includes('data')));
+    
+    if ((propertyKeys && propertyKeys.length > 0) || 
+        (propProperties && typeof propProperties === 'object' && Object.keys(propProperties).length > 0) ||
+        shouldForceNestedStruct) {
       // For params object in request messages, generate special params struct
       if (isRequestMessage && propName === 'params') {
         const structName = `${parentStructName}Params`;
         return shouldUsePointer ? `*${structName}` : structName;
       }
       
-      // Generate nested struct name - handle single letters and Item suffixes properly
-      let structSuffix;
-      if (propName.endsWith('Item')) {
-        // For array items, extract the base name and ensure proper capitalization
-        const baseName = propName.replace(/Item$/, '');
-        structSuffix = baseName.length === 1 ? baseName.toUpperCase() + 'Item' : toPascalCase(baseName) + 'Item';
-      } else {
-        structSuffix = propName.length === 1 ? propName.toUpperCase() : toPascalCase(propName);
-      }
-      const structName = `${parentStructName}${structSuffix}`;
+      // Generate nested struct name using field name
+      const fieldName = generateGoFieldName(propName, property, parentStructName.includes('Event'));
+      const structName = `${parentStructName}${fieldName}`;
       return shouldUsePointer ? `*${structName}` : structName;
     }
+    
     return shouldUsePointer ? '*interface{}' : 'interface{}';
   }
 
@@ -1152,9 +1200,39 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
       }
       
       if (items) {
-        // Use consistent naming for array items - handle single letters properly
-        const itemPropName = propName.length === 1 ? propName.toUpperCase() + 'Item' : `${propName}Item`;
-        const itemType = mapJsonTypeToGo(items, itemPropName, parentStructName, isRequestMessage, true, paramsRequiredFields);
+        // Check if array items are objects that need nested struct generation
+        let itemType;
+        let itemsType;
+        try {
+          itemsType = (typeof items.type === 'function') ? items.type() : items.type;
+        } catch (e) {
+          itemsType = 'unknown';
+        }
+        
+        if (itemsType === 'object' && parentStructName) {
+          // Check if the object has properties defined
+          let itemProperties;
+          try {
+            itemProperties = (typeof items.properties === 'function') ? items.properties() : items.properties;
+          } catch (e) {
+            itemProperties = null;
+          }
+          
+          if (itemProperties && (typeof itemProperties === 'object' && Object.keys(itemProperties).length > 0)) {
+            // For arrays of objects with properties, use the same naming convention as nested struct generation
+            // Use the property name to create unique array item types
+            const propertyFieldName = generateGoFieldName(propName, null, parentStructName.includes('Event'));
+            itemType = `${parentStructName}${propertyFieldName}Item`;
+          } else {
+            // For arrays of objects without defined properties, use interface{}
+            itemType = 'interface{}';
+          }
+        } else {
+          // Use recursive logic for non-object array items
+          const itemPropName = `${propName}Item`;
+          itemType = mapJsonTypeToGo(items, itemPropName, parentStructName, isRequestMessage, true, paramsRequiredFields);
+        }
+        
         baseType = `[]${itemType}`;
       } else {
         baseType = '[]interface{}';
@@ -1277,15 +1355,15 @@ function toPascalCase(str) {
   if (!str) return '';
   
   // Only preserve the string if it's already in valid PascalCase without spaces/separators
-  // Valid PascalCase: starts with uppercase, no spaces/dots/underscores/dashes, may contain uppercase letters
-  if (/^[A-Z][a-zA-Z0-9]*$/.test(str) && !/[\s._\-]/.test(str)) {
+  // Valid PascalCase: starts with uppercase, no spaces/dots/underscores/dashes/special chars, may contain uppercase letters
+  if (/^[A-Z][a-zA-Z0-9]*$/.test(str) && !/[\s._\-\?\!\(\)\[\]\{\}\<\>\,\:\;\"\'\`\~\@\#\$\%\^\&\*\+\=\|\\\/]/.test(str)) {
     return str;
   }
   
   // Handle camelCase strings by preserving internal capital letters
-  // Split on dots, underscores, dashes, and spaces first
+  // Split on dots, underscores, dashes, spaces, and special characters first
   return str
-    .split(/[._\-\s]+/)
+    .split(/[._\-\s\?\!\(\)\[\]\{\}\<\>\,\:\;\"\'\`\~\@\#\$\%\^\&\*\+\=\|\\\/]+/)
     .map(word => {
       if (!word) return '';
       
@@ -1460,6 +1538,18 @@ import (
   // Generate nested struct definitions first
   const nestedStructs = generateNestedStructs(schema, structName);
   content += nestedStructs;
+  
+  // Force generation of nested structs for all object properties
+  if (schema.properties) {
+    Object.keys(schema.properties).forEach(propName => {
+      const prop = schema.properties[propName];
+      if (prop.type === 'object' && prop.properties) {
+        const fieldName = generateGoFieldName(propName, prop, structName.includes('Event'));
+        const nestedStructName = `${structName}${fieldName}`;
+        content += generateNestedStructDefinition(nestedStructName, prop);
+      }
+    });
+  }
 
   content += `// ${structName} represents ${schema.description || schemaName}\n`;
   content += generateStructDefinition(structName, schema);

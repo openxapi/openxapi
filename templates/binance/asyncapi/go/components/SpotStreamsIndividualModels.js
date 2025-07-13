@@ -40,20 +40,57 @@ export function SpotStreamsIndividualModels({ asyncapi }) {
   // Generate model files
   const modelFiles = [];
   
-  // Generate message models
+  // First, collect all schema names to prioritize them over message models
+  const schemaModelNames = new Set();
+  componentSchemas.forEach((schemaData, schemaName) => {
+    schemaModelNames.add(toSnakeCase(schemaName));
+  });
+
+  // Generate message models (but skip if we have a corresponding schema model)
   messages.forEach((messageData, messageName) => {
+    const messageFileName = toSnakeCase(messageName);
+    
+    // Check if we have a corresponding schema model that should take priority
+    const hasCorrespondingSchema = Array.from(schemaModelNames).some(schemaFileName => {
+      // Check for exact match
+      if (schemaFileName === messageFileName) {
+        return true;
+      }
+      
+      // Check for Event suffix patterns (e.g., "liquidation" message vs "liquidation_event" schema)
+      const baseMessageName = messageFileName.replace(/_/g, '');
+      const baseSchemaName = schemaFileName.replace(/_event$/, '').replace(/_/g, '');
+      if (baseMessageName === baseSchemaName && schemaFileName.endsWith('_event')) {
+        return true;
+      }
+      
+      // Check for Error/Response patterns (e.g., "error_message" message vs "error_response" schema)
+      if (messageFileName.includes('error') && schemaFileName.includes('error')) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    if (hasCorrespondingSchema) {
+      console.debug(`Skipping message model: ${messageName} (schema model takes priority)`);
+      return;
+    }
+    
     const modelContent = generateSpotStreamsModelFile(messageName, messageData.payload, messageData.message, componentSchemas);
     modelFiles.push({
-      name: `${toSnakeCase(messageName)}.go`,
+      name: `${messageFileName}.go`,
       content: modelContent
     });
   });
 
-  // Generate component schema models
+  // Generate component schema models (these take priority)
   componentSchemas.forEach((schemaData, schemaName) => {
+    const schemaFileName = toSnakeCase(schemaName);
+    
     const modelContent = generateSpotStreamsSchemaFile(schemaName, schemaData);
     modelFiles.push({
-      name: `${toSnakeCase(schemaName)}.go`,
+      name: `${schemaFileName}.go`,
       content: modelContent
     });
   });
@@ -136,6 +173,9 @@ func (s ${structName}) String() string {
  * Generate Go struct for spot-streams with proper field naming
  */
 function generateSpotStreamsStruct(structName, payload, message) {
+  const usedStructNames = new Set();
+  let nestedStructs = '';
+  
   let structDef = `// ${structName} represents ${message.name() || structName}
 `;
   
@@ -174,8 +214,9 @@ function generateSpotStreamsStruct(structName, payload, message) {
     const prop = properties[propName];
     if (!prop) return;
 
-    // Generate meaningful field name from description
-    const fieldName = generateSpotStreamsFieldName(propName, prop, usedFieldNames);
+    // Generate meaningful field name from description, passing event type detection
+    const eventType = detectEventTypeFromStructName(structName);
+    const fieldName = generateSpotStreamsFieldName(propName, prop, usedFieldNames, eventType);
     usedFieldNames.add(fieldName);
     
     // Generate field documentation
@@ -192,7 +233,80 @@ function generateSpotStreamsStruct(structName, payload, message) {
     }
     
     // Generate field type
-    const goType = mapSpotStreamsJsonTypeToGo(prop, propName);
+    const goType = mapSpotStreamsJsonTypeToGo(prop, propName, structName, usedStructNames);
+    const jsonTag = prop.example ? `,omitempty` : `,omitempty`;
+    
+    structDef += `\t${fieldName} ${goType} \`json:"${propName}${jsonTag}"\`
+`;
+  });
+
+  structDef += `}
+
+`;
+
+  // Generate nested structs
+  usedStructNames.forEach(nestedStructName => {
+    if (nestedStructName !== structName) {
+      // Find the property that corresponds to this nested struct
+      for (const [propName, prop] of Object.entries(properties)) {
+        const fieldName = generateSpotStreamsFieldName(propName, prop, new Set(), '');
+        const expectedStructName = `${structName}${fieldName}`;
+        
+        // Handle direct object properties
+        if (expectedStructName === nestedStructName && prop.type === 'object' && prop.properties) {
+          nestedStructs += generateNestedStruct(nestedStructName, prop.properties, `${fieldName.toLowerCase()} details`);
+          break;
+        }
+        
+        // Handle array of objects (items have properties)
+        if (prop.type === 'array' && prop.items && prop.items.type === 'object' && prop.items.properties) {
+          const arrayItemStructName = `${structName}${fieldName}Item`;
+          if (arrayItemStructName === nestedStructName) {
+            nestedStructs += generateNestedStruct(nestedStructName, prop.items.properties, `${fieldName.toLowerCase()} item details`);
+            break;
+          }
+        }
+      }
+    }
+  });
+
+  return structDef + nestedStructs;
+}
+
+/*
+ * Generate nested struct definition
+ */
+function generateNestedStruct(structName, properties, description) {
+  let structDef = `// ${structName} represents the ${description}
+type ${structName} struct {
+`;
+
+  const usedFieldNames = new Set();
+  
+  Object.keys(properties).forEach((propName) => {
+    const prop = properties[propName];
+    if (!prop) return;
+
+    // Generate meaningful field name from description, passing event type detection
+    const eventType = detectEventTypeFromStructName(structName);
+    const fieldName = generateSpotStreamsFieldName(propName, prop, usedFieldNames, eventType);
+    usedFieldNames.add(fieldName);
+    
+    // Generate field documentation
+    if (prop.description) {
+      const description = typeof prop.description === 'function' ? prop.description() : prop.description;
+      if (description && typeof description === 'string') {
+        // Format description as proper Go comments, handling multi-line descriptions
+        const descriptionLines = description.split('\n');
+        descriptionLines.forEach(line => {
+          structDef += `\t// ${line.trim()}
+`;
+        });
+      }
+    }
+    
+    // Generate field type (no nested struct generation to avoid infinite recursion)
+    const goType = mapSpotStreamsJsonTypeToGo(prop, propName, '', new Set());
     const jsonTag = prop.example ? `,omitempty` : `,omitempty`;
     
     structDef += `\t${fieldName} ${goType} \`json:"${propName}${jsonTag}"\`
@@ -209,6 +323,9 @@ function generateSpotStreamsStruct(structName, payload, message) {
  * Generate Go struct from component schema
  */
 function generateSpotStreamsStructFromSchema(structName, schemaData) {
+  const usedStructNames = new Set();
+  let nestedStructs = '';
+  
   let structDef = `// ${structName} represents ${structName}
 `;
   
@@ -235,8 +352,9 @@ function generateSpotStreamsStructFromSchema(structName, schemaData) {
     const prop = properties[propName];
     if (!prop) return;
 
-    // Generate meaningful field name from description
-    const fieldName = generateSpotStreamsFieldName(propName, prop, usedFieldNames);
+    // Generate meaningful field name from description, passing event type detection
+    const eventType = detectEventTypeFromStructName(structName);
+    const fieldName = generateSpotStreamsFieldName(propName, prop, usedFieldNames, eventType);
     usedFieldNames.add(fieldName);
     
     // Generate field documentation
@@ -252,8 +370,16 @@ function generateSpotStreamsStructFromSchema(structName, schemaData) {
     }
     
     // Generate field type
-    const goType = mapSpotStreamsJsonTypeToGo(prop, propName);
+    let goType = mapSpotStreamsJsonTypeToGo(prop, propName, structName, usedStructNames);
     const jsonTag = prop.example ? `,omitempty` : `,omitempty`;
+    
+    // Use pointer for optional nested objects (allows nil checking)
+    // This applies to objects that aren't basic types and have omitempty
+    if (prop.type === 'object' && goType !== 'interface{}' && jsonTag.includes('omitempty')) {
+      if (!goType.startsWith('*')) {
+        goType = `*${goType}`;
+      }
+    }
     
     structDef += `\t${fieldName} ${goType} \`json:"${propName}${jsonTag}"\`
 `;
@@ -262,57 +388,230 @@ function generateSpotStreamsStructFromSchema(structName, schemaData) {
   structDef += `}
 
 `;
-  return structDef;
+
+  // Generate nested structs
+  usedStructNames.forEach(nestedStructName => {
+    if (nestedStructName !== structName) {
+      // Find the property that corresponds to this nested struct
+      for (const [propName, prop] of Object.entries(properties)) {
+        const fieldName = generateSpotStreamsFieldName(propName, prop, new Set(), '');
+        const expectedStructName = `${structName}${fieldName}`;
+        
+        // Handle direct object properties
+        if (expectedStructName === nestedStructName && prop.type === 'object' && prop.properties) {
+          nestedStructs += generateNestedStruct(nestedStructName, prop.properties, `${fieldName.toLowerCase()} details`);
+          break;
+        }
+        
+        // Handle array of objects (items have properties)
+        if (prop.type === 'array' && prop.items && prop.items.type === 'object' && prop.items.properties) {
+          const arrayItemStructName = `${structName}${fieldName}Item`;
+          if (arrayItemStructName === nestedStructName) {
+            nestedStructs += generateNestedStruct(nestedStructName, prop.items.properties, `${fieldName.toLowerCase()} item details`);
+            break;
+          }
+        }
+      }
+    }
+  });
+
+  return structDef + nestedStructs;
+}
+
+/*
+ * Detect event type from struct name
+ */
+function detectEventTypeFromStructName(structName) {
+  if (!structName) return '';
+  
+  const nameLower = structName.toLowerCase();
+  
+  if (nameLower.includes('bookticker')) {
+    return 'bookTicker';
+  } else if (nameLower.includes('ticker') && (nameLower.includes('24hr') || nameLower.includes('rolling'))) {
+    return 'ticker';
+  } else if (nameLower.includes('miniticker')) {
+    return 'miniTicker';
+  } else if (nameLower.includes('markprice')) {
+    return 'markPrice';
+  } else if (nameLower.includes('aggtrade') || nameLower.includes('aggregatetrade')) {
+    return 'aggTrade';
+  } else if (nameLower.includes('trade')) {
+    return 'trade';
+  } else if (nameLower.includes('kline')) {
+    return 'kline';
+  } else if (nameLower.includes('depth')) {
+    return 'depthUpdate';
+  }
+  
+  return '';
+}
+
+/*
+ * Get event-specific field mappings based on event type
+ */
+function getEventSpecificFieldMapping(propName, eventType, property) {
+  // Common fields that are the same across all events
+  const commonFields = {
+    'e': 'EventType',
+    'E': 'EventTime', 
+    's': 'Symbol',
+    'stream': 'StreamName',
+    'data': 'StreamData'
+  };
+  
+  // Event-specific field mappings
+  const eventSpecificMappings = {
+    // Book Ticker Event
+    'bookTicker': {
+      'u': 'UpdateId',
+      'b': 'BestBidPrice',
+      'B': 'BestBidQuantity',
+      'a': 'BestAskPrice',
+      'A': 'BestAskQuantity'
+    },
+    
+    // Ticker Event (24hr statistics)
+    'ticker': {
+      'P': 'PriceChangePercent',
+      'p': 'PriceChange',
+      'w': 'WeightedAveragePrice',
+      'c': 'LastPrice',
+      'Q': 'LastQuantity',
+      'o': 'OpenPrice',
+      'h': 'HighPrice',
+      'l': 'LowPrice',
+      'v': 'TotalTradedBaseAssetVolume',
+      'q': 'TotalTradedQuoteAssetVolume',
+      'O': 'OpenTime',
+      'C': 'CloseTime',
+      'F': 'FirstTradeId',
+      'L': 'LastTradeId',
+      'n': 'TotalNumberOfTrades'
+    },
+    
+    // Mark Price Event
+    'markPrice': {
+      'p': 'MarkPrice',
+      'P': 'EstimatedSettlePrice',
+      'i': 'IndexPrice',
+      'r': 'FundingRate',
+      'T': 'NextFundingTime'
+    },
+    
+    // Aggregate Trade Event
+    'aggTrade': {
+      'a': 'AggregateTradeId',
+      'p': 'Price',
+      'q': 'Quantity',
+      'f': 'FirstTradeId',
+      'l': 'LastTradeId',
+      'T': 'TradeTime',
+      't': 'TradeTime',
+      'm': 'IsBuyerMaker'
+    },
+    
+    // Trade Event
+    'trade': {
+      't': 'TradeId',
+      'p': 'Price',
+      'q': 'Quantity',
+      'b': 'BuyerOrderId',
+      'a': 'SellerOrderId',
+      'T': 'TradeTime',
+      'm': 'IsBuyerMaker'
+    },
+    
+    // Kline Event
+    'kline': {
+      'k': 'Kline',
+      't': 'KlineStartTime',
+      'T': 'KlineCloseTime',
+      'i': 'Interval',
+      'f': 'FirstTradeId',
+      'L': 'LastTradeId',
+      'o': 'OpenPrice',
+      'c': 'ClosePrice',
+      'h': 'HighPrice',
+      'l': 'LowPrice',
+      'v': 'BaseAssetVolume',
+      'n': 'NumberOfTrades',
+      'x': 'IsKlineClosed',
+      'q': 'QuoteAssetVolume',
+      'V': 'TakerBuyBaseAssetVolume',
+      'Q': 'TakerBuyQuoteAssetVolume'
+    },
+    
+    // Depth Events (partial and diff)
+    'depthUpdate': {
+      'u': 'FinalUpdateId',
+      'U': 'FirstUpdateId',
+      'b': 'Bids',
+      'a': 'Asks',
+      'pu': 'PrevFinalUpdateId'
+    },
+    
+    // Mini Ticker Event
+    'miniTicker': {
+      'c': 'ClosePrice',
+      'o': 'OpenPrice',
+      'h': 'HighPrice',
+      'l': 'LowPrice',
+      'v': 'TotalTradedBaseAssetVolume',
+      'q': 'TotalTradedQuoteAssetVolume'
+    }
+  };
+  
+  // Check common fields first
+  if (commonFields[propName]) {
+    return commonFields[propName];
+  }
+  
+  // Detect event type from property description or structure
+  let detectedEventType = eventType;
+  if (!detectedEventType && property && property.description) {
+    const description = typeof property.description === 'function' ? property.description() : property.description;
+    if (description && typeof description === 'string') {
+      const descLower = description.toLowerCase();
+      if (descLower.includes('book ticker') || descLower.includes('best bid') || descLower.includes('best ask')) {
+        detectedEventType = 'bookTicker';
+      } else if (descLower.includes('24hr') || descLower.includes('ticker') || descLower.includes('rolling window')) {
+        detectedEventType = 'ticker';
+      } else if (descLower.includes('mark price') || descLower.includes('funding')) {
+        detectedEventType = 'markPrice';
+      } else if (descLower.includes('aggregate trade')) {
+        detectedEventType = 'aggTrade';
+      } else if (descLower.includes('trade')) {
+        detectedEventType = 'trade';
+      } else if (descLower.includes('kline') || descLower.includes('candlestick')) {
+        detectedEventType = 'kline';
+      } else if (descLower.includes('depth') || descLower.includes('order book')) {
+        detectedEventType = 'depthUpdate';
+      } else if (descLower.includes('mini ticker')) {
+        detectedEventType = 'miniTicker';
+      }
+    }
+  }
+  
+  // Return event-specific mapping if found
+  if (detectedEventType && eventSpecificMappings[detectedEventType] && eventSpecificMappings[detectedEventType][propName]) {
+    return eventSpecificMappings[detectedEventType][propName];
+  }
+  
+  return null;
 }
 
 /*
  * Generate meaningful Go field names for spot-streams using descriptions
  */
-function generateSpotStreamsFieldName(propName, property, usedFieldNames) {
+function generateSpotStreamsFieldName(propName, property, usedFieldNames, eventType = '') {
   let fieldName;
   
-  // Check for common field mappings first (this takes priority)
-  const commonFieldMappings = {
-    'e': 'EventType',
-    'E': 'EventTime', 
-    's': 'Symbol',
-    'a': 'AggregateTradeId',
-    'p': 'Price',
-    'q': 'Quantity',
-    'f': 'FirstTradeId',
-    'l': 'LastTradeId',
-    'T': 'TradeTime',
-    'm': 'IsBuyerMaker',
-    't': 'TradeId',
-    'b': 'BuyerOrderId',
-    'A': 'SellerOrderId',
-    'M': 'Ignore',
-    'k': 'Kline',
-    'c': 'ClosePrice',
-    'o': 'OpenPrice',
-    'h': 'HighPrice',
-    'v': 'Volume',
-    'n': 'NumberOfTrades',
-    'x': 'IsKlineClosed',
-    'i': 'Interval',
-    'L': 'LastTradeId',
-    'V': 'TakerBuyBaseVolume',
-    'Q': 'TakerBuyQuoteVolume',
-    'u': 'UpdateId',
-    'U': 'FirstUpdateId',
-    'B': 'BestBidQuantity',
-    'w': 'WeightedAveragePrice',
-    'P': 'PriceChangePercent',
-    'F': 'FirstTradeId',
-    'C': 'CloseTime',
-    'O': 'OpenTime',
-    // Combined stream specific fields
-    'stream': 'StreamName',
-    'data': 'StreamData'
-  };
-
-  if (commonFieldMappings[propName]) {
-    fieldName = commonFieldMappings[propName];
+  // Get event-specific mappings based on the event type or structure name
+  fieldName = getEventSpecificFieldMapping(propName, eventType, property);
+  
+  if (fieldName) {
+    // Use the event-specific mapping
   } else {
     // Try to use description only if no mapping exists
     if (property && property.description) {
@@ -359,7 +658,7 @@ function generateSpotStreamsFieldName(propName, property, usedFieldNames) {
 /*
  * Map JSON types to Go types for spot-streams
  */
-function mapSpotStreamsJsonTypeToGo(property, propName) {
+function mapSpotStreamsJsonTypeToGo(property, propName, structName = '', usedStructNames = new Set()) {
   let propType;
   let propFormat;
   
@@ -407,11 +706,33 @@ function mapSpotStreamsJsonTypeToGo(property, propName) {
       }
       
       if (items) {
-        const itemType = mapSpotStreamsJsonTypeToGo(items, `${propName}Item`);
-        return `[]${itemType}`;
+        // For array items that are objects, generate proper struct name
+        if (items.type === 'object' && items.properties && structName) {
+          const fieldName = generateSpotStreamsFieldName(propName, property, new Set(), '');
+          const arrayItemStructName = `${structName}${fieldName}Item`;
+          usedStructNames.add(arrayItemStructName);
+          return `[]${arrayItemStructName}`;
+        } else {
+          const itemType = mapSpotStreamsJsonTypeToGo(items, `${propName}Item`, structName, usedStructNames);
+          return `[]${itemType}`;
+        }
       }
       return '[]interface{}';
     case 'object':
+      // Check if this object has properties (nested struct)
+      const hasProperties = property.properties && ((typeof property.properties === 'object' && Object.keys(property.properties).length > 0) || (typeof property.properties === 'function'));
+      
+      if (hasProperties && structName) {
+        // Generate nested struct name using {structName}{fieldName} convention
+        const fieldName = generateSpotStreamsFieldName(propName, property, new Set());
+        const nestedStructName = `${structName}${fieldName}`;
+        
+        // Track that we're creating a nested struct
+        usedStructNames.add(nestedStructName);
+        
+        return nestedStructName;
+      }
+      
       return 'interface{}';
     default:
       return 'interface{}';

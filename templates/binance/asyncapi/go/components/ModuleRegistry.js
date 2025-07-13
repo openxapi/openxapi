@@ -12,6 +12,9 @@ import { MessageStructs } from './MessageStructs.js';
 import { SpotStreamsWebSocketHandlers } from './SpotStreamsWebSocketHandlers.js';
 import { SpotStreamsIndividualModels } from './SpotStreamsIndividualModels.js';
 
+// Import dedicated umfutures-streams components
+import { UmfuturesStreamsWebSocketHandlers } from './UmfuturesStreamsWebSocketHandlers.js';
+
 // Registry of module-specific configurations and handlers
 const moduleRegistry = new Map();
 
@@ -169,6 +172,46 @@ registerModule('spot-streams', {
   }
 });
 
+registerModule('umfutures-streams', {
+  handlers: {
+    webSocketHandlers: umfuturesStreamsWebSocketHandlersGenerator,
+    individualModels: umfuturesStreamsIndividualModelsGenerator,
+    messageStructs: umfuturesStreamsMessageStructsGenerator
+  },
+  authentication: {
+    supportedTypes: [], // USD-M Futures streams are public, no authentication required
+    defaultType: null
+  },
+  specialMethods: {
+    // USD-M Futures streams use subscription model, not request-response
+    subscriptions: {
+      requiresAuth: false,
+      useStreamFormat: true,
+      futuresSpecific: true
+    }
+  }
+});
+
+registerModule('cmfutures-streams', {
+  handlers: {
+    webSocketHandlers: cmfuturesStreamsWebSocketHandlersGenerator,
+    individualModels: cmfuturesStreamsIndividualModelsGenerator,
+    messageStructs: cmfuturesStreamsMessageStructsGenerator
+  },
+  authentication: {
+    supportedTypes: [], // COIN-M Futures streams are public, no authentication required
+    defaultType: null
+  },
+  specialMethods: {
+    // COIN-M Futures streams use subscription model, not request-response
+    subscriptions: {
+      requiresAuth: false,
+      useStreamFormat: true,
+      futuresSpecific: true
+    }
+  }
+});
+
 /*
  * Module-specific generator functions
  * These can be customized for each module's specific needs
@@ -288,6 +331,83 @@ function spotStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
   }
 }
 
+// USD-M Futures Streams module generators (market data streams, no authentication)
+function umfuturesStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
+  try {
+    // Use dedicated UmfuturesStreamsWebSocketHandlers for dynamic event type handling
+    return UmfuturesStreamsWebSocketHandlers({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load UmfuturesStreamsWebSocketHandlers for umfutures-streams:', error.message);
+    return '// UmfuturesStreamsWebSocketHandlers component not available for umfutures-streams\n';
+  }
+}
+
+function umfuturesStreamsIndividualModelsGenerator(asyncapi, moduleConfig) {
+  try {
+    console.log('DEBUG: umfuturesStreamsIndividualModelsGenerator called for umfutures-streams');
+    // IMPORTANT: Use SpotStreamsIndividualModels ONLY for streams modules 
+    // This avoids generating UserDataStream types since streams modules only handle market data
+    let modelFiles = SpotStreamsIndividualModels({ asyncapi });
+    
+    // Ensure modelFiles is an array
+    if (!Array.isArray(modelFiles)) {
+      modelFiles = [{
+        name: 'models.go',
+        content: modelFiles
+      }];
+    }
+    
+    // Note: UserDataStream type aliases are NOT added for streams modules
+    // as they only handle market data streams, not WebSocket API methods
+    console.log('DEBUG: umfuturesStreamsIndividualModelsGenerator returning', modelFiles.length, 'model files for streams');
+    
+    return modelFiles;
+  } catch (error) {
+    console.warn('Could not load SpotStreamsIndividualModels for umfutures-streams:', error.message);
+    // Fallback to empty array - DO NOT use IndividualModels for streams modules
+    return [];
+  }
+}
+
+function umfuturesStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
+  try {
+    return MessageStructs({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load MessageStructs for umfutures-streams:', error.message);
+    return '// MessageStructs component not available for umfutures-streams\n';
+  }
+}
+
+// COIN-M Futures Streams module generators (market data streams, no authentication)
+function cmfuturesStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
+  try {
+    // Use SpotStreamsWebSocketHandlers as base since futures streams work similarly
+    return SpotStreamsWebSocketHandlers({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load WebSocketHandlers for cmfutures-streams:', error.message);
+    return '// WebSocketHandlers component not available for cmfutures-streams\n';
+  }
+}
+
+function cmfuturesStreamsIndividualModelsGenerator(asyncapi, moduleConfig) {
+  try {
+    // Use SpotStreamsIndividualModels as base since futures streams use similar model structure
+    return SpotStreamsIndividualModels({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load IndividualModels for cmfutures-streams:', error.message);
+    return [];
+  }
+}
+
+function cmfuturesStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
+  try {
+    return MessageStructs({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load MessageStructs for cmfutures-streams:', error.message);
+    return '// MessageStructs component not available for cmfutures-streams\n';
+  }
+}
+
 /*
  * Utility function to determine module name from AsyncAPI spec or context
  */
@@ -300,7 +420,7 @@ export function detectModuleName(asyncapi, context = {}) {
     const parts = context.moduleName.split('/');
     const lastPart = parts[parts.length - 1];
     // If it looks like a known module, return it
-    if (['spot', 'umfutures', 'cmfutures', 'spot-streams'].includes(lastPart)) {
+    if (['spot', 'umfutures', 'cmfutures', 'spot-streams', 'umfutures-streams', 'cmfutures-streams'].includes(lastPart)) {
       return lastPart;
     }
   }
@@ -317,8 +437,10 @@ export function detectModuleName(asyncapi, context = {}) {
     if (title) {
       const titleLower = title.toLowerCase();
       if (titleLower.includes('spot') && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'spot-streams';
+      if ((titleLower.includes('umfutures') || titleLower.includes('usd-s') || titleLower.includes('usd-m')) && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'umfutures-streams';
+      if ((titleLower.includes('cmfutures') || titleLower.includes('coin-m')) && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'cmfutures-streams';
       if (titleLower.includes('spot')) return 'spot';
-      if (titleLower.includes('umfutures') || titleLower.includes('usd-m')) return 'umfutures';
+      if (titleLower.includes('umfutures') || titleLower.includes('usd-m') || titleLower.includes('usd-s')) return 'umfutures';
       if (titleLower.includes('cmfutures') || titleLower.includes('coin-m')) return 'cmfutures';
     }
   }
@@ -333,6 +455,8 @@ export function detectModuleName(asyncapi, context = {}) {
         return url || '';
       }).join(' ');
       
+      if (serverUrls.includes('dstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'cmfutures-streams';
+      if (serverUrls.includes('fstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'umfutures-streams';
       if (serverUrls.includes('dstream')) return 'cmfutures';
       if (serverUrls.includes('fstream')) return 'umfutures';
       if (serverUrls.includes('stream.binance') || serverUrls.includes('data-stream.binance')) return 'spot-streams';

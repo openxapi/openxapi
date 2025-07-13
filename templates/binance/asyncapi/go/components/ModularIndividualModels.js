@@ -9,12 +9,34 @@ import { IndividualModels } from './IndividualModels.js';
 export function ModularIndividualModels({ asyncapi, context = {} }) {
   // Detect which module we're generating for
   const moduleName = detectModuleName(asyncapi, context);
+  console.log('DEBUG: ModularIndividualModels detected module name:', moduleName);
   
   // Get the module-specific configuration
   const moduleConfig = getModuleConfig(moduleName);
+  console.log('DEBUG: ModularIndividualModels using config for module:', moduleConfig.name);
+  
+  // CRITICAL: For streams modules, ensure we only use the streams-specific generator
+  if (moduleName.endsWith('-streams')) {
+    console.log('DEBUG: Detected streams module, using streams-specific generator only');
+  }
   
   // Use the module-specific individual models generator
-  return moduleConfig.handlers.individualModels(asyncapi, moduleConfig);
+  const result = moduleConfig.handlers.individualModels(asyncapi, moduleConfig);
+  console.log('DEBUG: ModularIndividualModels got result with', Array.isArray(result) ? result.length : 'non-array', 'items');
+  
+  // Ensure we return an array
+  if (Array.isArray(result)) {
+    return result;
+  } else if (typeof result === 'string') {
+    // If it's a string, wrap it in an array with a default filename
+    return [{
+      name: 'models.go',
+      content: result
+    }];
+  } else {
+    // Fallback to empty array
+    return [];
+  }
 }
 
 /*
@@ -57,21 +79,36 @@ export function EnhancedIndividualModels({ asyncapi, moduleName = null }) {
  */
 function generateModuleSpecificModels(asyncapi, moduleName, moduleConfig) {
   const moduleSpecificModels = [];
+  console.log('DEBUG: generateModuleSpecificModels called with moduleName:', moduleName);
   
   switch (moduleName) {
     case 'spot':
+      console.log('DEBUG: Using spot-specific models');
       moduleSpecificModels.push(...generateSpotSpecificModels(asyncapi, moduleConfig));
       break;
     case 'umfutures':
+      console.log('DEBUG: Using umfutures-specific models (includes UserDataStream types)');
       moduleSpecificModels.push(...generateUmfuturesSpecificModels(asyncapi, moduleConfig));
       break;
+    case 'umfutures-streams':
+      console.log('DEBUG: Using umfutures-streams-specific models (NO UserDataStream types)');
+      moduleSpecificModels.push(...generateUmfuturesStreamsSpecificModels(asyncapi, moduleConfig));
+      break;
     case 'cmfutures':
+    case 'cmfutures-streams':
+      console.log('DEBUG: Using cmfutures-specific models');
       moduleSpecificModels.push(...generateCmfuturesSpecificModels(asyncapi, moduleConfig));
       break;
+    case 'spot-streams':
+      console.log('DEBUG: Using spot-specific models');
+      moduleSpecificModels.push(...generateSpotSpecificModels(asyncapi, moduleConfig));
+      break;
     default:
+      console.log('DEBUG: Using default module models for:', moduleName);
       moduleSpecificModels.push(...generateDefaultModuleModels(asyncapi, moduleConfig));
   }
   
+  console.log('DEBUG: generateModuleSpecificModels returning', moduleSpecificModels.length, 'models');
   return moduleSpecificModels;
 }
 
@@ -112,6 +149,35 @@ function generateUmfuturesSpecificModels(asyncapi, moduleConfig) {
     name: 'futures_positions.go',
     content: generateFuturesPositionsModel(moduleConfig)
   });
+  
+  // Add user data stream type aliases to fix AsyncAPI generator naming issues
+  models.push({
+    name: 'user_data_stream_types.go',
+    content: generateUserDataStreamTypesModel(moduleConfig)
+  });
+  
+  return models;
+}
+
+/*
+ * Generate USD-M futures streams specific model files (without UserDataStream types)
+ */
+function generateUmfuturesStreamsSpecificModels(asyncapi, moduleConfig) {
+  const models = [];
+  
+  // Add futures-specific models (but no UserDataStream types since this is streams module)
+  models.push({
+    name: 'futures_utils.go',
+    content: generateFuturesUtilsModel(moduleConfig)
+  });
+  
+  models.push({
+    name: 'futures_positions.go',
+    content: generateFuturesPositionsModel(moduleConfig)
+  });
+  
+  // Note: UserDataStream types are NOT included for streams modules
+  // as they only handle market data streams, not WebSocket API methods
   
   return models;
 }
@@ -336,5 +402,22 @@ func (s ModuleInfo) String() string {
 \tb, _ := json.Marshal(s)
 \treturn string(b)
 }
+`;
+}
+
+function generateUserDataStreamTypesModel(moduleConfig) {
+  return `package models
+
+// Type aliases to fix AsyncAPI generator naming inconsistencies
+// These aliases map the expected type names to the actual generated ones
+
+// UserDataStreamStartRequestParameters is an alias for the actual generated type
+type UserDataStreamStartRequestParameters = UserDataStreamStartRequestRequestParameters
+
+// UserDataStreamPingRequestParameters is an alias for the actual generated type  
+type UserDataStreamPingRequestParameters = UserDataStreamPingRequestRequestParameters
+
+// UserDataStreamStopRequestParameters is an alias for the actual generated type
+type UserDataStreamStopRequestParameters = UserDataStreamStopRequestRequestParameters
 `;
 }

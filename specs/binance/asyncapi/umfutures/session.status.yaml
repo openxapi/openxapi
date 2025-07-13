@@ -1,0 +1,133 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    umfutures:
+        address: /
+        title: Channel session.status
+        description: |-
+            Query the status of the WebSocket connection,
+            inspecting which API key (if any) is used to authorize requests.
+            This allows you to check the current authentication status of your WebSocket session.
+        messages:
+            sessionStatusRequest:
+                $ref: '#/components/messages/sessionStatusRequest'
+            sessionStatusResponse:
+                $ref: '#/components/messages/sessionStatusResponse'
+operations:
+    receiveSessionStatus:
+        title: Receive from session.status
+        description: Receive response from session.status
+        action: receive
+        channel:
+            $ref: '#/channels/umfutures'
+        messages:
+            - $ref: '#/channels/umfutures/messages/sessionStatusResponse'
+    sendSessionStatus:
+        title: Send to session.status
+        description: Send a session.status request
+        action: send
+        channel:
+            $ref: '#/channels/umfutures'
+        messages:
+            - $ref: '#/channels/umfutures/messages/sessionStatusRequest'
+components:
+    messages:
+        sessionStatusRequest:
+            name: Query session status Request
+            title: Query session status Request
+            description: Send a session.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
+                    method:
+                        type: string
+                        description: method property
+                        example: session.status
+                        enum:
+                            - session.status
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionStatusResponse:
+            name: Query session status Response
+            title: Query session status Response
+            description: Receive response from session.status
+            payload:
+                type: object
+                description: response schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
+                    result:
+                        type: object
+                        description: result property
+                        properties:
+                            apiKey:
+                                type: string
+                                description: apiKey property (shows current authenticated key or empty if not authenticated)
+                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                            authorizedSince:
+                                type: integer
+                                format: int64
+                                description: authorizedSince property (timestamp when authentication occurred)
+                                example: 1649729878532
+                            connectedSince:
+                                type: integer
+                                format: int64
+                                description: connectedSince property (timestamp when WebSocket connection was established)
+                                example: 1649729873021
+                            returnRateLimits:
+                                type: boolean
+                                description: returnRateLimits property
+                                example: false
+                            serverTime:
+                                type: integer
+                                format: int64
+                                description: serverTime property (current server timestamp)
+                                example: 1649730611671
+                            userDataStream:
+                                type: boolean
+                                description: userDataStream property (indicates if connection can receive user data stream events)
+                                example: true
+                    status:
+                        type: integer
+                        description: status property
+                        example: 200
+                    rateLimits:
+                        type: array
+                        description: Rate limit information
+                        items:
+                            type: object
+                            properties:
+                                rateLimitType:
+                                    type: string
+                                    description: Rate limit type
+                                    example: REQUEST_WEIGHT
+                                interval:
+                                    type: string
+                                    description: Rate limit interval
+                                    example: MINUTE
+                                intervalNum:
+                                    type: integer
+                                    description: Interval number
+                                    example: 1
+                                limit:
+                                    type: integer
+                                    description: Rate limit
+                                    example: 2400
+                                count:
+                                    type: integer
+                                    description: Current count
+                                    example: 2
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
