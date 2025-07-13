@@ -344,10 +344,27 @@ function umfuturesStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
 
 function umfuturesStreamsIndividualModelsGenerator(asyncapi, moduleConfig) {
   try {
-    // Use SpotStreamsIndividualModels as base since futures streams use similar model structure
-    return SpotStreamsIndividualModels({ asyncapi });
+    console.log('DEBUG: umfuturesStreamsIndividualModelsGenerator called for umfutures-streams');
+    // IMPORTANT: Use SpotStreamsIndividualModels ONLY for streams modules 
+    // This avoids generating UserDataStream types since streams modules only handle market data
+    let modelFiles = SpotStreamsIndividualModels({ asyncapi });
+    
+    // Ensure modelFiles is an array
+    if (!Array.isArray(modelFiles)) {
+      modelFiles = [{
+        name: 'models.go',
+        content: modelFiles
+      }];
+    }
+    
+    // Note: UserDataStream type aliases are NOT added for streams modules
+    // as they only handle market data streams, not WebSocket API methods
+    console.log('DEBUG: umfuturesStreamsIndividualModelsGenerator returning', modelFiles.length, 'model files for streams');
+    
+    return modelFiles;
   } catch (error) {
-    console.warn('Could not load IndividualModels for umfutures-streams:', error.message);
+    console.warn('Could not load SpotStreamsIndividualModels for umfutures-streams:', error.message);
+    // Fallback to empty array - DO NOT use IndividualModels for streams modules
     return [];
   }
 }
