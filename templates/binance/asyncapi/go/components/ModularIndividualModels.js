@@ -9,20 +9,17 @@ import { IndividualModels } from './IndividualModels.js';
 export function ModularIndividualModels({ asyncapi, context = {} }) {
   // Detect which module we're generating for
   const moduleName = detectModuleName(asyncapi, context);
-  console.log('DEBUG: ModularIndividualModels detected module name:', moduleName);
   
   // Get the module-specific configuration
   const moduleConfig = getModuleConfig(moduleName);
-  console.log('DEBUG: ModularIndividualModels using config for module:', moduleConfig.name);
   
   // CRITICAL: For streams modules, ensure we only use the streams-specific generator
   if (moduleName.endsWith('-streams')) {
-    console.log('DEBUG: Detected streams module, using streams-specific generator only');
+    // Streams modules use specialized generation logic
   }
   
   // Use the module-specific individual models generator
   const result = moduleConfig.handlers.individualModels(asyncapi, moduleConfig);
-  console.log('DEBUG: ModularIndividualModels got result with', Array.isArray(result) ? result.length : 'non-array', 'items');
   
   // Ensure we return an array
   if (Array.isArray(result)) {
@@ -79,36 +76,28 @@ export function EnhancedIndividualModels({ asyncapi, moduleName = null }) {
  */
 function generateModuleSpecificModels(asyncapi, moduleName, moduleConfig) {
   const moduleSpecificModels = [];
-  console.log('DEBUG: generateModuleSpecificModels called with moduleName:', moduleName);
   
   switch (moduleName) {
     case 'spot':
-      console.log('DEBUG: Using spot-specific models');
       moduleSpecificModels.push(...generateSpotSpecificModels(asyncapi, moduleConfig));
       break;
     case 'umfutures':
-      console.log('DEBUG: Using umfutures-specific models (includes UserDataStream types)');
       moduleSpecificModels.push(...generateUmfuturesSpecificModels(asyncapi, moduleConfig));
       break;
     case 'umfutures-streams':
-      console.log('DEBUG: Using umfutures-streams-specific models (NO UserDataStream types)');
       moduleSpecificModels.push(...generateUmfuturesStreamsSpecificModels(asyncapi, moduleConfig));
       break;
     case 'cmfutures':
     case 'cmfutures-streams':
-      console.log('DEBUG: Using cmfutures-specific models');
       moduleSpecificModels.push(...generateCmfuturesSpecificModels(asyncapi, moduleConfig));
       break;
     case 'spot-streams':
-      console.log('DEBUG: Using spot-specific models');
       moduleSpecificModels.push(...generateSpotSpecificModels(asyncapi, moduleConfig));
       break;
     default:
-      console.log('DEBUG: Using default module models for:', moduleName);
       moduleSpecificModels.push(...generateDefaultModuleModels(asyncapi, moduleConfig));
   }
   
-  console.log('DEBUG: generateModuleSpecificModels returning', moduleSpecificModels.length, 'models');
   return moduleSpecificModels;
 }
 

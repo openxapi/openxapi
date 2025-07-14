@@ -73,7 +73,7 @@ export function SpotStreamsIndividualModels({ asyncapi }) {
     });
     
     if (hasCorrespondingSchema) {
-      console.debug(`Skipping message model: ${messageName} (schema model takes priority)`);
+      // Skip message model since schema model takes priority
       return;
     }
     
