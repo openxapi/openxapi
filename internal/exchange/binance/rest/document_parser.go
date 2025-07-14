@@ -711,7 +711,7 @@ func createSchemaWithValue(v interface{}, title string) (*parser.Schema, error) 
 			if strings.HasSuffix(key.String(), "Id") && valueSchema.Type == parser.IntegerType {
 				schema.Properties[key.String()].Format = "int64"
 			}
-			if key.String() == "goodTillDate" && valueSchema.Type == parser.IntegerType {
+			if strings.HasSuffix(key.String(), "Date") && valueSchema.Type == parser.IntegerType {
 				schema.Properties[key.String()].Format = "int64"
 			}
 		}
@@ -750,6 +750,17 @@ func createSchemaWithValue(v interface{}, title string) (*parser.Schema, error) 
 			}
 			// TODO: we can collect all the LONG parameters from documents and compare the key with the name
 			// if they are the same, we can set the format to int64
+			items := strings.Split(title, ".")
+			key := items[len(items)-1]
+			if strings.HasSuffix(key, "Time") || strings.HasSuffix(key, "time") || strings.HasSuffix(key, "timestamp") || strings.HasSuffix(key, "Timestamp") {
+				schema.Format = "int64"
+			}
+			if strings.HasSuffix(key, "Id") {
+				schema.Format = "int64"
+			}
+			if strings.HasSuffix(key, "Date") {
+				schema.Format = "int64"
+			}
 			return schema, nil
 		} else {
 			schema := &parser.Schema{

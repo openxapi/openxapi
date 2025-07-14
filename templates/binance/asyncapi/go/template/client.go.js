@@ -108,7 +108,7 @@ func NewServerManager() *ServerManager {
 		url = `${protocol}://${host}${pathname}`;
 		const title = server.title() || `${rawName.charAt(0).toUpperCase() + rawName.slice(1)} Server`;
 		const summary = server.summary() || `WebSocket API Server (${rawName})`;
-		const description = server.description() || `WebSocket server for ${rawName} environment`;
+		const description = (server.description() || `WebSocket server for ${rawName} environment`).replace(/"/g, '\\"').replace(/\n/g, '\\n');
 		
 		return `sm.servers["${name}"] = &ServerInfo{
 		Name:        "${name}",

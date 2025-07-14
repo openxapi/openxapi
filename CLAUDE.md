@@ -815,4 +815,65 @@ DEBUG: JSON line: "{'field': 'value'}"                        // Wrong quotes
 - Ensure `doc_type` is set correctly for specialized parsing (e.g., `derivatives`)
 - Test thoroughly to ensure no impact on existing modules
 
+### Systematic Documentation Review Principle
+**ALWAYS follow a systematic approach when reviewing multiple API documentation URLs to ensure complete accuracy and coverage.** When creating or updating AsyncAPI/OpenAPI specifications from documentation sources, follow this disciplined process:
+
+**Key Guidelines:**
+1. **Create a TODO.md tracking file** - List all documentation URLs with status tracking (❌ Not reviewed, 🔄 In progress, ✅ Completed and implemented)
+2. **Review documents sequentially** - Start with document #1 and proceed systematically through each URL
+3. **Extract complete information** - For each document, gather all details including:
+   - Exact stream patterns and naming conventions
+   - Complete response structures with ALL fields and data types
+   - Update frequencies and timing information
+   - Field descriptions with actual examples
+   - Any special characteristics or limitations
+4. **Update specification files immediately** - After reviewing each document, update the relevant YAML specification file with accurate information
+5. **Mark as completed only after implementation** - Only mark documents as ✅ in TODO.md after the information has been properly implemented in the specification file
+6. **Use actual examples from documentation** - Replace generic examples with real examples from the official documentation
+7. **Verify field accuracy** - Ensure all field names, types, and constraints match the official documentation exactly
+
+**Systematic Review Process:**
+```bash
+# 1. Create TODO.md with all documentation URLs
+# 2. For each document:
+WebFetch(url) -> Extract complete details -> Update YAML spec -> Mark as completed in TODO.md
+# 3. Continue until all documents are ✅ completed
+```
+
+**Example TODO.md Structure:**
+```markdown
+# API Documentation Review
+
+## Status Legend
+- ❌ Not reviewed
+- 🔄 In progress  
+- ✅ Completed and implemented in {spec-file}.yaml
+
+## Documentation URLs to Review
+
+1. ❌ **Document Name**
+   - URL: https://example.com/docs/...
+   - Status: Not reviewed
+   - Notes: Need to extract specific information
+
+2. ✅ **Document Name**
+   - URL: https://example.com/docs/...
+   - Status: Completed and implemented in spec.yaml
+   - Notes: ✅ All details verified and implemented
+```
+
+**Quality Checks:**
+- Verify all field names match official documentation exactly
+- Ensure data types and formats are correct
+- Update examples to use real values from documentation
+- Check that all stream patterns and naming conventions are accurate
+- Validate that update frequencies and timing information is correct
+
+**Anti-patterns to Avoid:**
+- Skipping documents or reviewing out of order
+- Marking documents as complete before implementing in YAML
+- Using generic examples instead of real documentation examples
+- Making assumptions about field names or types without verification
+- Incomplete extraction of information from documentation sources
+
 This guide provides the essential context for understanding and contributing to the OpenXAPI project. For specific implementation details, refer to the source code and existing tests. 
