@@ -108,7 +108,7 @@ func NewServerManager() *ServerManager {
 		url = `${protocol}://${host}${pathname}`;
 		const title = server.title() || `${rawName.charAt(0).toUpperCase() + rawName.slice(1)} Server`;
 		const summary = server.summary() || `WebSocket API Server (${rawName})`;
-		const description = server.description() || `WebSocket server for ${rawName} environment`;
+		const description = (server.description() || `WebSocket server for ${rawName} environment`).replace(/"/g, '\\"').replace(/\n/g, '\\n');
 		
 		return `sm.servers["${name}"] = &ServerInfo{
 		Name:        "${name}",
@@ -499,6 +499,7 @@ func NewClient() *Client {
 		responseList:  make([]interface{}, 0, 100), // Pre-allocate with capacity
 		done:          make(chan struct{}),
 		jsonBuffer:    make([]byte, 0, 1024), // Pre-allocate JSON buffer
+		handlers:      eventHandlers{},        // Initialize event handlers registry
 	}
 }
 

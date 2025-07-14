@@ -28,6 +28,12 @@ channels:
                 $ref: '#/components/messages/accountBalanceRequest'
             accountBalanceResponse:
                 $ref: '#/components/messages/accountBalanceResponse'
+            accountConfigUpdate:
+                name: Account Configuration Update Event
+                title: Account Configuration Update Event
+                description: Sent when account configuration changes (leverage update)
+                payload:
+                    $ref: '#/components/schemas/AccountConfigUpdateEvent'
             accountPositionRequest:
                 $ref: '#/components/messages/accountPositionRequest'
             accountPositionResponse:
@@ -36,6 +42,30 @@ channels:
                 $ref: '#/components/messages/accountStatusRequest'
             accountStatusResponse:
                 $ref: '#/components/messages/accountStatusResponse'
+            accountUpdate:
+                name: Account Update Event
+                title: Balance and Position Update Event
+                description: Sent when account balance or position changes
+                payload:
+                    $ref: '#/components/schemas/AccountUpdateEvent'
+            gridUpdate:
+                name: Grid Update Event
+                title: Grid Update Event
+                description: Sent when grid strategy updates
+                payload:
+                    $ref: '#/components/schemas/GridUpdateEvent'
+            listenKeyExpired:
+                name: Listen Key Expired Event
+                title: User Data Stream Expired Event
+                description: Sent when the listen key expires
+                payload:
+                    $ref: '#/components/schemas/ListenKeyExpiredEvent'
+            marginCall:
+                name: Margin Call Event
+                title: Margin Call Event
+                description: Sent when account is under margin call
+                payload:
+                    $ref: '#/components/schemas/MarginCallEvent'
             orderCancelRequest:
                 $ref: '#/components/messages/orderCancelRequest'
             orderCancelResponse:
@@ -52,6 +82,24 @@ channels:
                 $ref: '#/components/messages/orderStatusRequest'
             orderStatusResponse:
                 $ref: '#/components/messages/orderStatusResponse'
+            orderTradeUpdate:
+                name: Order Trade Update Event
+                title: Order Update Event
+                description: Orders are updated with orderTradeUpdate event
+                payload:
+                    $ref: '#/components/schemas/OrderTradeUpdateEvent'
+            sessionLogonRequest:
+                $ref: '#/components/messages/sessionLogonRequest'
+            sessionLogoutRequest:
+                $ref: '#/components/messages/sessionLogoutRequest'
+            sessionStatusRequest:
+                $ref: '#/components/messages/sessionStatusRequest'
+            strategyUpdate:
+                name: Strategy Update Event
+                title: Strategy Update Event
+                description: Sent when strategy status changes
+                payload:
+                    $ref: '#/components/schemas/StrategyUpdateEvent'
             userDataStreamPingRequest:
                 $ref: '#/components/messages/userDataStreamPingRequest'
             userDataStreamPingResponse:
@@ -121,6 +169,20 @@ operations:
             $ref: '#/channels/cmfutures'
         messages:
             - $ref: '#/channels/cmfutures/messages/orderStatusResponse'
+    receiveUserDataStreamEvents:
+        title: Receive user data stream events
+        description: Receive various user data stream events after successful subscription
+        action: receive
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/listenKeyExpired'
+            - $ref: '#/channels/cmfutures/messages/accountUpdate'
+            - $ref: '#/channels/cmfutures/messages/marginCall'
+            - $ref: '#/channels/cmfutures/messages/orderTradeUpdate'
+            - $ref: '#/channels/cmfutures/messages/accountConfigUpdate'
+            - $ref: '#/channels/cmfutures/messages/strategyUpdate'
+            - $ref: '#/channels/cmfutures/messages/gridUpdate'
     receiveUserDataStreamPing:
         title: Receive from userDataStream.ping
         description: Receive response from userDataStream.ping
@@ -201,6 +263,30 @@ operations:
             $ref: '#/channels/cmfutures'
         messages:
             - $ref: '#/channels/cmfutures/messages/orderStatusRequest'
+    sendSessionLogon:
+        title: Send to session.logon
+        description: Send a session.logon request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/sessionLogonRequest'
+    sendSessionLogout:
+        title: Send to session.logout
+        description: Send a session.logout request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/sessionLogoutRequest'
+    sendSessionStatus:
+        title: Send to session.status
+        description: Send a session.status request
+        action: send
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/sessionStatusRequest'
     sendUserDataStreamPing:
         title: Send to userDataStream.ping
         description: Send a userDataStream.ping request
@@ -226,6 +312,565 @@ operations:
         messages:
             - $ref: '#/channels/cmfutures/messages/userDataStreamStopRequest'
 components:
+    schemas:
+        AccountConfigUpdateEvent:
+            type: object
+            description: Account Configuration Update - sent when account configuration changes (leverage update)
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1611646737479
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1611646737476
+                        ac:
+                            type: object
+                            description: Account Configuration for Trade Pair
+                            properties:
+                                l:
+                                    type: integer
+                                    description: Leverage
+                                    example: 125
+                                s:
+                                    type: string
+                                    description: Symbol
+                                    example: BTCUSD_PERP
+                        e:
+                            type: string
+                            description: Event Type
+                            example: ACCOUNT_CONFIG_UPDATE
+                        i:
+                            type: string
+                            description: Account Alias
+                            example: SgsR
+        AccountUpdateEvent:
+            type: object
+            description: Balance and Position Update - sent when account balance or position changes
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1564034571105
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1564034571073
+                        a:
+                            type: object
+                            description: Account information
+                            properties:
+                                B:
+                                    type: array
+                                    description: Balance updates
+                                    items:
+                                        type: object
+                                        properties:
+                                            a:
+                                                type: string
+                                                description: Asset name
+                                                example: BTC
+                                            bc:
+                                                type: string
+                                                description: Balance Change except PnL and Commission
+                                                example: "0.00000000"
+                                            cw:
+                                                type: string
+                                                description: Cross Wallet Balance
+                                                example: "1.00000000"
+                                            wb:
+                                                type: string
+                                                description: Wallet Balance
+                                                example: "1.00000000"
+                                P:
+                                    type: array
+                                    description: Position updates
+                                    items:
+                                        type: object
+                                        properties:
+                                            bep:
+                                                type: string
+                                                description: Breakeven Price
+                                                example: "0.0"
+                                            cr:
+                                                type: string
+                                                description: Accumulated Realized
+                                                example: "0"
+                                            ep:
+                                                type: string
+                                                description: Entry Price
+                                                example: "0.00000"
+                                            iw:
+                                                type: string
+                                                description: Isolated Wallet
+                                                example: "0.00000000"
+                                            mt:
+                                                type: string
+                                                description: Margin Type
+                                                example: cross
+                                                enum:
+                                                    - isolated
+                                                    - cross
+                                            pa:
+                                                type: string
+                                                description: Position Amount
+                                                example: "0"
+                                            ps:
+                                                type: string
+                                                description: Position Side
+                                                example: BOTH
+                                                enum:
+                                                    - LONG
+                                                    - SHORT
+                                                    - BOTH
+                                            s:
+                                                type: string
+                                                description: Symbol
+                                                example: BTCUSD_PERP
+                                            up:
+                                                type: string
+                                                description: Unrealized PnL
+                                                example: "0.00000000"
+                                m:
+                                    type: string
+                                    description: Event reason type
+                                    example: ORDER
+                                    enum:
+                                        - ORDER
+                                        - FUNDING_FEE
+                                        - WITHDRAW
+                                        - DEPOSIT
+                                        - INSURANCE_CLEAR
+                                        - BENEFITS
+                                        - REFERRAL_KICKBACK
+                                        - COMMISSION_REBATE
+                                        - ADJUSTMENT
+                        e:
+                            type: string
+                            description: Event type
+                            example: ACCOUNT_UPDATE
+                        i:
+                            type: string
+                            description: Account Alias
+                            example: SgsR
+        GridUpdateEvent:
+            type: object
+            description: Grid Update - sent when grid strategy updates
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1669693493819
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1669693493658
+                        e:
+                            type: string
+                            description: Event Type
+                            example: GRID_UPDATE
+                        gu:
+                            type: object
+                            description: Grid Update
+                            properties:
+                                mp:
+                                    type: string
+                                    description: Additional properties
+                                    example: additional_data
+                                r:
+                                    type: string
+                                    description: Realized PNL
+                                    example: "8.59033754"
+                                s:
+                                    type: string
+                                    description: Symbol
+                                    example: BTCUSD_PERP
+                                si:
+                                    type: integer
+                                    format: int64
+                                    description: Strategy ID
+                                    example: 123456789
+                                ss:
+                                    type: string
+                                    description: Strategy Status
+                                    example: WORKING
+                                    enum:
+                                        - NEW
+                                        - WORKING
+                                        - CANCELLED
+                                        - EXPIRED
+                                st:
+                                    type: string
+                                    description: Strategy Type
+                                    example: GRID
+                                uf:
+                                    type: string
+                                    description: Unmatched Fee
+                                    example: "0.0228"
+                                up:
+                                    type: string
+                                    description: Unmatched Average Price
+                                    example: "56999.99"
+                                uq:
+                                    type: string
+                                    description: Unmatched Qty
+                                    example: "0.004"
+        ListenKeyExpiredEvent:
+            type: object
+            description: User Data Stream Expired - sent when the listen key expires
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event time (timestamp)
+                            example: 1576653824250
+                        e:
+                            type: string
+                            description: Event type
+                            example: listenKeyExpired
+                        listenKey:
+                            type: string
+                            description: The expired listen key
+                            example: WsCMN0a4KHUPTQuX6IUnqEZfB1inxmv1qR4kbf1LuEjur5VdbzqvyxqG9TSjVVxv
+        MarginCallEvent:
+            type: object
+            description: Margin Call - sent when account is under margin call
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1587727187525
+                        cw:
+                            type: string
+                            description: Cross Wallet Balance (only for cross position)
+                            example: "3.16312014"
+                        e:
+                            type: string
+                            description: Event Type
+                            example: MARGIN_CALL
+                        i:
+                            type: string
+                            description: Account Alias
+                            example: SgsR
+                        p:
+                            type: array
+                            description: Position(s) of Margin Call
+                            items:
+                                type: object
+                                properties:
+                                    iw:
+                                        type: string
+                                        description: Isolated Wallet
+                                        example: "0"
+                                    mm:
+                                        type: string
+                                        description: Maintenance Margin Required
+                                        example: "1.614445"
+                                    mp:
+                                        type: string
+                                        description: Mark Price
+                                        example: "187.17127"
+                                    mt:
+                                        type: string
+                                        description: Margin Type
+                                        example: cross
+                                        enum:
+                                            - isolated
+                                            - cross
+                                    pa:
+                                        type: string
+                                        description: Position Amount
+                                        example: "1.327"
+                                    ps:
+                                        type: string
+                                        description: Position Side
+                                        example: LONG
+                                        enum:
+                                            - LONG
+                                            - SHORT
+                                            - BOTH
+                                    s:
+                                        type: string
+                                        description: Symbol
+                                        example: ETHUSD_PERP
+                                    up:
+                                        type: string
+                                        description: Unrealized PnL
+                                        example: "-1.166074"
+        OrderTradeUpdateEvent:
+            type: object
+            description: Order Update - orders are updated with orderTradeUpdate event
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1568879465651
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1568879465650
+                        e:
+                            type: string
+                            description: Event Type
+                            example: ORDER_TRADE_UPDATE
+                        i:
+                            type: string
+                            description: Account Alias
+                            example: SgsR
+                        o:
+                            type: object
+                            description: Order details
+                            properties:
+                                L:
+                                    type: string
+                                    description: Last Filled Price
+                                    example: "0"
+                                "N":
+                                    type: string
+                                    description: Commission Asset
+                                    example: BTC
+                                R:
+                                    type: boolean
+                                    description: Is this reduce only
+                                    example: false
+                                S:
+                                    type: string
+                                    description: Side
+                                    example: SELL
+                                    enum:
+                                        - BUY
+                                        - SELL
+                                T:
+                                    type: integer
+                                    format: int64
+                                    description: Order Trade Time (milliseconds)
+                                    example: 1568879465651
+                                X:
+                                    type: string
+                                    description: Order Status
+                                    example: NEW
+                                    enum:
+                                        - NEW
+                                        - PARTIALLY_FILLED
+                                        - FILLED
+                                        - CANCELED
+                                        - EXPIRED
+                                        - NEW_INSURANCE
+                                        - NEW_ADL
+                                a:
+                                    type: string
+                                    description: Ask Notional
+                                    example: "9000"
+                                ap:
+                                    type: string
+                                    description: Average Price
+                                    example: "0"
+                                b:
+                                    type: string
+                                    description: Bids Notional
+                                    example: "0"
+                                c:
+                                    type: string
+                                    description: Client Order ID
+                                    example: myOrder1
+                                cp:
+                                    type: boolean
+                                    description: If Close-All
+                                    example: false
+                                f:
+                                    type: string
+                                    description: Time in Force
+                                    example: GTC
+                                    enum:
+                                        - GTC
+                                        - IOC
+                                        - FOK
+                                        - GTX
+                                i:
+                                    type: integer
+                                    format: int64
+                                    description: Order ID
+                                    example: 8886774
+                                l:
+                                    type: string
+                                    description: Order Last Filled Quantity
+                                    example: "0"
+                                m:
+                                    type: boolean
+                                    description: Maker side
+                                    example: false
+                                "n":
+                                    type: string
+                                    description: Commission
+                                    example: "0"
+                                o:
+                                    type: string
+                                    description: Order Type
+                                    example: LIMIT
+                                    enum:
+                                        - LIMIT
+                                        - MARKET
+                                        - STOP
+                                        - STOP_MARKET
+                                        - TAKE_PROFIT
+                                        - TAKE_PROFIT_MARKET
+                                        - TRAILING_STOP_MARKET
+                                ot:
+                                    type: string
+                                    description: Original Order Type
+                                    example: LIMIT
+                                p:
+                                    type: string
+                                    description: Original Price
+                                    example: "9000"
+                                pP:
+                                    type: boolean
+                                    description: Protect position
+                                    example: false
+                                ps:
+                                    type: string
+                                    description: Position Side
+                                    example: BOTH
+                                    enum:
+                                        - LONG
+                                        - SHORT
+                                        - BOTH
+                                q:
+                                    type: string
+                                    description: Original Quantity
+                                    example: "1"
+                                rp:
+                                    type: string
+                                    description: Realized Profit of the trade
+                                    example: "0"
+                                s:
+                                    type: string
+                                    description: Symbol
+                                    example: BTCUSD_PERP
+                                si:
+                                    type: integer
+                                    format: int64
+                                    description: Ignore
+                                    example: 0
+                                sp:
+                                    type: string
+                                    description: Stop Price
+                                    example: "0"
+                                ss:
+                                    type: integer
+                                    format: int64
+                                    description: Ignore
+                                    example: 0
+                                t:
+                                    type: integer
+                                    format: int64
+                                    description: Trade ID
+                                    example: 0
+                                wt:
+                                    type: string
+                                    description: Stop Price Working Type
+                                    example: CONTRACT_PRICE
+                                    enum:
+                                        - MARK_PRICE
+                                        - CONTRACT_PRICE
+                                x:
+                                    type: string
+                                    description: Execution Type
+                                    example: NEW
+                                    enum:
+                                        - NEW
+                                        - CANCELED
+                                        - CALCULATED
+                                        - EXPIRED
+                                        - TRADE
+                                z:
+                                    type: string
+                                    description: Order Filled Accumulated Quantity
+                                    example: "0"
+        StrategyUpdateEvent:
+            type: object
+            description: Strategy Update - sent when strategy status changes
+            properties:
+                event:
+                    type: object
+                    properties:
+                        E:
+                            type: integer
+                            format: int64
+                            description: Event Time (milliseconds)
+                            example: 1669693493819
+                        T:
+                            type: integer
+                            format: int64
+                            description: Transaction Time (milliseconds)
+                            example: 1669693493658
+                        e:
+                            type: string
+                            description: Event Type
+                            example: STRATEGY_UPDATE
+                        su:
+                            type: object
+                            description: Strategy Update
+                            properties:
+                                c:
+                                    type: integer
+                                    description: Operation Code
+                                    example: 1
+                                s:
+                                    type: string
+                                    description: Symbol
+                                    example: BTCUSD_PERP
+                                si:
+                                    type: integer
+                                    format: int64
+                                    description: Strategy ID
+                                    example: 123456789
+                                ss:
+                                    type: string
+                                    description: Strategy Status
+                                    example: NEW
+                                    enum:
+                                        - NEW
+                                        - WORKING
+                                        - CANCELLED
+                                        - EXPIRED
+                                st:
+                                    type: string
+                                    description: Strategy Type
+                                    example: GRID
+                                ut:
+                                    type: integer
+                                    format: int64
+                                    description: Update Time (milliseconds)
+                                    example: 1669693493658
     messages:
         accountBalanceRequest:
             name: Futures Account Balance(USER_DATA) Request
@@ -1525,6 +2170,86 @@ components:
                         type: integer
                         description: status property
                         example: 200
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionLogonRequest:
+            name: Log in with API key (SIGNED) Request
+            title: Log in with API key (SIGNED) Request
+            description: Send a session.logon request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: c174a2b1-3f51-4580-b200-8528bd237cb7
+                    method:
+                        type: string
+                        description: method property
+                        example: session.logon
+                        enum:
+                            - session.logon
+                    params:
+                        type: object
+                        description: params property
+                        properties:
+                            apiKey:
+                                type: string
+                                description: apiKey property
+                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                            signature:
+                                type: string
+                                description: signature property
+                                example: 1cf54395b336b0a9727ef27d5d98987962bc47aca6e13fe978612d0adee066ed
+                            timestamp:
+                                type: integer
+                                format: int64
+                                description: timestamp property
+                                example: 1649729878532
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionLogoutRequest:
+            name: SIGNED request example (Ed25519) Request
+            title: SIGNED request example (Ed25519) Request
+            description: Send a session.logout request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: c174a2b1-3f51-4580-b200-8528bd237cb7
+                    method:
+                        type: string
+                        description: method property
+                        example: session.logout
+                        enum:
+                            - session.logout
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionStatusRequest:
+            name: Query session status Request
+            title: Query session status Request
+            description: Send a session.status request
+            payload:
+                type: object
+                description: request schema
+                properties:
+                    id:
+                        type: string
+                        description: id property
+                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
+                    method:
+                        type: string
+                        description: method property
+                        example: session.status
+                        enum:
+                            - session.status
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

@@ -1,0 +1,1926 @@
+asyncapi: 3.0.0
+info:
+  title: Binance Coin-M Futures WebSocket Streams
+  version: 1.0.0
+  description: |
+    AsyncAPI specification for Binance Coin-M (Coin-Margined) Futures WebSocket Streams (Market Data).
+    
+    WebSocket Streams provide real-time coin-margined futures market data without authentication.
+    These are different from WebSocket API and User Data Streams.
+    
+    ## Connection Types
+    
+    ### Single Streams
+    - **Connection**: Connect to `/ws` first, then use SUBSCRIBE to add streams
+    - **Data Format**: Direct stream data (not wrapped)
+    - **Property**: `combined = false`
+    - **Example**: `wss://dstream.binance.com/ws` → SUBSCRIBE to `btcusd_perp@aggTrade`
+    
+    ### Combined Streams (Multiple Streams)  
+    - **Connection**: Connect to `/stream` first, then use SUBSCRIBE to add streams
+    - **Data Format**: Wrapped as `{"stream":"<streamName>","data":<rawPayload>}`
+    - **Property**: `combined = true`
+    - **Max Streams**: 1024 streams per connection
+    - **Example**: `wss://dstream.binance.com/stream` → SUBSCRIBE to multiple streams
+    
+    ## Connection Management
+    
+    ### Initial Connection
+    - Connect to `/ws` for single streams or `/stream` for combined streams
+    - No streams are active initially
+    - Use SUBSCRIBE method to add streams dynamically
+    
+    ### Heartbeat
+    - Server sends ping frame every 3 minutes
+    - Client must respond with pong within 10 minutes
+    - Connection will be disconnected if no pong received
+    - Unsolicited pong frames are allowed
+    
+    ### Limits and Validity
+    - **Connection Validity**: 24 hours maximum
+    - **Rate Limit**: 10 incoming messages per second
+    - **Streams per Connection**: Maximum 1024 streams
+    - **Connections per IP**: Rate limiting applies
+    - **IP Banning**: Repeated disconnections may result in IP ban
+    
+    ### Stream Naming Conventions
+    - All symbols must be provided in lowercase
+    - All stream names are lowercase
+    - Multiple streams can be combined in a single connection
+    - Coin-margined futures use specific naming patterns (e.g., btcusd_perp, btcusd_240329)
+
+servers:
+  mainnet:
+    host: dstream.binance.com
+    protocol: wss
+    pathname: /{streamPath}
+    title: Binance Coin-M Futures Server
+    summary: Binance Coin-M Futures WebSocket Streams Server (Mainnet)
+    description: WebSocket server for binance exchange coin-margined futures market data streams (mainnet environment)
+    variables:
+      streamPath:
+        description: |
+          WebSocket stream path for different connection types.
+          
+          - Single Stream: 'ws' - Connect to individual stream endpoint
+          - Combined Stream: 'stream' - Connect to combined stream endpoint
+        enum: ['ws', 'stream']
+        default: 'ws'
+        examples:
+          - ws
+          - stream
+      
+  testnet:
+    host: dstream.binancefuture.com
+    protocol: wss
+    pathname: /{streamPath}
+    title: Binance Coin-M Futures Testnet Server
+    summary: Binance Coin-M Futures WebSocket Streams Server (Testnet)
+    description: WebSocket server for binance exchange coin-margined futures market data streams (testnet environment)
+    variables:
+      streamPath:
+        description: |
+          WebSocket stream path for different connection types.
+          
+          - Single Stream: 'ws' - Connect to individual stream endpoint
+          - Combined Stream: 'stream' - Connect to combined stream endpoint
+        enum: ['ws', 'stream']
+        default: 'ws'
+        examples:
+          - ws
+          - stream
+
+  mainnet_auth:
+    host: dstream-auth.binance.com
+    protocol: wss
+    pathname: /{streamPath}
+    title: Binance Coin-M Futures Authenticated Server
+    summary: Binance Coin-M Futures WebSocket Streams Server with Authentication (Mainnet)
+    description: |
+      WebSocket server for binance exchange coin-margined futures market data streams with authentication support.
+      Requires a valid listenKey parameter for authentication.
+      Example: wss://dstream-auth.binance.com/ws/btcusdt@markPrice?listenKey=...
+    variables:
+      streamPath:
+        description: |
+          WebSocket stream path for different connection types.
+          
+          - Single Stream: 'ws' - Connect to individual stream endpoint
+          - Combined Stream: 'stream' - Connect to combined stream endpoint
+        enum: ['ws', 'stream']
+        default: 'ws'
+        examples:
+          - ws
+          - stream
+
+channels:
+  # Single stream connection (connect to /ws first, then subscribe)
+  singleStreamConnection:
+    address: /ws
+    title: Single Stream Connection
+    description: |
+      Initial connection endpoint for single streams. Connect here first, then use
+      SUBSCRIBE method to add individual streams. Each stream returns direct data.
+    messages:
+      subscribe:
+        $ref: '#/components/messages/subscribeRequest'
+      unsubscribe:
+        $ref: '#/components/messages/unsubscribeRequest'
+      subscribeResponse:
+        $ref: '#/components/messages/subscriptionResponse'
+      unsubscribeResponse:
+        $ref: '#/components/messages/subscriptionResponse'
+      listSubscriptions:
+        $ref: '#/components/messages/listSubscriptionsRequest'
+      listSubscriptionsResponse:
+        $ref: '#/components/messages/listSubscriptionsResponse'
+      setProperty:
+        $ref: '#/components/messages/setPropertyRequest'
+      setPropertyResponse:
+        $ref: '#/components/messages/setPropertyResponse'
+      getProperty:
+        $ref: '#/components/messages/getPropertyRequest'
+      getPropertyResponse:
+        $ref: '#/components/messages/getPropertyResponse'
+      error:
+        $ref: '#/components/messages/errorMessage'
+      # Single stream data messages (direct, not wrapped)
+      aggTrade:
+        $ref: '#/components/messages/aggregateTradeMessage'
+      indexPrice:
+        $ref: '#/components/messages/indexPriceMessage'
+      markPrice:
+        $ref: '#/components/messages/markPriceMessage'
+      allMarkPrices:
+        $ref: '#/components/messages/allMarkPricesMessage'
+      kline:
+        $ref: '#/components/messages/klineMessage'
+      continuousKline:
+        $ref: '#/components/messages/continuousKlineMessage'
+      indexKline:
+        $ref: '#/components/messages/indexKlineMessage'
+      markPriceKline:
+        $ref: '#/components/messages/markPriceKlineMessage'
+      miniTicker:
+        $ref: '#/components/messages/miniTickerMessage'
+      allMiniTickers:
+        $ref: '#/components/messages/allMiniTickersMessage'
+      ticker:
+        $ref: '#/components/messages/tickerMessage'
+      allTickers:
+        $ref: '#/components/messages/allTickersMessage'
+      bookTicker:
+        $ref: '#/components/messages/bookTickerMessage'
+      allBookTickers:
+        $ref: '#/components/messages/allBookTickersMessage'
+      liquidation:
+        $ref: '#/components/messages/liquidationMessage'
+      allLiquidations:
+        $ref: '#/components/messages/allLiquidationsMessage'
+      contractInfo:
+        $ref: '#/components/messages/contractInfoMessage'
+      partialDepth:
+        $ref: '#/components/messages/partialDepthMessage'
+      diffDepth:
+        $ref: '#/components/messages/diffDepthMessage'
+
+  # Combined stream connection (connect to /stream first, then subscribe)
+  combinedStreamConnection:
+    address: /stream
+    title: Combined Stream Connection
+    description: |
+      Initial connection endpoint for combined streams. Connect here first, then use
+      SUBSCRIBE method to add multiple streams. Each stream returns wrapped data
+      with format: {"stream":"<streamName>","data":<rawPayload>}
+    messages:
+      subscribe:
+        $ref: '#/components/messages/subscribeRequest'
+      unsubscribe:
+        $ref: '#/components/messages/unsubscribeRequest'
+      subscribeResponse:
+        $ref: '#/components/messages/subscriptionResponse'
+      unsubscribeResponse:
+        $ref: '#/components/messages/subscriptionResponse'
+      listSubscriptions:
+        $ref: '#/components/messages/listSubscriptionsRequest'
+      listSubscriptionsResponse:
+        $ref: '#/components/messages/listSubscriptionsResponse'
+      setProperty:
+        $ref: '#/components/messages/setPropertyRequest'
+      setPropertyResponse:
+        $ref: '#/components/messages/setPropertyResponse'
+      getProperty:
+        $ref: '#/components/messages/getPropertyRequest'
+      getPropertyResponse:
+        $ref: '#/components/messages/getPropertyResponse'
+      error:
+        $ref: '#/components/messages/errorMessage'
+      # Combined stream data messages (wrapped format)
+      combinedData:
+        $ref: '#/components/messages/combinedStreamMessage'
+
+operations:
+  # Single stream operations
+  subscribeToSingleStreams:
+    title: Subscribe to Single Streams
+    summary: Subscribe to streams on single connection
+    description: |
+      Subscribe to market data streams on single connection. Each stream returns
+      direct data without wrapping. Maximum 1024 streams per connection.
+    action: send
+    channel:
+      $ref: '#/channels/singleStreamConnection'
+    messages:
+      - $ref: '#/channels/singleStreamConnection/messages/subscribe'
+    reply:
+      channel:
+        $ref: '#/channels/singleStreamConnection'
+      messages:
+        - $ref: '#/channels/singleStreamConnection/messages/subscribeResponse'
+
+  unsubscribeFromSingleStreams:
+    title: Unsubscribe from Single Streams
+    summary: Unsubscribe from streams on single connection
+    action: send
+    channel:
+      $ref: '#/channels/singleStreamConnection'
+    messages:
+      - $ref: '#/channels/singleStreamConnection/messages/unsubscribe'
+    reply:
+      channel:
+        $ref: '#/channels/singleStreamConnection'
+      messages:
+        - $ref: '#/channels/singleStreamConnection/messages/unsubscribeResponse'
+
+  listSingleSubscriptions:
+    title: List Single Stream Subscriptions
+    summary: Get list of active single stream subscriptions
+    action: send
+    channel:
+      $ref: '#/channels/singleStreamConnection'
+    messages:
+      - $ref: '#/channels/singleStreamConnection/messages/listSubscriptions'
+    reply:
+      channel:
+        $ref: '#/channels/singleStreamConnection'
+      messages:
+        - $ref: '#/channels/singleStreamConnection/messages/listSubscriptionsResponse'
+
+  receiveSingleStreamData:
+    title: Receive Single Stream Data
+    summary: Receive direct stream data from single connection
+    description: |
+      Receive market data from subscribed streams. Data is returned directly
+      without wrapping. Stream type can be determined by the event structure.
+    action: receive
+    channel:
+      $ref: '#/channels/singleStreamConnection'
+
+  # Combined stream operations
+    
+  subscribeToCombinedStreams:
+    title: Subscribe to Combined Streams
+    summary: Subscribe to streams on combined connection
+    description: |
+      Subscribe to market data streams on combined connection. Each stream returns
+      wrapped data with stream name identifier. Maximum 1024 streams per connection.
+    action: send
+    channel:
+      $ref: '#/channels/combinedStreamConnection'
+    messages:
+      - $ref: '#/channels/combinedStreamConnection/messages/subscribe'
+    reply:
+      channel:
+        $ref: '#/channels/combinedStreamConnection'
+      messages:
+        - $ref: '#/channels/combinedStreamConnection/messages/subscribeResponse'
+
+  unsubscribeFromCombinedStreams:
+    title: Unsubscribe from Combined Streams
+    summary: Unsubscribe from streams on combined connection
+    action: send
+    channel:
+      $ref: '#/channels/combinedStreamConnection'
+    messages:
+      - $ref: '#/channels/combinedStreamConnection/messages/unsubscribe'
+    reply:
+      channel:
+        $ref: '#/channels/combinedStreamConnection'
+      messages:
+        - $ref: '#/channels/combinedStreamConnection/messages/unsubscribeResponse'
+
+  listCombinedSubscriptions:
+    title: List Combined Stream Subscriptions
+    summary: Get list of active combined stream subscriptions
+    action: send
+    channel:
+      $ref: '#/channels/combinedStreamConnection'
+    messages:
+      - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptions'
+    reply:
+      channel:
+        $ref: '#/channels/combinedStreamConnection'
+      messages:
+        - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptionsResponse'
+
+  receiveCombinedStreamData:
+    title: Receive Combined Stream Data
+    summary: Receive wrapped stream data from combined connection
+    description: |
+      Receive market data from subscribed streams. Each message is wrapped with
+      stream name and original data: {"stream":"<streamName>","data":<rawPayload>}
+    action: receive
+    channel:
+      $ref: '#/channels/combinedStreamConnection'
+
+components:
+  messages:
+    # Control messages
+    subscribeRequest:
+      name: Subscribe Request
+      title: Subscribe to Streams
+      summary: Request to subscribe to one or more streams
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SubscribeRequest'
+
+    unsubscribeRequest:
+      name: Unsubscribe Request
+      title: Unsubscribe from Streams
+      summary: Request to unsubscribe from one or more streams
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/UnsubscribeRequest'
+
+    subscriptionResponse:
+      name: Subscription Response
+      title: Subscription Response
+      summary: Response to subscription/unsubscription request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SubscriptionResponse'
+
+    listSubscriptionsRequest:
+      name: List Subscriptions Request
+      title: List Active Subscriptions
+      summary: Request list of active subscriptions
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ListSubscriptionsRequest'
+
+    listSubscriptionsResponse:
+      name: List Subscriptions Response
+      title: Active Subscriptions List
+      summary: List of currently active subscriptions
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ListSubscriptionsResponse'
+
+    setPropertyRequest:
+      name: Set Property Request
+      title: Set Property Request
+      summary: Request to set a stream property
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SetPropertyRequest'
+
+    setPropertyResponse:
+      name: Set Property Response
+      title: Set Property Response
+      summary: Response to set property request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/SetPropertyResponse'
+
+    getPropertyRequest:
+      name: Get Property Request
+      title: Get Property Request
+      summary: Request to get a stream property
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/GetPropertyRequest'
+
+    getPropertyResponse:
+      name: Get Property Response
+      title: Get Property Response
+      summary: Response to get property request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/GetPropertyResponse'
+
+    errorMessage:
+      name: Error Message
+      title: Error Response
+      summary: Error response from server
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ErrorResponse'
+
+    # Stream data messages (raw format)
+    aggregateTradeMessage:
+      name: Aggregate Trade
+      title: Aggregate Trade Event
+      summary: Aggregate trade information for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AggregateTradeEvent'
+
+    indexPriceMessage:
+      name: Index Price
+      title: Index Price Event
+      summary: Index price information for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/IndexPriceEvent'
+
+    markPriceMessage:
+      name: Mark Price
+      title: Mark Price Event
+      summary: Mark price information for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MarkPriceEvent'
+
+    allMarkPricesMessage:
+      name: All Mark Prices
+      title: All Mark Prices Event
+      summary: Mark price information for all symbols of a pair
+      contentType: application/json
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/MarkPriceEvent'
+
+    klineMessage:
+      name: Kline
+      title: Kline Event
+      summary: Kline/candlestick information for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/KlineEvent'
+
+    continuousKlineMessage:
+      name: Continuous Kline
+      title: Continuous Contract Kline Event
+      summary: Continuous contract kline information
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ContinuousKlineEvent'
+
+    indexKlineMessage:
+      name: Index Kline
+      title: Index Kline Event
+      summary: Index kline/candlestick information
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/IndexKlineEvent'
+
+    markPriceKlineMessage:
+      name: Mark Price Kline
+      title: Mark Price Kline Event
+      summary: Mark price kline/candlestick information
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MarkPriceKlineEvent'
+
+    miniTickerMessage:
+      name: Mini Ticker
+      title: 24hr Mini Ticker Event
+      summary: 24hr rolling window mini ticker statistics for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/MiniTickerEvent'
+
+    allMiniTickersMessage:
+      name: All Mini Tickers
+      title: All Market Mini Tickers
+      summary: Array of 24hr mini ticker stats for all symbols
+      contentType: application/json
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/MiniTickerEvent'
+
+    tickerMessage:
+      name: Ticker
+      title: 24hr Ticker Event
+      summary: 24hr rolling window ticker statistics for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/TickerEvent'
+
+    allTickersMessage:
+      name: All Tickers
+      title: All Market Tickers
+      summary: Array of 24hr ticker stats for all symbols
+      contentType: application/json
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/TickerEvent'
+
+    bookTickerMessage:
+      name: Book Ticker
+      title: Book Ticker Event
+      summary: Best bid/ask information for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/BookTickerEvent'
+
+    allBookTickersMessage:
+      name: All Book Tickers
+      title: All Market Book Tickers
+      summary: Array of book ticker for all symbols
+      contentType: application/json
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/BookTickerEvent'
+
+    liquidationMessage:
+      name: Liquidation
+      title: Liquidation Order Event
+      summary: Liquidation order information
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/LiquidationEvent'
+
+    allLiquidationsMessage:
+      name: All Liquidations
+      title: All Market Liquidations
+      summary: Array of liquidation orders for all symbols
+      contentType: application/json
+      payload:
+        type: array
+        items:
+          $ref: '#/components/schemas/LiquidationEvent'
+
+    contractInfoMessage:
+      name: Contract Info
+      title: Contract Info Event
+      summary: Contract information for all symbols
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/ContractInfoEvent'
+
+    partialDepthMessage:
+      name: Partial Depth
+      title: Partial Book Depth Event
+      summary: Partial book depth information for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/PartialDepthEvent'
+
+    diffDepthMessage:
+      name: Diff Depth
+      title: Depth Update Event
+      summary: Order book depth update for coin-margined futures
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/DiffDepthEvent'
+
+    # Combined stream message (wrapped format)
+    combinedStreamMessage:
+      name: Combined Stream Data
+      title: Combined Stream Wrapper
+      summary: Wrapper for combined stream data
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/CombinedStreamEvent'
+
+  schemas:
+    # Control schemas
+    SubscribeRequest:
+      type: object
+      description: |
+        Request to subscribe to one or more streams. Stream names should follow
+        Binance naming conventions (lowercase, with @ separators).
+        
+        Supported stream patterns for Coin-M Futures:
+        - Symbol streams: {symbol}@{streamType} (e.g., "btcusd_perp@aggTrade")
+        - Index streams: {pair}@indexPrice (e.g., "btcusd@indexPrice", "btcusd@indexPrice@1s")
+        - Mark price streams: {symbol}@markPrice (e.g., "btcusd_perp@markPrice", "btcusd_200626@markPrice@1s") 
+        - Mark price for pair: {pair}@markPrice (e.g., "btcusd@markPrice")
+        - All market streams: !{streamType}@arr (e.g., "!miniTicker@arr", "!ticker@arr", "!forceOrder@arr")
+        - All book tickers: !bookTicker
+        - Depth streams: {symbol}@depth{levels}{speed} (e.g., "btcusd_perp@depth5@100ms", "btcusd_200626@depth20")
+        - Kline streams: {symbol}@kline_{interval} (e.g., "btcusd_perp@kline_1m", "btcusd_200626@kline_4h")
+        - Continuous kline: {pair}_{contractType}@continuousKline_{interval}
+        - Index kline: {pair}@indexPriceKline_{interval}
+        - Mark price kline: {symbol}@markPriceKline_{interval}
+        - Liquidation: {symbol}@forceOrder or !forceOrder@arr
+        - Contract info: !contractInfo
+      required:
+        - method
+        - params
+        - id
+      properties:
+        method:
+          type: string
+          const: SUBSCRIBE
+          description: Method name
+        params:
+          type: array
+          description: Array of stream names to subscribe to
+          items:
+            type: string
+            pattern: '^[a-zA-Z0-9!@._]+$'
+          examples:
+            - ["btcusd_perp@aggTrade"]
+            - ["btcusd_perp@aggTrade", "btcusd_perp@depth5@100ms"]
+            - ["btcusd@indexPrice", "btcusd@indexPrice@1s"]
+            - ["btcusd_perp@markPrice", "btcusd_200626@markPrice@1s"]
+            - ["btcusd@markPrice"]
+            - ["ethusd_240329@kline_1m", "btcusd_perp@miniTicker"]
+            - ["BTCUSD_PERPETUAL@continuousKline_1m"]
+            - ["btcusd@indexPriceKline_1h", "btcusd_perp@markPriceKline_4h"]
+            - ["btcusd_perp@forceOrder", "!forceOrder@arr"]
+            - ["!miniTicker@arr", "!ticker@arr", "!bookTicker"]
+            - ["!contractInfo"]
+        id:
+          type: integer
+          description: Request ID
+          example: 1
+
+    UnsubscribeRequest:
+      type: object
+      required:
+        - method
+        - params
+        - id
+      properties:
+        method:
+          type: string
+          const: UNSUBSCRIBE
+          description: Method name
+        params:
+          type: array
+          description: Array of stream names to unsubscribe from
+          items:
+            type: string
+          example: ["btcusd_perp@aggTrade"]
+        id:
+          type: integer
+          description: Request ID
+          example: 2
+
+    SubscriptionResponse:
+      type: object
+      properties:
+        result:
+          type: "null"
+          description: Always null for successful subscription
+        id:
+          type: integer
+          description: Request ID echo
+
+    ListSubscriptionsRequest:
+      type: object
+      required:
+        - method
+        - id
+      properties:
+        method:
+          type: string
+          const: LIST_SUBSCRIPTIONS
+          description: Method name
+        id:
+          type: integer
+          description: Request ID
+          example: 3
+
+    ListSubscriptionsResponse:
+      type: object
+      properties:
+        result:
+          type: array
+          description: Array of active stream names
+          items:
+            type: string
+          example: ["btcusd_perp@aggTrade", "btcusd_perp@markPrice"]
+        id:
+          type: integer
+          description: Request ID echo
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            msg:
+              type: string
+              description: Error message
+        id:
+          type: integer
+          description: Request ID echo
+
+    SetPropertyRequest:
+      type: object
+      required:
+        - method
+        - params
+        - id
+      properties:
+        method:
+          type: string
+          const: SET_PROPERTY
+          description: Method name
+        params:
+          type: array
+          description: Array containing property name and value
+          items:
+            oneOf:
+              - type: string
+              - type: boolean
+          minItems: 2
+          maxItems: 2
+          example: ["combined", true]
+        id:
+          type: integer
+          description: Request ID
+          example: 5
+
+    SetPropertyResponse:
+      type: object
+      properties:
+        result:
+          type: "null"
+          description: Always null for successful property setting
+        id:
+          type: integer
+          description: Request ID echo
+
+    GetPropertyRequest:
+      type: object
+      required:
+        - method
+        - params
+        - id
+      properties:
+        method:
+          type: string
+          const: GET_PROPERTY
+          description: Method name
+        params:
+          type: array
+          description: Array containing property name to retrieve
+          items:
+            type: string
+          minItems: 1
+          maxItems: 1
+          example: ["combined"]
+        id:
+          type: integer
+          description: Request ID
+          example: 2
+
+    GetPropertyResponse:
+      type: object
+      properties:
+        result:
+          oneOf:
+            - type: boolean
+            - type: string
+          description: Property value (currently only 'combined' property supported)
+        id:
+          type: integer
+          description: Request ID echo
+
+    # Stream event schemas
+    AggregateTradeEvent:
+      type: object
+      required:
+        - e
+        - E
+        - s
+        - a
+        - p
+        - q
+        - f
+        - l
+        - T
+        - m
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: aggTrade
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591261134288
+        s:
+          type: string
+          description: Symbol
+          example: BTCUSD_200626
+        a:
+          type: integer
+          format: int64
+          description: Aggregate trade ID
+          example: 424951
+        p:
+          type: string
+          description: Price
+          example: "9643.5"
+        q:
+          type: string
+          description: Quantity
+          example: "2"
+        f:
+          type: integer
+          format: int64
+          description: First trade ID
+          example: 606073
+        l:
+          type: integer
+          format: int64
+          description: Last trade ID
+          example: 606073
+        T:
+          type: integer
+          format: int64
+          description: Trade time
+          example: 1591261134199
+        m:
+          type: boolean
+          description: Is the buyer the market maker
+          example: false
+
+    IndexPriceEvent:
+      type: object
+      required:
+        - e
+        - E
+        - i
+        - p
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: indexPriceUpdate
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591261236000
+        i:
+          type: string
+          description: Pair
+          example: BTCUSD
+        p:
+          type: string
+          description: Index price
+          example: "9636.57860000"
+
+    MarkPriceEvent:
+      type: object
+      required:
+        - e
+        - E
+        - s
+        - p
+        - P
+        - i
+        - r
+        - T
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: markPriceUpdate
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1596095725000
+        s:
+          type: string
+          description: Symbol
+          example: BTCUSD_201225
+        p:
+          type: string
+          description: Mark price
+          example: "10934.62615417"
+        P:
+          type: string
+          description: Estimated settle price (only for quarterly contract)
+          example: "10962.17178236"
+        i:
+          type: string
+          description: Index price
+          example: "10933.62615417"
+        r:
+          type: string
+          description: Funding rate (empty for delivery symbols)
+          example: ""
+        T:
+          type: integer
+          format: int64
+          description: Next funding time (0 for delivery symbols)
+          example: 0
+
+    KlineEvent:
+      type: object
+      required:
+        - e
+        - E
+        - s
+        - k
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: kline
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591261542539
+        s:
+          type: string
+          description: Symbol
+          example: BTCUSD_200626
+        k:
+          type: object
+          description: Kline data
+          required:
+            - t
+            - T
+            - s
+            - i
+            - f
+            - L
+            - o
+            - c
+            - h
+            - l
+            - v
+            - n
+            - x
+            - q
+            - V
+            - Q
+            - B
+          properties:
+            t:
+              type: integer
+              format: int64
+              description: Kline start time
+              example: 1591261500000
+            T:
+              type: integer
+              format: int64
+              description: Kline close time
+              example: 1591261559999
+            s:
+              type: string
+              description: Symbol
+              example: BTCUSD_200626
+            i:
+              type: string
+              description: Interval
+              example: 1m
+            f:
+              type: integer
+              format: int64
+              description: First trade ID
+              example: 100
+            L:
+              type: integer
+              format: int64
+              description: Last trade ID
+              example: 200
+            o:
+              type: string
+              description: Open price
+              example: "41230.0"
+            c:
+              type: string
+              description: Close price
+              example: "41235.0"
+            h:
+              type: string
+              description: High price
+              example: "41240.0"
+            l:
+              type: string
+              description: Low price
+              example: "41225.0"
+            v:
+              type: string
+              description: Base asset volume
+              example: "100.0"
+            n:
+              type: integer
+              description: Number of trades
+              example: 100
+            x:
+              type: boolean
+              description: Is this kline closed
+              example: false
+            q:
+              type: string
+              description: Quote asset volume
+              example: "4123500.0"
+            V:
+              type: string
+              description: Taker buy base asset volume
+              example: "60.0"
+            Q:
+              type: string
+              description: Taker buy quote asset volume
+              example: "2474100.0"
+            B:
+              type: string
+              description: Ignore field
+              example: "0"
+
+    ContinuousKlineEvent:
+      type: object
+      required:
+        - e
+        - E
+        - ps
+        - ct
+        - k
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: continuous_kline
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591261542539
+        ps:
+          type: string
+          description: Pair
+          example: BTCUSD
+        ct:
+          type: string
+          description: Contract type
+          example: NEXT_QUARTER
+        k:
+          type: object
+          description: Kline data
+          required:
+            - t
+            - T
+            - i
+            - f
+            - L
+            - o
+            - c
+            - h
+            - l
+            - v
+            - n
+            - x
+            - q
+            - V
+            - Q
+            - B
+          properties:
+            t:
+              type: integer
+              format: int64
+              description: Kline start time
+              example: 1591261500000
+            T:
+              type: integer
+              format: int64
+              description: Kline close time
+              example: 1591261559999
+            i:
+              type: string
+              description: Interval
+              example: 1m
+            f:
+              type: integer
+              format: int64
+              description: First update ID
+              example: 606400
+            L:
+              type: integer
+              format: int64
+              description: Last update ID
+              example: 606430
+            o:
+              type: string
+              description: Open price
+              example: "41230.0"
+            c:
+              type: string
+              description: Close price
+              example: "41235.0"
+            h:
+              type: string
+              description: High price
+              example: "41240.0"
+            l:
+              type: string
+              description: Low price
+              example: "41225.0"
+            v:
+              type: string
+              description: Volume
+              example: "100.0"
+            n:
+              type: integer
+              description: Number of trades
+              example: 100
+            x:
+              type: boolean
+              description: Is this kline closed
+              example: false
+            q:
+              type: string
+              description: Quote asset volume
+              example: "4123500.0"
+            V:
+              type: string
+              description: Taker buy volume
+              example: "60.0"
+            Q:
+              type: string
+              description: Taker buy quote asset volume
+              example: "2474100.0"
+            B:
+              type: string
+              description: Ignore field
+              example: "0"
+
+    IndexKlineEvent:
+      type: object
+      required:
+        - e
+        - E
+        - ps
+        - k
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: indexPrice_kline
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591267070033
+        ps:
+          type: string
+          description: Pair
+          example: BTCUSD
+        k:
+          type: object
+          description: Kline data
+          required:
+            - t
+            - T
+            - i
+            - o
+            - c
+            - h
+            - l
+            - n
+            - x
+          properties:
+            t:
+              type: integer
+              format: int64
+              description: Kline start time
+              example: 1591267020000
+            T:
+              type: integer
+              format: int64
+              description: Kline close time
+              example: 1591267079999
+            i:
+              type: string
+              description: Interval
+              example: 1m
+            o:
+              type: string
+              description: Open price
+              example: "9542.21900000"
+            c:
+              type: string
+              description: Close price
+              example: "9542.50440000"
+            h:
+              type: string
+              description: High price
+              example: "9542.71640000"
+            l:
+              type: string
+              description: Low price
+              example: "9542.21040000"
+            n:
+              type: integer
+              description: Number of basic data points
+              example: 51
+            x:
+              type: boolean
+              description: Is this kline closed
+              example: false
+
+    MarkPriceKlineEvent:
+      type: object
+      required:
+        - e
+        - E
+        - ps
+        - k
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: markPrice_kline
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591267398004
+        ps:
+          type: string
+          description: Pair
+          example: BTCUSD
+        k:
+          type: object
+          description: Kline data
+          required:
+            - t
+            - T
+            - s
+            - i
+            - o
+            - c
+            - h
+            - l
+            - n
+            - x
+          properties:
+            t:
+              type: integer
+              format: int64
+              description: Kline start time
+              example: 1591267380000
+            T:
+              type: integer
+              format: int64
+              description: Kline close time
+              example: 1591267439999
+            s:
+              type: string
+              description: Symbol
+              example: BTCUSD_200626
+            i:
+              type: string
+              description: Interval
+              example: 1m
+            o:
+              type: string
+              description: Open price
+              example: "9539.67161333"
+            c:
+              type: string
+              description: Close price
+              example: "9540.82761333"
+            h:
+              type: string
+              description: High price
+              example: "9540.82761333"
+            l:
+              type: string
+              description: Low price
+              example: "9539.00000000"
+            n:
+              type: integer
+              description: Number of basic data points
+              example: 51
+            x:
+              type: boolean
+              description: Is this kline closed
+              example: false
+
+    MiniTickerEvent:
+      type: object
+      required:
+        - e
+        - E
+        - s
+        - ps
+        - c
+        - o
+        - h
+        - l
+        - v
+        - q
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: 24hrMiniTicker
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591267704450
+        s:
+          type: string
+          description: Symbol
+          example: BTCUSD_200626
+        ps:
+          type: string
+          description: Pair
+          example: BTCUSD
+        c:
+          type: string
+          description: Close price
+          example: "9561.7"
+        o:
+          type: string
+          description: Open price
+          example: "9580.9"
+        h:
+          type: string
+          description: High price
+          example: "10000.0"
+        l:
+          type: string
+          description: Low price
+          example: "7000.0"
+        v:
+          type: string
+          description: Total traded volume
+          example: "487476"
+        q:
+          type: string
+          description: Total traded base asset volume
+          example: "33264343847.22378500"
+
+    TickerEvent:
+      type: object
+      required:
+        - e
+        - E
+        - s
+        - ps
+        - p
+        - P
+        - w
+        - c
+        - Q
+        - o
+        - h
+        - l
+        - v
+        - q
+        - O
+        - C
+        - F
+        - L
+        - n
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: 24hrTicker
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591268262453
+        s:
+          type: string
+          description: Symbol
+          example: BTCUSD_200626
+        ps:
+          type: string
+          description: Pair
+          example: BTCUSD
+        p:
+          type: string
+          description: Price change
+          example: "-43.4"
+        P:
+          type: string
+          description: Price change percent
+          example: "-0.452"
+        w:
+          type: string
+          description: Weighted average price
+          example: "0.00147974"
+        c:
+          type: string
+          description: Last price
+          example: "9548.5"
+        Q:
+          type: string
+          description: Last quantity
+          example: "2"
+        o:
+          type: string
+          description: Open price
+          example: "9591.9"
+        h:
+          type: string
+          description: High price
+          example: "10000.0"
+        l:
+          type: string
+          description: Low price
+          example: "7000.0"
+        v:
+          type: string
+          description: Total traded volume
+          example: "487850"
+        q:
+          type: string
+          description: Total traded base asset volume
+          example: "32968676323.46222700"
+        O:
+          type: integer
+          format: int64
+          description: Statistics open time
+          example: 1591181820000
+        C:
+          type: integer
+          format: int64
+          description: Statistics close time
+          example: 1591268262442
+        F:
+          type: integer
+          format: int64
+          description: First trade ID
+          example: 512014
+        L:
+          type: integer
+          format: int64
+          description: Last trade ID
+          example: 615289
+        n:
+          type: integer
+          description: Total number of trades
+          example: 103272
+
+    BookTickerEvent:
+      type: object
+      required:
+        - e
+        - u
+        - s
+        - ps
+        - b
+        - B
+        - a
+        - A
+        - T
+        - E
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: bookTicker
+        u:
+          type: integer
+          format: int64
+          description: Order book updateId
+          example: 17242169
+        s:
+          type: string
+          description: Symbol
+          example: BTCUSD_200626
+        ps:
+          type: string
+          description: Pair
+          example: BTCUSD
+        b:
+          type: string
+          description: Best bid price
+          example: "9548.1"
+        B:
+          type: string
+          description: Best bid quantity
+          example: "52"
+        a:
+          type: string
+          description: Best ask price
+          example: "9548.5"
+        A:
+          type: string
+          description: Best ask quantity
+          example: "11"
+        T:
+          type: integer
+          format: int64
+          description: Transaction time
+          example: 1591268628155
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591268628166
+
+    LiquidationEvent:
+      type: object
+      required:
+        - e
+        - E
+        - o
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: forceOrder
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591154240950
+        o:
+          type: object
+          description: Liquidation order
+          required:
+            - s
+            - ps
+            - S
+            - o
+            - f
+            - q
+            - p
+            - ap
+            - X
+            - l
+            - z
+            - T
+          properties:
+            s:
+              type: string
+              description: Symbol
+              example: BTCUSD_200925
+            ps:
+              type: string
+              description: Pair
+              example: BTCUSD
+            S:
+              type: string
+              description: Side
+              enum: [BUY, SELL]
+              example: SELL
+            o:
+              type: string
+              description: Order type
+              const: LIMIT
+            f:
+              type: string
+              description: Time in force
+              const: IOC
+            q:
+              type: string
+              description: Original quantity
+              example: "1"
+            p:
+              type: string
+              description: Price
+              example: "9425.5"
+            ap:
+              type: string
+              description: Average price
+              example: "9496.5"
+            X:
+              type: string
+              description: Order status
+              const: FILLED
+            l:
+              type: string
+              description: Last filled quantity
+              example: "1"
+            z:
+              type: string
+              description: Accumulated filled quantity
+              example: "1"
+            T:
+              type: integer
+              format: int64
+              description: Order trade time
+              example: 1591154240949
+
+    ContractInfoEvent:
+      type: object
+      required:
+        - e
+        - E
+        - s
+        - ps
+        - ct
+        - dt
+        - ot
+        - cs
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: contractInfo
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1669647330375
+        s:
+          type: string
+          description: Symbol
+          example: APTUSD_PERP
+        ps:
+          type: string
+          description: Pair
+          example: APTUSD
+        ct:
+          type: string
+          description: Contract type
+          example: PERPETUAL
+        dt:
+          type: integer
+          format: int64
+          description: Delivery date time
+          example: 4133404800000
+        ot:
+          type: integer
+          format: int64
+          description: Onboard date time
+          example: 1666594800000
+        cs:
+          type: string
+          description: Contract status
+          example: TRADING
+        bks:
+          type: array
+          description: Bracket information (optional)
+          items:
+            type: object
+            properties:
+              bs:
+                type: integer
+                description: Notional bracket
+                example: 1
+              bnf:
+                type: integer
+                description: Floor notional
+                example: 0
+              bnc:
+                type: integer
+                description: Cap notional
+                example: 5000
+              mmr:
+                type: number
+                description: Maintenance ratio
+                example: 0.01
+              cf:
+                type: integer
+                description: Auxiliary calculation number
+                example: 0
+              mi:
+                type: integer
+                description: Minimum leverage
+                example: 21
+              ma:
+                type: integer
+                description: Maximum leverage
+                example: 50
+
+    PartialDepthEvent:
+      type: object
+      required:
+        - e
+        - E
+        - T
+        - s
+        - ps
+        - U
+        - u
+        - pu
+        - b
+        - a
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: depthUpdate
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591269996801
+        T:
+          type: integer
+          format: int64
+          description: Transaction time
+          example: 1591269996646
+        s:
+          type: string
+          description: Symbol
+          example: BTCUSD_200626
+        ps:
+          type: string
+          description: Pair
+          example: BTCUSD
+        U:
+          type: integer
+          format: int64
+          description: First update ID in event
+          example: 17276694
+        u:
+          type: integer
+          format: int64
+          description: Final update ID in event
+          example: 17276701
+        pu:
+          type: integer
+          format: int64
+          description: Final update ID in last stream
+          example: 17276678
+        b:
+          type: array
+          description: Bids
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 2
+            maxItems: 2
+          example: [["9523.0", "5"]]
+        a:
+          type: array
+          description: Asks
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 2
+            maxItems: 2
+          example: [["9524.6", "2"]]
+
+    DiffDepthEvent:
+      type: object
+      required:
+        - e
+        - E
+        - T
+        - s
+        - ps
+        - U
+        - u
+        - pu
+        - b
+        - a
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: depthUpdate
+        E:
+          type: integer
+          format: int64
+          description: Event time
+          example: 1591270260907
+        T:
+          type: integer
+          format: int64
+          description: Transaction time
+          example: 1591270260891
+        s:
+          type: string
+          description: Symbol
+          example: BTCUSD_200626
+        ps:
+          type: string
+          description: Pair
+          example: BTCUSD
+        U:
+          type: integer
+          format: int64
+          description: First update ID in event
+          example: 17285681
+        u:
+          type: integer
+          format: int64
+          description: Final update ID in event
+          example: 17285702
+        pu:
+          type: integer
+          format: int64
+          description: Previous final update ID in event
+          example: 17285675
+        b:
+          type: array
+          description: Bids to be updated
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 2
+            maxItems: 2
+          example: [["9517.6", "10"]]
+        a:
+          type: array
+          description: Asks to be updated
+          items:
+            type: array
+            items:
+              type: string
+            minItems: 2
+            maxItems: 2
+          example: [["9518.5", "45"]]
+
+    CombinedStreamEvent:
+      type: object
+      description: |
+        Wrapper for combined stream data. When connecting to combined streams,
+        all events are wrapped with this structure to identify the source stream.
+        
+        The 'stream' field contains the original stream name, and 'data' contains
+        the original event data that would be received from an individual stream.
+      required:
+        - stream
+        - data
+      properties:
+        stream:
+          type: string
+          description: Original stream name that generated this event
+          examples:
+            - "btcusd_perp@aggTrade"
+            - "btcusd_perp@depth5"
+            - "btcusd@indexPrice"
+            - "btcusd@indexPrice@1s"
+            - "btcusd_perp@markPrice"
+            - "btcusd_200626@markPrice@1s"
+            - "btcusd@markPrice"
+            - "BTCUSD_PERPETUAL@continuousKline_1m"
+            - "btcusd@indexPriceKline_1h"
+            - "btcusd_perp@markPriceKline_4h"
+            - "btcusd_perp@forceOrder"
+            - "!contractInfo"
+            - "!miniTicker@arr"
+            - "!ticker@arr"
+            - "!bookTicker"
+            - "!forceOrder@arr"
+        data:
+          description: |
+            Original stream event data (unwrapped). This is exactly the same data
+            that would be received when connecting to the individual stream directly.
+            The event type can be determined by examining the 'stream' field.
+          oneOf:
+            - $ref: '#/components/schemas/AggregateTradeEvent'
+            - $ref: '#/components/schemas/IndexPriceEvent'
+            - $ref: '#/components/schemas/MarkPriceEvent'
+            - $ref: '#/components/schemas/KlineEvent'
+            - $ref: '#/components/schemas/ContinuousKlineEvent'
+            - $ref: '#/components/schemas/IndexKlineEvent'
+            - $ref: '#/components/schemas/MarkPriceKlineEvent'
+            - $ref: '#/components/schemas/MiniTickerEvent'
+            - $ref: '#/components/schemas/TickerEvent'
+            - $ref: '#/components/schemas/BookTickerEvent'
+            - $ref: '#/components/schemas/LiquidationEvent'
+            - $ref: '#/components/schemas/ContractInfoEvent'
+            - $ref: '#/components/schemas/PartialDepthEvent'
+            - $ref: '#/components/schemas/DiffDepthEvent'
+            # Array event types for combined streams
+            - type: array
+              description: Array of mark price events (for pair@markPrice or !markPrice@arr)
+              items:
+                $ref: '#/components/schemas/MarkPriceEvent'
+            - type: array
+              description: Array of mini ticker events (for !miniTicker@arr)
+              items:
+                $ref: '#/components/schemas/MiniTickerEvent'
+            - type: array
+              description: Array of ticker events (for !ticker@arr)
+              items:
+                $ref: '#/components/schemas/TickerEvent'
+            - type: array
+              description: Array of book ticker events (for !bookTicker)
+              items:
+                $ref: '#/components/schemas/BookTickerEvent'
+            - type: array
+              description: Array of liquidation events (for !forceOrder@arr)
+              items:
+                $ref: '#/components/schemas/LiquidationEvent'
+      example:
+        stream: "btcusd_perp@aggTrade"
+        data:
+          e: "aggTrade"
+          E: 1672304050123
+          s: "BTCUSD_PERP"
+          a: 12345
+          p: "41234.5"
+          q: "0.001"
+          f: 100
+          l: 105
+          T: 1672304050120
+          m: false

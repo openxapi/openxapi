@@ -15,6 +15,9 @@ import { SpotStreamsIndividualModels } from './SpotStreamsIndividualModels.js';
 // Import dedicated umfutures-streams components
 import { UmfuturesStreamsWebSocketHandlers } from './UmfuturesStreamsWebSocketHandlers.js';
 
+// Import dedicated cmfutures-streams components
+import { CmfuturesStreamsWebSocketHandlers } from './CmfuturesStreamsWebSocketHandlers.js';
+
 // Registry of module-specific configurations and handlers
 const moduleRegistry = new Map();
 
@@ -344,7 +347,6 @@ function umfuturesStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
 
 function umfuturesStreamsIndividualModelsGenerator(asyncapi, moduleConfig) {
   try {
-    console.log('DEBUG: umfuturesStreamsIndividualModelsGenerator called for umfutures-streams');
     // IMPORTANT: Use SpotStreamsIndividualModels ONLY for streams modules 
     // This avoids generating UserDataStream types since streams modules only handle market data
     let modelFiles = SpotStreamsIndividualModels({ asyncapi });
@@ -359,7 +361,6 @@ function umfuturesStreamsIndividualModelsGenerator(asyncapi, moduleConfig) {
     
     // Note: UserDataStream type aliases are NOT added for streams modules
     // as they only handle market data streams, not WebSocket API methods
-    console.log('DEBUG: umfuturesStreamsIndividualModelsGenerator returning', modelFiles.length, 'model files for streams');
     
     return modelFiles;
   } catch (error) {
@@ -381,8 +382,8 @@ function umfuturesStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
 // COIN-M Futures Streams module generators (market data streams, no authentication)
 function cmfuturesStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
   try {
-    // Use SpotStreamsWebSocketHandlers as base since futures streams work similarly
-    return SpotStreamsWebSocketHandlers({ asyncapi });
+    // Use dedicated CmfuturesStreamsWebSocketHandlers for COIN-M futures specific event handling
+    return CmfuturesStreamsWebSocketHandlers({ asyncapi });
   } catch (error) {
     console.warn('Could not load WebSocketHandlers for cmfutures-streams:', error.message);
     return '// WebSocketHandlers component not available for cmfutures-streams\n';
