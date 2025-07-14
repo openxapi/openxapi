@@ -499,6 +499,7 @@ func NewClient() *Client {
 		responseList:  make([]interface{}, 0, 100), // Pre-allocate with capacity
 		done:          make(chan struct{}),
 		jsonBuffer:    make([]byte, 0, 1024), // Pre-allocate JSON buffer
+		handlers:      eventHandlers{},        // Initialize event handlers registry
 	}
 }
 
