@@ -432,7 +432,21 @@ func (c *Client) processStreamMessage(message []byte) error {
 		return nil
 	}
 
-	// Try to parse as individual stream event by detecting event type FIRST
+	// Try to parse as combined stream event FIRST (before individual streams)
+	// Combined streams have format: {"stream": "symbol@eventType", "data": {...}}
+	var combinedEvent models.CombinedStreamEvent
+	if err := json.Unmarshal(message, &combinedEvent); err == nil && combinedEvent.StreamName != "" {
+		if c.handlers.combinedStream != nil {
+			if err := c.handlers.combinedStream(&combinedEvent); err != nil {
+				return err
+			}
+		}
+		
+		// Also process the inner data based on stream type
+		return c.processStreamData(combinedEvent.StreamName, combinedEvent.StreamData)
+	}
+
+	// Try to parse as individual stream event by detecting event type
 	var genericMsg map[string]interface{}
 	if err := json.Unmarshal(message, &genericMsg); err == nil {
 		if eventType, hasEventType := genericMsg["e"]; hasEventType {
@@ -464,19 +478,6 @@ func (c *Client) processStreamMessage(message []byte) error {
 				}
 			}
 		}
-	}
-
-	// Try to parse as combined stream event (only if not an individual stream event)
-	var combinedEvent models.CombinedStreamEvent
-	if err := json.Unmarshal(message, &combinedEvent); err == nil && combinedEvent.StreamName != "" {
-		if c.handlers.combinedStream != nil {
-			if err := c.handlers.combinedStream(&combinedEvent); err != nil {
-				return err
-			}
-		}
-		
-		// Also process the inner data based on stream type
-		return c.processStreamData(combinedEvent.StreamName, combinedEvent.StreamData)
 	}
 
 	log.Printf("Unknown message format: %s", string(message))
