@@ -755,7 +755,7 @@ func createSchemaWithValue(v interface{}, title string) (*parser.Schema, error) 
 			if strings.HasSuffix(key, "Time") || strings.HasSuffix(key, "time") || strings.HasSuffix(key, "timestamp") || strings.HasSuffix(key, "Timestamp") {
 				schema.Format = "int64"
 			}
-			if strings.HasSuffix(key, "Id") {
+			if strings.HasSuffix(key, "Id") || strings.HasSuffix(key, "id") {
 				schema.Format = "int64"
 			}
 			if strings.HasSuffix(key, "Date") {
@@ -1010,7 +1010,7 @@ func (p *SpotDocumentParser) processSecurities(endpoint *parser.Endpoint) {
 	// Extract the security type from the endpoint summary
 	summary := strings.TrimSpace(endpoint.Summary)
 	// TODO: no need to sign for USER_STREAM endpoints
-	if strings.HasSuffix(summary, "(USER_DATA)") || strings.Contains(summary, "(USER DATA)") || strings.HasSuffix(summary, "(USER_STREAM)") || strings.Contains(summary, "USER_STREAM") || strings.HasSuffix(summary, "(TRADE)") || strings.Contains(summary, "TRADE") {
+	if strings.HasSuffix(summary, "(USER_DATA)") || strings.Contains(summary, "(USER DATA)") || strings.HasSuffix(summary, "(USER_STREAM)") || strings.Contains(summary, "USER_STREAM") || strings.HasSuffix(summary, "(TRADE)") || strings.Contains(summary, "TRADE") || strings.HasSuffix(summary, "(MARKET_DATA)") {
 		endpoint.SecuritySchemas["ApiKey"] = &parser.SecuritySchema{
 			Type: parser.SecurityTypeApiKey,
 			In:   parser.SecurityLocationHeader,
