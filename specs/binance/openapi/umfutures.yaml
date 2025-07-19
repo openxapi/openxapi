@@ -1174,8 +1174,10 @@ components:
             example: '{ "lastUpdateId": 1027024, "E": 1589436922972,    "T": 1589436922959,    "bids": [ [ "4.00000000",      "431.00000000"     ] ], "asks": [ [ "4.00000200", "12.00000000" ] ] }'
             properties:
                 E:
+                    format: int64
                     type: integer
                 T:
+                    format: int64
                     type: integer
                 asks:
                     items:
@@ -1404,6 +1406,7 @@ components:
         GetHistoricalTradesV1RespItem:
             properties:
                 id:
+                    format: int64
                     type: integer
                 isBuyerMaker:
                     type: boolean
@@ -1960,6 +1963,7 @@ components:
         GetTradesV1RespItem:
             properties:
                 id:
+                    format: int64
                     type: integer
                 isBuyerMaker:
                     type: boolean
@@ -1987,6 +1991,7 @@ components:
                 commissionAsset:
                     type: string
                 id:
+                    format: int64
                     type: integer
                 maker:
                     type: boolean
@@ -2014,9 +2019,9 @@ components:
         UmfuturesCreateBatchOrdersV1Req:
             properties:
                 batchOrders:
-                    items:
-                        $ref: '#/components/schemas/UmfuturesCreateBatchOrdersV1ReqBatchOrdersItem'
-                    type: array
+                    description: JSON string containing array of order objects. Max 5 orders.
+                    example: '[{"symbol":"BTCUSDT","side":"BUY","type":"LIMIT","quantity":"1","price":"30000"},{"symbol":"BTCUSDT","side":"BUY","type":"LIMIT","quantity":"1","price":"31000"}]'
+                    type: string
                 recvWindow:
                     format: int64
                     type: integer
@@ -2324,7 +2329,7 @@ components:
                             asset:
                                 type: string
                             autoAssetExchange:
-                                type: integer
+                                type: string
                             marginAvailable:
                                 type: boolean
                         type: object
@@ -2347,6 +2352,7 @@ components:
                         type: object
                     type: array
                 serverTime:
+                    format: int64
                     type: integer
                 symbols:
                     items:
@@ -2362,6 +2368,7 @@ components:
                             contractType:
                                 type: string
                             deliveryDate:
+                                format: int64
                                 type: integer
                             filters:
                                 items:
@@ -2385,6 +2392,7 @@ components:
                             marketTakeBound:
                                 type: string
                             onboardDate:
+                                format: int64
                                 type: integer
                             pair:
                                 type: string
@@ -2605,6 +2613,9 @@ components:
                     type: string
                 bidQty:
                     type: string
+                lastUpdateId:
+                    format: int64
+                    type: integer
                 symbol:
                     type: string
                 time:
@@ -2648,9 +2659,9 @@ components:
         UmfuturesUpdateBatchOrdersV1Req:
             properties:
                 batchOrders:
-                    items:
-                        $ref: '#/components/schemas/UmfuturesUpdateBatchOrdersV1ReqBatchOrdersItem'
-                    type: array
+                    description: JSON string containing array of order modification objects. Max 5 orders.
+                    example: '[{"symbol":"BTCUSDT","orderId":12345,"side":"BUY","quantity":"1","price":"30000"},{"symbol":"BTCUSDT","orderId":12346,"side":"BUY","quantity":"1","price":"31000"}]'
+                    type: string
                 recvWindow:
                     format: int64
                     type: integer
@@ -3737,17 +3748,12 @@ paths:
                   in: query
                   name: orderIdList
                   schema:
-                    items:
-                        format: int64
-                        type: integer
-                    type: array
+                    type: string
                 - description: max length 10<br/> e.g. [&#34;my_id_1&#34;,&#34;my_id_2&#34;], encode the double quotes. No space after comma.
                   in: query
                   name: origClientOrderIdList
                   schema:
-                    items:
-                        type: string
-                    type: array
+                    type: string
                 - in: query
                   name: recvWindow
                   schema:
@@ -4506,6 +4512,8 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/GetHistoricalTradesV1Resp'
                     description: Successful operation
+            security:
+                - ApiKey: []
             summary: Old Trades Lookup (MARKET_DATA)
             tags:
                 - Futures

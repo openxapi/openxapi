@@ -72,9 +72,7 @@ components:
         CmfuturesCreateBatchOrdersV1Req:
             properties:
                 batchOrders:
-                    items:
-                        $ref: '#/components/schemas/CmfuturesCreateBatchOrderV1ReqBatchOrdersItem'
-                    type: array
+                    type: string
                 recvWindow:
                     format: int64
                     type: integer
@@ -100,6 +98,8 @@ components:
                     type: string
                 clientOrderId:
                     type: string
+                closePosition:
+                    type: boolean
                 cumBase:
                     type: string
                 cumQty:
@@ -176,6 +176,8 @@ components:
                 origQty:
                     type: string
                 origType:
+                    type: string
+                pair:
                     type: string
                 positionSide:
                     type: string
@@ -433,9 +435,9 @@ components:
         CmfuturesUpdateBatchOrdersV1Req:
             properties:
                 batchOrders:
-                    items:
-                        $ref: '#/components/schemas/CmfuturesUpdateBatchOrdersV1ReqBatchOrdersItem'
-                    type: array
+                    description: JSON string containing array of order modification objects. Max 5 orders.
+                    example: '[{"symbol":"BTCUSD_PERP","orderId":12345,"side":"BUY","quantity":"1","price":"30000"},{"symbol":"BTCUSD_PERP","orderId":12346,"side":"BUY","quantity":"1","price":"31000"}]'
+                    type: string
                 recvWindow:
                     format: int64
                     type: integer
@@ -780,7 +782,7 @@ components:
             example: '{ "amount": 100.0, "code": 200, "msg": "Successfully modify position margin.", "type": 1 }'
             properties:
                 amount:
-                    type: integer
+                    type: number
                 code:
                     type: integer
                 msg:
@@ -988,6 +990,7 @@ components:
         GetAggTradesV1RespItem:
             properties:
                 T:
+                    format: int64
                     type: integer
                 a:
                     type: integer
@@ -1122,8 +1125,10 @@ components:
             example: '{ "lastUpdateId": 16769853, "symbol": "BTCUSD_PERP",  "pair": "BTCUSD",  "E": 1591250106370,    "T": 1591250106368,    "bids": [ [ "9638.0",      "431"     ] ], "asks": [ [ "9638.2", "12" ] ] }'
             properties:
                 E:
+                    format: int64
                     type: integer
                 T:
+                    format: int64
                     type: integer
                 asks:
                     items:
@@ -1312,6 +1317,7 @@ components:
                 baseQty:
                     type: string
                 id:
+                    format: int64
                     type: integer
                 isBuyerMaker:
                     type: boolean
@@ -1372,7 +1378,8 @@ components:
                 tradeId:
                     type: string
                 tranId:
-                    type: string
+                    format: int64
+                    type: integer
             type: object
         GetLeverageBracketV1Resp:
             example: '[ { "pair": "BTCUSD", "brackets": [ { "bracket": 1,    "initialLeverage": 125,   "qtyCap": 50,   "qtylFloor": 0,   "maintMarginRatio": 0.004,  "cum": 0.0   } ] } ]'
@@ -1387,14 +1394,16 @@ components:
                             bracket:
                                 type: integer
                             cum:
-                                type: integer
+                                type: number
                             initialLeverage:
                                 type: integer
                             maintMarginRatio:
                                 type: number
                             qtyCap:
+                                format: int64
                                 type: integer
                             qtylFloor:
+                                format: int64
                                 type: integer
                         type: object
                     type: array
@@ -1414,14 +1423,16 @@ components:
                             bracket:
                                 type: integer
                             cum:
-                                type: integer
+                                type: number
                             initialLeverage:
                                 type: integer
                             maintMarginRatio:
                                 type: number
                             qtyCap:
+                                format: int64
                                 type: integer
                             qtylFloor:
+                                format: int64
                                 type: integer
                         type: object
                     type: array
@@ -1927,6 +1938,7 @@ components:
                 baseQty:
                     type: string
                 id:
+                    format: int64
                     type: integer
                 isBuyerMaker:
                     type: boolean
@@ -1954,6 +1966,7 @@ components:
                 commissionAsset:
                     type: string
                 id:
+                    format: int64
                     type: integer
                 maker:
                     type: boolean
@@ -2398,18 +2411,14 @@ paths:
                   in: query
                   name: orderIdList
                   schema:
-                    items:
-                        format: int64
-                        type: integer
-                    type: array
+                    example: '[1234567,2345678]'
+                    type: string
                 - description: max length 10<br/> e.g. [&#34;my_id_1&#34;,&#34;my_id_2&#34;], encode the double quotes. No space after comma.
                   in: query
                   name: origClientOrderIdList
                   schema:
-                    items:
-                        default: ""
-                        type: string
-                    type: array
+                    example: '["my_id_1","my_id_2"]'
+                    type: string
                 - in: query
                   name: recvWindow
                   schema:
@@ -2943,6 +2952,8 @@ paths:
                             schema:
                                 $ref: '#/components/schemas/GetHistoricalTradesV1Resp'
                     description: Successful operation
+            security:
+                - ApiKey: []
             summary: Old Trades Lookup(MARKET_DATA)
             tags:
                 - Futures
