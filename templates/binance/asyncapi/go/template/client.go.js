@@ -698,7 +698,124 @@ func (c *Client) ConnectToServer(ctx context.Context, serverName string) error {
 	}
 	
 	return c.Connect(ctx)
-}`}
+}
+
+${(() => {
+        // Check if any server has variables defined
+        const hasServerVariables = serverList.some(server => {
+          const serverJson = server.json ? server.json() : (server._json || {});
+          return serverJson.variables && Object.keys(serverJson.variables).length > 0;
+        });
+        
+        if (!hasServerVariables) {
+          return ''; // Don't generate server variable methods if no variables are defined
+        }
+        
+        // Get all unique server variables across all servers
+        const allVariables = new Set();
+        serverList.forEach(server => {
+          const serverJson = server.json ? server.json() : (server._json || {});
+          if (serverJson.variables) {
+            Object.keys(serverJson.variables).forEach(varName => allVariables.add(varName));
+          }
+        });
+        
+        const variableNames = Array.from(allVariables);
+        const parameterList = variableNames.map(varName => `${varName} string`).join(', ');
+        const variableMapEntries = variableNames.map(varName => `\t\t"${varName}": ${varName},`).join('\n');
+        
+        return `// ConnectWithVariables establishes a WebSocket connection using provided server variables
+// This method resolves server URL template variables like {${variableNames.join('}, {')}}
+func (c *Client) ConnectWithVariables(ctx context.Context, ${parameterList}) error {
+	activeServer := c.serverManager.GetActiveServer()
+	if activeServer == nil {
+		return fmt.Errorf("no active server configured")
+	}
+	
+	// Resolve the URL with the provided variables
+	variables := map[string]string{
+${variableMapEntries}
+	}
+	
+	resolvedURL, err := c.serverManager.ResolveServerURL(activeServer.Name, variables)
+	if err != nil {
+		return fmt.Errorf("failed to resolve server URL: %w", err)
+	}
+	
+	u, err := url.Parse(resolvedURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	dialer := websocket.DefaultDialer
+	dialer.HandshakeTimeout = 10 * time.Second
+
+	conn, _, err := dialer.DialContext(ctx, u.String(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s: %w", resolvedURL, err)
+	}
+
+	c.conn = conn
+	c.isConnected = true
+	go c.readMessages()
+	return nil
+}
+
+// ConnectToServerWithVariables establishes a WebSocket connection to a specific server using provided server variables
+func (c *Client) ConnectToServerWithVariables(ctx context.Context, serverName string, ${parameterList}) error {
+	if err := c.SetActiveServer(serverName); err != nil {
+		return fmt.Errorf("failed to set active server: %w", err)
+	}
+	
+	return c.ConnectWithVariables(ctx, ${variableNames.join(', ')})
+}${variableNames.map(varName => `
+
+// ConnectWith${varName.charAt(0).toUpperCase() + varName.slice(1)} establishes a WebSocket connection using the provided ${varName}
+// This is a convenience method for the ${varName} variable
+func (c *Client) ConnectWith${varName.charAt(0).toUpperCase() + varName.slice(1)}(ctx context.Context, ${varName} string) error {
+	${variableNames.length === 1 ? `return c.ConnectWithVariables(ctx, ${varName})` : `// Create variables map with only ${varName} provided
+	variables := map[string]string{
+		"${varName}": ${varName},
+	}
+	// Call the generic method with resolved URL
+	activeServer := c.serverManager.GetActiveServer()
+	if activeServer == nil {
+		return fmt.Errorf("no active server configured")
+	}
+	
+	resolvedURL, err := c.serverManager.ResolveServerURL(activeServer.Name, variables)
+	if err != nil {
+		return fmt.Errorf("failed to resolve server URL: %w", err)
+	}
+	
+	u, err := url.Parse(resolvedURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+
+	dialer := websocket.DefaultDialer
+	dialer.HandshakeTimeout = 10 * time.Second
+
+	conn, _, err := dialer.DialContext(ctx, u.String(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to connect to %s: %w", resolvedURL, err)
+	}
+
+	c.conn = conn
+	c.isConnected = true
+	go c.readMessages()
+	return nil`}
+}
+
+// ConnectToServerWith${varName.charAt(0).toUpperCase() + varName.slice(1)} establishes a WebSocket connection to a specific server using the provided ${varName}
+func (c *Client) ConnectToServerWith${varName.charAt(0).toUpperCase() + varName.slice(1)}(ctx context.Context, serverName string, ${varName} string) error {
+	if err := c.SetActiveServer(serverName); err != nil {
+		return fmt.Errorf("failed to set active server: %w", err)
+	}
+	
+	return c.ConnectWith${varName.charAt(0).toUpperCase() + varName.slice(1)}(ctx, ${varName})
+}`).join('')}`;
+      })()}`}
       </Text>
 
       <Text newLines={2}>
