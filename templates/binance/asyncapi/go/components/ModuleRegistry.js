@@ -18,6 +18,9 @@ import { UmfuturesStreamsWebSocketHandlers } from './UmfuturesStreamsWebSocketHa
 // Import dedicated cmfutures-streams components
 import { CmfuturesStreamsWebSocketHandlers } from './CmfuturesStreamsWebSocketHandlers.js';
 
+// Import dedicated options-streams components
+import { OptionsStreamsWebSocketHandlers } from './OptionsStreamsWebSocketHandlers.js';
+
 // Registry of module-specific configurations and handlers
 const moduleRegistry = new Map();
 
@@ -211,6 +214,26 @@ registerModule('cmfutures-streams', {
       requiresAuth: false,
       useStreamFormat: true,
       futuresSpecific: true
+    }
+  }
+});
+
+registerModule('options-streams', {
+  handlers: {
+    webSocketHandlers: optionsStreamsWebSocketHandlersGenerator,
+    individualModels: optionsStreamsIndividualModelsGenerator,
+    messageStructs: optionsStreamsMessageStructsGenerator
+  },
+  authentication: {
+    supportedTypes: [], // Options streams are public, no authentication required
+    defaultType: null
+  },
+  specialMethods: {
+    // Options streams use subscription model, not request-response
+    subscriptions: {
+      requiresAuth: false,
+      useStreamFormat: true,
+      optionsSpecific: true
     }
   }
 });
@@ -409,6 +432,36 @@ function cmfuturesStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
   }
 }
 
+// Options Streams module generators (market data streams, no authentication)
+function optionsStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
+  try {
+    // Use dedicated OptionsStreamsWebSocketHandlers for options-specific event handling
+    return OptionsStreamsWebSocketHandlers({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load OptionsStreamsWebSocketHandlers for options-streams:', error.message);
+    return '// OptionsStreamsWebSocketHandlers component not available for options-streams\n';
+  }
+}
+
+function optionsStreamsIndividualModelsGenerator(asyncapi, moduleConfig) {
+  try {
+    // Use SpotStreamsIndividualModels as base since options streams use similar model structure
+    return SpotStreamsIndividualModels({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load SpotStreamsIndividualModels for options-streams:', error.message);
+    return [];
+  }
+}
+
+function optionsStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
+  try {
+    return MessageStructs({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load MessageStructs for options-streams:', error.message);
+    return '// MessageStructs component not available for options-streams\n';
+  }
+}
+
 /*
  * Utility function to determine module name from AsyncAPI spec or context
  */
@@ -421,7 +474,7 @@ export function detectModuleName(asyncapi, context = {}) {
     const parts = context.moduleName.split('/');
     const lastPart = parts[parts.length - 1];
     // If it looks like a known module, return it
-    if (['spot', 'umfutures', 'cmfutures', 'spot-streams', 'umfutures-streams', 'cmfutures-streams'].includes(lastPart)) {
+    if (['spot', 'umfutures', 'cmfutures', 'spot-streams', 'umfutures-streams', 'cmfutures-streams', 'options-streams'].includes(lastPart)) {
       return lastPart;
     }
   }
@@ -440,6 +493,7 @@ export function detectModuleName(asyncapi, context = {}) {
       if (titleLower.includes('spot') && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'spot-streams';
       if ((titleLower.includes('umfutures') || titleLower.includes('usd-s') || titleLower.includes('usd-m')) && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'umfutures-streams';
       if ((titleLower.includes('cmfutures') || titleLower.includes('coin-m')) && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'cmfutures-streams';
+      if (titleLower.includes('options') && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'options-streams';
       if (titleLower.includes('spot')) return 'spot';
       if (titleLower.includes('umfutures') || titleLower.includes('usd-m') || titleLower.includes('usd-s')) return 'umfutures';
       if (titleLower.includes('cmfutures') || titleLower.includes('coin-m')) return 'cmfutures';
@@ -458,6 +512,7 @@ export function detectModuleName(asyncapi, context = {}) {
       
       if (serverUrls.includes('dstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'cmfutures-streams';
       if (serverUrls.includes('fstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'umfutures-streams';
+      if (serverUrls.includes('nbstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'options-streams';
       if (serverUrls.includes('dstream')) return 'cmfutures';
       if (serverUrls.includes('fstream')) return 'umfutures';
       if (serverUrls.includes('stream.binance') || serverUrls.includes('data-stream.binance')) return 'spot-streams';

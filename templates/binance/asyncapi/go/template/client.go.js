@@ -92,10 +92,11 @@ func NewServerManager() *ServerManager {
 		// Handle server variables (streamPath, listenKey, etc.)
 		const serverJson = server.json ? server.json() : (server._json || {});
 		if (serverJson.variables) {
-			// Handle streamPath variable
+			// Handle streamPath variable - keep as template for options-streams and other stream modules
 			if (serverJson.variables.streamPath) {
-				const defaultStreamPath = serverJson.variables.streamPath.default || 'ws';
-				pathname = pathname.replace('{streamPath}', defaultStreamPath);
+				// For stream modules, keep {streamPath} as template for runtime replacement
+				// This allows dynamic path selection (/ws, /stream, etc.)
+				// Note: streamPath variables are resolved at connection time, not initialization time
 			}
 			
 			// Handle listenKey variable - leave as template for runtime replacement
