@@ -21,6 +21,9 @@ import { CmfuturesStreamsWebSocketHandlers } from './CmfuturesStreamsWebSocketHa
 // Import dedicated options-streams components
 import { OptionsStreamsWebSocketHandlers } from './OptionsStreamsWebSocketHandlers.js';
 
+// Import dedicated pmargin components
+import { PmarginWebSocketHandlers } from './PmarginWebSocketHandlers.js';
+
 // Registry of module-specific configurations and handlers
 const moduleRegistry = new Map();
 
@@ -234,6 +237,25 @@ registerModule('options-streams', {
       requiresAuth: false,
       useStreamFormat: true,
       optionsSpecific: true
+    }
+  }
+});
+
+registerModule('pmargin', {
+  handlers: {
+    webSocketHandlers: pmarginWebSocketHandlersGenerator,
+    individualModels: pmarginIndividualModelsGenerator,
+    messageStructs: pmarginMessageStructsGenerator
+  },
+  authentication: {
+    supportedTypes: ['HMAC_SHA256', 'RSA', 'ED25519'],
+    defaultType: 'HMAC_SHA256'
+  },
+  specialMethods: {
+    // Portfolio margin user data streams require authentication via listen key
+    userDataStream: {
+      requiresAuth: true,
+      useListenKey: true
     }
   }
 });
@@ -462,6 +484,34 @@ function optionsStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
   }
 }
 
+// Portfolio Margin module generators
+function pmarginWebSocketHandlersGenerator(asyncapi, moduleConfig) {
+  try {
+    return PmarginWebSocketHandlers({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load PmarginWebSocketHandlers for pmargin:', error.message);
+    return '// PmarginWebSocketHandlers component not available for pmargin\n';
+  }
+}
+
+function pmarginIndividualModelsGenerator(asyncapi, moduleConfig) {
+  try {
+    return IndividualModels({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load IndividualModels for pmargin:', error.message);
+    return [];
+  }
+}
+
+function pmarginMessageStructsGenerator(asyncapi, moduleConfig) {
+  try {
+    return MessageStructs({ asyncapi });
+  } catch (error) {
+    console.warn('Could not load MessageStructs for pmargin:', error.message);
+    return '// MessageStructs component not available for pmargin\n';
+  }
+}
+
 /*
  * Utility function to determine module name from AsyncAPI spec or context
  */
@@ -474,7 +524,7 @@ export function detectModuleName(asyncapi, context = {}) {
     const parts = context.moduleName.split('/');
     const lastPart = parts[parts.length - 1];
     // If it looks like a known module, return it
-    if (['spot', 'umfutures', 'cmfutures', 'spot-streams', 'umfutures-streams', 'cmfutures-streams', 'options-streams'].includes(lastPart)) {
+    if (['spot', 'umfutures', 'cmfutures', 'pmargin', 'spot-streams', 'umfutures-streams', 'cmfutures-streams', 'options-streams'].includes(lastPart)) {
       return lastPart;
     }
   }
@@ -497,6 +547,7 @@ export function detectModuleName(asyncapi, context = {}) {
       if (titleLower.includes('spot')) return 'spot';
       if (titleLower.includes('umfutures') || titleLower.includes('usd-m') || titleLower.includes('usd-s')) return 'umfutures';
       if (titleLower.includes('cmfutures') || titleLower.includes('coin-m')) return 'cmfutures';
+      if (titleLower.includes('pmargin') || titleLower.includes('portfolio margin')) return 'pmargin';
     }
   }
   
@@ -514,6 +565,7 @@ export function detectModuleName(asyncapi, context = {}) {
       if (serverUrls.includes('fstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'umfutures-streams';
       if (serverUrls.includes('nbstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'options-streams';
       if (serverUrls.includes('dstream')) return 'cmfutures';
+      if (serverUrls.includes('fstream') && serverUrls.includes('/pm/ws')) return 'pmargin';
       if (serverUrls.includes('fstream')) return 'umfutures';
       if (serverUrls.includes('stream.binance') || serverUrls.includes('data-stream.binance')) return 'spot-streams';
       if (serverUrls.includes('ws-api.binance')) return 'spot';

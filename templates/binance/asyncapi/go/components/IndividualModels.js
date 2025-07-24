@@ -8,6 +8,9 @@
 const isRequestMessage = false;
 
 export function IndividualModels({ asyncapi }) {
+  // Reset nested struct tracking for each model generation
+  generatedNestedStructs.clear();
+  
   const messages = new Map();
   const oneOfTypes = new Map(); // Track oneOf types for special handling
   const eventSchemas = new Map(); // Track event schemas separately
@@ -166,11 +169,11 @@ import (
 `;
 
   // Generate nested struct definitions first
-  const nestedStructs = generateNestedStructs(schema, structName);
+  const nestedStructs = generateNestedStructs(schema, structName, isEvent);
   content += nestedStructs;
 
   content += generateStructWithDocs(structName, schema, message, false, isEvent, isRequestMessage);
-  content += generateHelperMethods(structName, isEvent, isRequestMessage);
+  content += generateHelperMethods(structName, isEvent, isRequestMessage, schema);
   
   // Generate SetXxx methods for request messages
   if (isRequestMessage) {
@@ -181,9 +184,14 @@ import (
 }
 
 /*
+ * Track generated nested struct names to avoid duplicates
+ */
+let generatedNestedStructs = new Set();
+
+/*
  * Generate nested struct definitions for object properties
  */
-function generateNestedStructs(schema, parentName) {
+function generateNestedStructs(schema, parentName, isEvent = false) {
   let nestedStructs = '';
   
   // Check if this is a request message to determine if we need special params handling
@@ -262,12 +270,12 @@ function generateNestedStructs(schema, parentName) {
           nestedStructs += generateParamsStruct(parentName, prop);
         } else {
           // Generate regular nested struct using field name
-          const fieldName = generateGoFieldName(propName, prop, parentName.includes('Event'));
+          const fieldName = generateGoFieldName(propName, prop, isEvent);
           const nestedStructName = `${parentName}${fieldName}`;
-          nestedStructs += generateNestedStructDefinition(nestedStructName, prop);
+          nestedStructs += generateNestedStructDefinition(nestedStructName, prop, isEvent);
           
           // Recursively generate nested structs for this object's properties
-          nestedStructs += generateNestedStructs(prop, nestedStructName);
+          nestedStructs += generateNestedStructs(prop, nestedStructName, isEvent);
         }
       } else if (propType === 'array' && prop.items) {
         // Handle array items that might be objects
@@ -312,7 +320,7 @@ function generateNestedStructs(schema, parentName) {
         
         if (itemType === 'object' && itemProperties) {
           // Use the property name to create unique array item types
-          const propertyFieldName = generateGoFieldName(propName, null, parentName.includes('Event'));
+          const propertyFieldName = generateGoFieldName(propName, null, isEvent);
           const itemStructName = `${parentName}${propertyFieldName}Item`;
           
           // Create a schema-like object for generateNestedStructDefinition
@@ -322,10 +330,10 @@ function generateNestedStructs(schema, parentName) {
             description: itemDescription
           };
           
-          nestedStructs += generateNestedStructDefinition(itemStructName, itemSchema);
+          nestedStructs += generateNestedStructDefinition(itemStructName, itemSchema, isEvent);
           
           // Recursively generate nested structs for array item's properties
-          nestedStructs += generateNestedStructs(itemSchema, itemStructName);
+          nestedStructs += generateNestedStructs(itemSchema, itemStructName, isEvent);
         }
       }
     });
@@ -431,7 +439,7 @@ function generateParamsStruct(parentName, paramsProperty) {
         }
         
         // For params, use pointers for optional fields
-        const goType = mapJsonTypeToGo(prop, propName, structName, true, isRequired, []);
+        const goType = mapJsonTypeToGo(prop, propName, structName, true, isRequired, [], false);
         const jsonTag = getJsonTagOptions(prop, isRequired);
         
         structDef += `\t${goFieldName} ${goType} \`json:"${propName}${jsonTag}"\`\n`;
@@ -446,10 +454,18 @@ function generateParamsStruct(parentName, paramsProperty) {
 /*
  * Generate nested struct definition for object properties
  */
-function generateNestedStructDefinition(structName, schema) {
+function generateNestedStructDefinition(structName, schema, isEvent = false) {
   if (!schema) {
     return '';
   }
+  
+  // Check if this struct has already been generated
+  if (generatedNestedStructs.has(structName)) {
+    return '';
+  }
+  
+  // Mark as generated to avoid duplicates
+  generatedNestedStructs.add(structName);
   
   let structDef = `// ${structName} represents a nested object structure\n`;
   structDef += `type ${structName} struct {\n`;
@@ -598,8 +614,8 @@ function generateNestedStructDefinition(structName, schema) {
         }
         
         // Generate field name and handle collisions
-        // Check if parent struct is an event schema
-        let goFieldName = generateGoFieldName(propName, prop, structName.includes('Event'));
+        // Use the inherited isEvent flag from parent
+        let goFieldName = generateGoFieldName(propName, prop, isEvent);
         
         // Handle field name collisions
         if (usedFieldNames.has(goFieldName)) {
@@ -622,7 +638,7 @@ function generateNestedStructDefinition(structName, schema) {
         
         // For nested structs, don't use pointers for request message logic
         // as these are typically internal structures
-        const goType = mapJsonTypeToGo(prop, propName, structName, false, isRequired, []);
+        const goType = mapJsonTypeToGo(prop, propName, structName, false, isRequired, [], isEvent);
         const jsonTag = getJsonTagOptions(prop, isRequired);
         
         structDef += `\t${goFieldName} ${goType} \`json:"${propName}${jsonTag}"\`\n`;
@@ -671,7 +687,7 @@ function generateStructDefinition(name, schema) {
           const fieldName = generateGoFieldName(propName, prop, name.includes('Event'));
           goType = `${name}${fieldName}`;
         } else {
-          goType = mapJsonTypeToGo(prop, propName, name, false, false, []);
+          goType = mapJsonTypeToGo(prop, propName, name, false, false, [], name.includes('Event'));
         }
       }
       
@@ -914,7 +930,7 @@ function generateStructWithDocs(name, schema, message, isNested = false, isEvent
         }
         usedFieldNames.add(goFieldName);
         
-        const goType = mapJsonTypeToGo(prop, propName, name, isRequestMessage, isRequired, paramsRequiredFields);
+        const goType = mapJsonTypeToGo(prop, propName, name, isRequestMessage, isRequired, paramsRequiredFields, isEvent);
         const jsonTag = getJsonTagOptions(prop, isRequired);
         
         structDef += `\t${goFieldName} ${goType} \`json:"${propName}${jsonTag}"\`\n`;
@@ -934,7 +950,7 @@ function generateStructWithDocs(name, schema, message, isNested = false, isEvent
 /*
  * Generate helper methods for struct (including event-specific methods)
  */
-function generateHelperMethods(structName, isEvent = false, isRequestMessage = false) {
+function generateHelperMethods(structName, isEvent = false, isRequestMessage = false, schema = null) {
   let methods = '';
   
   // Generate constructor for request messages
@@ -954,18 +970,51 @@ function generateHelperMethods(structName, isEvent = false, isRequestMessage = f
   
   // Event-specific methods
   if (isEvent) {
+    // Detect whether the struct has direct event fields or nested event object
+    let hasDirectEventFields = false;
+    let hasNestedEventObject = false;
+    
+    if (schema) {
+      try {
+        let properties;
+        if (typeof schema.properties === 'function') {
+          properties = schema.properties();
+        } else {
+          properties = schema.properties;
+        }
+        
+        if (properties) {
+          // Check for direct event fields (e for EventType, E for EventTime)
+          if (properties.e || properties.E) {
+            hasDirectEventFields = true;
+          }
+          
+          // Check for nested event object
+          if (properties.event || properties.Event) {
+            hasNestedEventObject = true;
+          }
+        }
+      } catch (e) {
+        console.warn(`Error inspecting schema for ${structName}:`, e.message);
+      }
+    }
+    
+    // Determine field access pattern
+    const eventTypeAccess = hasNestedEventObject ? 's.Event.EventType' : 's.EventType';
+    const eventTimeAccess = hasNestedEventObject ? 's.Event.EventTime' : 's.EventTime';
+    
     methods += `// GetEventType returns the event type for ${structName}\n`;
     methods += `func (s ${structName}) GetEventType() string {\n`;
-    methods += `\tif s.Event.EventType != "" {\n`;
-    methods += `\t\treturn s.Event.EventType\n`;
+    methods += `\tif ${eventTypeAccess} != "" {\n`;
+    methods += `\t\treturn ${eventTypeAccess}\n`;
     methods += `\t}\n`;
     methods += `\treturn "${structName.toLowerCase()}"\n`;
     methods += `}\n\n`;
     
     methods += `// GetEventTime returns the event timestamp for ${structName}\n`;
     methods += `func (s ${structName}) GetEventTime() int64 {\n`;
-    methods += `\tif s.Event.EventTime != 0 {\n`;
-    methods += `\t\treturn s.Event.EventTime\n`;
+    methods += `\tif ${eventTimeAccess} != 0 {\n`;
+    methods += `\t\treturn ${eventTimeAccess}\n`;
     methods += `\t}\n`;
     methods += `\treturn 0\n`;
     methods += `}\n\n`;
@@ -977,7 +1026,7 @@ function generateHelperMethods(structName, isEvent = false, isRequestMessage = f
 /*
  * Map JSON schema types to Go types with more precision
  */
-function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage = false, isRequired = false, paramsRequiredFields = []) {
+function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage = false, isRequired = false, paramsRequiredFields = [], isEvent = false) {
   if (!property) {
     return 'interface{}';
   }
@@ -1090,7 +1139,7 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
       }
       
       // Generate nested struct name using field name
-      const fieldName = generateGoFieldName(propName, property, parentStructName.includes('Event'));
+      const fieldName = generateGoFieldName(propName, property, isEvent);
       const structName = `${parentStructName}${fieldName}`;
       return shouldUsePointer ? `*${structName}` : structName;
     }
@@ -1420,7 +1469,7 @@ function hasTimeFields(schema) {
 
   return Object.keys(properties).some(propName => {
     const prop = properties[propName];
-    const goType = mapJsonTypeToGo(prop, propName, 'HasTimeCheck', false, false, []);
+    const goType = mapJsonTypeToGo(prop, propName, 'HasTimeCheck', false, false, [], false);
     return goType.includes('time.') || (propName && (propName.includes('time') || propName.includes('Time') || propName.includes('timestamp')));
   });
 }
@@ -1536,7 +1585,8 @@ import (
 `;
 
   // Generate nested struct definitions first
-  const nestedStructs = generateNestedStructs(schema, structName);
+  const isEventStruct = structName.includes('Event');
+  const nestedStructs = generateNestedStructs(schema, structName, isEventStruct);
   content += nestedStructs;
   
   // Force generation of nested structs for all object properties
@@ -1546,14 +1596,14 @@ import (
       if (prop.type === 'object' && prop.properties) {
         const fieldName = generateGoFieldName(propName, prop, structName.includes('Event'));
         const nestedStructName = `${structName}${fieldName}`;
-        content += generateNestedStructDefinition(nestedStructName, prop);
+        content += generateNestedStructDefinition(nestedStructName, prop, structName.includes('Event'));
       }
     });
   }
 
   content += `// ${structName} represents ${schema.description || schemaName}\n`;
   content += generateStructDefinition(structName, schema);
-  content += generateHelperMethods(structName, schema.isEvent || false, isRequestMessage);
+  content += generateHelperMethods(structName, schema.isEvent || false, isRequestMessage, schema);
   
   // Generate SetXxx methods for request messages in component schemas
   if (isRequestMessage) {
@@ -1763,7 +1813,7 @@ function generateSetterMethods(structName, schema) {
     
     // Generate setter for the property itself
     if (!isRequired) {
-      const goType = mapJsonTypeToGo(prop, propName, structName, true, isRequired, []);
+      const goType = mapJsonTypeToGo(prop, propName, structName, true, isRequired, [], false);
       // Remove pointer for the parameter type in setter
       const paramType = goType.startsWith('*') ? goType.substring(1) : goType;
       

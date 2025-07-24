@@ -187,7 +187,15 @@ func (c *Client) connect(ctx context.Context, endpoint string, isCombined bool) 
 	}
 	
 	// Build the WebSocket URL with the specific endpoint
-	serverURL := fmt.Sprintf("%s://%s%s", activeServer.Protocol, activeServer.Host, endpoint)
+	// For streams, we connect directly to the endpoint (like /ws or /stream)
+	// The Host field should be clean hostname without template variables
+	host := activeServer.Host
+	if strings.Contains(host, "{streamPath}") {
+		// Extract just the hostname part, removing template variables
+		host = strings.Split(host, "/")[0]
+		host = strings.ReplaceAll(host, "{streamPath}", "")
+	}
+	serverURL := fmt.Sprintf("%s://%s%s", activeServer.Protocol, host, endpoint)
 	
 	u, err := url.Parse(serverURL)
 	if err != nil {

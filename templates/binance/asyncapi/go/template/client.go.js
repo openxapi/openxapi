@@ -668,7 +668,8 @@ func (c *Client) SetURL(newURL string) error {
       <Text newLines={2}>
         {`// Connect establishes a WebSocket connection to the active server
 func (c *Client) Connect(ctx context.Context) error {
-	currentURL := c.serverManager.GetActiveServerURL()
+	${packageName.includes('streams') ? `// For streams modules, use ConnectToSingleStreams by default
+	return c.ConnectToSingleStreams(ctx, "")` : `currentURL := c.serverManager.GetActiveServerURL()
 	if currentURL == "" {
 		return fmt.Errorf("no active server configured")
 	}
@@ -688,8 +689,11 @@ func (c *Client) Connect(ctx context.Context) error {
 
 	c.conn = conn
 	c.isConnected = true
+	
+	// Start the message reading loop
 	go c.readMessages()
-	return nil
+	
+	return nil`}
 }
 
 // ConnectToServer establishes a WebSocket connection to a specific server
