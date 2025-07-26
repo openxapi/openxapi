@@ -78,7 +78,7 @@ func (c *Client) Subscribe(ctx context.Context, streams []string) error {
 	request := map[string]interface{}{
 		"method": "SUBSCRIBE",
 		"params": streams,
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -93,7 +93,7 @@ func (c *Client) Unsubscribe(ctx context.Context, streams []string) error {
 	request := map[string]interface{}{
 		"method": "UNSUBSCRIBE", 
 		"params": streams,
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -107,7 +107,7 @@ func (c *Client) ListSubscriptions(ctx context.Context) error {
 
 	request := map[string]interface{}{
 		"method": "LIST_SUBSCRIPTIONS",
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -177,7 +177,12 @@ func (c *Client) setStreamPath(streamPath string) error {
 
 // connect establishes a WebSocket connection to a specific endpoint (for spot-streams)
 func (c *Client) connect(ctx context.Context, endpoint string, isCombined bool) error {
-	if c.isConnected {
+	// Check connection state with proper locking
+	c.connMu.RLock()
+	isConnected := c.isConnected
+	c.connMu.RUnlock()
+	
+	if isConnected {
 		return fmt.Errorf("websocket already connected")
 	}
 	
@@ -210,8 +215,11 @@ func (c *Client) connect(ctx context.Context, endpoint string, isCombined bool) 
 		return fmt.Errorf("failed to connect to %s: %w", serverURL, err)
 	}
 
+	// Safely assign connection with proper locking
+	c.connMu.Lock()
 	c.conn = conn
 	c.isConnected = true
+	c.connMu.Unlock()
 	
 	// Start message processing based on connection type
 	if isCombined {
@@ -227,9 +235,6 @@ func (c *Client) connect(ctx context.Context, endpoint string, isCombined bool) 
 func (c *Client) readSingleStreamMessages() {
 	defer func() {
 		c.isConnected = false
-		if c.conn != nil {
-			c.conn.Close()
-		}
 	}()
 
 	for {
@@ -237,7 +242,17 @@ func (c *Client) readSingleStreamMessages() {
 		case <-c.done:
 			return
 		default:
-			_, message, err := c.conn.ReadMessage()
+			// Safely access connection with read lock
+			c.connMu.RLock()
+			conn := c.conn
+			c.connMu.RUnlock()
+			
+			// Check if connection is nil (race condition protection)
+			if conn == nil {
+				return
+			}
+			
+			_, message, err := conn.ReadMessage()
 			if err != nil {
 				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					return
@@ -260,9 +275,6 @@ func (c *Client) readSingleStreamMessages() {
 func (c *Client) readCombinedStreamMessages() {
 	defer func() {
 		c.isConnected = false
-		if c.conn != nil {
-			c.conn.Close()
-		}
 	}()
 
 	for {
@@ -270,7 +282,17 @@ func (c *Client) readCombinedStreamMessages() {
 		case <-c.done:
 			return
 		default:
-			_, message, err := c.conn.ReadMessage()
+			// Safely access connection with read lock
+			c.connMu.RLock()
+			conn := c.conn
+			c.connMu.RUnlock()
+			
+			// Check if connection is nil (race condition protection)
+			if conn == nil {
+				return
+			}
+			
+			_, message, err := conn.ReadMessage()
 			if err != nil {
 				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					return
@@ -413,84 +435,95 @@ func (c *Client) OnStreamError(handler StreamErrorHandler) {
 function generateCombinedStreamHandlers() {
   return `
 // Message processing for incoming stream data
-func (c *Client) processStreamMessage(message []byte) error {
+func (c *Client) processStreamMessage(data []byte) error {
 	// First check if this is an array stream (like !miniTicker@arr)
 	// by trying to parse as an array first
 	var arrayData []interface{}
-	if err := json.Unmarshal(message, &arrayData); err == nil {
+	if err := json.Unmarshal(data, &arrayData); err == nil {
 		// This is an array stream - process as array of events
-		return c.processArrayStreamEvent(message, arrayData)
+		return c.processArrayStreamEvent(data, arrayData)
+	}
+	
+	// Parse message as object to determine type
+	var baseMsg map[string]interface{}
+	if err := json.Unmarshal(data, &baseMsg); err != nil {
+		return fmt.Errorf("failed to parse message: %w", err)
 	}
 
-	// Try to parse as subscription response first
-	var subscriptionResp models.SubscriptionResponse
-	if err := json.Unmarshal(message, &subscriptionResp); err == nil && subscriptionResp.RequestIdEcho != 0 {
+	// Check for subscription response
+	if _, hasID := baseMsg["id"]; hasID {
+		var response models.SubscriptionResponse
+		if err := json.Unmarshal(data, &response); err != nil {
+			return fmt.Errorf("failed to parse subscription response: %w", err)
+		}
 		if c.handlers.subscriptionResponse != nil {
-			return c.handlers.subscriptionResponse(&subscriptionResp)
+			return c.handlers.subscriptionResponse(&response)
 		}
 		return nil
 	}
 
-	// Try to parse as error response
-	var errorResp models.ErrorResponse
-	if err := json.Unmarshal(message, &errorResp); err == nil && errorResp.Error != nil {
+	// Check for error response
+	if errorData, hasError := baseMsg["error"]; hasError && errorData != nil {
+		var errorResp models.ErrorResponse
+		if err := json.Unmarshal(data, &errorResp); err != nil {
+			return fmt.Errorf("failed to parse error response: %w", err)
+		}
 		if c.handlers.error != nil {
 			return c.handlers.error(&errorResp)
 		}
 		return nil
 	}
 
-	// Try to parse as combined stream event FIRST (before individual streams)
-	// Combined streams have format: {"stream": "symbol@eventType", "data": {...}}
-	var combinedEvent models.CombinedStreamEvent
-	if err := json.Unmarshal(message, &combinedEvent); err == nil && combinedEvent.StreamName != "" {
+	// Check for combined stream format
+	if _, hasStream := baseMsg["stream"]; hasStream {
+		var combined models.CombinedStreamEvent
+		if err := json.Unmarshal(data, &combined); err != nil {
+			return fmt.Errorf("failed to parse combined stream: %w", err)
+		}
 		if c.handlers.combinedStream != nil {
-			if err := c.handlers.combinedStream(&combinedEvent); err != nil {
-				return err
-			}
+			return c.handlers.combinedStream(&combined)
 		}
-		
-		// Also process the inner data based on stream type
-		return c.processStreamData(combinedEvent.StreamName, combinedEvent.StreamData)
+		// Also try to process the nested data
+		if dataBytes, err := json.Marshal(combined.StreamData); err == nil {
+			return c.processSingleStreamEvent(dataBytes)
+		}
+		return nil
 	}
 
-	// Try to parse as individual stream event by detecting event type
-	var genericMsg map[string]interface{}
-	if err := json.Unmarshal(message, &genericMsg); err == nil {
-		if eventType, hasEventType := genericMsg["e"]; hasEventType {
-			if eventTypeStr, ok := eventType.(string); ok {
-				return c.processStreamDataByEventType(eventTypeStr, message)
-			}
-		}
-		
-		// Special handling for BookTicker events (no "e" field)
-		// BookTicker messages have fields: "u" (update ID), "s" (symbol), "b" (best bid), "a" (best ask)
-		if _, hasUpdateId := genericMsg["u"]; hasUpdateId {
-			if _, hasSymbol := genericMsg["s"]; hasSymbol {
-				if _, hasBestBid := genericMsg["b"]; hasBestBid {
-					if _, hasBestAsk := genericMsg["a"]; hasBestAsk {
-						// This is a BookTicker event
-						return c.processStreamDataByEventType("bookTicker", message)
-					}
-				}
-			}
-		}
-		
-		// Special handling for PartialDepth events (no "e" field)
-		// PartialDepth messages have fields: "lastUpdateId", "bids", "asks"
-		if _, hasLastUpdateId := genericMsg["lastUpdateId"]; hasLastUpdateId {
-			if _, hasBids := genericMsg["bids"]; hasBids {
-				if _, hasAsks := genericMsg["asks"]; hasAsks {
-					// This is a PartialDepth event
-					return c.processStreamDataByEventType("partialDepth", message)
-				}
-			}
-		}
-	}
-
-	log.Printf("Unknown message format: %s", string(message))
-	return nil
+	// Process as single stream event
+	return c.processSingleStreamEvent(data)
 }
+
+// processSingleStreamEvent processes individual stream events
+func (c *Client) processSingleStreamEvent(data []byte) error {
+	// First try to parse the message as a generic map to handle flexible event type field
+	var genericMsg map[string]interface{}
+	if err := json.Unmarshal(data, &genericMsg); err != nil {
+		return fmt.Errorf("failed to parse message: %w", err)
+	}
+	
+	// Extract event type, handling both string and number formats
+	var eventType string
+	if eValue, hasEventType := genericMsg["e"]; hasEventType {
+		switch v := eValue.(type) {
+		case string:
+			eventType = v
+		case float64:
+			// Handle numeric event types by converting to string
+			eventType = fmt.Sprintf("%.0f", v)
+		case int:
+			// Handle integer event types by converting to string
+			eventType = fmt.Sprintf("%d", v)
+		default:
+			return fmt.Errorf("unknown event type format: %T", v)
+		}
+	} else {
+		return fmt.Errorf("no event type field found")
+	}
+	
+	return c.processStreamDataByEventType(eventType, data)
+}
+
 
 // processArrayStreamEvent processes array stream events (like !miniTicker@arr)
 func (c *Client) processArrayStreamEvent(data []byte, arrayData []interface{}) error {
@@ -667,11 +700,6 @@ func (c *Client) processStreamDataByEventType(eventType string, data []byte) err
 	}
 
 	return nil
-}
-
-// Generate unique request ID
-func (c *Client) generateRequestID() int64 {
-	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
 `;

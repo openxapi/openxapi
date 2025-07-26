@@ -120,7 +120,7 @@ func (c *Client) Subscribe(ctx context.Context, streams []string) error {
 	request := map[string]interface{}{
 		"method": "SUBSCRIBE",
 		"params": streams,
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -135,7 +135,7 @@ func (c *Client) Unsubscribe(ctx context.Context, streams []string) error {
 	request := map[string]interface{}{
 		"method": "UNSUBSCRIBE", 
 		"params": streams,
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -149,7 +149,7 @@ func (c *Client) ListSubscriptions(ctx context.Context) error {
 
 	request := map[string]interface{}{
 		"method": "LIST_SUBSCRIPTIONS",
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -219,7 +219,12 @@ func (c *Client) setStreamPath(streamPath string) error {
 
 // connect establishes a WebSocket connection to a specific endpoint (for umfutures-streams)
 func (c *Client) connect(ctx context.Context, endpoint string, isCombined bool) error {
-	if c.isConnected {
+	// Check connection state with proper locking
+	c.connMu.RLock()
+	isConnected := c.isConnected
+	c.connMu.RUnlock()
+	
+	if isConnected {
 		return fmt.Errorf("websocket already connected")
 	}
 	
@@ -252,8 +257,11 @@ func (c *Client) connect(ctx context.Context, endpoint string, isCombined bool) 
 		return fmt.Errorf("failed to connect to %s: %w", serverURL, err)
 	}
 
+	// Safely assign connection with proper locking
+	c.connMu.Lock()
 	c.conn = conn
 	c.isConnected = true
+	c.connMu.Unlock()
 	
 	// Start appropriate message reading routine
 	if isCombined {
@@ -265,20 +273,10 @@ func (c *Client) connect(ctx context.Context, endpoint string, isCombined bool) 
 	return nil
 }
 
-// generateRequestID generates a unique request ID
-func (c *Client) generateRequestID() int {
-	// Simple incrementing ID for WebSocket requests
-	// In production, you might want to use a more sophisticated ID generation
-	return int(time.Now().UnixNano() % 1000000)
-}
-
 // readSingleStreamMessages processes messages from single stream connections
 func (c *Client) readSingleStreamMessages() {
 	defer func() {
 		c.isConnected = false
-		if c.conn != nil {
-			c.conn.Close()
-		}
 	}()
 
 	for {
@@ -286,7 +284,17 @@ func (c *Client) readSingleStreamMessages() {
 		case <-c.done:
 			return
 		default:
-			_, message, err := c.conn.ReadMessage()
+			// Safely access connection with read lock
+			c.connMu.RLock()
+			conn := c.conn
+			c.connMu.RUnlock()
+			
+			// Check if connection is nil (race condition protection)
+			if conn == nil {
+				return
+			}
+			
+			_, message, err := conn.ReadMessage()
 			if err != nil {
 				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					return
@@ -309,9 +317,6 @@ func (c *Client) readSingleStreamMessages() {
 func (c *Client) readCombinedStreamMessages() {
 	defer func() {
 		c.isConnected = false
-		if c.conn != nil {
-			c.conn.Close()
-		}
 	}()
 
 	for {
@@ -319,7 +324,17 @@ func (c *Client) readCombinedStreamMessages() {
 		case <-c.done:
 			return
 		default:
-			_, message, err := c.conn.ReadMessage()
+			// Safely access connection with read lock
+			c.connMu.RLock()
+			conn := c.conn
+			c.connMu.RUnlock()
+			
+			// Check if connection is nil (race condition protection)
+			if conn == nil {
+				return
+			}
+			
+			_, message, err := conn.ReadMessage()
 			if err != nil {
 				if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 					return
@@ -402,15 +417,45 @@ type (
 type eventHandlers struct {
 `;
 
+  // Helper function to convert event type to camelCase field name
+  const toCamelCaseFieldName = (eventType) => {
+    // Handle special cases with consistent naming
+    const specialCases = {
+      'aggTrade': 'aggregateTrade',
+      '24hrMiniTicker': 'miniTicker', 
+      '24hrTicker': 'ticker',
+      'bookTicker': 'bookTicker',
+      'depthUpdate': 'depth',
+      'kline': 'kline',
+      'markPriceUpdate': 'markPriceUpdate',
+      'continuousKline': 'continuousKline',
+      'forceOrder': 'forceOrder'
+    };
+    
+    if (specialCases[eventType]) {
+      return specialCases[eventType];
+    }
+    
+    // Convert to camelCase: remove non-alphanumeric, split by boundaries, capitalize appropriately
+    let fieldName = eventType
+      .replace(/[^a-zA-Z0-9]/g, '') // remove special chars
+      .replace(/^24hr/i, '') // remove 24hr prefix
+      .replace(/([A-Z])/g, (match, letter, offset) => offset === 0 ? letter.toLowerCase() : letter)
+      .replace(/([a-z])([A-Z])/g, '$1$2'); // preserve existing camelCase boundaries
+    
+    // Fix field names that start with numbers (invalid in Go)
+    if (/^\d/.test(fieldName)) {
+      fieldName = 'h' + fieldName.charAt(0).toUpperCase() + fieldName.slice(1); // h24hrTicker -> h24HrTicker
+    }
+    
+    return fieldName;
+  };
+
   // Generate handler registry fields (one field per event type, not per model)
   allEventTypes.forEach(eventType => {
     const modelName = eventToModelMap[eventType];
     if (modelName) {
-      let fieldName = eventType.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      // Fix field names that start with numbers (invalid in Go)
-      if (/^\d/.test(fieldName)) {
-        fieldName = 'h' + fieldName; // prefix with 'h' for handler
-      }
+      const fieldName = toCamelCaseFieldName(eventType);
       const handlerName = modelName.replace('Event', 'Handler');
       code += `\t${fieldName} ${handlerName}\n`;
     }
@@ -442,11 +487,7 @@ type eventHandlers struct {
       
       // Set the handler for all related event types
       relatedEventTypes.forEach(relatedEventType => {
-        let fieldName = relatedEventType.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-        // Fix field names that start with numbers (invalid in Go)
-        if (/^\d/.test(fieldName)) {
-          fieldName = 'h' + fieldName; // prefix with 'h' for handler
-        }
+        const fieldName = toCamelCaseFieldName(relatedEventType);
         code += `\tc.handlers.${fieldName} = handler
 `;
       });
@@ -588,11 +629,7 @@ func (c *Client) processSingleStreamEvent(data []byte) error {
   allEventTypes.forEach(eventType => {
     const modelName = eventToModelMap[eventType];
     if (modelName) {
-      let fieldName = eventType.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-      // Fix field names that start with numbers (invalid in Go)
-      if (/^\d/.test(fieldName)) {
-        fieldName = 'h' + fieldName; // prefix with 'h' for handler
-      }
+      const fieldName = toCamelCaseFieldName(eventType);
       code += `\tcase "${eventType}":
 \t\tif c.handlers.${fieldName} != nil {
 \t\t\tvar event models.${modelName}

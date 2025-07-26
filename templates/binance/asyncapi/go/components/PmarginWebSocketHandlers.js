@@ -362,10 +362,5 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 	return nil
 }
 
-// Generate unique request ID
-func (c *Client) generateRequestID() int64 {
-	return time.Now().UnixNano() / int64(time.Millisecond)
-}
-
 `;
 }
