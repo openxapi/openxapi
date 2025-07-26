@@ -163,31 +163,31 @@ channels:
         $ref: '#/components/messages/errorMessage'
       # Single stream data messages (direct, not wrapped)
       aggTrade:
-        $ref: '#/components/messages/aggregateTradeMessage'
+        $ref: '#/components/messages/aggregateTradeEvent'
       trade:
-        $ref: '#/components/messages/tradeMessage'
+        $ref: '#/components/messages/tradeEvent'
       kline:
-        $ref: '#/components/messages/klineMessage'
+        $ref: '#/components/messages/klineEvent'
       miniTicker:
-        $ref: '#/components/messages/miniTickerMessage'
+        $ref: '#/components/messages/miniTickerEvent'
       allMiniTickers:
-        $ref: '#/components/messages/allMiniTickersMessage'
+        $ref: '#/components/messages/allMiniTickersEvent'
       ticker:
-        $ref: '#/components/messages/tickerMessage'
+        $ref: '#/components/messages/tickerEvent'
       allTickers:
-        $ref: '#/components/messages/allTickersMessage'
+        $ref: '#/components/messages/allTickersEvent'
       rollingWindowTicker:
-        $ref: '#/components/messages/rollingWindowTickerMessage'
+        $ref: '#/components/messages/rollingWindowTickerEvent'
       allRollingWindowTickers:
-        $ref: '#/components/messages/allRollingWindowTickersMessage'
+        $ref: '#/components/messages/allRollingWindowTickersEvent'
       bookTicker:
-        $ref: '#/components/messages/bookTickerMessage'
+        $ref: '#/components/messages/bookTickerEvent'
       avgPrice:
-        $ref: '#/components/messages/avgPriceMessage'
+        $ref: '#/components/messages/avgPriceEvent'
       partialDepth:
-        $ref: '#/components/messages/partialDepthMessage'
+        $ref: '#/components/messages/partialDepthEvent'
       diffDepth:
-        $ref: '#/components/messages/diffDepthMessage'
+        $ref: '#/components/messages/diffDepthEvent'
 
   # Combined stream connection (connect to /stream first, then subscribe)
   combinedStreamConnection:
@@ -223,7 +223,7 @@ channels:
         $ref: '#/components/messages/errorMessage'
       # Combined stream data messages (wrapped format)
       combinedData:
-        $ref: '#/components/messages/combinedStreamMessage'
+        $ref: '#/components/messages/combinedStreamEvent'
 
 operations:
   # Single stream operations
@@ -391,7 +391,7 @@ components:
         $ref: '#/components/schemas/ErrorResponse'
 
     # Stream data messages (raw format)
-    aggregateTradeMessage:
+    aggregateTradeEvent:
       name: Aggregate Trade
       title: Aggregate Trade Event
       summary: Aggregate trade information
@@ -399,7 +399,7 @@ components:
       payload:
         $ref: '#/components/schemas/AggregateTradeEvent'
 
-    tradeMessage:
+    tradeEvent:
       name: Trade
       title: Trade Event
       summary: Individual trade information
@@ -407,7 +407,7 @@ components:
       payload:
         $ref: '#/components/schemas/TradeEvent'
 
-    klineMessage:
+    klineEvent:
       name: Kline
       title: Kline Event
       summary: Kline/candlestick information
@@ -415,7 +415,7 @@ components:
       payload:
         $ref: '#/components/schemas/KlineEvent'
 
-    miniTickerMessage:
+    miniTickerEvent:
       name: Mini Ticker
       title: 24hr Mini Ticker Event
       summary: 24hr rolling window mini ticker statistics
@@ -423,7 +423,7 @@ components:
       payload:
         $ref: '#/components/schemas/MiniTickerEvent'
 
-    allMiniTickersMessage:
+    allMiniTickersEvent:
       name: All Mini Tickers
       title: All Market Mini Tickers
       summary: Array of 24hr mini ticker stats for all symbols
@@ -433,7 +433,7 @@ components:
         items:
           $ref: '#/components/schemas/MiniTickerEvent'
 
-    tickerMessage:
+    tickerEvent:
       name: Ticker
       title: 24hr Ticker Event
       summary: 24hr rolling window ticker statistics
@@ -441,7 +441,7 @@ components:
       payload:
         $ref: '#/components/schemas/TickerEvent'
 
-    allTickersMessage:
+    allTickersEvent:
       name: All Tickers
       title: All Market Tickers
       summary: Array of 24hr ticker stats for all symbols
@@ -451,7 +451,7 @@ components:
         items:
           $ref: '#/components/schemas/TickerEvent'
 
-    rollingWindowTickerMessage:
+    rollingWindowTickerEvent:
       name: Rolling Window Ticker
       title: Rolling Window Statistics Event
       summary: Rolling window ticker statistics
@@ -459,7 +459,7 @@ components:
       payload:
         $ref: '#/components/schemas/RollingWindowTickerEvent'
 
-    allRollingWindowTickersMessage:
+    allRollingWindowTickersEvent:
       name: All Rolling Window Tickers
       title: All Market Rolling Window Statistics
       summary: Array of rolling window stats for all symbols
@@ -469,7 +469,7 @@ components:
         items:
           $ref: '#/components/schemas/RollingWindowTickerEvent'
 
-    bookTickerMessage:
+    bookTickerEvent:
       name: Book Ticker
       title: Book Ticker Event
       summary: Best bid/ask information
@@ -477,7 +477,7 @@ components:
       payload:
         $ref: '#/components/schemas/BookTickerEvent'
 
-    avgPriceMessage:
+    avgPriceEvent:
       name: Average Price
       title: Average Price Event
       summary: Average price information
@@ -485,7 +485,7 @@ components:
       payload:
         $ref: '#/components/schemas/AvgPriceEvent'
 
-    partialDepthMessage:
+    partialDepthEvent:
       name: Partial Depth
       title: Partial Book Depth Event
       summary: Partial book depth information
@@ -493,7 +493,7 @@ components:
       payload:
         $ref: '#/components/schemas/PartialDepthEvent'
 
-    diffDepthMessage:
+    diffDepthEvent:
       name: Diff Depth
       title: Depth Update Event
       summary: Order book depth update
@@ -502,7 +502,7 @@ components:
         $ref: '#/components/schemas/DiffDepthEvent'
 
     # Combined stream message (wrapped format)
-    combinedStreamMessage:
+    combinedStreamEvent:
       name: Combined Stream Data
       title: Combined Stream Wrapper
       summary: Wrapper for combined stream data
@@ -544,7 +544,7 @@ components:
             - ["!ticker@arr"]
             - ["ethusdt@kline_1m", "btcusdt@trade"]
         id:
-          type: integer
+          type: string
           description: Request ID
           example: 1
 
@@ -566,7 +566,7 @@ components:
             type: string
           example: ["btcusdt@depth"]
         id:
-          type: integer
+          type: string
           description: Request ID
           example: 2
 
@@ -577,8 +577,7 @@ components:
           type: "null"
           description: Always null for successful subscription
         id:
-          type: integer
-          description: Request ID echo
+          type: string
 
     ListSubscriptionsRequest:
       type: object
@@ -591,7 +590,7 @@ components:
           const: LIST_SUBSCRIPTIONS
           description: Method name
         id:
-          type: integer
+          type: string
           description: Request ID
           example: 3
 
@@ -605,8 +604,8 @@ components:
             type: string
           example: ["btcusdt@aggTrade", "btcusdt@ticker"]
         id:
-          type: integer
-          description: Request ID echo
+          type: string
+          
 
     ErrorResponse:
       type: object
@@ -621,8 +620,8 @@ components:
               type: string
               description: Error message
         id:
-          type: integer
-          description: Request ID echo
+          type: string
+          
 
     # Stream event schemas
     AggregateTradeEvent:

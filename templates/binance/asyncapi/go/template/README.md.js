@@ -52,7 +52,7 @@ type APIError struct {
     Status  int    \`json:"status"\`  // HTTP-like status code (400, 403, 429, etc.)
     Code    int    \`json:"code"\`    // Binance-specific error code
     Message string \`json:"msg"\`     // Error message
-    ID      string \`json:"id"\`      // Request ID that caused the error
+    Id      string \`json:"id"\`      // Request ID that caused the error
 }
 
 // Check if an error is an APIError
@@ -843,7 +843,7 @@ debugHandler := func(response *models.AccountCommissionResponse, err error) erro
             log.Printf("Status: %d", apiErr.Status)
             log.Printf("Code: %d", apiErr.Code)
             log.Printf("Message: %s", apiErr.Message)
-            log.Printf("Request ID: %s", apiErr.ID)
+            log.Printf("Request ID: %s", apiErr.Id)
             log.Printf("======================")
             return nil
         }

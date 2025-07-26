@@ -78,7 +78,7 @@ func (c *Client) Subscribe(ctx context.Context, streams []string) error {
 	request := map[string]interface{}{
 		"method": "SUBSCRIBE",
 		"params": streams,
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -93,7 +93,7 @@ func (c *Client) Unsubscribe(ctx context.Context, streams []string) error {
 	request := map[string]interface{}{
 		"method": "UNSUBSCRIBE", 
 		"params": streams,
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -107,7 +107,7 @@ func (c *Client) ListSubscriptions(ctx context.Context) error {
 
 	request := map[string]interface{}{
 		"method": "LIST_SUBSCRIPTIONS",
-		"id":     c.generateRequestID(),
+		"id":     GenerateRequestID(),
 	}
 
 	return c.sendRequest(request)
@@ -119,8 +119,8 @@ func (c *Client) ConnectToSingleStreams(ctx context.Context, timeUnit string) er
 		return fmt.Errorf("already connected to websocket")
 	}
 	
-	// Build stream path with timeUnit parameter
-	streamPath := "/ws"
+	// Build stream path with timeUnit parameter (no leading slash - server URL already contains path)
+	streamPath := "ws"
 	if timeUnit != "" {
 		streamPath += timeUnit // timeUnit should be formatted like "?timeUnit=MICROSECOND"
 	}
@@ -135,8 +135,8 @@ func (c *Client) ConnectToCombinedStreams(ctx context.Context, timeUnit string) 
 		return fmt.Errorf("already connected to websocket")
 	}
 	
-	// Build stream path with timeUnit parameter
-	streamPath := "/stream"
+	// Build stream path with timeUnit parameter (no leading slash - server URL already contains path)
+	streamPath := "stream"
 	if timeUnit != "" {
 		streamPath += timeUnit // timeUnit should be formatted like "?timeUnit=MICROSECOND"
 	}
@@ -161,8 +161,8 @@ func (c *Client) ConnectToStream(ctx context.Context, streamName string) error {
 		return fmt.Errorf("already connected to websocket")
 	}
 	
-	// Build full stream path with stream name
-	streamPath := "/ws/" + streamName
+	// Build full stream path with stream name (no leading slash - server URL already contains path)
+	streamPath := "ws/" + streamName
 	
 	// Use ConnectWithVariables to resolve {streamPath} template variable correctly
 	return c.ConnectWithVariables(ctx, streamPath)
@@ -174,8 +174,8 @@ func (c *Client) ConnectToStreamWithTimeUnit(ctx context.Context, streamName str
 		return fmt.Errorf("already connected to websocket")
 	}
 	
-	// Build full stream path with stream name and time unit
-	streamPath := "/ws/" + streamName
+	// Build full stream path with stream name and time unit (no leading slash - server URL already contains path)
+	streamPath := "ws/" + streamName
 	if timeUnit != "" {
 		streamPath += timeUnit // timeUnit should be formatted like "?timeUnit=MICROSECOND"
 	}
@@ -199,35 +199,32 @@ func (c *Client) ConnectWithAutoCorrection(ctx context.Context, streamPath strin
 }
 
 // validateAndCorrectStreamPath ensures proper streamPath format for options streams
+// Note: Server URL template is "wss://nbstream.binance.com/eoptions/{streamPath}"
+// So streamPath should NOT have leading slash to avoid double slashes
 func (c *Client) validateAndCorrectStreamPath(streamPath string) string {
-	// If streamPath doesn't start with / it's likely a raw stream name
-	if !strings.HasPrefix(streamPath, "/") {
-		// Check if it looks like a stream name (contains @ or is option_pair)
-		if strings.Contains(streamPath, "@") || streamPath == "option_pair" {
-			// It's a stream name, prepend /ws/
-			return "/ws/" + streamPath
-		}
-		// It's a path fragment, prepend /
-		return "/" + streamPath
-	}
-	
-	// If it starts with /ws/ or /stream, it's already correct
-	if strings.HasPrefix(streamPath, "/ws/") || strings.HasPrefix(streamPath, "/stream") {
-		return streamPath
-	}
-	
-	// If it's just /ws or /stream, it's correct for base endpoints
-	if streamPath == "/ws" || streamPath == "/stream" {
-		return streamPath
-	}
-	
-	// If it starts with / but not /ws/ or /stream, it might be a raw stream name with /
-	// Remove the / and treat as stream name
+	// Remove leading slash since server URL template already contains the base path
 	if strings.HasPrefix(streamPath, "/") {
-		streamName := streamPath[1:] // Remove leading /
-		if strings.Contains(streamName, "@") || streamName == "option_pair" {
-			return "/ws/" + streamName
-		}
+		streamPath = streamPath[1:]
+	}
+	
+	// If streamPath is empty after removing slash, default to "ws"
+	if streamPath == "" {
+		return "ws"
+	}
+	
+	// If it looks like a raw stream name (contains @ or is option_pair), prepend "ws/"
+	if strings.Contains(streamPath, "@") || streamPath == "option_pair" {
+		return "ws/" + streamPath
+	}
+	
+	// If it starts with "ws/" or "stream", it's already correct
+	if strings.HasPrefix(streamPath, "ws/") || strings.HasPrefix(streamPath, "stream") {
+		return streamPath
+	}
+	
+	// If it's just "ws" or "stream", it's correct for base endpoints
+	if streamPath == "ws" || streamPath == "stream" {
+		return streamPath
 	}
 	
 	// Default: return as-is
@@ -351,116 +348,71 @@ func (c *Client) OnStreamError(handler StreamErrorHandler) {
 function generateOptionsCombinedStreamHandlers() {
   return `
 // Message processing for incoming options stream data
-func (c *Client) processStreamMessage(message []byte) error {
+func (c *Client) processStreamMessage(data []byte) error {
 	// First check if this is an array stream (like !miniTicker@arr)
 	// by trying to parse as an array first
 	var arrayData []interface{}
-	if err := json.Unmarshal(message, &arrayData); err == nil {
+	if err := json.Unmarshal(data, &arrayData); err == nil {
 		// This is an array stream - process as array of events
-		return c.processArrayStreamEvent(message, arrayData)
+		return c.processArrayStreamEvent(data, arrayData)
+	}
+	
+	// Parse message as object to determine type
+	var baseMsg map[string]interface{}
+	if err := json.Unmarshal(data, &baseMsg); err != nil {
+		return fmt.Errorf("failed to parse message: %w", err)
 	}
 
-	// Try to parse as subscription response first
-	var subscriptionResp models.SubscriptionResponse
-	if err := json.Unmarshal(message, &subscriptionResp); err == nil && subscriptionResp.RequestIdEcho != 0 {
+	// Check for subscription response
+	if _, hasID := baseMsg["id"]; hasID {
+		var response models.SubscriptionResponse
+		if err := json.Unmarshal(data, &response); err != nil {
+			return fmt.Errorf("failed to parse subscription response: %w", err)
+		}
 		if c.handlers.subscriptionResponse != nil {
-			return c.handlers.subscriptionResponse(&subscriptionResp)
+			return c.handlers.subscriptionResponse(&response)
 		}
 		return nil
 	}
 
-	// Try to parse as error response
-	var errorResp models.ErrorResponse
-	if err := json.Unmarshal(message, &errorResp); err == nil && errorResp.Error != nil {
+	// Check for error response
+	if errorData, hasError := baseMsg["error"]; hasError && errorData != nil {
+		var errorResp models.ErrorResponse
+		if err := json.Unmarshal(data, &errorResp); err != nil {
+			return fmt.Errorf("failed to parse error response: %w", err)
+		}
 		if c.handlers.error != nil {
 			return c.handlers.error(&errorResp)
 		}
 		return nil
 	}
 
-	// Try to parse as combined stream event FIRST (before individual streams)
-	// Combined streams have format: {"stream": "symbol@eventType", "data": {...}}
-	var combinedEvent models.CombinedStreamEvent
-	if err := json.Unmarshal(message, &combinedEvent); err == nil && combinedEvent.StreamName != "" {
+	// Check for combined stream format
+	if _, hasStream := baseMsg["stream"]; hasStream {
+		var combined models.CombinedStreamEvent
+		if err := json.Unmarshal(data, &combined); err != nil {
+			return fmt.Errorf("failed to parse combined stream: %w", err)
+		}
 		if c.handlers.combinedStream != nil {
-			if err := c.handlers.combinedStream(&combinedEvent); err != nil {
-				return err
-			}
+			return c.handlers.combinedStream(&combined)
 		}
-		
-		// Also process the inner data based on stream type
-		return c.processOptionsStreamData(combinedEvent.StreamName, combinedEvent.StreamData)
+		// Also try to process the nested data
+		if dataBytes, err := json.Marshal(combined.StreamData); err == nil {
+			return c.processOptionsStreamDataByEventType("", dataBytes)
+		}
+		return nil
 	}
 
-	// Try to parse as individual stream event by detecting event type
-	var genericMsg map[string]interface{}
-	if err := json.Unmarshal(message, &genericMsg); err == nil {
-		if eventType, hasEventType := genericMsg["e"]; hasEventType {
-			if eventTypeStr, ok := eventType.(string); ok {
-				return c.processOptionsStreamDataByEventType(eventTypeStr, message)
-			}
-		}
-		
-		// Special handling for events without "e" field - detect by field patterns
-		
-		// New Symbol Info events (option_pair stream)
-		if _, hasSymbol := genericMsg["s"]; hasSymbol {
-			if _, hasId := genericMsg["id"]; hasId {
-				if _, hasType := genericMsg["o"]; hasType { // "o" for option type
-					return c.processOptionsStreamDataByEventType("newSymbolInfo", message)
-				}
-			}
-		}
-		
-		// Open Interest events
-		if _, hasSymbol := genericMsg["s"]; hasSymbol {
-			if _, hasOpenInterest := genericMsg["o"]; hasOpenInterest {
-				if _, hasTime := genericMsg["T"]; hasTime {
-					return c.processOptionsStreamDataByEventType("openInterest", message)
-				}
-			}
-		}
-		
-		// Mark Price events  
-		if _, hasSymbol := genericMsg["s"]; hasSymbol {
-			if _, hasMarkPrice := genericMsg["mp"]; hasMarkPrice {
-				return c.processOptionsStreamDataByEventType("markPrice", message)
-			}
-		}
-		
-		// Index Price events
-		if _, hasSymbol := genericMsg["s"]; hasSymbol { // "s" for symbol
-			if _, hasPrice := genericMsg["p"]; hasPrice {
-				// Index events typically have fewer fields, distinguish from other events
-				if len(genericMsg) <= 4 { // index events usually have e, E, s, p
-					return c.processOptionsStreamDataByEventType("index", message)
-				}
-			}
-		}
-		
-		// Ticker events - detect by having all ticker fields
-		if _, hasSymbol := genericMsg["s"]; hasSymbol {
-			if _, hasCount := genericMsg["c"]; hasCount { // count field indicates ticker
-				if _, hasVolume := genericMsg["v"]; hasVolume {
-					return c.processOptionsStreamDataByEventType("ticker", message)
-				}
-			}
-		}
-		
-		// Partial Depth events (no "e" field)
-		// PartialDepth messages have fields: "lastUpdateId", "bids", "asks"  
-		if _, hasLastUpdateId := genericMsg["lastUpdateId"]; hasLastUpdateId {
-			if _, hasBids := genericMsg["bids"]; hasBids {
-				if _, hasAsks := genericMsg["asks"]; hasAsks {
-					return c.processOptionsStreamDataByEventType("partialDepth", message)
-				}
-			}
-		}
-	}
-
-	log.Printf("Unknown options stream message format: %s", string(message))
-	return nil
+	// Process as single stream event
+	return c.processOptionsStreamDataByEventType("", data)
 }
+
+// processSingleStreamEvent processes individual stream events for options  
+func (c *Client) processSingleStreamEvent(data []byte) error {
+	// For options streams, use the specific options processing
+	return c.processOptionsStreamDataByEventType("", data)
+}
+
 
 // processArrayStreamEvent processes array stream events (like !miniTicker@arr)
 func (c *Client) processArrayStreamEvent(data []byte, arrayData []interface{}) error {
@@ -640,11 +592,6 @@ func (c *Client) processOptionsStreamDataByEventType(eventType string, data []by
 	}
 
 	return nil
-}
-
-// Generate unique request ID
-func (c *Client) generateRequestID() int64 {
-	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
 `;

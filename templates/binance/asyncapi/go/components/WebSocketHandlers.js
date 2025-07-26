@@ -762,7 +762,7 @@ function generateBasicTypedMethod(methodName, actualMethod, requestStructName, r
   } else {
     // Use untyped handler for interface{} responses
     method += `\tc.responseHandlers.Store(reqID, ResponseHandler{\n`;
-    method += `\t\tRequestID: reqID,\n`;
+    method += `\t\tRequestId: reqID,\n`;
     method += `\t\tHandler: func(data []byte, err error) error {\n`;
     method += `\t\t\tif err != nil {\n`;
     method += `\t\t\t\treturn responseHandler(nil, err)\n`;
@@ -963,7 +963,7 @@ function generateOneOfHandlerMethod(methodName, actualMethod, requestStructName,
   
   method += `\t// Register generic response handler for oneOf handling\n`;
   method += `\tc.responseHandlers.Store(reqID, ResponseHandler{\n`;
-  method += `\t\tRequestID: reqID,\n`;
+  method += `\t\tRequestId: reqID,\n`;
   method += `\t\tHandler: func(data []byte, err error) error {\n`;
   method += `\t\t\tif err != nil {\n`;
   method += `\t\t\t\treturn responseHandler(nil, err)\n`;
@@ -1014,7 +1014,7 @@ function generateOneOfHelperMethods(asyncapi) {
   helpers += `// RegisterTypedResponseHandler registers a typed response handler for a request ID\n`;
   helpers += `func RegisterTypedResponseHandler[T any](c *Client, requestID string, handler func(*T, error) error) {\n`;
   helpers += `\tc.responseHandlers.Store(requestID, ResponseHandler{\n`;
-  helpers += `\t\tRequestID: requestID,\n`;
+  helpers += `\t\tRequestId: requestID,\n`;
   helpers += `\t\tHandler: func(data []byte, err error) error {\n`;
   helpers += `\t\t\tif err != nil {\n`;
   helpers += `\t\t\t\treturn handler(nil, err)\n`;

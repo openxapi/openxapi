@@ -33,8 +33,8 @@ export default function ({ asyncapi, params }) {
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/google/uuid"
+${detectedModule !== 'options-streams' ? `
+	"github.com/google/uuid"` : ''}
 	"github.com/gorilla/websocket"${usesModels ? `
 	"${moduleName}/models"` : ''}
 )`}
@@ -403,12 +403,12 @@ type APIError struct {
 	Status  int    \`json:"status"\`  // HTTP-like status code from the response
 	Code    int    \`json:"code"\`    // Binance-specific error code
 	Message string \`json:"msg"\`     // Error message
-	ID      string \`json:"id"\`      // Request ID that caused the error
+	Id      string \`json:"id"\`      // Request ID that caused the error
 }
 
 // Error implements the error interface
 func (e APIError) Error() string {
-	return fmt.Sprintf("binance api error: status=%d, code=%d, message=%s, id=%s", e.Status, e.Code, e.Message, e.ID)
+	return fmt.Sprintf("binance api error: status=%d, code=%d, message=%s, id=%s", e.Status, e.Code, e.Message, e.Id)
 }
 
 // IsAPIError checks if an error is an APIError
@@ -426,7 +426,7 @@ func IsAPIError(err error) (*APIError, bool) {
       <Text newLines={2}>
         {`// ResponseHandler represents a high-performance handler for WebSocket responses
 type ResponseHandler struct {
-	RequestID string
+	RequestId string
 	Handler   func([]byte, error) error
 }
 
@@ -475,6 +475,7 @@ func (e *EventHandler) HandleResponse(eventType string, data []byte) error {
         {`// Client represents a high-performance WebSocket client for ${asyncapi.info().title()}
 type Client struct {
 	conn             *websocket.Conn
+	connMu           sync.RWMutex     // Protects connection access
 	serverManager    *ServerManager   // Manages multiple servers
 	responseHandlers sync.Map         // Using sync.Map for better concurrent performance
 	eventHandler     *EventHandler
@@ -824,8 +825,9 @@ func (c *Client) ConnectToServerWith${varName.charAt(0).toUpperCase() + varName.
       </Text>
 
       <Text newLines={2}>
-        {`// Disconnect closes the WebSocket connection safely
+        {`// Disconnect closes the WebSocket connection safely and resets state for reconnection
 func (c *Client) Disconnect() error {
+	// Signal all goroutines to stop first
 	c.isConnected = false
 	
 	// Safely close the done channel only once
@@ -836,15 +838,40 @@ func (c *Client) Disconnect() error {
 		close(c.done)
 	}
 	
+	// Wait a brief moment for goroutines to see the done signal
+	time.Sleep(10 * time.Millisecond)
+	
+	// Now safely handle the connection with proper locking
+	c.connMu.Lock()
+	defer c.connMu.Unlock()
+	
+	var err error
 	if c.conn != nil {
-		return c.conn.Close()
+		err = c.conn.Close()
+		c.conn = nil  // Reset connection to nil for clean reconnection
 	}
-	return nil
+	
+	// Reset connection state for reconnection
+	c.done = make(chan struct{})  // Recreate done channel
+	
+	return err
 }`}
       </Text>
 
       <Text newLines={2}>
-        {`// GenerateRequestID generates a unique UUID v4 request ID (global function)
+        {detectedModule === 'options-streams' ? 
+          `// GenerateRequestID generates a unique integer request ID (global function)
+// Options streams API requires unsigned integer request IDs, not UUIDs
+var requestIDCounter uint64 = 0
+var requestIDMutex sync.Mutex
+
+func GenerateRequestID() uint64 {
+	requestIDMutex.Lock()
+	defer requestIDMutex.Unlock()
+	requestIDCounter++
+	return requestIDCounter
+}` :
+          `// GenerateRequestID generates a unique UUID v4 request ID (global function)
 func GenerateRequestID() string {
 	return uuid.New().String()
 }`}
@@ -910,7 +937,7 @@ func (c *Client) handleMessage(data []byte) error {
 	if id, hasID := genericMessage["id"]; hasID {
 		// Parse response structure to check for errors
 		var response struct {
-			ID     interface{} \`json:"id"\`
+			Id     interface{} \`json:"id"\`
 			Status int         \`json:"status"\`
 			Result interface{} \`json:"result,omitempty"\`
 			Error  *struct {
@@ -933,7 +960,7 @@ func (c *Client) handleMessage(data []byte) error {
 				Status:  response.Status,
 				Code:    response.Error.Code,
 				Message: response.Error.Msg,
-				ID:      requestID,
+				Id:      requestID,
 			}
 		}
 
