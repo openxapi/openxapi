@@ -517,11 +517,34 @@ func (c *Client) processSingleStreamEvent(data []byte) error {
 		default:
 			return fmt.Errorf("unknown event type format: %T", v)
 		}
-	} else {
-		return fmt.Errorf("no event type field found")
+		return c.processStreamDataByEventType(eventType, data)
 	}
 	
-	return c.processStreamDataByEventType(eventType, data)
+	// Special case: Check for bookTicker stream (has fields: u, s, b, B, a, A but no "e" field)
+	if _, hasU := genericMsg["u"]; hasU {
+		if _, hasS := genericMsg["s"]; hasS {
+			if _, hasB := genericMsg["b"]; hasB {
+				if _, hasBigB := genericMsg["B"]; hasBigB {
+					if _, hasA := genericMsg["a"]; hasA {
+						if _, hasBigA := genericMsg["A"]; hasBigA {
+							return c.processStreamDataByEventType("bookTicker", data)
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	// Special case: Check for partial depth stream (has fields: lastUpdateId, bids, asks but no "e" field)
+	if _, hasLastUpdateId := genericMsg["lastUpdateId"]; hasLastUpdateId {
+		if _, hasBids := genericMsg["bids"]; hasBids {
+			if _, hasAsks := genericMsg["asks"]; hasAsks {
+				return c.processStreamDataByEventType("partialDepth", data)
+			}
+		}
+	}
+	
+	return fmt.Errorf("no event type field found")
 }
 
 
@@ -563,8 +586,36 @@ func (c *Client) processArrayStreamEvent(data []byte, arrayData []interface{}) e
 				continue
 			}
 		} else {
-			log.Printf("No event type field found in array element %d", i)
-			continue
+			// Special case: Check for bookTicker stream (has fields: u, s, b, B, a, A but no "e" field)
+			if _, hasU := genericMsg["u"]; hasU {
+				if _, hasS := genericMsg["s"]; hasS {
+					if _, hasB := genericMsg["b"]; hasB {
+						if _, hasBigB := genericMsg["B"]; hasBigB {
+							if _, hasA := genericMsg["a"]; hasA {
+								if _, hasBigA := genericMsg["A"]; hasBigA {
+									eventType = "bookTicker"
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			// Special case: Check for partial depth stream (has fields: lastUpdateId, bids, asks but no "e" field)
+			if eventType == "" {
+				if _, hasLastUpdateId := genericMsg["lastUpdateId"]; hasLastUpdateId {
+					if _, hasBids := genericMsg["bids"]; hasBids {
+						if _, hasAsks := genericMsg["asks"]; hasAsks {
+							eventType = "partialDepth"
+						}
+					}
+				}
+			}
+			
+			if eventType == "" {
+				log.Printf("No event type field found in array element %d", i)
+				continue
+			}
 		}
 		
 		if err := c.processStreamDataByEventType(eventType, elementBytes); err != nil {
