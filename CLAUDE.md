@@ -174,6 +174,82 @@ type Endpoint struct {
 3. **Configuration Templates**: Client configuration files
 4. **Documentation Templates**: Generated SDK documentation
 
+### WebSocket Event Handler Naming Convention
+
+**CRITICAL**: All WebSocket SDK templates must follow consistent event handler naming patterns for intuitive, predictable APIs across all modules.
+
+#### Event Handler Patterns
+- **Event Handlers**: `Handle{EventName}Event` for actual real-time events
+- **Response Handlers**: `Handle{ResponseType}` for subscription confirmations and responses  
+- **Error Handlers**: `Handle{ErrorType}` for error handling
+
+#### Examples by Category
+
+**✅ Event Handlers (with 'Event' suffix):**
+```go
+// Trading and market events - these are real-time streaming data
+func (c *Client) HandleAggregateTradeEvent(handler AggregateTradeHandler)
+func (c *Client) HandleKlineEvent(handler KlineHandler)
+func (c *Client) HandleTickerEvent(handler TickerHandler)
+func (c *Client) HandleDepthEvent(handler DepthHandler)
+
+// Account and order events - real-time account updates
+func (c *Client) HandleBalanceUpdateEvent(handler BalanceUpdateHandler)
+func (c *Client) HandleExecutionReportEvent(handler ExecutionReportHandler)
+func (c *Client) HandleMarginAccountUpdateEvent(handler MarginAccountUpdateHandler)
+
+// Portfolio margin events
+func (c *Client) HandleConditionalOrderTradeUpdateEvent(handler ConditionalOrderTradeUpdateHandler)
+func (c *Client) HandleRiskLevelChangeEvent(handler RiskLevelChangeHandler)
+```
+
+**✅ Response Handlers (without 'Event' suffix):**
+```go
+// Subscription management - these are confirmations, not events
+func (c *Client) HandleSubscriptionResponse(handler SubscriptionResponseHandler)
+
+// Session management responses
+func (c *Client) HandleSessionLogonResponse(handler SessionLogonResponseHandler)
+```
+
+**✅ Error Handlers (without 'Event' suffix):**
+```go
+// Error handling - these are errors, not events
+func (c *Client) HandleStreamError(handler StreamErrorHandler)
+func (c *Client) HandlePmarginError(handler PmarginErrorHandler)
+```
+
+#### Model Name Consistency
+Event handler types must reference models with matching 'Event' suffix:
+```go
+// Handler type definitions must match actual generated model names
+type AggregateTradeHandler func(*models.AggregateTradeEvent) error  // ✅ Correct
+type TickerHandler func(*models.TickerEvent) error                  // ✅ Correct
+
+// NOT this (missing Event suffix in model reference):
+type AggregateTradeHandler func(*models.AggregateTrade) error        // ❌ Wrong
+```
+
+#### Module Consistency Requirements
+- **All modules** (spot, umfutures, cmfutures, options, pmargin) must follow the same pattern
+- **Dynamic generation** in stream handlers must use `Handle{EventName}` prefix, not `On{EventName}`
+- **Template inheritance** ensures consistency across similar modules
+
+#### Implementation Files
+Apply this convention in all WebSocket handler templates:
+- `templates/binance/asyncapi/go/components/SpotStreamsWebSocketHandlers.js`
+- `templates/binance/asyncapi/go/components/UmfuturesStreamsWebSocketHandlers.js`  
+- `templates/binance/asyncapi/go/components/CmfuturesStreamsWebSocketHandlers.js`
+- `templates/binance/asyncapi/go/components/OptionsStreamsWebSocketHandlers.js`
+- `templates/binance/asyncapi/go/components/PmarginWebSocketHandlers.js`
+- `templates/binance/asyncapi/go/components/ModularWebSocketHandlers.js`
+
+**Benefits:**
+- **Intuitive API**: Developers can predict method names based on whether it's an event, response, or error
+- **Type Safety**: Clear distinction between event handlers and response handlers
+- **Consistency**: Same patterns across all exchanges and modules
+- **Maintainability**: Easy to identify the purpose of each handler method
+
 ## Sample Management Strategy
 
 ### Purpose
