@@ -201,62 +201,307 @@ go mod download
 make build
 ```
 
-## Generate OpenAPI Specification
+## Working with Specifications
 
-### For the first time
+OpenXAPI generates two types of specifications for cryptocurrency exchange APIs:
 
-1. Configure exchange API documentation URLs in `configs/config.yaml`
-2. Run the OpenAPI specification generator:
+- **OpenAPI 3.0 Specifications** for REST API endpoints
+- **AsyncAPI 3.0 Specifications** for WebSocket API endpoints
+
+Both specifications are automatically generated from exchange API documentation and can be used to generate SDKs for multiple programming languages.
+
+## Generate OpenAPI Specifications (REST APIs)
+
+OpenAPI specifications define REST API endpoints, request/response schemas, authentication methods, and parameter validation rules.
+
+### Initial Generation
+
+1. Configure exchange API documentation URLs in `configs/exchanges/{exchange}/rest.yaml`
+2. Generate specifications for all exchanges:
 ```bash
 ./openxapi
 ```
 
-> NOTE: This command will scrape the exchange's website and parse the API documentation from the website, so it may take a while to complete. Only run this command when you want to use the latest API documentation instead of the sample files.
-
-The generated OpenAPI specification will be saved in `specs/` directory.
-
-### For the subsequent generations - Use sample files
-
-The program can save API documentation to sample files and use them for regenerate the OpenAPI specification offline by default, that said, you don't need to access the HTTP API documentation online, this is the recommended way to generate the OpenAPI specification after the first generation:
-
+3. Generate specifications for a specific exchange:
 ```bash
-./openxapi
+make generate-rest-spec EXCHANGE=binance
 ```
 
-Or simply use `make` command:
+> **NOTE**: Initial generation scrapes live exchange documentation, which may take several minutes. The process saves documentation samples locally for faster subsequent generations.
+
+### Subsequent Generations (Recommended)
+
+Use cached sample files for faster, offline generation:
+
 ```bash
+# Generate all specifications
+./openxapi
+
+# Generate specific exchange REST specifications
+make generate-rest-spec EXCHANGE=binance
+
+# Generate all specifications for specific exchange
 make generate-spec EXCHANGE=binance
 ```
 
-### Mannual maintenance on OpenAPI Specification
+### Generated Files Structure
 
-If you find there are some issues on the generated OpenAPI specification, please check with the exchange's official API documentation, because we try to parse the API documentation from the exchange's website automatically, there are some API documentation that is not structured well, so we need to maintain the OpenAPI specification manually.
-
-Please follow the steps below to mannually update the OpenAPI specification:
-
-1. Find the OpenAPI specification for an exchange in `specs/` directory, for example, `specs/binance/openapi/spot/delete_api_v3_openOrders.yaml`.
-2. Add the endpoint to the `protected_endpoints` section in `configs/exchanges/binance/rest.yaml`, this will make sure the endpoint will be ignored by the automatic generation.
-3. Update the OpenAPI specification in `specs/binance/openapi/spot/delete_api_v3_openOrders.yaml`.
-4. Regenerate the OpenAPI specification by the steps in [Generate OpenAPI Specification](#generate-openapi-specification) section.
-
-## Generate SDKs for OpenAPI Specification
-
-We use [OpenAPI Generator](https://openapi-generator.tech/) to generate SDKs for OpenAPI Specification.
-
-Following is an example of generating Go SDK for Binance Spot REST API:
-
-```bash
-make generate-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=../binance-go
+```
+specs/
+└── {exchange}/
+    └── openapi/
+        ├── {module}.yaml          # Combined specification
+        └── {module}/             # Individual endpoint specifications
+            ├── endpoint1.yaml
+            ├── endpoint2.yaml
+            └── ...
 ```
 
-* Supported languages: `go`, `python`, `js`, `rust`
-* Supported exchanges: `binance`
+**Example for Binance:**
+```
+specs/binance/openapi/
+├── spot.yaml              # Combined Spot REST API
+├── umfutures.yaml         # Combined USD-M Futures REST API
+├── cmfutures.yaml         # Combined COIN-M Futures REST API
+├── options.yaml           # Combined Options REST API
+├── pmargin.yaml           # Combined Portfolio Margin REST API
+└── spot/                  # Individual Spot endpoints
+    ├── get_api_v3_account.yaml
+    ├── post_api_v3_order.yaml
+    └── ...
+```
 
-### Update the SDK code
+### Validation
 
-If you need to update the genereated SDK code, do not edit the generated code directly. Instead, update the templates in `templates/` and regenerate the SDK code.
+Validate generated OpenAPI specifications:
 
-After updating the templates, you can regenerate the SDK code by the steps in [Generate SDKs for OpenAPI Specification](#generate-sdks-for-openapi-specification) section.
+```bash
+# Validate specific exchange REST specifications
+make validate-rest-spec EXCHANGE=binance
+
+# Validate using external tools
+swagger-codegen validate -i specs/binance/openapi/spot.yaml
+```
+
+### Manual Maintenance
+
+When automatic generation produces incorrect specifications:
+
+1. **Identify the problematic endpoint**:
+   ```bash
+   # Find the specific endpoint file
+   ls specs/binance/openapi/spot/
+   ```
+
+2. **Protect from automatic regeneration**:
+   Edit `configs/exchanges/binance/rest.yaml`:
+   ```yaml
+   protected_endpoints:
+     - "DELETE /api/v3/openOrders"
+   ```
+
+3. **Manually edit the specification**:
+   ```bash
+   # Edit the endpoint specification
+   vim specs/binance/openapi/spot/delete_api_v3_openOrders.yaml
+   ```
+
+4. **Regenerate combined specification**:
+   ```bash
+   make generate-rest-spec EXCHANGE=binance
+   ```
+
+## Generate AsyncAPI Specifications (WebSocket APIs)
+
+AsyncAPI specifications define WebSocket operations, message schemas, authentication, and real-time event handling for streaming APIs.
+
+### WebSocket API Types
+
+OpenXAPI generates two types of WebSocket specifications:
+
+1. **API Operations**: Request/response operations (user data streams, account operations)
+2. **Market Streams**: Real-time market data streams (price feeds, order books, trades)
+
+### Initial Generation
+
+1. Configure WebSocket documentation URLs in `configs/exchanges/{exchange}/websocket.yaml`
+2. Generate WebSocket specifications:
+```bash
+# Generate all WebSocket specifications
+make generate-ws-spec EXCHANGE=binance
+
+# Generate all specifications (REST + WebSocket)
+make generate-spec EXCHANGE=binance
+```
+
+### Generated Files Structure
+
+```
+specs/
+└── {exchange}/
+    └── asyncapi/
+        ├── {module}.yaml          # API operations specification
+        ├── {module}-streams.yaml  # Market streams specification
+        └── {module}/             # Individual operation specifications
+            ├── operation1.yaml
+            ├── operation2.yaml
+            └── ...
+```
+
+**Example for Binance:**
+```
+specs/binance/asyncapi/
+├── spot.yaml                 # Spot WebSocket API operations
+├── spot-streams.yaml         # Spot market data streams
+├── umfutures.yaml           # USD-M Futures WebSocket API
+├── umfutures-streams.yaml   # USD-M Futures market streams
+├── cmfutures.yaml           # COIN-M Futures WebSocket API
+├── cmfutures-streams.yaml   # COIN-M Futures market streams
+├── options.yaml             # Options WebSocket API
+├── options-streams.yaml     # Options market streams
+├── pmargin.yaml             # Portfolio Margin WebSocket API
+└── spot/                    # Individual Spot operations
+    ├── session.logon.yaml
+    ├── order.place.yaml
+    ├── userDataStream.subscribe.yaml
+    └── ...
+```
+
+### WebSocket Specification Features
+
+**API Operations (`{module}.yaml`)**:
+- Authentication methods (HMAC-SHA256, RSA, Ed25519)
+- Request/response message schemas
+- User data stream management
+- Account and trading operations
+- Error handling and status codes
+
+**Market Streams (`{module}-streams.yaml`)**:
+- Real-time price feeds
+- Order book updates
+- Trade streams
+- Kline/candlestick data
+- Ticker information
+- Market depth streams
+
+### Validation
+
+Validate generated AsyncAPI specifications:
+
+```bash
+# Validate specific exchange WebSocket specifications
+make validate-ws-spec EXCHANGE=binance
+
+# Validate using AsyncAPI CLI
+asyncapi validate specs/binance/asyncapi/spot.yaml
+```
+
+### Configuration Management
+
+**REST API Configuration (`configs/exchanges/{exchange}/rest.yaml`)**:
+```yaml
+name: "binance_spot"
+version: "1.0.0"
+docs:
+  - type: "rest"
+    servers: ["https://api.binance.com"]
+    url_groups:
+      - name: "spot_trading"
+        urls: ["https://developers.binance.com/docs/..."]
+    protected_endpoints: ["POST /api/v3/order"]
+```
+
+**WebSocket API Configuration (`configs/exchanges/{exchange}/websocket.yaml`)**:
+```yaml
+name: "binance_websocket"
+version: "1.0.0"
+docs:
+  - type: "spot"
+    servers:
+      mainnet: ["wss://stream.binance.com:9443"]
+      testnet: ["wss://testnet.binance.vision"]
+    url_groups:
+      - name: "spot_websocket"
+        doc_type: "spot"
+        urls: ["https://developers.binance.com/docs/..."]
+```
+
+## Generate SDKs from Specifications
+
+### REST SDK Generation (OpenAPI)
+
+Generate REST SDKs using [OpenAPI Generator](https://openapi-generator.tech/):
+
+```bash
+# Generate Go SDK for Binance Spot REST API
+make generate-rest-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=../binance-go/rest
+
+# Generate Python SDK
+make generate-rest-sdk EXCHANGE=binance LANGUAGE=python OUTPUT_DIR=../binance-py/rest
+
+# Generate JavaScript SDK
+make generate-rest-sdk EXCHANGE=binance LANGUAGE=js OUTPUT_DIR=../binance-js/rest
+
+# Generate Rust SDK
+make generate-rest-sdk EXCHANGE=binance LANGUAGE=rust OUTPUT_DIR=../binance-rs/rest
+```
+
+### WebSocket SDK Generation (AsyncAPI)
+
+Generate WebSocket SDKs using [AsyncAPI Generator](https://www.asyncapi.com/tools/generator):
+
+```bash
+# Generate Go WebSocket SDK for Binance
+make generate-ws-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=../binance-go/ws
+
+# Generate for specific module
+make generate-ws-sdk EXCHANGE=binance MODULE=spot LANGUAGE=go OUTPUT_DIR=../binance-go/ws/spot
+```
+
+### Supported Languages and Exchanges
+
+**REST SDKs (OpenAPI)**:
+- **Languages**: `go`, `python`, `js`, `rust`
+- **Exchanges**: `binance`, `okx`
+- **Template Engine**: Mustache
+
+**WebSocket SDKs (AsyncAPI)**:
+- **Languages**: `go` (more languages coming soon)
+- **Exchanges**: `binance`
+- **Template Engine**: React with TypeScript
+
+### Customizing Generated SDKs
+
+**For REST SDKs**:
+1. Edit Mustache templates in `templates/{exchange}/openapi/{language}/`
+2. Regenerate SDK:
+   ```bash
+   make generate-rest-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=../binance-go/rest
+   ```
+
+**For WebSocket SDKs**:
+1. Edit React templates in `templates/{exchange}/asyncapi/{language}/`
+2. Regenerate SDK:
+   ```bash
+   make generate-ws-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=../binance-go/ws
+   ```
+
+### SDK Features
+
+**REST SDK Features**:
+- Type-safe request/response models
+- Automatic request signing and authentication
+- Rate limiting and retry mechanisms
+- Comprehensive error handling
+- Debug logging and request tracing
+
+**WebSocket SDK Features**:
+- Automatic connection management and reconnection
+- Message type safety with generated models
+- Authentication handling (HMAC, RSA, Ed25519)
+- Stream subscription management
+- Event-driven architecture with callbacks
+- Built-in error handling and recovery
 
 ## Contributing
 
