@@ -476,7 +476,7 @@ type eventHandlers struct {
     const modelName = eventToModelMap[eventType];
     if (modelName && !generatedMethods.has(modelName)) {
       generatedMethods.add(modelName);
-      const methodName = `On${modelName}`;
+      const methodName = `Handle${modelName}`;
       const handlerName = modelName.replace('Event', 'Handler');
       
       // Find all event types that map to this model
@@ -498,15 +498,15 @@ type eventHandlers struct {
     }
   });
 
-  code += `func (c *Client) OnCombinedStreamEvent(handler CombinedStreamHandler) {
+  code += `func (c *Client) HandleCombinedStreamEvent(handler CombinedStreamHandler) {
 \tc.handlers.combinedStream = handler
 }
 
-func (c *Client) OnSubscriptionResponse(handler SubscriptionResponseHandler) {
+func (c *Client) HandleSubscriptionResponse(handler SubscriptionResponseHandler) {
 \tc.handlers.subscriptionResponse = handler
 }
 
-func (c *Client) OnStreamError(handler StreamErrorHandler) {
+func (c *Client) HandleStreamError(handler StreamErrorHandler) {
 \tc.handlers.error = handler
 }
 

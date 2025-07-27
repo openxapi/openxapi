@@ -113,37 +113,37 @@ function generatePmarginEventHandlers(operations, channels) {
 // Portfolio margin stream event handler functions
 type (
 	// Conditional Order Trade Update Handler
-	ConditionalOrderTradeUpdateHandler func(*models.ConditionalOrderTradeUpdate) error
+	ConditionalOrderTradeUpdateHandler func(*models.ConditionalOrderTradeUpdateEvent) error
 	
 	// Open Order Loss Update Handler
-	OpenOrderLossHandler func(*models.OpenOrderLoss) error
+	OpenOrderLossHandler func(*models.OpenOrderLossEvent) error
 	
 	// Margin Account Update Handler
-	MarginAccountUpdateHandler func(*models.MarginAccountUpdate) error
+	MarginAccountUpdateHandler func(*models.MarginAccountUpdateEvent) error
 	
 	// Liability Update Handler
-	LiabilityUpdateHandler func(*models.LiabilityUpdate) error
+	LiabilityUpdateHandler func(*models.LiabilityUpdateEvent) error
 	
 	// Margin Order Update Handler
-	MarginOrderUpdateHandler func(*models.MarginOrderUpdate) error
+	MarginOrderUpdateHandler func(*models.MarginOrderUpdateEvent) error
 	
 	// Futures Order Update Handler
-	FuturesOrderUpdateHandler func(*models.FuturesOrderUpdate) error
+	FuturesOrderUpdateHandler func(*models.FuturesOrderUpdateEvent) error
 	
 	// Futures Balance Position Update Handler
-	FuturesBalancePositionUpdateHandler func(*models.FuturesBalancePositionUpdate) error
+	FuturesBalancePositionUpdateHandler func(*models.FuturesBalancePositionUpdateEvent) error
 	
 	// Futures Account Config Update Handler
-	FuturesAccountConfigUpdateHandler func(*models.FuturesAccountConfigUpdate) error
+	FuturesAccountConfigUpdateHandler func(*models.FuturesAccountConfigUpdateEvent) error
 	
 	// Risk Level Change Handler
-	RiskLevelChangeHandler func(*models.RiskLevelChange) error
+	RiskLevelChangeHandler func(*models.RiskLevelChangeEvent) error
 	
 	// Margin Balance Update Handler
-	MarginBalanceUpdateHandler func(*models.MarginBalanceUpdate) error
+	MarginBalanceUpdateHandler func(*models.MarginBalanceUpdateEvent) error
 	
 	// User Data Stream Expired Handler
-	UserDataStreamExpiredHandler func(*models.UserDataStreamExpired) error
+	UserDataStreamExpiredHandler func(*models.UserDataStreamExpiredEvent) error
 	
 	// Error Handler
 	PmarginErrorHandler func(*models.ErrorResponse) error
@@ -166,51 +166,51 @@ type eventHandlers struct {
 }
 
 // Register event handlers for portfolio margin streams
-func (c *Client) OnConditionalOrderTradeUpdate(handler ConditionalOrderTradeUpdateHandler) {
+func (c *Client) HandleConditionalOrderTradeUpdateEvent(handler ConditionalOrderTradeUpdateHandler) {
 	c.handlers.conditionalOrderTradeUpdate = handler
 }
 
-func (c *Client) OnOpenOrderLoss(handler OpenOrderLossHandler) {
+func (c *Client) HandleOpenOrderLossEvent(handler OpenOrderLossHandler) {
 	c.handlers.openOrderLoss = handler
 }
 
-func (c *Client) OnMarginAccountUpdate(handler MarginAccountUpdateHandler) {
+func (c *Client) HandleMarginAccountUpdateEvent(handler MarginAccountUpdateHandler) {
 	c.handlers.marginAccountUpdate = handler
 }
 
-func (c *Client) OnLiabilityUpdate(handler LiabilityUpdateHandler) {
+func (c *Client) HandleLiabilityUpdateEvent(handler LiabilityUpdateHandler) {
 	c.handlers.liabilityUpdate = handler
 }
 
-func (c *Client) OnMarginOrderUpdate(handler MarginOrderUpdateHandler) {
+func (c *Client) HandleMarginOrderUpdateEvent(handler MarginOrderUpdateHandler) {
 	c.handlers.marginOrderUpdate = handler
 }
 
-func (c *Client) OnFuturesOrderUpdate(handler FuturesOrderUpdateHandler) {
+func (c *Client) HandleFuturesOrderUpdateEvent(handler FuturesOrderUpdateHandler) {
 	c.handlers.futuresOrderUpdate = handler
 }
 
-func (c *Client) OnFuturesBalancePositionUpdate(handler FuturesBalancePositionUpdateHandler) {
+func (c *Client) HandleFuturesBalancePositionUpdateEvent(handler FuturesBalancePositionUpdateHandler) {
 	c.handlers.futuresBalancePositionUpdate = handler
 }
 
-func (c *Client) OnFuturesAccountConfigUpdate(handler FuturesAccountConfigUpdateHandler) {
+func (c *Client) HandleFuturesAccountConfigUpdateEvent(handler FuturesAccountConfigUpdateHandler) {
 	c.handlers.futuresAccountConfigUpdate = handler
 }
 
-func (c *Client) OnRiskLevelChange(handler RiskLevelChangeHandler) {
+func (c *Client) HandleRiskLevelChangeEvent(handler RiskLevelChangeHandler) {
 	c.handlers.riskLevelChange = handler
 }
 
-func (c *Client) OnMarginBalanceUpdate(handler MarginBalanceUpdateHandler) {
+func (c *Client) HandleMarginBalanceUpdateEvent(handler MarginBalanceUpdateHandler) {
 	c.handlers.marginBalanceUpdate = handler
 }
 
-func (c *Client) OnUserDataStreamExpired(handler UserDataStreamExpiredHandler) {
+func (c *Client) HandleUserDataStreamExpiredEvent(handler UserDataStreamExpiredHandler) {
 	c.handlers.userDataStreamExpired = handler
 }
 
-func (c *Client) OnPmarginError(handler PmarginErrorHandler) {
+func (c *Client) HandlePmarginError(handler PmarginErrorHandler) {
 	c.handlers.error = handler
 }
 
@@ -250,7 +250,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 	switch eventType {
 	case "CONDITIONAL_ORDER_TRADE_UPDATE":
 		if c.handlers.conditionalOrderTradeUpdate != nil {
-			var event models.ConditionalOrderTradeUpdate
+			var event models.ConditionalOrderTradeUpdateEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -260,7 +260,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "openOrderLoss":
 		if c.handlers.openOrderLoss != nil {
-			var event models.OpenOrderLoss
+			var event models.OpenOrderLossEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -270,7 +270,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "outboundAccountPosition":
 		if c.handlers.marginAccountUpdate != nil {
-			var event models.MarginAccountUpdate
+			var event models.MarginAccountUpdateEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -280,7 +280,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "liabilityChange":
 		if c.handlers.liabilityUpdate != nil {
-			var event models.LiabilityUpdate
+			var event models.LiabilityUpdateEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -290,7 +290,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "executionReport":
 		if c.handlers.marginOrderUpdate != nil {
-			var event models.MarginOrderUpdate
+			var event models.MarginOrderUpdateEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -300,7 +300,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "ORDER_TRADE_UPDATE":
 		if c.handlers.futuresOrderUpdate != nil {
-			var event models.FuturesOrderUpdate
+			var event models.FuturesOrderUpdateEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -310,7 +310,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "ACCOUNT_UPDATE":
 		if c.handlers.futuresBalancePositionUpdate != nil {
-			var event models.FuturesBalancePositionUpdate
+			var event models.FuturesBalancePositionUpdateEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -320,7 +320,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "ACCOUNT_CONFIG_UPDATE":
 		if c.handlers.futuresAccountConfigUpdate != nil {
-			var event models.FuturesAccountConfigUpdate
+			var event models.FuturesAccountConfigUpdateEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -330,7 +330,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "riskLevelChange":
 		if c.handlers.riskLevelChange != nil {
-			var event models.RiskLevelChange
+			var event models.RiskLevelChangeEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -340,7 +340,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "balanceUpdate":
 		if c.handlers.marginBalanceUpdate != nil {
-			var event models.MarginBalanceUpdate
+			var event models.MarginBalanceUpdateEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}
@@ -350,7 +350,7 @@ func (c *Client) processPmarginStreamDataByEventType(eventType string, data []by
 
 	case "listenKeyExpired":
 		if c.handlers.userDataStreamExpired != nil {
-			var event models.UserDataStreamExpired
+			var event models.UserDataStreamExpiredEvent
 			if err := json.Unmarshal(data, &event); err != nil {
 				return err
 			}

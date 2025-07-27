@@ -293,51 +293,51 @@ type eventHandlers struct {
 }
 
 // Register event handlers for options streams
-func (c *Client) OnNewSymbolInfoEvent(handler NewSymbolInfoHandler) {
+func (c *Client) HandleNewSymbolInfoEvent(handler NewSymbolInfoHandler) {
 	c.handlers.newSymbolInfo = handler
 }
 
-func (c *Client) OnOpenInterestEvent(handler OpenInterestHandler) {
+func (c *Client) HandleOpenInterestEvent(handler OpenInterestHandler) {
 	c.handlers.openInterest = handler
 }
 
-func (c *Client) OnMarkPriceEvent(handler MarkPriceHandler) {
+func (c *Client) HandleMarkPriceEvent(handler MarkPriceHandler) {
 	c.handlers.markPrice = handler
 }
 
-func (c *Client) OnKlineEvent(handler KlineHandler) {
+func (c *Client) HandleKlineEvent(handler KlineHandler) {
 	c.handlers.kline = handler
 }
 
-func (c *Client) OnTickerEvent(handler TickerHandler) {
+func (c *Client) HandleTickerEvent(handler TickerHandler) {
 	c.handlers.ticker = handler
 }
 
-func (c *Client) OnTickerByUnderlyingEvent(handler TickerByUnderlyingHandler) {
+func (c *Client) HandleTickerByUnderlyingEvent(handler TickerByUnderlyingHandler) {
 	c.handlers.tickerByUnderlying = handler
 }
 
-func (c *Client) OnIndexPriceEvent(handler IndexPriceHandler) {
+func (c *Client) HandleIndexPriceEvent(handler IndexPriceHandler) {
 	c.handlers.indexPrice = handler
 }
 
-func (c *Client) OnTradeEvent(handler TradeHandler) {
+func (c *Client) HandleTradeEvent(handler TradeHandler) {
 	c.handlers.trade = handler
 }
 
-func (c *Client) OnPartialDepthEvent(handler PartialDepthHandler) {
+func (c *Client) HandlePartialDepthEvent(handler PartialDepthHandler) {
 	c.handlers.partialDepth = handler
 }
 
-func (c *Client) OnCombinedStreamEvent(handler CombinedStreamHandler) {
+func (c *Client) HandleCombinedStreamEvent(handler CombinedStreamHandler) {
 	c.handlers.combinedStream = handler
 }
 
-func (c *Client) OnSubscriptionResponse(handler SubscriptionResponseHandler) {
+func (c *Client) HandleSubscriptionResponse(handler SubscriptionResponseHandler) {
 	c.handlers.subscriptionResponse = handler
 }
 
-func (c *Client) OnStreamError(handler StreamErrorHandler) {
+func (c *Client) HandleStreamError(handler StreamErrorHandler) {
 	c.handlers.error = handler
 }
 
