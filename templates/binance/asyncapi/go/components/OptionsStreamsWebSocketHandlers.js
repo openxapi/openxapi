@@ -398,19 +398,72 @@ func (c *Client) processStreamMessage(data []byte) error {
 		}
 		// Also try to process the nested data
 		if dataBytes, err := json.Marshal(combined.StreamData); err == nil {
-			return c.processOptionsStreamDataByEventType("", dataBytes)
+			return c.processSingleStreamEvent(dataBytes)
 		}
 		return nil
 	}
 
 	// Process as single stream event
-	return c.processOptionsStreamDataByEventType("", data)
+	return c.processSingleStreamEvent(data)
 }
 
-// processSingleStreamEvent processes individual stream events for options  
+// processSingleStreamEvent processes individual stream events for options
 func (c *Client) processSingleStreamEvent(data []byte) error {
-	// For options streams, use the specific options processing
-	return c.processOptionsStreamDataByEventType("", data)
+	// First try to parse the message as a generic map to handle flexible event type field
+	var genericMsg map[string]interface{}
+	if err := json.Unmarshal(data, &genericMsg); err != nil {
+		return fmt.Errorf("failed to parse message: %w", err)
+	}
+	
+	// Extract event type, handling both string and number formats
+	var eventType string
+	if eValue, hasEventType := genericMsg["e"]; hasEventType {
+		switch v := eValue.(type) {
+		case string:
+			// Map options-specific event types to handler event types
+			switch v {
+			case "24hrTicker":
+				eventType = "ticker"
+			case "index":
+				eventType = "index"
+			case "markPrice":
+				eventType = "markPrice"
+			case "kline":
+				eventType = "kline"
+			case "trade":
+				eventType = "trade"
+			case "openInterest":
+				eventType = "openInterest"
+			case "newSymbolInfo":
+				eventType = "newSymbolInfo"
+			case "tickerByUnderlying":
+				eventType = "tickerByUnderlying"
+			default:
+				// For unknown event types, try to use as-is
+				eventType = v
+			}
+		case float64:
+			// Handle numeric event types by converting to string
+			eventType = fmt.Sprintf("%.0f", v)
+		case int:
+			// Handle integer event types by converting to string
+			eventType = fmt.Sprintf("%d", v)
+		default:
+			return fmt.Errorf("unknown event type format: %T", v)
+		}
+		return c.processOptionsStreamDataByEventType(eventType, data)
+	}
+	
+	// Special case: Check for partial depth stream (has fields: lastUpdateId, bids, asks but no "e" field)
+	if _, hasLastUpdateId := genericMsg["lastUpdateId"]; hasLastUpdateId {
+		if _, hasBids := genericMsg["bids"]; hasBids {
+			if _, hasAsks := genericMsg["asks"]; hasAsks {
+				return c.processOptionsStreamDataByEventType("partialDepth", data)
+			}
+		}
+	}
+	
+	return fmt.Errorf("no event type field found")
 }
 
 
@@ -430,33 +483,7 @@ func (c *Client) processArrayStreamEvent(data []byte, arrayData []interface{}) e
 			continue
 		}
 		
-		// Parse the element to determine its event type
-		var genericMsg map[string]interface{}
-		if err := json.Unmarshal(elementBytes, &genericMsg); err != nil {
-			log.Printf("Failed to parse array element %d: %v", i, err)
-			continue
-		}
-		
-		// Extract event type from the element
-		var eventType string
-		if eValue, hasEventType := genericMsg["e"]; hasEventType {
-			switch v := eValue.(type) {
-			case string:
-				eventType = v
-			case float64:
-				eventType = fmt.Sprintf("%.0f", v)
-			case int:
-				eventType = fmt.Sprintf("%d", v)
-			default:
-				log.Printf("Unknown event type format in array element %d: %T", i, v)
-				continue
-			}
-		} else {
-			log.Printf("No event type field found in array element %d", i)
-			continue
-		}
-		
-		if err := c.processOptionsStreamDataByEventType(eventType, elementBytes); err != nil {
+		if err := c.processSingleStreamEvent(elementBytes); err != nil {
 			log.Printf("Failed to process array element %d: %v", i, err)
 			// Continue processing other elements even if one fails
 		}

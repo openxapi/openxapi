@@ -976,9 +976,9 @@ func (c *Client) handleMessage(data []byte) error {
 		}
 	}
 
-	${detectedModule === 'spot-streams' ? 
-		`// For spot-streams, always try processStreamMessage for any non-request message
-		// This handles both standard events (with "e" field) and special events (BookTicker, PartialDepth)
+	${detectedModule.includes('-streams') ? 
+		`// For stream modules, always try processStreamMessage for any non-request message
+		// This handles both standard events (with "e" field), special events (BookTicker, PartialDepth), and combined streams
 		return c.processStreamMessage(data)` : 
 		`// Check for direct event type field (stream messages)
 		if eventType, hasEventType := genericMessage["e"]; hasEventType {

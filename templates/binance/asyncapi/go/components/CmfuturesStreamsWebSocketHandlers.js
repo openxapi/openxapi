@@ -553,39 +553,34 @@ func (c *Client) processSingleStreamEvent(data []byte) error {
 		default:
 			return fmt.Errorf("unknown event type format: %T", v)
 		}
-	} else {
-		// Handle events without "e" field by detecting field patterns
-		
-		// BookTicker events (no "e" field)
-		// BookTicker messages have fields: "u" (update ID), "s" (symbol), "b" (best bid), "a" (best ask)
-		if _, hasUpdateId := genericMsg["u"]; hasUpdateId {
-			if _, hasSymbol := genericMsg["s"]; hasSymbol {
-				if _, hasBestBid := genericMsg["b"]; hasBestBid {
-					if _, hasBestAsk := genericMsg["a"]; hasBestAsk {
-						eventType = "bookTicker"
+		return c.processStreamDataByEventType(eventType, data)
+	}
+	
+	// Special case: Check for bookTicker stream (has fields: u, s, b, B, a, A but no "e" field)
+	if _, hasU := genericMsg["u"]; hasU {
+		if _, hasS := genericMsg["s"]; hasS {
+			if _, hasB := genericMsg["b"]; hasB {
+				if _, hasBigB := genericMsg["B"]; hasBigB {
+					if _, hasA := genericMsg["a"]; hasA {
+						if _, hasBigA := genericMsg["A"]; hasBigA {
+							return c.processStreamDataByEventType("bookTicker", data)
+						}
 					}
 				}
 			}
-		}
-		
-		// PartialDepth events (no "e" field)
-		// PartialDepth messages have fields: "lastUpdateId", "bids", "asks"
-		if eventType == "" {
-			if _, hasLastUpdateId := genericMsg["lastUpdateId"]; hasLastUpdateId {
-				if _, hasBids := genericMsg["bids"]; hasBids {
-					if _, hasAsks := genericMsg["asks"]; hasAsks {
-						eventType = "partialDepth"
-					}
-				}
-			}
-		}
-		
-		if eventType == "" {
-			return fmt.Errorf("no event type field found")
 		}
 	}
 	
-	return c.processStreamDataByEventType(eventType, data)
+	// Special case: Check for partial depth stream (has fields: lastUpdateId, bids, asks but no "e" field)
+	if _, hasLastUpdateId := genericMsg["lastUpdateId"]; hasLastUpdateId {
+		if _, hasBids := genericMsg["bids"]; hasBids {
+			if _, hasAsks := genericMsg["asks"]; hasAsks {
+				return c.processStreamDataByEventType("partialDepth", data)
+			}
+		}
+	}
+	
+	return fmt.Errorf("no event type field found")
 }
 
 
@@ -605,33 +600,7 @@ func (c *Client) processArrayStreamEvent(data []byte, arrayData []interface{}) e
 			continue
 		}
 		
-		// Parse the element to determine its event type
-		var genericMsg map[string]interface{}
-		if err := json.Unmarshal(elementBytes, &genericMsg); err != nil {
-			log.Printf("Failed to parse array element %d: %v", i, err)
-			continue
-		}
-		
-		// Extract event type from the element
-		var eventType string
-		if eValue, hasEventType := genericMsg["e"]; hasEventType {
-			switch v := eValue.(type) {
-			case string:
-				eventType = v
-			case float64:
-				eventType = fmt.Sprintf("%.0f", v)
-			case int:
-				eventType = fmt.Sprintf("%d", v)
-			default:
-				log.Printf("Unknown event type format in array element %d: %T", i, v)
-				continue
-			}
-		} else {
-			log.Printf("No event type field found in array element %d", i)
-			continue
-		}
-		
-		if err := c.processStreamDataByEventType(eventType, elementBytes); err != nil {
+		if err := c.processSingleStreamEvent(elementBytes); err != nil {
 			log.Printf("Failed to process array element %d: %v", i, err)
 			// Continue processing other elements even if one fails
 		}
