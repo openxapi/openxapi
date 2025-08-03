@@ -254,7 +254,10 @@ function generateNestedClasses(schema, parentClassName, isRequestMessage) {
       // Generate RateLimits nested class
       nestedClasses += generateRateLimitsClass(parentClassName, schemaData.items);
     } else if (fieldName === 'result' && schemaData.type === 'object' && schemaData.properties) {
-      // Generate Result nested class for object results
+      // First generate nested classes for array items within the result (must come before Result class)
+      nestedClasses += generateArrayItemClasses(schemaData, parentClassName);
+      
+      // Then generate Result nested class for object results
       nestedClasses += generateResultClass(parentClassName, schemaData);
     } else if (fieldName === 'params' && isRequestMessage) {
       // Generate Params nested class for requests - be more flexible about detection
@@ -265,6 +268,75 @@ function generateNestedClasses(schema, parentClassName, isRequestMessage) {
   });
 
   return nestedClasses;
+}
+
+/*
+ * Generate nested classes for array items within objects
+ */
+function generateArrayItemClasses(objectSchema, parentClassName) {
+  let nestedClasses = '';
+  
+  if (!objectSchema.properties) return nestedClasses;
+  
+  Object.entries(objectSchema.properties).forEach(([fieldName, fieldSchema]) => {
+    // Get schema data from AsyncAPI objects
+    let schemaData = fieldSchema;
+    try {
+      if (fieldSchema && typeof fieldSchema.json === 'function') {
+        schemaData = fieldSchema.json();
+      } else if (fieldSchema && fieldSchema._json) {
+        schemaData = fieldSchema._json;
+      }
+    } catch (e) {
+      // Use original schema
+    }
+    
+    // Check if this is an array of objects that needs a nested class
+    if (schemaData.type === 'array' && schemaData.items && schemaData.items.type === 'object' && schemaData.items.properties) {
+      // Generate a nested class for the array items
+      const itemClassName = `${parentClassName}${toPascalCase(fieldName)}Item`;
+      nestedClasses += generateArrayItemClass(itemClassName, schemaData.items);
+    }
+  });
+  
+  return nestedClasses;
+}
+
+/*
+ * Generate a nested class for array items
+ */
+function generateArrayItemClass(className, itemSchema) {
+  let content = `class ${className}(BaseModel):
+    """Array item from AsyncAPI spec"""
+`;
+
+  if (itemSchema.properties) {
+    Object.entries(itemSchema.properties).forEach(([fieldName, fieldSchema]) => {
+      const pythonType = getPythonTypeFromSchema(fieldSchema);
+      const description = getDescription(fieldSchema, `${fieldName} field`);
+      const alias = getFieldAlias(fieldName);
+      
+      if (alias) {
+        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${alias}")
+`;
+      } else {
+        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}")
+`;
+      }
+    });
+  }
+
+  content += `
+    class Config:
+        """Pydantic model configuration"""
+        extra = "allow"
+        validate_assignment = True
+        use_enum_values = True
+
+
+`;
+
+  return content;
 }
 
 /*
@@ -322,7 +394,27 @@ function generateResultClass(parentClassName, resultSchema) {
 
   if (resultSchema.properties) {
     Object.entries(resultSchema.properties).forEach(([fieldName, fieldSchema]) => {
-      const pythonType = getPythonTypeFromSchema(fieldSchema);
+      let pythonType = getPythonTypeFromSchema(fieldSchema);
+      
+      // Get schema data from AsyncAPI objects for better type detection
+      let schemaData = fieldSchema;
+      try {
+        if (fieldSchema && typeof fieldSchema.json === 'function') {
+          schemaData = fieldSchema.json();
+        } else if (fieldSchema && fieldSchema._json) {
+          schemaData = fieldSchema._json;
+        }
+      } catch (e) {
+        // Use original schema
+      }
+      
+      // Check if this is an array of objects that should use a nested class
+      if (schemaData.type === 'array' && schemaData.items && schemaData.items.type === 'object' && schemaData.items.properties) {
+        // Use proper nested class type instead of Dict[str, Any]
+        const itemClassName = `${parentClassName}${toPascalCase(fieldName)}Item`;
+        pythonType = `List[${itemClassName}]`;
+      }
+      
       const description = getDescription(fieldSchema, `${fieldName} field`);
       const alias = getFieldAlias(fieldName);
       
@@ -444,20 +536,91 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
   // Parse properties from schema
   const properties = getProperties(schema);
 
-  // Generate fields from actual schema properties
-  Object.entries(properties).forEach(([fieldName, fieldSchema]) => {
-    const pythonType = getFieldTypeFromSchema(fieldName, fieldSchema, className);
-    const description = getDescription(fieldSchema, `${fieldName} field`);
-    const alias = getFieldAlias(fieldName);
+  // For request messages, flatten the params into the main class
+  if (isRequestMessage && properties.params) {
+    // Get params schema and flatten its properties into the main class
+    const paramsSchema = properties.params;
+    let paramsProperties = {};
     
-    if (alias) {
-      content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${alias}")
-`;
-    } else {
-      content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}")
-`;
+    try {
+      if (paramsSchema && typeof paramsSchema.json === 'function') {
+        const paramsData = paramsSchema.json();
+        if (paramsData.properties) {
+          paramsProperties = paramsData.properties;
+        }
+      } else if (paramsSchema && paramsSchema.properties) {
+        paramsProperties = paramsSchema.properties;
+      }
+      
+      // Generate flattened parameters directly in the request class
+      const paramsProps = getProperties(paramsSchema);
+      if (Object.keys(paramsProps).length > 0) {
+        paramsProperties = paramsProps;
+      }
+    } catch (e) {
+      console.warn('Error accessing params properties:', e.message);
     }
-  });
+
+    // Generate fields from flattened params properties
+    Object.entries(paramsProperties).forEach(([fieldName, fieldSchema]) => {
+      const pythonType = getPythonTypeFromSchema(fieldSchema);
+      const description = getDescription(fieldSchema, `${fieldName} parameter`);
+      const alias = getFieldAlias(fieldName);
+      
+      // Check if field is required
+      const paramsData = paramsSchema.json ? paramsSchema.json() : paramsSchema;
+      const requiredFields = paramsData.required || [];
+      const isRequired = requiredFields.includes(fieldName);
+      
+      // Authentication fields should be COMPLETELY EXCLUDED from request models
+      // since they're handled entirely by the client's _add_authentication() method
+      const authFields = ['apiKey', 'signature', 'timestamp'];
+      const isAuthField = authFields.includes(fieldName);
+      
+      // Skip authentication fields entirely - don't include them in the model
+      if (isAuthField) {
+        return; // Skip this field completely
+      }
+      
+      if (alias) {
+        if (isRequired) {
+          content += `    ${toSnakeCase(fieldName)}: ${pythonType} = Field(description="${description}", alias="${alias}")
+`;
+        } else {
+          content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${alias}")
+`;
+        }
+      } else {
+        if (isRequired) {
+          content += `    ${toSnakeCase(fieldName)}: ${pythonType} = Field(description="${description}")
+`;
+        } else {
+          content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}")
+`;
+        }
+      }
+    });
+  } else {
+    // Generate fields from actual schema properties (for non-request or non-nested models)
+    Object.entries(properties).forEach(([fieldName, fieldSchema]) => {
+      // Skip id, method, and params for request messages since we're flattening
+      if (isRequestMessage && (fieldName === 'id' || fieldName === 'method' || fieldName === 'params')) {
+        return;
+      }
+      
+      const pythonType = getFieldTypeFromSchema(fieldName, fieldSchema, className);
+      const description = getDescription(fieldSchema, `${fieldName} field`);
+      const alias = getFieldAlias(fieldName);
+      
+      if (alias) {
+        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${alias}")
+`;
+      } else {
+        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}")
+`;
+      }
+    });
+  }
 
   content += `
     class Config:
@@ -579,29 +742,35 @@ function getPythonTypeFromSchema(schema) {
 
 /*
  * Get field alias for camelCase to snake_case conversion
+ * Automatically creates aliases for any camelCase field name
  */
 function getFieldAlias(fieldName) {
-  const camelCaseFields = {
-    'timeInForce': 'timeInForce',
-    'newClientOrderId': 'newClientOrderId',
-    'icebergQty': 'icebergQty',
-    'stopPrice': 'stopPrice',
-    'trailingDelta': 'trailingDelta',
-    'recvWindow': 'recvWindow',
-    'startTime': 'startTime',
-    'endTime': 'endTime',
-    'orderId': 'orderId',
-    'origClientOrderId': 'origClientOrderId',
-    'clientOrderId': 'clientOrderId',
-    'apiKey': 'apiKey',
-    'origQty': 'origQty',
-    'executedQty': 'executedQty',
-    'transactTime': 'transactTime',
-    'intervalNum': 'intervalNum',
-    'rateLimitType': 'rateLimitType'
+  // Check if the field name is in camelCase (contains lowercase followed by uppercase)
+  const isCamelCase = /[a-z][A-Z]/.test(fieldName);
+  
+  if (isCamelCase) {
+    // Field is already in camelCase, so it should use itself as alias
+    // This means snake_case Python field names will map back to camelCase for API
+    return fieldName;
+  }
+  
+  // For snake_case field names, check if they should have camelCase aliases
+  // Convert snake_case to camelCase for the alias
+  const snakeCasePattern = /_[a-z]/g;
+  if (snakeCasePattern.test(fieldName)) {
+    // Convert snake_case to camelCase
+    const camelCaseAlias = fieldName.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase());
+    return camelCaseAlias;
+  }
+  
+  // Special case mappings for fields that don't follow standard patterns
+  const specialMappings = {
+    'apiKey': 'apiKey',  // Already camelCase, keep as is
+    'recv_window': 'recvWindow',
+    'time_zone': 'timeZone'
   };
   
-  return camelCaseFields[fieldName] || null;
+  return specialMappings[fieldName] || null;
 }
 
 /*

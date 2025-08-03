@@ -259,10 +259,8 @@ class BinanceWebSocketClient:
             raise WebSocketError("Not connected to WebSocket")
             
         try:
-            # Add authentication if required and available
-            if self.auth and self._requires_auth(message):
-                message = await self._add_authentication(message)
-                
+            # Note: Authentication is handled in _send_request for authenticated methods
+            # to avoid duplicate authentication calls
             message_str = json.dumps(message)
             await self._websocket.send(message_str)
             logger.debug(f"Sent message: {message_str}")
@@ -276,32 +274,59 @@ class BinanceWebSocketClient:
         method = message.get('method', '').lower()
         return any(keyword in method for keyword in ['account', 'order', 'user'])
 
-    async def _add_authentication(self, message: Dict[str, Any]) -> Dict[str, Any]:
-        """Add authentication to a message"""
+    def _add_authentication(self, message: Dict[str, Any], auth_type: str = "USER_DATA") -> Dict[str, Any]:
+        """
+        Add authentication to a message based on authentication type (following Go SDK patterns)
+        
+        Args:
+            message: Message to authenticate
+            auth_type: Authentication type (USER_STREAM, USER_DATA, TRADE, SIGNED)
+        """
         if not self.auth:
             raise AuthenticationError("Authentication required but not provided")
             
-        # Ensure params object exists
+        # Special case: some methods should send 0 parameters
+        # These methods work with session-based authentication after connection
+        method = message.get('method', '')
+        zero_param_methods = [
+            'userDataStream.subscribe', 
+            'userDataStream.unsubscribe',
+            'session.status',
+            'session.logout'
+        ]
+        if method in zero_param_methods:
+            # Don't add any parameters for these methods - they send 0 parameters
+            # Authentication is handled at the session/connection level
+            return message
+            
+        # For all other authenticated requests, ensure params object exists
         if 'params' not in message:
             message['params'] = {}
         params = message['params']
         
-        # Add apiKey FIRST (this must be included in signature payload)
+        # Add API key for authenticated requests (except subscribe/unsubscribe)
         params['apiKey'] = self.auth.api_key
         
-        # Add timestamp (this must also be included in signature payload)
-        timestamp = int(time.time() * 1000)
-        params['timestamp'] = timestamp
+        # Determine if this auth type requires signature (following Go SDK RequiresSignature logic)
+        requires_signature = auth_type in ["TRADE", "USER_DATA", "SIGNED"]
         
-        # Create signature payload from ALL params (including apiKey and timestamp)
-        if isinstance(params, dict):
-            query_string = urlencode(sorted(params.items()))
-        else:
-            query_string = f"apiKey={self.auth.api_key}&timestamp={timestamp}"
+        if requires_signature:
+            # Add timestamp for signed requests (USER_DATA and TRADE)
+            timestamp = int(time.time() * 1000)
+            params['timestamp'] = timestamp
             
-        # Sign the request and add signature to params
-        signature = self.auth.sign(query_string)
-        params['signature'] = signature
+            # Create signature payload from ALL params (including apiKey and timestamp)
+            if isinstance(params, dict):
+                query_string = urlencode(sorted(params.items()))
+            else:
+                query_string = f"apiKey={self.auth.api_key}&timestamp={timestamp}"
+                
+            # Sign the request and add signature to params
+            signature = self.auth.sign(query_string)
+            params['signature'] = signature
+        
+        # For USER_STREAM auth type (except subscribe/unsubscribe), only apiKey is added
+        # This matches Go SDK behavior where USER_STREAM methods get apiKey but not timestamp/signature
         
         return message
 
@@ -456,7 +481,7 @@ class BinanceWebSocketClient:
         
         if method in auth_required_methods:
             if self.auth:
-                message = await self._add_authentication(message)
+                message = self._add_authentication(message)
             else:
                 raise AuthenticationError(f"Authentication required for {method}")
         

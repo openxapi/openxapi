@@ -105,10 +105,11 @@ function generatePythonApiMethodFromMessage(message, asyncapi, module) {
   const requestModelName = getModelClassName(messageId);
   const responseModelName = getResponseModelName(messageId);
   
-  // Check if this method requires authentication
-  const requiresAuth = isAuthenticatedMethod(methodName);
+  // Determine authentication type for this method
+  const authType = getAuthType(methodName);
+  const requiresAuth = authType !== AuthType.NONE;
   
-  return generateMethodImplementation(pythonMethodName, methodName, requestModelName, responseModelName, requiresAuth);
+  return generateMethodImplementation(pythonMethodName, methodName, requestModelName, responseModelName, requiresAuth, authType);
 }
 
 /**
@@ -139,10 +140,11 @@ function generatePythonApiMethod(operation, asyncapi, module) {
   const requestModelName = getModelClassName(sendMessage.id());
   const responseModelName = getResponseModelName(sendMessage.id());
   
-  // Check if this method requires authentication
-  const requiresAuth = isAuthenticatedMethod(methodName);
+  // Determine authentication type for this method
+  const authType = getAuthType(methodName);
+  const requiresAuth = authType !== AuthType.NONE;
   
-  return generateMethodImplementation(pythonMethodName, methodName, requestModelName, responseModelName, requiresAuth);
+  return generateMethodImplementation(pythonMethodName, methodName, requestModelName, responseModelName, requiresAuth, authType);
 }
 
 /**
@@ -273,40 +275,82 @@ function getResponseModelName(requestMessageId) {
 }
 
 /**
+ * Authentication type constants (matching Go SDK)
+ */
+const AuthType = {
+  NONE: 'NONE',           // Public market data - no authentication required
+  TRADE: 'TRADE',         // Trading on the exchange, placing and canceling orders  
+  USER_DATA: 'USER_DATA', // Private account information, such as order status and trading history
+  USER_STREAM: 'USER_STREAM', // Managing User Data Stream subscriptions
+  SIGNED: 'SIGNED'        // Signed requests requiring API key and signature
+};
+
+/**
+ * Determine authentication type for a method (following Go SDK patterns)
+ */
+function getAuthType(methodName) {
+  // USER_STREAM methods - only need apiKey, no timestamp/signature
+  const userStreamMethods = [
+    'userDataStream.start', 'userDataStream.ping', 'userDataStream.stop',
+    'userDataStream.subscribe', 'userDataStream.unsubscribe'
+  ];
+  
+  // TRADE methods - need full authentication (apiKey + timestamp + signature)
+  const tradeMethods = [
+    'order.place', 'order.test', 'order.cancel',
+    'orderList.place.oco', 'orderList.place.oto', 'orderList.place.otoco',
+    'orderList.cancel', 'sor.order.test', 'sor.order.place'
+  ];
+  
+  // USER_DATA methods - need full authentication (apiKey + timestamp + signature)
+  const userDataMethods = [
+    'order.status', 'openOrders.cancelAll', 'openOrders.status',
+    'allOrders', 'myTrades', 'myAllocations', 'myPreventedMatches',
+    'account.status', 'account.commission', 'account.rateLimits.orders',
+    'orderList.status', 'allOrderLists', 'openOrderLists.status',
+    'session.logon', 'session.status', 'session.logout'
+  ];
+  
+  if (userStreamMethods.includes(methodName)) {
+    return AuthType.USER_STREAM;
+  } else if (tradeMethods.includes(methodName)) {
+    return AuthType.TRADE;
+  } else if (userDataMethods.includes(methodName)) {
+    return AuthType.USER_DATA;
+  } else {
+    return AuthType.NONE;
+  }
+}
+
+/**
  * Check if a method requires authentication
  */
 function isAuthenticatedMethod(methodName) {
-  const authMethods = [
-    'order.place', 'order.test', 'order.status', 'order.cancel',
-    'openOrders.cancelAll', 'openOrders.status',
-    'allOrders', 'myTrades', 'myAllocations', 'myPreventedMatches',
-    'account.status', 'account.commission', 'account.rateLimits.orders',
-    'userDataStream.start', 'userDataStream.ping', 'userDataStream.stop',
-    'userDataStream.subscribe', 'userDataStream.unsubscribe',
-    'session.logon', 'session.status', 'session.logout',
-    'orderList.place.oco', 'orderList.place.oto', 'orderList.place.otoco',
-    'orderList.cancel', 'orderList.status',
-    'allOrderLists', 'openOrderLists.status',
-    'sor.order.test', 'sor.order.place'
-  ];
-  
-  return authMethods.includes(methodName);
+  return getAuthType(methodName) !== AuthType.NONE;
+}
+
+/**
+ * Check if authentication type requires signature (following Go SDK logic)
+ */
+function requiresSignature(authType) {
+  return authType === AuthType.TRADE || authType === AuthType.USER_DATA || authType === AuthType.SIGNED;
 }
 
 /**
  * Generate the actual Python method implementation with **params pattern
  */
-function generateMethodImplementation(pythonMethodName, originalMethodName, requestModelName, responseModelName, requiresAuth) {
+function generateMethodImplementation(pythonMethodName, originalMethodName, requestModelName, responseModelName, requiresAuth, authType) {
   const responseModelImport = getModelClassName(responseModelName);
+  const requestModelImport = getModelClassName(requestModelName);
   
-  return `    async def ${pythonMethodName}(self, *, id: Optional[Union[int, str]] = None, method: Optional[str] = None, **params) -> '${responseModelImport}':
+  return `    async def ${pythonMethodName}(self, request: Optional['${requestModelImport}'] = None, *, id: Optional[Union[int, str]] = None, method: Optional[str] = None) -> '${responseModelImport}':
         """
         ${getMethodDescription(originalMethodName)}
         
         Args:
+            request: ${requestModelImport} object (contains all request parameters)
             id: Optional request ID (auto-generated if not provided)
             method: Optional method name (defaults to "${originalMethodName}")
-            **params: Request parameters as keyword arguments
             
         Returns:
             ${responseModelImport}: API response
@@ -327,16 +371,23 @@ function generateMethodImplementation(pythonMethodName, originalMethodName, requ
             "method": method or "${originalMethodName}"
         }
         
-        # Add request parameters if provided
-        if params:
-            # Filter out None values from params
-            filtered_params = {k: v for k, v in params.items() if v is not None}
-            if filtered_params:
-                message["params"] = filtered_params
+        # Handle parameters from flattened request model
+        if request is not None:
+            # Use flattened request model - all parameters are now direct properties
+            if hasattr(request, 'model_dump'):
+                # Pydantic v2 - use by_alias=True to send camelCase field names to API
+                request_data = request.model_dump(exclude_none=True, by_alias=True)
+            else:
+                # Pydantic v1 fallback - use by_alias=True to send camelCase field names to API
+                request_data = request.dict(exclude_none=True, by_alias=True)
+            
+            # All request_data fields become params (since request is now flattened)
+            if request_data:
+                message["params"] = request_data
         ${requiresAuth ? `
-        # Add authentication if required
+        # Add authentication based on auth type (following Go SDK patterns)
         if self.auth:
-            message = await self._add_authentication(message)
+            message = self._add_authentication(message, auth_type="${authType}")
         else:
             raise AuthenticationError("Authentication required for ` + originalMethodName + `")` : ''}
         
