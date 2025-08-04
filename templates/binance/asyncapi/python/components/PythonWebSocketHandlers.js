@@ -452,44 +452,52 @@ function getMethodDescription(methodName) {
 }
 
 /**
- * Generate subscription methods for stream data
+ * Generate subscription methods for stream data (matching Go SDK)
  */
 function generateSubscriptionMethods(module) {
-  return `    async def subscribe(self, channel: str, *, id: Optional[Union[int, str]] = None, **params) -> None:
+  return `    async def subscribe(self, streams: List[str], *, id: Optional[Union[int, str]] = None) -> None:
         """
-        Subscribe to a WebSocket channel
+        Subscribe to market data streams (matching Go SDK)
         
         Args:
-            channel: Channel name to subscribe to
+            streams: List of stream names to subscribe to
             id: Optional request ID (auto-generated if not provided)
-            **params: Optional parameters for subscription
+            
+        Example:
+            await client.subscribe(['btcusdt@trade', 'ethusdt@ticker'])
         """
+        if not self._is_connected:
+            raise WebSocketError("WebSocket not connected")
+            
         request_id = id if id is not None else self._generate_request_id()
         
         message = {
             "method": "SUBSCRIBE",
-            "params": [channel],
+            "params": streams,
             "id": request_id
         }
         
-        if params:
-            message["params"].extend([f"{k}={v}" for k, v in params.items()])
-            
         await self._send_message(message)
 
-    async def unsubscribe(self, channel: str, *, id: Optional[Union[int, str]] = None) -> None:
+    async def unsubscribe(self, streams: List[str], *, id: Optional[Union[int, str]] = None) -> None:
         """
-        Unsubscribe from a WebSocket channel
+        Unsubscribe from market data streams (matching Go SDK)
         
         Args:
-            channel: Channel name to unsubscribe from
+            streams: List of stream names to unsubscribe from
             id: Optional request ID (auto-generated if not provided)
+            
+        Example:
+            await client.unsubscribe(['btcusdt@trade', 'ethusdt@ticker'])
         """
+        if not self._is_connected:
+            raise WebSocketError("WebSocket not connected")
+            
         request_id = id if id is not None else self._generate_request_id()
         
         message = {
-            "method": "UNSUBSCRIBE", 
-            "params": [channel],
+            "method": "UNSUBSCRIBE",
+            "params": streams,
             "id": request_id
         }
         

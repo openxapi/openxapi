@@ -1,6 +1,6 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
-import { PythonWebSocketHandlers } from '../components/PythonWebSocketHandlers.js';
-// import { detectModuleName } from '../../go/components/ModuleRegistry.js'; // Removed to fix import issue
+import { PythonModularWebSocketHandlers } from '../components/PythonModularWebSocketHandlers.js';
+import { detectModuleName, getModuleConfig, extractServerInfo } from '../components/PythonModuleRegistry.js';
 
 export default function ({ asyncapi, params }) {
   const packageName = params.packageName || 'spot';
@@ -8,37 +8,35 @@ export default function ({ asyncapi, params }) {
   const version = params.version || '0.1.0';
   const author = params.author || 'openxapi';
   
-  // Detect the module type
-  const detectedModule = packageName || 'spot'; // Simplified detection without Go module dependency
+  // Detect the module type using the registry system
+  const detectedModule = detectModuleName(asyncapi, { packageName, moduleName });
+  const moduleConfig = getModuleConfig(detectedModule);
   
-  // Get all servers from AsyncAPI spec
-  const servers = asyncapi.servers();
-  const serverList = servers.all();
-  const mainnetServers = serverList.filter(server => 
-    server.id().includes('mainnet') || !server.id().includes('testnet')
-  );
-  const testnetServers = serverList.filter(server => 
-    server.id().includes('testnet')
-  );
+  // Extract complete server information from AsyncAPI spec
+  const serverInfoList = extractServerInfo(asyncapi);
 
   // Get all channels to generate handler methods
   const channels = asyncapi.channels();
   
-  // Generate handlers code
-  const handlersCode = PythonWebSocketHandlers({ asyncapi, context: { packageName, moduleName } });
+  // Generate module-specific handlers code
+  const handlersCode = PythonModularWebSocketHandlers({ asyncapi, context: { packageName, moduleName } });
   const usesModels = handlersCode && handlersCode.includes('models.');
 
-  // Get server URLs for configuration
-  const mainnetUrl = mainnetServers.length > 0 ? mainnetServers[0].url() : 'wss://stream.binance.com:9443/ws';
-  const testnetUrl = testnetServers.length > 0 ? testnetServers[0].url() : 'wss://testnet.dex.binance.org/api/ws';
+  // Set first server as default if available
+  const defaultServerUrl = serverInfoList.length > 0 ? serverInfoList[0].url : moduleConfig.serverConfig.mainnetUrlPattern;
 
   return (
     <File name="client.py">
       <Text>{`"""
-Binance ${packageName.toUpperCase()} WebSocket Client
+Binance ${packageName.toUpperCase()} WebSocket Client (Module: ${detectedModule})
 
 This module provides an async WebSocket client for the Binance ${packageName.toUpperCase()} API.
-Generated from AsyncAPI specification.
+Generated from AsyncAPI specification with complete server configurations.
+
+Module: ${detectedModule}
+Available Servers: ${serverInfoList.length}
+${serverInfoList.map(server => `  - ${server.name}: ${server.url} (${server.title})`).join('\n')}
+Authentication: ${moduleConfig.authentication.supportedTypes.join(', ') || 'None'}
 
 Author: ${author}
 Version: ${version}
@@ -85,10 +83,19 @@ class AuthenticationError(Exception):
 
 class BinanceWebSocketClient:
     """
-    Async WebSocket client for Binance ${packageName.toUpperCase()} API
+    Async WebSocket client for Binance ${packageName.toUpperCase()} API (Module: ${detectedModule})
     
     This client provides methods to connect to Binance WebSocket streams,
     subscribe to various data feeds, and handle real-time events.
+    
+    Module Configuration:
+    - Target Module: ${detectedModule}
+    - Available Servers: ${serverInfoList.length}
+${serverInfoList.map(server => `      * ${server.name}: ${server.url} (${server.title})`).join('\n')}
+    - Authentication: ${moduleConfig.authentication.supportedTypes.join(', ') || 'None'}
+    
+    This client is specifically configured for the ${detectedModule} module and 
+    uses server endpoints extracted directly from the AsyncAPI specification.
     """
     
     def __init__(
@@ -130,12 +137,113 @@ class BinanceWebSocketClient:
         self._request_id = 0
         self._message_history: List[Dict] = []
         
-        # URLs
-        self.base_url = "${testnetUrl}" if testnet else "${mainnetUrl}"
+        # Server configuration from AsyncAPI spec
+        self.servers = {
+${serverInfoList.map(server => `            "${server.name}": {
+                "name": "${server.name}",
+                "url": "${server.url}",
+                "host": "${server.host}",
+                "pathname": "${server.pathname}",
+                "protocol": "${server.protocol}",
+                "title": "${server.title}",
+                "summary": "${server.summary}",
+                "description": "${server.description}",
+                "active": False
+            }`).join(',\n')}
+        }
+        self.module = "${detectedModule}"
+        
+        # Set default active server (first server or fallback)
+        ${serverInfoList.length > 0 ? `
+        self.active_server = "${serverInfoList[0].name}"
+        self.servers["${serverInfoList[0].name}"]["active"] = True
+        self.base_url = "${serverInfoList[0].url}"` : `
+        self.active_server = None
+        self.base_url = "${defaultServerUrl}"`}
         
         # Background tasks
         self._listen_task: Optional[asyncio.Task] = None
         self._ping_task: Optional[asyncio.Task] = None
+
+    def get_server_info(self) -> Dict[str, Any]:
+        """
+        Get current server configuration information
+        
+        Returns:
+            Dict containing server configuration details
+        """
+        active_server_info = self.servers.get(self.active_server, {}) if self.active_server else {}
+        return {
+            'module': self.module,
+            'active_server': self.active_server,
+            'base_url': self.base_url,
+            'active_server_info': active_server_info,
+            'available_servers': list(self.servers.keys()),
+            'total_servers': len(self.servers)
+        }
+    
+    def switch_server(self, server_name: str) -> bool:
+        """
+        Switch to a different server
+        
+        Args:
+            server_name: Name of the server to switch to
+            
+        Returns:
+            True if successful, False if server not found
+            
+        Note:
+            This will close existing connections. Call connect() to reconnect.
+        """
+        if server_name not in self.servers:
+            logger.error(f"Server '{server_name}' not found. Available servers: {list(self.servers.keys())}")
+            return False
+            
+        # Deactivate current server
+        if self.active_server and self.active_server in self.servers:
+            self.servers[self.active_server]["active"] = False
+            
+        # Activate new server
+        self.active_server = server_name
+        self.servers[server_name]["active"] = True
+        self.base_url = self.servers[server_name]["url"]
+        
+        # Close existing connection if connected
+        if self._is_connected:
+            logger.info(f"Switching to server '{server_name}': {self.base_url}")
+            
+        return True
+    
+    def get_available_servers(self) -> List[str]:
+        """
+        Get list of available server names
+        
+        Returns:
+            List of server names
+        """
+        return list(self.servers.keys())
+    
+    def get_connection_url(self, custom_path: Optional[str] = None) -> str:
+        """
+        Get the connection URL, optionally with a custom path
+        
+        Args:
+            custom_path: Optional custom path to append (for streams)
+            
+        Returns:
+            Full WebSocket URL
+        """
+        if custom_path:
+            # Handle stream-specific paths
+            base = self.base_url
+            if base.endswith('/ws') or base.endswith('/ws/'):
+                # Replace /ws with custom path
+                base = base.replace('/ws', custom_path)
+            else:
+                # Append custom path
+                base = base.rstrip('/') + custom_path
+            return base
+        return self.base_url
 
     def _generate_request_id(self) -> int:
         """Generate a unique request ID"""
@@ -188,18 +296,30 @@ class BinanceWebSocketClient:
 
     async def connect(self, uri: Optional[str] = None) -> None:
         """
-        Connect to the WebSocket server
+        Connect to the WebSocket server using the active server configuration
         
         Args:
-            uri: Custom WebSocket URI (uses default if not provided)
+            uri: Custom WebSocket URI (uses active server if not provided)
+            
+        Note:
+            For stream modules, this defaults to ConnectToSingleStream behavior
         """
         async with self._connection_lock:
             if self._is_connected:
                 logger.warning("Already connected to WebSocket")
                 return
                 
-            connect_uri = uri or self.base_url
-            logger.info(f"Connecting to WebSocket: {connect_uri}")
+            # Determine connection URI
+            if uri:
+                connect_uri = uri
+            else:
+                # For stream modules, default to single stream connection
+                if '${detectedModule}'.endswith('-streams'):
+                    return await self.connect_to_single_stream()
+                else:
+                    connect_uri = self.base_url
+                
+            logger.info(f"Connecting to WebSocket: {connect_uri} (module: {self.module}, server: {self.active_server})")
             
             try:
                 self._websocket = await websockets.connect(
@@ -219,6 +339,171 @@ class BinanceWebSocketClient:
             except Exception as e:
                 logger.error(f"Failed to connect to WebSocket: {e}")
                 raise WebSocketError(f"Connection failed: {e}")
+
+    async def connect_to_server(self, server_name: str) -> None:
+        """
+        Connect to a specific server by name
+        
+        Args:
+            server_name: Name of the server to connect to
+        """
+        if not self.switch_server(server_name):
+            raise WebSocketError(f"Failed to switch to server '{server_name}'")
+        
+        await self.connect()
+
+    async def connect_to_single_stream(self, time_unit: Optional[str] = None) -> None:
+        """
+        Connect to single stream endpoint with optional timeUnit parameter
+        (For stream modules only)
+        
+        Args:
+            time_unit: Optional time unit parameter (e.g., "?timeUnit=MICROSECOND")
+        """
+        async with self._connection_lock:
+            if self._is_connected:
+                logger.warning("Already connected to WebSocket")
+                return
+                
+            # Build endpoint URL with timeUnit parameter
+            endpoint = "/ws"
+            if time_unit:
+                endpoint += time_unit
+                
+            connect_uri = self.get_connection_url(endpoint)
+            logger.info(f"Connecting to single stream: {connect_uri} (module: {self.module}, server: {self.active_server})")
+            
+            try:
+                self._websocket = await websockets.connect(
+                    connect_uri,
+                    ping_interval=self.ping_interval,
+                    ping_timeout=self.ping_timeout,
+                    max_size=self.max_message_size
+                )
+                self._is_connected = True
+                
+                # Start background tasks
+                self._listen_task = asyncio.create_task(self._listen_for_messages())
+                self._ping_task = asyncio.create_task(self._ping_handler())
+                
+                logger.info("Single stream WebSocket connection established")
+                
+            except Exception as e:
+                logger.error(f"Failed to connect to single stream: {e}")
+                raise WebSocketError(f"Single stream connection failed: {e}")
+
+    async def connect_to_combined_stream(self, time_unit: Optional[str] = None) -> None:
+        """
+        Connect to combined stream endpoint with optional timeUnit parameter
+        (For stream modules only)
+        
+        Args:
+            time_unit: Optional time unit parameter (e.g., "?timeUnit=MICROSECOND")
+        """
+        async with self._connection_lock:
+            if self._is_connected:
+                logger.warning("Already connected to WebSocket")
+                return
+                
+            # Build endpoint URL with timeUnit parameter
+            endpoint = "/stream"
+            if time_unit:
+                endpoint += time_unit
+                
+            connect_uri = self.get_connection_url(endpoint)
+            logger.info(f"Connecting to combined stream: {connect_uri} (module: {self.module}, server: {self.active_server})")
+            
+            try:
+                self._websocket = await websockets.connect(
+                    connect_uri,
+                    ping_interval=self.ping_interval,
+                    ping_timeout=self.ping_timeout,
+                    max_size=self.max_message_size
+                )
+                self._is_connected = True
+                
+                # Start background tasks
+                self._listen_task = asyncio.create_task(self._listen_for_messages())
+                self._ping_task = asyncio.create_task(self._ping_handler())
+                
+                logger.info("Combined stream WebSocket connection established")
+                
+            except Exception as e:
+                logger.error(f"Failed to connect to combined stream: {e}")
+                raise WebSocketError(f"Combined stream connection failed: {e}")
+
+    async def connect_to_single_stream_microsecond(self) -> None:
+        """
+        Connect to single stream endpoint with microsecond precision
+        (For stream modules only)
+        """
+        await self.connect_to_single_stream("?timeUnit=MICROSECOND")
+
+    async def connect_to_combined_stream_microsecond(self) -> None:
+        """
+        Connect to combined stream endpoint with microsecond precision
+        (For stream modules only)
+        """
+        await self.connect_to_combined_stream("?timeUnit=MICROSECOND")
+
+    async def connect_with_variables(self, **variables) -> None:
+        """
+        Connect using provided server variables (like {streamPath}, {listenKey})
+        
+        Args:
+            **variables: Server variables to resolve in the URL template
+            
+        Example:
+            await client.connect_with_variables(streamPath="ws", listenKey="your_listen_key")
+        """
+        async with self._connection_lock:
+            if self._is_connected:
+                logger.warning("Already connected to WebSocket")
+                return
+                
+            # Start with base URL
+            connect_uri = self.base_url
+            
+            # Replace variables in the URL
+            for var_name, var_value in variables.items():
+                template = "{" + var_name + "}"
+                if template in connect_uri:
+                    connect_uri = connect_uri.replace(template, str(var_value))
+                    logger.debug(f"Replaced {template} with {var_value}")
+                    
+            logger.info(f"Connecting with variables: {connect_uri} (module: {self.module}, server: {self.active_server})")
+            
+            try:
+                self._websocket = await websockets.connect(
+                    connect_uri,
+                    ping_interval=self.ping_interval,
+                    ping_timeout=self.ping_timeout,
+                    max_size=self.max_message_size
+                )
+                self._is_connected = True
+                
+                # Start background tasks
+                self._listen_task = asyncio.create_task(self._listen_for_messages())
+                self._ping_task = asyncio.create_task(self._ping_handler())
+                
+                logger.info("WebSocket connection with variables established")
+                
+            except Exception as e:
+                logger.error(f"Failed to connect with variables: {e}")
+                raise WebSocketError(f"Connection with variables failed: {e}")
+
+    async def connect_to_server_with_variables(self, server_name: str, **variables) -> None:
+        """
+        Connect to a specific server using provided server variables
+        
+        Args:
+            server_name: Name of the server to connect to
+            **variables: Server variables to resolve in the URL template
+        """
+        if not self.switch_server(server_name):
+            raise WebSocketError(f"Failed to switch to server '{server_name}'")
+        
+        await self.connect_with_variables(**variables)
 
     async def disconnect(self) -> None:
         """Disconnect from the WebSocket server"""
@@ -555,8 +840,20 @@ ${handlersCode}
 async def main():
     """Example usage of the WebSocket client"""
     
-    # Initialize client
-    client = BinanceWebSocketClient(testnet=True)
+    # Initialize client for ${detectedModule} module
+    client = BinanceWebSocketClient()
+    
+    # Check server configuration
+    server_info = client.get_server_info()
+    print(f"Module: {server_info['module']}")
+    print(f"Active server: {server_info['active_server']}")
+    print(f"Available servers: {server_info['available_servers']}")
+    
+    # Switch to a different server if needed
+    # available_servers = client.get_available_servers()
+    # if len(available_servers) > 1:
+    #     client.switch_server(available_servers[1])
+    #     print(f"Switched to: {client.get_server_info()['active_server']}")
     
     # Set up handlers
     async def handle_ticker(data):
@@ -565,17 +862,74 @@ async def main():
     async def handle_trade(data):
         print(f"Trade update: {data}")
     
-    # Use as async context manager
+    # Example 1: Basic connection (uses default behavior)
     async with client:
         # Set handlers
         client.set_handler('*', handle_ticker)  # Handle all messages
         
-        # Subscribe to streams
-        await client.subscribe('btcusdt@ticker')
-        await client.subscribe('btcusdt@trade')
+        # Default connection behavior:
+        # - For stream modules: connects to single stream endpoint
+        # - For API modules: connects to main WebSocket API endpoint
         
         # Keep running
-        await asyncio.sleep(60)
+        await asyncio.sleep(10)
+    
+    # Example 2: Connect to specific server
+    client2 = BinanceWebSocketClient()
+    available_servers = client2.get_available_servers()
+    if len(available_servers) > 1:
+        await client2.connect_to_server(available_servers[1])
+        await asyncio.sleep(5)
+        await client2.disconnect()
+    
+    # Example 3: Module-specific usage
+    ${detectedModule.includes('stream') ? `
+    # Stream module examples (${detectedModule})
+    client3 = BinanceWebSocketClient()
+    
+    async with client3:
+        # Connect to single stream endpoint  
+        await client3.connect_to_single_stream()
+        
+        # Simple subscribe/unsubscribe like Go SDK
+        ${detectedModule === 'spot-streams' ? `
+        # Spot streams - market data
+        await client3.subscribe(['btcusdt@trade', 'btcusdt@ticker'])
+        await client3.subscribe(['btcusdt@kline_1m', 'ethusdt@depth5'])
+        
+        # Unsubscribe from some streams
+        await client3.unsubscribe(['btcusdt@trade'])` : `
+        # Futures streams - derivatives data  
+        await client3.subscribe(['btcusdt@trade', 'btcusdt@markPrice'])
+        await client3.subscribe(['btcusdt@fundingRate', 'btcusdt@forceOrder'])
+        
+        # Unsubscribe from some streams
+        await client3.unsubscribe(['btcusdt@trade'])`}
+        
+        await asyncio.sleep(10)` : `
+    # API module examples (${detectedModule})
+    client3 = BinanceWebSocketClient()
+    
+    async with client3:
+        # Connect to WebSocket API endpoint
+        await client3.connect()
+        
+        # Module-specific API methods
+        ${detectedModule === 'spot' ? `
+        # Spot WebSocket API methods
+        # ping_response = await client3.ping()
+        # time_response = await client3.time()
+        # exchange_info = await client3.exchange_info()
+        # ticker_response = await client3.ticker(symbol="BTCUSDT")` : `
+        # ${detectedModule.toUpperCase()} WebSocket API methods
+        # ping_response = await client3.ping() 
+        # time_response = await client3.time()
+        # exchange_info = await client3.exchange_info()`}
+        
+        # Set up event handlers for real-time data
+        client3.set_handler('*', handle_ticker)
+        
+        await asyncio.sleep(10)`}
 
 
 if __name__ == "__main__":
