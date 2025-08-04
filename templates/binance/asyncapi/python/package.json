@@ -1,0 +1,73 @@
+{
+  "name": "binance-asyncapi-python-template",
+  "version": "0.1.0",
+  "description": "A modular template that generates lightweight Python WebSocket clients for Binance AsyncAPI v3 specifications with asyncio and Pydantic support.",
+  "scripts": {
+    "generate": "${ASYNCAPI_CLI:-asyncapi} generate fromTemplate ${SPEC_FILE:-../../../../specs/binance/asyncapi/spot.yaml} ./ --output ${OUTPUT_DIR:-./output} --force-write -p moduleName=binance-websocket-client -p packageName=spot -p version=0.1.0 -p author=openxapi",
+    "generate:module": "MODULE=${MODULE:-spot} && MODULE_NAME=$(node -pe \"JSON.parse(require('fs').readFileSync('../../../../generator-configs/binance/asyncapi/python/' + process.env.MODULE + '.json', 'utf8')).generator.parameters.moduleName.default\") && PACKAGE_NAME=$(node -pe \"JSON.parse(require('fs').readFileSync('../../../../generator-configs/binance/asyncapi/python/' + process.env.MODULE + '.json', 'utf8')).generator.parameters.packageName.default\") && VERSION=$(node -pe \"JSON.parse(require('fs').readFileSync('../../../../generator-configs/binance/asyncapi/python/' + process.env.MODULE + '.json', 'utf8')).generator.parameters.version.default\") && AUTHOR=$(node -pe \"JSON.parse(require('fs').readFileSync('../../../../generator-configs/binance/asyncapi/python/' + process.env.MODULE + '.json', 'utf8')).generator.parameters.author.default\") && ${ASYNCAPI_CLI:-asyncapi} generate fromTemplate ${SPEC_FILE:-../../../../specs/binance/asyncapi/$MODULE.yaml} ./ --output ${OUTPUT_DIR:-./output} --force-write -p moduleName=\"$MODULE_NAME\" -p packageName=\"$PACKAGE_NAME\" -p version=\"$VERSION\" -p author=\"$AUTHOR\"",
+    "test": "npm run test:clean && npm run test:generate && npm run test:build",
+    "test:clean": "rm -rf test/project",
+    "test:generate": "${ASYNCAPI_CLI:-asyncapi} generate fromTemplate ../../../../specs/binance/asyncapi/spot.yaml ./ --output test/project --force-write -p moduleName=binance-websocket-client -p packageName=spot -p version=0.1.0 -p author=openxapi",
+    "test:build": "cd test/project && python3 -m py_compile *.py && echo '✅ Python files compiled successfully'",
+    "test:module": "MODULE=${MODULE:-spot} npm run test:module:generate && npm run test:build",
+    "test:module:generate": "MODULE=${MODULE:-spot} && MODULE_NAME=$(node -pe \"JSON.parse(require('fs').readFileSync('../../../../generator-configs/binance/asyncapi/python/' + process.env.MODULE + '.json', 'utf8')).generator.parameters.moduleName.default\") && PACKAGE_NAME=$(node -pe \"JSON.parse(require('fs').readFileSync('../../../../generator-configs/binance/asyncapi/python/' + process.env.MODULE + '.json', 'utf8')).generator.parameters.packageName.default\") && VERSION=$(node -pe \"JSON.parse(require('fs').readFileSync('../../../../generator-configs/binance/asyncapi/python/' + process.env.MODULE + '.json', 'utf8')).generator.parameters.version.default\") && AUTHOR=$(node -pe \"JSON.parse(require('fs').readFileSync('../../../../generator-configs/binance/asyncapi/python/' + process.env.MODULE + '.json', 'utf8')).generator.parameters.author.default\") && ${ASYNCAPI_CLI:-asyncapi} generate fromTemplate ../../../../specs/binance/asyncapi/$MODULE.yaml ./ --output test/project --force-write -p moduleName=\"$MODULE_NAME\" -p packageName=\"$PACKAGE_NAME\" -p version=\"$VERSION\" -p author=\"$AUTHOR\"",
+    "example": "npm run test:generate && cd test/project && python client.py",
+    "example:module": "MODULE=${MODULE:-spot} npm run test:module && cd test/project && python client.py",
+    "test:install": "cd test/project && pip install -r requirements.txt",
+    "test:dependencies": "python -c 'import asyncio, websockets, pydantic, cryptography; print(\"✅ All dependencies available\")'",
+    "test:all-modules": "MODULE=spot npm run test:module && MODULE=umfutures npm run test:module && MODULE=cmfutures npm run test:module"
+  },
+  "generator": {
+    "renderer": "react",
+    "apiVersion": "v3",
+    "generator": ">=1.10.0 <2.0.0",
+    "supportedProtocols": [
+      "ws",
+      "wss"
+    ],
+    "parameters": {
+      "moduleName": {
+        "description": "The Python module name for the generated client.",
+        "required": true,
+        "default": "binance-websocket-client"
+      },
+      "packageName": {
+        "description": "The Python package name for the generated client.",
+        "required": false,
+        "default": "spot"
+      },
+      "version": {
+        "description": "The version of the generated client package.",
+        "required": false,
+        "default": "0.1.0"
+      },
+      "author": {
+        "description": "The author of the generated client package.",
+        "required": false,
+        "default": "openxapi"
+      }
+    }
+  },
+  "keywords": [
+    "asyncapi",
+    "binance",
+    "websocket",
+    "python",
+    "template",
+    "modular",
+    "asyncio",
+    "pydantic",
+    "spot",
+    "umfutures",
+    "cmfutures",
+    "futures",
+    "cryptocurrency",
+    "trading"
+  ],
+  "dependencies": {
+    "@asyncapi/generator-react-sdk": "^0.2.25"
+  },
+  "devDependencies": {
+    "rimraf": "^5.0.0"
+  }
+}

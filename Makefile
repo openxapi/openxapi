@@ -1,4 +1,4 @@
-.PHONY: all build clean format lint vet test unit-test coverage help test-with-samples generate-spec generate-sdk generate-rest-spec generate-ws-spec validate-rest-spec validate-ws-spec generate-rest-sdk
+.PHONY: all build clean format lint vet test unit-test coverage help test-with-samples generate-spec generate-sdk generate-rest-spec generate-ws-spec validate-rest-spec validate-ws-spec generate-rest-sdk generate-ws-sdk release deps
 
 # Go parameters
 GOCMD=go
@@ -142,6 +142,23 @@ generate-ws-sdk:
 				ASYNCAPI_CLI=${ASYNCAPI_CLI:-asyncapi} \
 				npm run --silent generate:module 2>&1 | grep -v "ExperimentalWarning: CommonJS module" | grep -v "Support for loading ES Module in require()" | grep -v "Use \`node --trace-warnings"); \
 			done \
+		elif [ "${LANGUAGE}" == "python" ]; then \
+			for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
+				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
+				echo "Generating ${EXCHANGE} ${LANGUAGE} WebSocket SDK for module: $$subdir"; \
+				rm -rf ${OUTPUT_DIR}/$$subdir; \
+				(cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
+				$${ASYNCAPI_CLI:-asyncapi} generate fromTemplate \
+				../../../../specs/${EXCHANGE}/asyncapi/$$subdir.yaml \
+				./ \
+				--output ${OUTPUT_DIR}/$$subdir \
+				--force-write \
+				-p moduleName=$${MODULE_NAME:-binance-websocket-client} \
+				-p packageName=$$subdir \
+				-p version=$${VERSION:-0.1.0} \
+				-p author=$${AUTHOR:-openxapi} \
+				2>&1 | grep -v "ExperimentalWarning: CommonJS module" | grep -v "Support for loading ES Module in require()" | grep -v "Use \`node --trace-warnings"); \
+			done \
 		fi \
 	fi
 
@@ -202,6 +219,8 @@ deps:
 
 help:
 	@echo "Available targets:"
+	@echo ""
+	@echo "Build and Test:"
 	@echo "  all              - Format, lint, vet, test, and build"
 	@echo "  build            - Build the binary"
 	@echo "  clean            - Clean build files"
@@ -213,4 +232,25 @@ help:
 	@echo "  test-with-samples - Run tests with sample files"
 	@echo "  coverage         - Generate test coverage report"
 	@echo "  deps             - Download and verify dependencies"
-	@echo "  help             - Show this help message"
+	@echo ""
+	@echo "Specification Generation:"
+	@echo "  generate-spec        - Generate all specs (EXCHANGE=<exchange>)"
+	@echo "  generate-rest-spec   - Generate OpenAPI REST specs (EXCHANGE=<exchange>)"
+	@echo "  generate-ws-spec     - Generate AsyncAPI WebSocket specs (EXCHANGE=<exchange>)"
+	@echo ""
+	@echo "Specification Validation:"
+	@echo "  validate-rest-spec   - Validate OpenAPI specs (EXCHANGE=<exchange>)"
+	@echo "  validate-ws-spec     - Validate AsyncAPI specs (EXCHANGE=<exchange>)"
+	@echo ""
+	@echo "SDK Generation:"
+	@echo "  generate-rest-sdk    - Generate REST SDK (EXCHANGE=<exchange> LANGUAGE=<go|python|js|rust> OUTPUT_DIR=<dir>)"
+	@echo "  generate-ws-sdk      - Generate WebSocket SDK (EXCHANGE=<exchange> LANGUAGE=<go|python> OUTPUT_DIR=<dir>)"
+	@echo ""
+	@echo "Release:"
+	@echo "  release              - Release all SDKs (EXCHANGE=<exchange> VERSION=<version> BASE_OUTPUT_DIR=<dir>)"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make generate-ws-sdk EXCHANGE=binance LANGUAGE=python OUTPUT_DIR=./python-client"
+	@echo "  make generate-ws-sdk EXCHANGE=binance LANGUAGE=go OUTPUT_DIR=./go-client"
+	@echo ""
+	@echo "  help                 - Show this help message"

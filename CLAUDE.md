@@ -549,70 +549,6 @@ docs(readme): update installation instructions
 - `parser.HTTPDocumentParser` - Document parsing interface
 - `generator.Generator` - Specification generation
 
-## Known Issues
-
-### WebSocket UserDataStream Subscribe/Unsubscribe Error (FIXED)
-**Error**: "Not all sent parameters were read; read '0' parameter(s) but was sent '1'"
-**Cause**: The UserDataStream.subscribe and UserDataStream.unsubscribe methods don't accept any parameters, but the generated client was creating an empty params field for authentication.
-**Solution**: Fixed in WebSocketHandlers.js template to skip params creation for userDataStream methods. Template now includes special case handling:
-```javascript
-if (requestMap["method"] == "userDataStream.subscribe" || requestMap["method"] == "userDataStream.unsubscribe") {
-    // These methods require authentication but don't accept any parameters
-    // Skip params creation - authentication is handled at the WebSocket connection level
-}
-```
-
-### Binance WebSocket API Specific Issues
-
-#### umfutures Response Detection Issue (FIXED)
-**Problem**: umfutures WebSocket AsyncAPI specs were missing response messages entirely
-**Root Cause**: umfutures documentation uses `<h2>Response Example</h2>` structure while spot documentation uses `<p><strong>Response:</strong></p>` structure. The umfutures parser was calling the spot parser's `collectElementContent` method which didn't recognize the umfutures response pattern.
-**Solution**: Added umfutures-specific response detection in the `collectElementContent` method:
-- `isUmfuturesResponseElement()` - detects response sections in umfutures HTML structure
-- `extractUmfuturesResponseContent()` - extracts JSON from umfutures response sections  
-- `extractCodeBlockJSON()` - parses JSON from code block elements
-The fix ensures response content is properly detected and converted to JSON for schema generation.
-
-#### PERCENT_PRICE_BY_SIDE Filter
-**Error**: "Filter failure: PERCENT_PRICE_BY_SIDE" (error -1013)
-**Cause**: Order price is too far from current market price
-**Solution**: Fetch current market price and place orders within acceptable percentage range (e.g., 5% from current price)
-
-#### SessionLogon Authentication
-**Error**: "Signature for this request is not valid" (error -1022)
-**Cause**: WebSocket session.logon requires Ed25519 keys with proper signature generation, not HMAC-SHA256
-**Solution**: Implement Ed25519 signature generation for session.logon requests. The test code was incorrectly using HMAC-SHA256 for all key types. Fixed by updating generateSignature function to handle Ed25519 keys:
-
-```go
-case KeyTypeED25519:
-    // Load Ed25519 private key from file and decode (hex or base64)
-    privateKey := ed25519.PrivateKey(privateKeyBytes)
-    signature := ed25519.Sign(privateKey, []byte(queryString))
-    return hex.EncodeToString(signature), nil
-```
-
-The fix handles multiple Ed25519 key formats:
-- PEM-encoded PKCS8 keys (parsed with x509.ParsePKCS8PrivateKey)
-- 32-byte seed format (hex/base64) using ed25519.NewKeyFromSeed
-- 64-byte full key format (hex/base64) used directly as ed25519.PrivateKey
-
-The error "ed25519: bad private key length: 48" indicated a PEM-encoded key that needed proper parsing rather than raw byte decoding.
-
-#### OCO Order Parameters
-**Error**: "Parameter 'aboveTimeInForce' sent when not required" (error -1106)
-**Cause**: LIMIT_MAKER orders don't require timeInForce parameter
-**Solution**: Only send timeInForce for order types that require it (e.g., STOP_LOSS_LIMIT)
-
-#### OCO Order Price Rules
-**Error**: "A limit order in a buy OCO must be below" (error -1165)
-**Cause**: For buy OCO orders, limit price must be below current market price, stop price must be above
-**Solution**: Fetch current market price and set limit price below it, stop price above it
-
-#### UserDataStream Authentication
-**Error**: "WebSocket session not authenticated. Recommendation: use 'session.logon'" (error -1193)
-**Cause**: UserDataStream subscribe/unsubscribe requires session.logon which only works with Ed25519 keys
-**Solution**: Skip UserDataStream tests when using HMAC/RSA keys, or use Ed25519 keys for WebSocket session authentication
-
 ## CRITICAL DEVELOPMENT RULES
 
 ### Spec Generation Principle
@@ -635,17 +571,6 @@ The error "ed25519: bad private key length: 48" indicated a PEM-encoded key that
 5. **Manual documentation fixes ONLY as last resort** - Only manually fix JSON in API documentation samples if parser-based cleaning fails
 6. **Always verify with user** - Double-check any manual documentation fixes before applying them
 7. **Update parser for future issues** - Enhance cleaning logic to handle similar malformed JSON patterns automatically
-
-**Example Cleaning Pipeline:**
-```go
-// Stage 1: During HTML extraction
-text := cleanResponseLine(child.Text())
-
-// Stage 2: Before JSON parsing  
-jsonCode := strings.TrimPrefix(line, "JSON:")
-jsonCode = cleanResponseLine(jsonCode) // Additional cleaning
-responseSchema = p.parseJSONSchema(jsonCode, "response")
-```
 
 **Common Binance JSON Issues to Handle:**
 - Missing commas before comments: `"field": "value" // comment "nextField": "value"`
@@ -680,39 +605,6 @@ responseSchema = p.parseJSONSchema(jsonCode, "response")
 4. **Use pattern matching for classes** - Look for class name patterns (e.g., classes containing "sticky" or "nav") instead of exact matches
 5. **Test across exchanges** - Ensure detection logic works for different exchange documentation formats
 6. **Document patterns** - Clearly document the heuristics used for future maintainability
-
-**Example General Detection Pattern:**
-```go
-// General method header detection using CSS patterns and text heuristics
-func (p *DocumentParser) isRealMethodHeader(headerElement *goquery.Selection, headerText string) bool {
-    // Check if header has anchor class (general method header indicator)
-    hasAnchor := headerElement.HasClass("anchor")
-    
-    // Check for any sticky navigation classes (general pattern, not specific class names)
-    hasStickyNav := false
-    classList, exists := headerElement.Attr("class")
-    if exists {
-        classLower := strings.ToLower(classList)
-        if strings.Contains(classLower, "sticky") || strings.Contains(classLower, "nav") {
-            hasStickyNav = true
-        }
-    }
-    
-    // Real method headers typically have both anchor and navigation classes
-    if hasAnchor && hasStickyNav {
-        if strings.Contains(headerText, ".") || strings.Contains(headerText, "(") {
-            return true
-        }
-    }
-    
-    // Check for method-like patterns in text
-    if strings.Contains(headerText, ".") && !strings.Contains(headerText, " ") {
-        return true
-    }
-    
-    return false
-}
-```
 
 **Common Method Header Patterns:**
 - Method names with dots: `order.place`, `ticker.24hr`
