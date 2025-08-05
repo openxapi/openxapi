@@ -1,45 +1,122 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
-import { PythonModularWebSocketHandlers } from '../components/PythonModularWebSocketHandlers.js';
-import { detectModuleName, getModuleConfig, extractServerInfo } from '../components/PythonModuleRegistry.js';
+import { PythonWebSocketHandlers } from '../components/PythonWebSocketHandlers.js';
+import { extractServerInfo } from '../components/PythonModuleRegistry.js';
+
+/**
+ * Detect module information directly from AsyncAPI spec content
+ */
+function detectModuleFromSpec(asyncapi) {
+  try {
+    const info = asyncapi.info();
+    const title = info.title().toLowerCase();
+    
+    // Extract module name from title
+    if (title.includes('streams')) {
+      if (title.includes('spot')) return 'spot-streams';
+      if (title.includes('usd-m') || title.includes('umfutures')) return 'umfutures-streams';
+      if (title.includes('coin-m') || title.includes('cmfutures')) return 'cmfutures-streams';
+      if (title.includes('options')) return 'options-streams';
+      return 'streams';
+    } else {
+      if (title.includes('spot')) return 'spot';
+      if (title.includes('usd-m') || title.includes('umfutures')) return 'umfutures';
+      if (title.includes('coin-m') || title.includes('cmfutures')) return 'cmfutures';
+      if (title.includes('options')) return 'options';
+      if (title.includes('pmargin') || title.includes('portfolio')) return 'pmargin';
+      return 'api';
+    }
+  } catch (e) {
+    return 'api';
+  }
+}
+
+/**
+ * Get module type (streams vs api) from detected module
+ */
+function getModuleType(detectedModule) {
+  return detectedModule.includes('streams') ? 'streams' : 'api';
+}
+
+/**
+ * Determine authentication capabilities from AsyncAPI operations
+ */
+function getAuthCapabilities(asyncapi) {
+  try {
+    const operations = asyncapi.operations();
+    if (!operations || typeof operations.all !== 'function') {
+      return { requiresAuth: false, authTypes: [] };
+    }
+    
+    const operationsList = operations.all();
+    const authTypes = new Set();
+    let requiresAuth = false;
+    
+    operationsList.forEach(operation => {
+      const operationId = operation.id();
+      if (operationId && (
+        operationId.includes('order') || 
+        operationId.includes('account') || 
+        operationId.includes('session') ||
+        operationId.includes('userDataStream')
+      )) {
+        requiresAuth = true;
+        authTypes.add('API_KEY');
+        if (operationId.includes('order') || operationId.includes('account')) {
+          authTypes.add('SIGNATURE');
+        }
+      }
+    });
+    
+    return { requiresAuth, authTypes: Array.from(authTypes) };
+  } catch (e) {
+    return { requiresAuth: false, authTypes: [] };
+  }
+}
 
 export default function ({ asyncapi, params }) {
-  const packageName = params.packageName || 'spot';
+  const packageName = params.packageName || 'binance-websocket';
   const moduleName = params.moduleName || 'binance-websocket-client';
   const version = params.version || '0.1.0';
   const author = params.author || 'openxapi';
   
-  // Detect the module type using the registry system
-  const detectedModule = detectModuleName(asyncapi, { packageName, moduleName });
-  const moduleConfig = getModuleConfig(detectedModule);
+  // Extract module information directly from AsyncAPI spec
+  const apiInfo = asyncapi.info();
+  const apiTitle = apiInfo.title();
+  const apiDescription = apiInfo.description();
+  const apiVersion = apiInfo.version();
+  
+  // Detect module type from spec content rather than hardcoded detection
+  const detectedModule = detectModuleFromSpec(asyncapi);
+  const moduleType = getModuleType(detectedModule);
+  const authCapabilities = getAuthCapabilities(asyncapi);
   
   // Extract complete server information from AsyncAPI spec
   const serverInfoList = extractServerInfo(asyncapi);
-
-  // Get all channels to generate handler methods
-  const channels = asyncapi.channels();
   
-  // Generate module-specific handlers code
-  const handlersCode = PythonModularWebSocketHandlers({ asyncapi, context: { packageName, moduleName } });
+  // Generate handlers code dynamically from AsyncAPI operations
+  const handlersCode = PythonWebSocketHandlers({ asyncapi, context: { packageName, moduleName, detectedModule, moduleType } });
   const usesModels = handlersCode && handlersCode.includes('models.');
 
   // Set first server as default if available
-  const defaultServerUrl = serverInfoList.length > 0 ? serverInfoList[0].url : moduleConfig.serverConfig.mainnetUrlPattern;
+  const defaultServerUrl = serverInfoList.length > 0 ? serverInfoList[0].url : 'wss://stream.binance.com:9443/ws';
 
   return (
     <File name="client.py">
       <Text>{`"""
-Binance ${packageName.toUpperCase()} WebSocket Client (Module: ${detectedModule})
+${apiTitle}
 
-This module provides an async WebSocket client for the Binance ${packageName.toUpperCase()} API.
-Generated from AsyncAPI specification with complete server configurations.
+${apiDescription || `WebSocket client for ${apiTitle}`}
+Generated from AsyncAPI ${apiVersion} specification.
 
-Module: ${detectedModule}
+API Title: ${apiTitle}
+API Version: ${apiVersion}
+Module Type: ${moduleType} (${detectedModule})
 Available Servers: ${serverInfoList.length}
-${serverInfoList.map(server => `  - ${server.name}: ${server.url} (${server.title})`).join('\n')}
-Authentication: ${moduleConfig.authentication.supportedTypes.join(', ') || 'None'}
+${serverInfoList.map(server => `  - ${server.name}: ${server.url} (${server.title || server.summary || 'Server'})`).join('\n')}
+Authentication: ${authCapabilities.authTypes.length > 0 ? authCapabilities.authTypes.join(', ') : 'None required'}
 
-Author: ${author}
-Version: ${version}
+Generated by: OpenXAPI (${author})
+Template Version: ${version}
 """
 
 import asyncio
@@ -83,24 +160,28 @@ class AuthenticationError(Exception):
 
 class BinanceWebSocketClient:
     """
-    Async WebSocket client for Binance ${packageName.toUpperCase()} API (Module: ${detectedModule})
+    ${apiTitle} - Async WebSocket Client
     
-    This client provides methods to connect to Binance WebSocket streams,
-    subscribe to various data feeds, and handle real-time events.
+    ${apiDescription || `WebSocket client for ${apiTitle}`}
     
-    Module Configuration:
-    - Target Module: ${detectedModule}
+    This client is generated dynamically from the AsyncAPI specification and provides:
+    ${moduleType === 'streams' ? '- Stream subscription methods (subscribe/unsubscribe)' : '- WebSocket API request methods'}
+    - Connection management with server switching
+    - Authentication support${authCapabilities.requiresAuth ? ' (API Key & Signature)' : ' (Public endpoints)'}
+    - Automatic reconnection and error handling
+    
+    Specification Details:
+    - API Version: ${apiVersion}
+    - Module Type: ${moduleType} (${detectedModule})
     - Available Servers: ${serverInfoList.length}
-${serverInfoList.map(server => `      * ${server.name}: ${server.url} (${server.title})`).join('\n')}
-    - Authentication: ${moduleConfig.authentication.supportedTypes.join(', ') || 'None'}
+${serverInfoList.map(server => `      * ${server.name}: ${server.url}`).join('\n')}
+    - Authentication: ${authCapabilities.authTypes.length > 0 ? authCapabilities.authTypes.join(', ') : 'None required'}
     
-    This client is specifically configured for the ${detectedModule} module and 
-    uses server endpoints extracted directly from the AsyncAPI specification.
+    All methods are generated automatically from AsyncAPI operations.
     """
     
     def __init__(
         self,
-        testnet: bool = False,
         auth: Optional[BinanceAuth] = None,
         auto_reconnect: bool = True,
         ping_interval: int = 20,
@@ -111,14 +192,12 @@ ${serverInfoList.map(server => `      * ${server.name}: ${server.url} (${server.
         Initialize the WebSocket client
         
         Args:
-            testnet: Use testnet environment if True
             auth: Authentication credentials for private endpoints
             auto_reconnect: Automatically reconnect on connection loss
             ping_interval: Ping interval in seconds
             ping_timeout: Ping timeout in seconds
             max_message_size: Maximum WebSocket message size in bytes (default: 10MB)
         """
-        self.testnet = testnet
         self.auth = auth
         self.auto_reconnect = auto_reconnect
         self.ping_interval = ping_interval
@@ -314,10 +393,7 @@ ${serverInfoList.map(server => `            "${server.name}": {
                 connect_uri = uri
             else:
                 # For stream modules, default to single stream connection
-                if '${detectedModule}'.endswith('-streams'):
-                    return await self.connect_to_single_stream()
-                else:
-                    connect_uri = self.base_url
+                ${moduleType === 'streams' ? `return await self.connect_to_single_stream()` : `connect_uri = self.base_url`}
                 
             logger.info(f"Connecting to WebSocket: {connect_uri} (module: {self.module}, server: {self.active_server})")
             
@@ -840,7 +916,7 @@ ${handlersCode}
 async def main():
     """Example usage of the WebSocket client"""
     
-    # Initialize client for ${detectedModule} module
+    # Initialize client for ${apiTitle} (${detectedModule} module)
     client = BinanceWebSocketClient()
     
     # Check server configuration
@@ -849,11 +925,15 @@ async def main():
     print(f"Active server: {server_info['active_server']}")
     print(f"Available servers: {server_info['available_servers']}")
     
-    # Switch to a different server if needed
-    # available_servers = client.get_available_servers()
-    # if len(available_servers) > 1:
-    #     client.switch_server(available_servers[1])
-    #     print(f"Switched to: {client.get_server_info()['active_server']}")
+    # Switch to a different server if needed (e.g., testnet)
+    available_servers = client.get_available_servers()
+    print(f"Available servers: {available_servers}")
+    
+    # Example: Switch to testnet server if available
+    testnet_servers = [s for s in available_servers if 'testnet' in s.lower()]
+    if testnet_servers:
+        client.switch_server(testnet_servers[0])
+        print(f"Switched to testnet: {client.get_server_info()['active_server']}")
     
     # Set up handlers
     async def handle_ticker(data):
@@ -882,49 +962,45 @@ async def main():
         await asyncio.sleep(5)
         await client2.disconnect()
     
-    # Example 3: Module-specific usage
-    ${detectedModule.includes('stream') ? `
-    # Stream module examples (${detectedModule})
+    # Example 3: Spec-specific usage based on ${apiTitle}
+    ${moduleType === 'streams' ? `
+    # Stream module usage (${detectedModule})
     client3 = BinanceWebSocketClient()
     
     async with client3:
         # Connect to single stream endpoint  
         await client3.connect_to_single_stream()
         
-        # Simple subscribe/unsubscribe like Go SDK
-        ${detectedModule === 'spot-streams' ? `
-        # Spot streams - market data
+        # Simple subscribe/unsubscribe (methods generated from AsyncAPI operations)
+        ${detectedModule.includes('spot') ? `
+        # Market data streams for spot trading
         await client3.subscribe(['btcusdt@trade', 'btcusdt@ticker'])
-        await client3.subscribe(['btcusdt@kline_1m', 'ethusdt@depth5'])
-        
-        # Unsubscribe from some streams
-        await client3.unsubscribe(['btcusdt@trade'])` : `
-        # Futures streams - derivatives data  
+        await client3.subscribe(['btcusdt@kline_1m', 'ethusdt@depth5'])` : detectedModule.includes('futures') ? `
+        # Derivatives streams for futures trading
         await client3.subscribe(['btcusdt@trade', 'btcusdt@markPrice'])
-        await client3.subscribe(['btcusdt@fundingRate', 'btcusdt@forceOrder'])
+        await client3.subscribe(['btcusdt@fundingRate', 'btcusdt@forceOrder'])` : `
+        # Generic streams (check AsyncAPI spec for available stream names)
+        await client3.subscribe(['symbol@trade', 'symbol@ticker'])`}
         
-        # Unsubscribe from some streams
-        await client3.unsubscribe(['btcusdt@trade'])`}
+        # Unsubscribe from streams
+        await client3.unsubscribe(['btcusdt@trade'])
         
         await asyncio.sleep(10)` : `
-    # API module examples (${detectedModule})
+    # API module usage (${detectedModule})
     client3 = BinanceWebSocketClient()
     
     async with client3:
         # Connect to WebSocket API endpoint
         await client3.connect()
         
-        # Module-specific API methods
-        ${detectedModule === 'spot' ? `
-        # Spot WebSocket API methods
+        # All API methods are generated from AsyncAPI operations
+        # Common methods (if available in spec):
         # ping_response = await client3.ping()
         # time_response = await client3.time()
         # exchange_info = await client3.exchange_info()
-        # ticker_response = await client3.ticker(symbol="BTCUSDT")` : `
-        # ${detectedModule.toUpperCase()} WebSocket API methods
-        # ping_response = await client3.ping() 
-        # time_response = await client3.time()
-        # exchange_info = await client3.exchange_info()`}
+        
+        # Check the generated client code for available methods
+        # based on your specific AsyncAPI specification
         
         # Set up event handlers for real-time data
         client3.set_handler('*', handle_ticker)

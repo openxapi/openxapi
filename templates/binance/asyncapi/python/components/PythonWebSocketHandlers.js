@@ -1,21 +1,32 @@
 // import { detectModuleName } from '../../go/components/ModuleRegistry.js'; // Removed to fix import issue
 
 /**
- * Detect module name from AsyncAPI specification
+ * Detect module name from AsyncAPI specification or context
  */
 function detectModuleName(asyncapi, context = {}) {
   try {
+    // If provided in context, use it
+    if (context.detectedModule) {
+      return context.detectedModule;
+    }
+    
     // Method 1: Check asyncapi info title
     const info = asyncapi.info();
     if (info && typeof info.title === 'function') {
-      const title = info.title();
-      if (title) {
-        const titleLower = title.toLowerCase();
-        if (titleLower.includes('spot')) return 'spot';
-        if (titleLower.includes('umfutures') || titleLower.includes('usd-m')) return 'umfutures';
-        if (titleLower.includes('cmfutures') || titleLower.includes('coin-m')) return 'cmfutures';
-        if (titleLower.includes('options')) return 'options';
-        if (titleLower.includes('pmargin') || titleLower.includes('portfolio')) return 'pmargin';
+      const title = info.title().toLowerCase();
+      if (title.includes('streams')) {
+        if (title.includes('spot')) return 'spot-streams';
+        if (title.includes('usd-m') || title.includes('umfutures')) return 'umfutures-streams';
+        if (title.includes('coin-m') || title.includes('cmfutures')) return 'cmfutures-streams';
+        if (title.includes('options')) return 'options-streams';
+        return 'streams';
+      } else {
+        if (title.includes('spot')) return 'spot';
+        if (title.includes('usd-m') || title.includes('umfutures')) return 'umfutures';
+        if (title.includes('coin-m') || title.includes('cmfutures')) return 'cmfutures';
+        if (title.includes('options')) return 'options';
+        if (title.includes('pmargin') || title.includes('portfolio')) return 'pmargin';
+        return 'api';
       }
     }
     
@@ -30,10 +41,10 @@ function detectModuleName(asyncapi, context = {}) {
     }
     
     // Method 3: Fallback to default
-    return 'spot';
+    return 'api';
   } catch (error) {
     console.warn('Error detecting module name:', error.message);
-    return 'spot';
+    return 'api';
   }
 }
 
@@ -51,40 +62,179 @@ export function PythonWebSocketHandlers({ asyncapi, context }) {
   
   let methodsCode = [];
   
-  // Try alternative approach using channels to generate API methods
+  // Parse operations from AsyncAPI spec dynamically
   try {
-    const channels = asyncapi.channels();
-    if (channels && typeof channels.all === 'function') {
-      const channelsList = channels.all();
+    const operations = asyncapi.operations();
+    if (operations && typeof operations.all === 'function') {
+      const operationsList = operations.all();
       
-      channelsList.forEach((channel) => {
-        const messages = channel.messages();
-        if (messages && typeof messages.all === 'function') {
-          messages.all().forEach(message => {
-            const messageId = message.id();
-            if (messageId && messageId.includes('Request')) {
-              const apiMethod = generatePythonApiMethodFromMessage(message, asyncapi, detectedModule);
-              if (apiMethod) {
-                methodsCode.push(apiMethod);
-              }
-            }
-          });
+      operationsList.forEach((operation) => {
+        const operationId = operation.id();
+        const action = operation.action();
+        
+        // Handle send operations (API methods like sendPing -> ping())
+        if (action === 'send') {
+          const apiMethod = generatePythonApiMethodFromOperation(operation, asyncapi, detectedModule);
+          if (apiMethod) {
+            methodsCode.push(apiMethod);
+          }
+        }
+        
+        // Handle subscription operations (subscribe/unsubscribe)
+        if (operationId && (operationId.includes('subscribe') || operationId.includes('unsubscribe'))) {
+          const subscriptionMethod = generateSubscriptionMethodFromOperation(operation, detectedModule);
+          if (subscriptionMethod) {
+            methodsCode.push(subscriptionMethod);
+          }
         }
       });
     }
   } catch (e) {
-    // Fallback to basic methods if parsing fails
+    console.warn('Error parsing AsyncAPI operations:', e.message);
+    // Fallback to basic subscription methods if parsing fails
+    const subscriptionMethods = generateSubscriptionMethods(detectedModule);
+    methodsCode.push(subscriptionMethods);
   }
 
-  // Generate subscription methods
-  const subscriptionMethods = generateSubscriptionMethods(detectedModule);
-  methodsCode.push(subscriptionMethods);
+  // If no operations found, add basic methods
+  if (methodsCode.length === 0) {
+    const subscriptionMethods = generateSubscriptionMethods(detectedModule);
+    methodsCode.push(subscriptionMethods);
+  }
 
   return methodsCode.join('\n\n');
 }
 
 /**
- * Generate a Python API request method from a message (alternative approach)
+ * Generate a Python API request method from an AsyncAPI operation (dynamic parsing)
+ */
+function generatePythonApiMethodFromOperation(operation, asyncapi, module) {
+  try {
+    const operationId = operation.id();
+    
+    // Extract method name from operation ID (e.g., "sendPing" -> "ping")
+    let methodName = null;
+    if (operationId && operationId.startsWith('send')) {
+      // Remove 'send' prefix first (e.g., "sendTickerPrice" -> "TickerPrice")
+      let rawMethodName = operationId.replace(/^send/, '');
+      // Handle camelCase conversion including numbers (e.g., "Ticker24hr" -> "ticker.24hr")
+      methodName = rawMethodName
+        .replace(/([A-Z])/g, '.$1')           // Add dots before capitals
+        .replace(/([0-9]+)/g, '.$1')          // Add dots before numbers
+        .toLowerCase()
+        .replace(/^\./, '');                  // Remove leading dot
+    }
+    
+    if (!methodName) {
+      return null;
+    }
+
+    // Convert method name to Python function name (e.g., "account.commission" -> "account_commission")
+    const pythonMethodName = methodName.replace(/\./g, '_');
+    
+    // Extract request message from operation
+    const messages = operation.messages();
+    if (!messages || typeof messages.all !== 'function') {
+      return null;
+    }
+    
+    const messagesList = messages.all();
+    const requestMessage = messagesList.find(msg => {
+      const msgId = msg.id && typeof msg.id === 'function' ? msg.id() : msg.id;
+      return msgId && (msgId.includes('Request') || msgId.includes('request'));
+    });
+    
+    if (!requestMessage) {
+      return null;
+    }
+    
+    const requestMessageId = requestMessage.id && typeof requestMessage.id === 'function' ? requestMessage.id() : requestMessage.id;
+    
+    // Use the Go SDK-compatible method name mapping
+    const realApiMethodName = getMethodNameFromMessageId(requestMessageId);
+    
+    // Get request and response model names
+    const requestModelName = getModelClassName(requestMessageId);
+    const responseModelName = getResponseModelName(requestMessageId);
+    
+    // Determine authentication type for this method
+    const authType = getAuthType(realApiMethodName);
+    const requiresAuth = authType !== AuthType.NONE;
+    
+    return generateMethodImplementation(pythonMethodName, realApiMethodName, requestModelName, responseModelName, requiresAuth, authType);
+  } catch (e) {
+    console.warn('Error generating method from operation:', e.message);
+    return null;
+  }
+}
+
+/**
+ * Generate subscription method from AsyncAPI operation (dynamic parsing)
+ */
+function generateSubscriptionMethodFromOperation(operation, module) {
+  try {
+    const operationId = operation.id();
+    
+    if (!operationId) {
+      return null;
+    }
+    
+    // Extract method type (subscribe/unsubscribe)
+    let methodType = null;
+    if (operationId.toLowerCase().includes('subscribe') && !operationId.toLowerCase().includes('unsubscribe')) {
+      methodType = 'subscribe';
+    } else if (operationId.toLowerCase().includes('unsubscribe')) {
+      methodType = 'unsubscribe';
+    }
+    
+    if (!methodType) {
+      return null;
+    }
+    
+    // Generate subscription method
+    return generateDynamicSubscriptionMethod(methodType, operationId);
+  } catch (e) {
+    console.warn('Error generating subscription method from operation:', e.message);
+    return null;
+  }
+}
+
+/**
+ * Generate dynamic subscription method based on operation
+ */
+function generateDynamicSubscriptionMethod(methodType, operationId) {
+  const isSubscribe = methodType === 'subscribe';
+  const methodName = isSubscribe ? 'subscribe' : 'unsubscribe';
+  const methodVerb = isSubscribe ? 'SUBSCRIBE' : 'UNSUBSCRIBE';
+  const description = isSubscribe ? 'Subscribe to' : 'Unsubscribe from';
+  
+  return `    async def ${methodName}(self, streams: List[str], *, id: Optional[Union[int, str]] = None) -> None:
+        """
+        ${description} market data streams (generated from ${operationId})
+        
+        Args:
+            streams: List of stream names to ${methodName}
+            id: Optional request ID (auto-generated if not provided)
+            
+        Example:
+            await client.${methodName}(['btcusdt@trade', 'ethusdt@ticker'])
+        """
+        if not self._is_connected:
+            raise WebSocketError("WebSocket not connected")
+            
+        request_id = id if id is not None else self._generate_request_id()
+        
+        message = {
+            "method": "${methodVerb}",
+            "params": streams,
+            "id": request_id
+        }
+        
+        await self._send_message(message)`;
+}
+
+/**
+ * Generate a Python API request method from a message (fallback approach)
  */
 function generatePythonApiMethodFromMessage(message, asyncapi, module) {
   const messageId = message.id();
@@ -92,7 +242,7 @@ function generatePythonApiMethodFromMessage(message, asyncapi, module) {
     return null;
   }
   
-  // Use the reliable mapping approach
+  // Use the reliable mapping approach as fallback
   const methodName = getMethodNameFromMessageId(messageId);
   if (!methodName) {
     return null;
@@ -112,148 +262,96 @@ function generatePythonApiMethodFromMessage(message, asyncapi, module) {
   return generateMethodImplementation(pythonMethodName, methodName, requestModelName, responseModelName, requiresAuth, authType);
 }
 
-/**
- * Generate a Python API request method for a send operation
- */
-function generatePythonApiMethod(operation, asyncapi, module) {
-  const operationId = operation.id();
-  
-  // Extract the actual method name from the operation
-  const sendMessage = operation.messages().find(msg => {
-    const msgId = msg.id();
-    return msgId && msgId.includes('Request');
-  });
-  
-  if (!sendMessage) {
-    return null;
-  }
-
-  const methodName = extractMethodNameFromMessage(sendMessage);
-  if (!methodName) {
-    return null;
-  }
-
-  // Convert method name to Python function name (e.g., "order.place" -> "order_place")
-  const pythonMethodName = methodName.replace(/\./g, '_').toLowerCase();
-  
-  // Get request and response model names
-  const requestModelName = getModelClassName(sendMessage.id());
-  const responseModelName = getResponseModelName(sendMessage.id());
-  
-  // Determine authentication type for this method
-  const authType = getAuthType(methodName);
-  const requiresAuth = authType !== AuthType.NONE;
-  
-  return generateMethodImplementation(pythonMethodName, methodName, requestModelName, responseModelName, requiresAuth, authType);
-}
 
 /**
- * Get method name from message ID using a simple mapping approach
- * This is more reliable than trying to parse the AsyncAPI schema directly
+ * Get method name from message ID using Go SDK patterns (matches working implementation)
+ * Only ticker methods use dot notation, everything else uses camelCase
  */
 function getMethodNameFromMessageId(messageId) {
-  // Simple mapping from message ID to method name
-  const methodMap = {
-    'pingRequest': 'ping',
-    'timeRequest': 'time',
-    'exchangeInfoRequest': 'exchangeInfo',
-    'orderPlaceRequest': 'order.place',
-    'orderTestRequest': 'order.test',
-    'orderStatusRequest': 'order.status',
-    'orderCancelRequest': 'order.cancel',
-    'openOrdersStatusRequest': 'openOrders.status',
-    'openOrdersCancelAllRequest': 'openOrders.cancelAll',
-    'allOrdersRequest': 'allOrders',
-    'myTradesRequest': 'myTrades',
-    'tickerRequest': 'ticker',
-    'ticker24hrRequest': 'ticker.24hr',
-    'tickerPriceRequest': 'ticker.price',
-    'tickerBookRequest': 'ticker.book',
-    'tickerTradingDayRequest': 'ticker.tradingDay',
-    'depthRequest': 'depth',
-    'klinesRequest': 'klines',
-    'uiKlinesRequest': 'uiKlines',
-    'avgPriceRequest': 'avgPrice',
-    'tradesAggregateRequest': 'trades.aggregate',
-    'tradesHistoricalRequest': 'trades.historical',
-    'tradesRecentRequest': 'trades.recent',
-    'sessionLogonRequest': 'session.logon',
-    'sessionStatusRequest': 'session.status',
-    'sessionLogoutRequest': 'session.logout',
-    'userDataStreamStartRequest': 'userDataStream.start',
-    'userDataStreamPingRequest': 'userDataStream.ping',
-    'userDataStreamStopRequest': 'userDataStream.stop',
-    'userDataStreamSubscribeRequest': 'userDataStream.subscribe',
-    'userDataStreamUnsubscribeRequest': 'userDataStream.unsubscribe',
-    'accountStatusRequest': 'account.status',
-    'accountCommissionRequest': 'account.commission',
-    'accountRateLimitsOrdersRequest': 'account.rateLimits.orders',
-    'myAllocationsRequest': 'myAllocations',
-    'myPreventedMatchesRequest': 'myPreventedMatches',
-    'orderListPlaceOcoRequest': 'orderList.place.oco',
-    'orderListPlaceOtoRequest': 'orderList.place.oto',
-    'orderListPlaceOtocoRequest': 'orderList.place.otoco',
-    'orderListPlaceRequest': 'orderList.place',
-    'orderListCancelRequest': 'orderList.cancel',
-    'orderListStatusRequest': 'orderList.status',
-    'allOrderListsRequest': 'allOrderLists',
-    'openOrderListsStatusRequest': 'openOrderLists.status',
-    'sorOrderTestRequest': 'sor.order.test',
-    'sorOrderPlaceRequest': 'sor.order.place',
-    'orderAmendKeepPriorityRequest': 'order.amendKeepPriority',
-    'orderAmendmentsRequest': 'order.amendments',
-    'orderCancelReplaceRequest': 'order.cancelReplace'
-  };
-  
-  return methodMap[messageId] || null;
-}
-
-/**
- * Extract the actual method name from a message (legacy approach - not currently used)
- */
-function extractMethodNameFromMessage(message) {
-  try {
-    const payload = message.payload();
-    if (!payload || !payload.properties) {
-      return null;
-    }
-    
-    let properties;
-    if (typeof payload.properties === 'function') {
-      properties = payload.properties();
-    } else {
-      properties = payload.properties;
-    }
-    
-    // Get the method property
-    let methodProp;
-    if (properties && typeof properties.get === 'function') {
-      methodProp = properties.get('method');
-    } else if (properties && properties.method) {
-      methodProp = properties.method;
-    }
-    
-    if (!methodProp) {
-      return null;
-    }
-    
-    // Get the const value
-    let constValue;
-    if (typeof methodProp.const === 'function') {
-      constValue = methodProp.const();
-    } else if (methodProp.const !== undefined) {
-      constValue = methodProp.const;
-    } else if (methodProp.value !== undefined) {
-      constValue = methodProp.value;
-    } else if (methodProp.default !== undefined) {
-      constValue = methodProp.default;
-    }
-    
-    return constValue;
-  } catch (e) {
+  if (!messageId) {
     return null;
   }
+  
+  // Remove 'Request' suffix to get the base method name
+  let methodName = messageId.replace(/Request$/, '');
+  
+  // Direct mapping to match Go SDK exactly (which works correctly)
+  const goSdkMethodNames = {
+    // Basic methods (camelCase)
+    'ping': 'ping',
+    'time': 'time',
+    'exchangeInfo': 'exchangeInfo',
+    'uiKlines': 'uiKlines',
+    'avgPrice': 'avgPrice',
+    'depth': 'depth',
+    'klines': 'klines',
+    
+    // Account methods (camelCase)
+    'accountStatus': 'account.status',
+    'accountCommission': 'account.commission', 
+    'accountRateLimitsOrders': 'account.rateLimits.orders',
+    
+    // Order methods (dot notation)
+    'orderPlace': 'order.place',
+    'orderTest': 'order.test',
+    'orderStatus': 'order.status',
+    'orderCancel': 'order.cancel',
+    'orderCancelReplace': 'order.cancelReplace',
+    'orderAmendKeepPriority': 'order.amendKeepPriority',
+    'orderAmendments': 'order.amendments',
+    
+    // Order list methods (dot notation)
+    'orderListPlace': 'orderList.place',
+    'orderListPlaceOco': 'orderList.place.oco',
+    'orderListPlaceOto': 'orderList.place.oto',
+    'orderListPlaceOtoco': 'orderList.place.otoco',
+    'orderListCancel': 'orderList.cancel',
+    'orderListStatus': 'orderList.status',
+    'allOrderLists': 'allOrderLists',
+    'openOrderListsStatus': 'openOrderLists.status',
+    
+    // Open orders methods (dot notation)
+    'openOrdersStatus': 'openOrders.status',
+    'openOrdersCancelAll': 'openOrders.cancelAll',
+    'allOrders': 'allOrders',
+    
+    // Trading methods (camelCase)
+    'myTrades': 'myTrades',
+    'myAllocations': 'myAllocations',
+    'myPreventedMatches': 'myPreventedMatches',
+    
+    // SOR methods (dot notation)
+    'sorOrderPlace': 'sor.order.place',
+    'sorOrderTest': 'sor.order.test',
+    
+    // Ticker methods (dot notation - matching Go SDK)
+    'ticker': 'ticker',
+    'ticker24hr': 'ticker.24hr',
+    'tickerPrice': 'ticker.price',
+    'tickerBook': 'ticker.book',
+    'tickerTradingDay': 'ticker.tradingDay',
+    
+    // Trades methods (dot notation)
+    'tradesAggregate': 'trades.aggregate',
+    'tradesHistorical': 'trades.historical',
+    'tradesRecent': 'trades.recent',
+    
+    // Session methods (dot notation)
+    'sessionLogon': 'session.logon',
+    'sessionStatus': 'session.status',
+    'sessionLogout': 'session.logout',
+    
+    // User data stream methods (dot notation)
+    'userDataStreamStart': 'userDataStream.start',
+    'userDataStreamPing': 'userDataStream.ping',
+    'userDataStreamStop': 'userDataStream.stop',
+    'userDataStreamSubscribe': 'userDataStream.subscribe',
+    'userDataStreamUnsubscribe': 'userDataStream.unsubscribe'
+  };
+  
+  return goSdkMethodNames[methodName] || methodName;
 }
+
 
 /**
  * Convert message ID to Python model class name
