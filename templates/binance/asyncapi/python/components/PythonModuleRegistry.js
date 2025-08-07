@@ -131,7 +131,7 @@ export function detectModuleName(asyncapi, context = {}) {
     const parts = context.moduleName.split('/');
     const lastPart = parts[parts.length - 1];
     // If it looks like a known module, return it
-    if (['spot', 'umfutures', 'cmfutures', 'pmargin', 'spot-streams', 'umfutures-streams', 'cmfutures-streams', 'options-streams'].includes(lastPart)) {
+    if (['spot', 'umfutures', 'cmfutures', 'pmargin', 'spot-streams', 'umfutures-streams', 'cmfutures-streams', 'options-streams', 'options'].includes(lastPart)) {
       return lastPart;
     }
   }
@@ -168,9 +168,10 @@ export function detectModuleName(asyncapi, context = {}) {
         return url || '';
       }).join(' ');
       
-      if (serverUrls.includes('dstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'cmfutures-streams';
-      if (serverUrls.includes('fstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'umfutures-streams';
-      if (serverUrls.includes('nbstream') && (serverUrls.includes('/stream') || serverUrls.includes('/ws'))) return 'options-streams';
+      if (serverUrls.includes('dstream') && serverUrls.includes('/stream')) return 'cmfutures-streams';
+      if (serverUrls.includes('fstream') && serverUrls.includes('/stream')) return 'umfutures-streams';
+      if (serverUrls.includes('nbstream') && serverUrls.includes('/stream')) return 'options-streams';
+      if (serverUrls.includes('nbstream') && serverUrls.includes('/eoptions/ws')) return 'options';
       if (serverUrls.includes('dstream')) return 'cmfutures';
       if (serverUrls.includes('fstream') && serverUrls.includes('/pm/ws')) return 'pmargin';
       if (serverUrls.includes('fstream')) return 'umfutures';
@@ -301,6 +302,25 @@ registerModule('options-streams', {
   serverConfig: {
     mainnetUrlPattern: 'wss://nbstream.binance.com:9443/ws',
     testnetUrlPattern: 'wss://testnet.binance.vision/ws'
+  }
+});
+
+registerModule('options', {
+  authentication: {
+    supportedTypes: [], // Options user data streams use listen key, no direct auth required
+    defaultType: null
+  },
+  specialMethods: {
+    // Options user data streams use listen key subscription model
+    userDataStream: {
+      requiresAuth: true,
+      useListenKey: true,
+      skipParamsCreation: true
+    }
+  },
+  serverConfig: {
+    mainnetUrlPattern: 'wss://nbstream.binance.com/eoptions/ws',
+    testnetUrlPattern: 'wss://testnet.binance.vision/eoptions/ws'
   }
 });
 

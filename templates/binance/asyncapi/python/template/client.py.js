@@ -1,5 +1,5 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
-import { PythonWebSocketHandlers } from '../components/PythonWebSocketHandlers.js';
+import { PythonGeneralWebSocketHandlers } from '../components/PythonGeneralWebSocketHandlers.js';
 import { extractServerInfo } from '../components/PythonModuleRegistry.js';
 
 /**
@@ -8,21 +8,44 @@ import { extractServerInfo } from '../components/PythonModuleRegistry.js';
 function detectModuleFromSpec(asyncapi) {
   try {
     const info = asyncapi.info();
-    const title = info.title().toLowerCase();
+    const title = info.title() || '';
+    const description = info.description() || '';
+    const titleLower = title.toLowerCase();
+    const descLower = description.toLowerCase();
     
-    // Extract module name from title
-    if (title.includes('streams')) {
-      if (title.includes('spot')) return 'spot-streams';
-      if (title.includes('usd-m') || title.includes('umfutures')) return 'umfutures-streams';
-      if (title.includes('coin-m') || title.includes('cmfutures')) return 'cmfutures-streams';
-      if (title.includes('options')) return 'options-streams';
+    // Check title and description for module indicators
+    const combined = `${titleLower} ${descLower}`;
+    
+    // Extract module name from title and description
+    if (combined.includes('streams')) {
+      if (combined.includes('spot')) return 'spot-streams';
+      if (combined.includes('usd-m') || combined.includes('umfutures')) return 'umfutures-streams';
+      if (combined.includes('coin-m') || combined.includes('cmfutures')) return 'cmfutures-streams';
+      if (combined.includes('options')) return 'options-streams';
       return 'streams';
     } else {
-      if (title.includes('spot')) return 'spot';
-      if (title.includes('usd-m') || title.includes('umfutures')) return 'umfutures';
-      if (title.includes('coin-m') || title.includes('cmfutures')) return 'cmfutures';
-      if (title.includes('options')) return 'options';
-      if (title.includes('pmargin') || title.includes('portfolio')) return 'pmargin';
+      if (combined.includes('spot')) return 'spot';
+      if (combined.includes('usd-m') || combined.includes('umfutures')) return 'umfutures';
+      if (combined.includes('coin-m') || combined.includes('cmfutures')) return 'cmfutures';
+      if (combined.includes('options')) return 'options';
+      if (combined.includes('pmargin') || combined.includes('portfolio')) return 'pmargin';
+      
+      // Check servers for module detection
+      const servers = asyncapi.servers();
+      if (servers) {
+        const serverMap = typeof servers.all === 'function' ? servers.all() : servers;
+        const serverUrls = Object.values(serverMap).map(server => {
+          const url = typeof server.url === 'function' ? server.url() : server.url;
+          return url || '';
+        }).join(' ');
+        
+        if (serverUrls.includes('nbstream') && serverUrls.includes('/eoptions/ws')) return 'options';
+        if (serverUrls.includes('fstream') && serverUrls.includes('/pm/ws')) return 'pmargin';
+        if (serverUrls.includes('dstream')) return 'cmfutures';
+        if (serverUrls.includes('fstream')) return 'umfutures';
+        if (serverUrls.includes('ws-api.binance')) return 'spot';
+      }
+      
       return 'api';
     }
   } catch (e) {
@@ -31,10 +54,39 @@ function detectModuleFromSpec(asyncapi) {
 }
 
 /**
- * Get module type (streams vs api) from detected module
+ * Get module type (streams vs api) from detected module and operations
  */
-function getModuleType(detectedModule) {
-  return detectedModule.includes('streams') ? 'streams' : 'api';
+function getModuleType(detectedModule, asyncapi) {
+  // Stream modules based on name
+  if (detectedModule.includes('streams')) {
+    return 'streams';
+  }
+  
+  // Check operations for event-only modules (like options)
+  try {
+    const operations = asyncapi.operations();
+    if (operations) {
+      const operationIds = Object.keys(operations);
+      
+      // Check if it has send operations (API module)
+      const hasSendOperations = operationIds.some(opId => 
+        opId.toLowerCase().startsWith('send')
+      );
+      
+      // If it only has receive operations without send operations, treat as streams (event-only)
+      const hasReceiveOperations = operationIds.some(opId => 
+        opId.toLowerCase().includes('receive')
+      );
+      
+      if (hasReceiveOperations && !hasSendOperations) {
+        return 'streams';  // Event-only modules behave like streams
+      }
+    }
+  } catch (e) {
+    // Ignore errors
+  }
+  
+  return 'api';
 }
 
 /**
@@ -44,33 +96,172 @@ function getAuthCapabilities(asyncapi) {
   try {
     const operations = asyncapi.operations();
     if (!operations || typeof operations.all !== 'function') {
-      return { requiresAuth: false, authTypes: [] };
+      return { requiresAuth: false, authTypes: [], securitySchemes: {} };
     }
     
     const operationsList = operations.all();
     const authTypes = new Set();
+    const securitySchemes = {};
     let requiresAuth = false;
     
+    // Collect security requirements from operations
     operationsList.forEach(operation => {
-      const operationId = operation.id();
-      if (operationId && (
-        operationId.includes('order') || 
-        operationId.includes('account') || 
-        operationId.includes('session') ||
-        operationId.includes('userDataStream')
-      )) {
+      const security = operation.security();
+      if (security && security.length > 0) {
         requiresAuth = true;
-        authTypes.add('API_KEY');
-        if (operationId.includes('order') || operationId.includes('account')) {
-          authTypes.add('SIGNATURE');
-        }
+        security.forEach(secReq => {
+          // Each security requirement is an array of SecurityRequirement objects
+          if (secReq && secReq.all) {
+            secReq.all().forEach(sr => {
+              const scheme = sr.scheme();
+              if (scheme) {
+                const schemeName = scheme.id();
+                authTypes.add(schemeName);
+                // Store scheme details
+                securitySchemes[schemeName] = {
+                  type: scheme.type(),
+                  description: scheme.description(),
+                  in: scheme.in()
+                };
+              }
+            });
+          }
+        });
       }
     });
     
-    return { requiresAuth, authTypes: Array.from(authTypes) };
+    // Also check components for security schemes
+    const components = asyncapi.components();
+    if (components && components.securitySchemes) {
+      const schemes = components.securitySchemes();
+      if (schemes) {
+        Object.keys(schemes).forEach(schemeName => {
+          const scheme = schemes[schemeName];
+          if (scheme) {
+            securitySchemes[schemeName] = {
+              type: scheme.type ? scheme.type() : 'apiKey',
+              description: scheme.description ? scheme.description() : '',
+              in: scheme.in ? scheme.in() : 'user'
+            };
+          }
+        });
+      }
+    }
+    
+    return { requiresAuth, authTypes: Array.from(authTypes), securitySchemes };
   } catch (e) {
-    return { requiresAuth: false, authTypes: [] };
+    return { requiresAuth: false, authTypes: [], securitySchemes: {} };
   }
+}
+
+/**
+ * Build operation security map from AsyncAPI spec
+ */
+function buildOperationSecurityMap(asyncapi) {
+  const operationSecurityMap = {};
+  
+  try {
+    const operations = asyncapi.operations();
+    
+    // Try different ways to get operations
+    let operationsList = [];
+    if (operations) {
+      if (typeof operations.all === 'function') {
+        operationsList = operations.all();
+      } else if (Array.isArray(operations)) {
+        operationsList = operations;
+      } else if (typeof operations === 'object') {
+        // Convert operations object to array
+        operationsList = Object.keys(operations).map(key => operations[key]);
+      }
+    }
+    
+    if (operationsList && operationsList.length > 0) {
+      
+      operationsList.forEach(operation => {
+        const operationId = operation.id();
+        if (!operationId) return;
+        
+        // Extract method name from operation ID (e.g., 'sendOrderPlace' -> 'order.place')
+        let methodName = '';
+        if (operationId.startsWith('send')) {
+          // For send operations, extract the method name
+          const title = operation.title ? operation.title() : '';
+          if (title && title.includes('Send to ')) {
+            methodName = title.replace('Send to ', '').trim();
+          } else {
+            // Fallback: convert sendOrderPlace -> order.place
+            methodName = operationId.replace('send', '');
+            // Convert camelCase to dot notation
+            methodName = methodName.replace(/([A-Z])/g, '.$1').toLowerCase();
+            if (methodName.startsWith('.')) {
+              methodName = methodName.substring(1);
+            }
+          }
+        }
+        
+        if (methodName) {
+          // Get security requirements for this operation
+          const security = operation.security();
+          if (security && security.length > 0) {
+            // Handle both direct security and $ref format
+            const secReq = security[0];
+            if (secReq) {
+              // Check if it's a $ref format
+              if (secReq['$ref']) {
+                // Extract security scheme name from $ref
+                // Format: #/components/securitySchemes/userData
+                const refPath = secReq['$ref'];
+                const schemeName = refPath.split('/').pop();
+                if (schemeName) {
+                  operationSecurityMap[methodName] = schemeName;
+                }
+              } else if (secReq.all) {
+                // Handle the parsed format
+                const schemes = secReq.all();
+                if (schemes && schemes.length > 0) {
+                  const scheme = schemes[0].scheme();
+                  if (scheme) {
+                    const schemeName = scheme.id();
+                    operationSecurityMap[methodName] = schemeName;
+                  }
+                }
+              } else {
+                // Check for direct scheme names in the security object
+                const schemeNames = Object.keys(secReq);
+                if (schemeNames.length > 0) {
+                  operationSecurityMap[methodName] = schemeNames[0];
+                }
+              }
+            }
+          }
+        }
+        
+        // Also check for x-binance-security-type extension
+        const extensions = operation.extensions();
+        if (extensions && extensions['x-binance-security-type']) {
+          const binanceSecType = extensions['x-binance-security-type'];
+          // Store the original Binance security type as well if available
+          if (methodName && !operationSecurityMap[methodName]) {
+            // Map Binance security types to scheme names
+            if (binanceSecType === 'TRADE') {
+              operationSecurityMap[methodName] = 'trade';
+            } else if (binanceSecType === 'USER_DATA') {
+              operationSecurityMap[methodName] = 'userData';
+            } else if (binanceSecType === 'USER_STREAM') {
+              operationSecurityMap[methodName] = 'userStream';
+            } else if (binanceSecType === 'SIGNED') {
+              operationSecurityMap[methodName] = 'userData';
+            }
+          }
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('Error building operation security map:', e.message);
+  }
+  
+  return operationSecurityMap;
 }
 
 export default function ({ asyncapi, params }) {
@@ -87,15 +278,87 @@ export default function ({ asyncapi, params }) {
   
   // Detect module type from spec content rather than hardcoded detection
   const detectedModule = detectModuleFromSpec(asyncapi);
-  const moduleType = getModuleType(detectedModule);
+  const moduleType = getModuleType(detectedModule, asyncapi);
   const authCapabilities = getAuthCapabilities(asyncapi);
+  // Try to build operation security map from AsyncAPI spec
+  let operationSecurityMap = {};
+  try {
+    operationSecurityMap = buildOperationSecurityMap(asyncapi);
+  } catch (e) {
+    console.warn('Failed to build operation security map from spec:', e.message);
+  }
+  
+  // Always use hardcoded security mappings for Binance spot API
+  // (The AsyncAPI generator doesn't properly pass operation security to templates)
+  if (detectedModule === 'spot' || Object.keys(operationSecurityMap).length === 0) {
+    operationSecurityMap = {
+      // USER_STREAM: userDataStream methods (only apiKey)
+      'userDataStream.start': 'userStream',
+      'userDataStream.ping': 'userStream',
+      'userDataStream.stop': 'userStream',
+      'userDataStream.subscribe': 'userStream',
+      'userDataStream.unsubscribe': 'userStream',
+      
+      // TRADE: Trading and order methods (apiKey + timestamp + signature)
+      'order.place': 'trade',
+      'order.test': 'trade',
+      'order.cancel': 'trade',
+      'order.cancelReplace': 'trade',
+      'order.amend.keepPriority': 'trade',
+      'orderList.place': 'trade',
+      'orderList.place.oco': 'trade',
+      'orderList.place.oto': 'trade',
+      'orderList.place.otoco': 'trade',
+      'orderList.cancel': 'trade',
+      'openOrders.cancelAll': 'trade',
+      'sor.order.place': 'trade',
+      'sor.order.test': 'trade',
+      
+      // USER_DATA: Account information methods (apiKey + timestamp + signature)
+      'account.status': 'userData',
+      'account.commission': 'userData',
+      'account.rateLimits.orders': 'userData',
+      'order.status': 'userData',
+      'orderList.status': 'userData',
+      'openOrders.status': 'userData',
+      'openOrderLists.status': 'userData',
+      'allOrders': 'userData',
+      'allOrderLists': 'userData',
+      'myTrades': 'userData',
+      'myAllocations': 'userData',
+      'myPreventedMatches': 'userData',
+      'order.amendments': 'userData',
+      
+      // SIGNED: Session methods (apiKey + timestamp + signature)
+      'session.logon': 'userData',
+      'session.status': 'userData',
+      'session.logout': 'userData'
+    };
+  }
   
   // Extract complete server information from AsyncAPI spec
   const serverInfoList = extractServerInfo(asyncapi);
   
   // Generate handlers code dynamically from AsyncAPI operations
-  const handlersCode = PythonWebSocketHandlers({ asyncapi, context: { packageName, moduleName, detectedModule, moduleType } });
+  const handlersCode = PythonGeneralWebSocketHandlers({ asyncapi, context: { packageName, moduleName, detectedModule, moduleType } });
   const usesModels = handlersCode && handlersCode.includes('models.');
+  
+  // Generate operation security map as Python code
+  let operationSecurityMapPython = Object.entries(operationSecurityMap)
+    .map(([key, value]) => `'${key}': '${value}'`)
+    .join(',\n            ');
+  
+  // Ensure we have a non-empty map
+  if (!operationSecurityMapPython) {
+    operationSecurityMapPython = `'order.place': 'trade',
+            'order.test': 'trade',
+            'order.cancel': 'trade',
+            'account.status': 'userData',
+            'account.commission': 'userData',
+            'userDataStream.start': 'userStream',
+            'userDataStream.ping': 'userStream',
+            'session.logon': 'userData'`;
+  }
 
   // Set first server as default if available
   const defaultServerUrl = serverInfoList.length > 0 ? serverInfoList[0].url : 'wss://stream.binance.com:9443/ws';
@@ -113,7 +376,7 @@ API Version: ${apiVersion}
 Module Type: ${moduleType} (${detectedModule})
 Available Servers: ${serverInfoList.length}
 ${serverInfoList.map(server => `  - ${server.name}: ${server.url} (${server.title || server.summary || 'Server'})`).join('\n')}
-Authentication: ${authCapabilities.authTypes.length > 0 ? authCapabilities.authTypes.join(', ') : 'None required'}
+Authentication: ${Object.keys(authCapabilities.securitySchemes).length > 0 ? Object.keys(authCapabilities.securitySchemes).join(', ') : 'None required'}
 
 Generated by: OpenXAPI (${author})
 Template Version: ${version}
@@ -175,7 +438,7 @@ class BinanceWebSocketClient:
     - Module Type: ${moduleType} (${detectedModule})
     - Available Servers: ${serverInfoList.length}
 ${serverInfoList.map(server => `      * ${server.name}: ${server.url}`).join('\n')}
-    - Authentication: ${authCapabilities.authTypes.length > 0 ? authCapabilities.authTypes.join(', ') : 'None required'}
+    - Authentication: ${Object.keys(authCapabilities.securitySchemes).length > 0 ? Object.keys(authCapabilities.securitySchemes).join(', ') : 'None required'}
     
     All methods are generated automatically from AsyncAPI operations.
     """
@@ -243,6 +506,12 @@ ${serverInfoList.map(server => `            "${server.name}": {
         # Background tasks
         self._listen_task: Optional[asyncio.Task] = None
         self._ping_task: Optional[asyncio.Task] = None
+        
+        # Security configuration from AsyncAPI spec
+        self._operation_security_map = {
+            ${operationSecurityMapPython}
+        }
+        self._security_schemes = ${JSON.stringify(authCapabilities.securitySchemes, null, 12).replace(/"/g, "'")}
 
     def get_server_info(self) -> Dict[str, Any]:
         """
@@ -340,8 +609,8 @@ ${serverInfoList.map(server => `            "${server.name}": {
             Dict containing id, method, and params
         """
         if hasattr(request_obj, 'model_dump'):
-            # Pydantic model
-            data = request_obj.model_dump(exclude_none=True)
+            # Pydantic model - use by_alias=True to get API field names
+            data = request_obj.model_dump(by_alias=True, exclude_none=True)
         elif isinstance(request_obj, dict):
             # Dictionary
             data = {k: v for k, v in request_obj.items() if v is not None}
@@ -630,10 +899,35 @@ ${serverInfoList.map(server => `            "${server.name}": {
             logger.error(f"Failed to send message: {e}")
             raise WebSocketError(f"Send failed: {e}")
 
-    def _requires_auth(self, message: Dict[str, Any]) -> bool:
-        """Check if a message requires authentication"""
-        method = message.get('method', '').lower()
-        return any(keyword in method for keyword in ['account', 'order', 'user'])
+    def _get_auth_type(self, method: str) -> Optional[str]:
+        """
+        Determine the authentication type required for a given method
+        by checking the AsyncAPI spec's operation security map
+        
+        Args:
+            method: WebSocket method name
+            
+        Returns:
+            Security scheme name from AsyncAPI spec or None if no auth required
+            
+        Security Schemes (from AsyncAPI spec):
+        - userStream: Only apiKey required (for User Data Stream management)
+        - trade: apiKey, timestamp, signature required (for trading operations)
+        - userData: apiKey, timestamp, signature required (for private user data)
+        """
+        if not method:
+            return None
+            
+        # Check the operation security map from AsyncAPI spec
+        security_scheme = self._operation_security_map.get(method)
+        
+        if security_scheme:
+            # Return the security scheme name from the spec
+            # This will be 'trade', 'userData', or 'userStream'
+            return security_scheme.upper().replace('USERSTREAM', 'USER_STREAM').replace('USERDATA', 'USER_DATA')
+            
+        # No authentication required for public methods
+        return None
 
     def _add_authentication(self, message: Dict[str, Any], auth_type: str = "USER_DATA") -> Dict[str, Any]:
         """
@@ -641,7 +935,7 @@ ${serverInfoList.map(server => `            "${server.name}": {
         
         Args:
             message: Message to authenticate
-            auth_type: Authentication type (USER_STREAM, USER_DATA, TRADE, SIGNED)
+            auth_type: Authentication type from AsyncAPI spec (USER_STREAM, USER_DATA, TRADE, etc.)
         """
         if not self.auth:
             raise AuthenticationError("Authentication required but not provided")
@@ -668,7 +962,8 @@ ${serverInfoList.map(server => `            "${server.name}": {
         # Add API key for authenticated requests (except subscribe/unsubscribe)
         params['apiKey'] = self.auth.api_key
         
-        # Determine if this auth type requires signature (following Go SDK RequiresSignature logic)
+        # Determine if this auth type requires signature based on AsyncAPI spec
+        # userStream only requires apiKey, while trade and userData require full signature
         requires_signature = auth_type in ["TRADE", "USER_DATA", "SIGNED"]
         
         if requires_signature:
@@ -830,19 +1125,12 @@ ${serverInfoList.map(server => `            "${server.name}": {
         if params:
             message["params"] = params
         
-        # Check if authentication is required (basic heuristic)
-        auth_required_methods = [
-            'order.place', 'order.test', 'order.status', 'order.cancel',
-            'openOrders.cancelAll', 'openOrders.status',
-            'allOrders', 'myTrades', 'myAllocations', 'myPreventedMatches',
-            'account.status', 'account.commission', 'account.rateLimits.orders',
-            'userDataStream.start', 'userDataStream.ping', 'userDataStream.stop',
-            'session.logon', 'session.status', 'session.logout'
-        ]
+        # Determine authentication type dynamically based on method name
+        auth_type = self._get_auth_type(method)
         
-        if method in auth_required_methods:
+        if auth_type:
             if self.auth:
-                message = self._add_authentication(message)
+                message = self._add_authentication(message, auth_type)
             else:
                 raise AuthenticationError(f"Authentication required for {method}")
         
