@@ -332,6 +332,7 @@ function generateArrayItemClass(className, itemSchema) {
         extra = "allow"
         validate_assignment = True
         use_enum_values = True
+        populate_by_name = True
 
 
 `;
@@ -377,6 +378,7 @@ function generateRateLimitsClass(parentClassName, itemsSchema) {
         extra = "allow"
         validate_assignment = True
         use_enum_values = True
+        populate_by_name = True
 
 
 `;
@@ -434,6 +436,7 @@ function generateResultClass(parentClassName, resultSchema) {
         extra = "allow"
         validate_assignment = True
         use_enum_values = True
+        populate_by_name = True
 
 
 `;
@@ -514,6 +517,7 @@ function generateParamsClass(parentClassName, paramsSchema) {
         extra = "allow"
         validate_assignment = True
         use_enum_values = True
+        populate_by_name = True
 
 
 `;
@@ -628,6 +632,7 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
         extra = "allow"
         validate_assignment = True
         use_enum_values = True
+        populate_by_name = True
 
     def __str__(self) -> str:
         """String representation of the model"""
@@ -813,6 +818,7 @@ class ${className}(BaseModel):
         extra = "allow"
         validate_assignment = True
         use_enum_values = True
+        populate_by_name = True
 
     def __str__(self) -> str:
         """String representation of the model"""
