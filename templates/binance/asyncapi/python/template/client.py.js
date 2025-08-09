@@ -971,8 +971,15 @@ ${serverInfoList.map(server => `            "${server.name}": {
             if self.auto_reconnect and self._should_reconnect:
                 await self._reconnect()
 
-    async def _handle_message(self, data: Dict[str, Any]) -> None:
+    async def _handle_message(self, data: Union[Dict[str, Any], List[Dict[str, Any]]]) -> None:
         """Handle incoming WebSocket message"""
+        # Handle array responses (when server sends an array of events)
+        if isinstance(data, list):
+            # Array response - handle each item
+            for item in data:
+                await self._handle_single_event(item)
+            return
+        
         # Check for error messages
         if 'error' in data:
             logger.error(f"Received error: {data['error']}")
@@ -991,39 +998,52 @@ ${serverInfoList.map(server => `            "${server.name}": {
             stream_name = data['stream']
             stream_data = data['data']
             
-            # Find appropriate handler
-            for pattern, handler in self._handlers.items():
-                if stream_name.startswith(pattern) or pattern == '*':
-                    try:
-                        await handler(stream_data)
-                    except Exception as e:
-                        logger.error(f"Error in handler for {stream_name}: {e}")
-                    break
-        
-        # Handle single stream data (direct event data)
-        # This includes events with 'e' field and those without (ticker, bookTicker, depth, etc.)
+            # Check if stream_data is an array (some streams return arrays of events)
+            if isinstance(stream_data, list):
+                # Handle array of events
+                for item in stream_data:
+                    await self._handle_stream_event(stream_name, item)
+            else:
+                # Handle single event
+                await self._handle_stream_event(stream_name, stream_data)
         else:
-            # For events with explicit event type
-            event_type = data.get('e')
-            
-            # Track if we found a specific handler
-            handled = False
-            
-            # First, try to find a specific handler matching the event type
-            if event_type and event_type in self._handlers:
-                handler = self._handlers[event_type]
+            # Handle single stream data (direct event data)
+            await self._handle_single_event(data)
+    
+    async def _handle_single_event(self, data: Dict[str, Any]) -> None:
+        """Handle a single event (not wrapped in stream format)"""
+        # Try to get event type from 'e' field (if present)
+        event_type = data.get('e')
+        
+        # Track if we found a specific handler
+        handled = False
+        
+        # First, try to find a specific handler matching the event type
+        if event_type and event_type in self._handlers:
+            handler = self._handlers[event_type]
+            try:
+                await handler(data)
+                handled = True
+            except Exception as e:
+                logger.error(f"Error in handler for event {event_type}: {e}")
+        
+        # If no specific handler was found, use the universal handler
+        if not handled and '*' in self._handlers:
+            try:
+                await self._handlers['*'](data)
+            except Exception as e:
+                logger.error(f"Error in universal handler: {e}")
+    
+    async def _handle_stream_event(self, stream_name: str, data: Dict[str, Any]) -> None:
+        """Handle an event from a specific stream"""
+        # Find appropriate handler based on stream pattern
+        for pattern, handler in self._handlers.items():
+            if stream_name.startswith(pattern) or pattern == '*':
                 try:
                     await handler(data)
-                    handled = True
                 except Exception as e:
-                    logger.error(f"Error in handler for event {event_type}: {e}")
-            
-            # If no specific handler was found, use the universal handler
-            if not handled and '*' in self._handlers:
-                try:
-                    await self._handlers['*'](data)
-                except Exception as e:
-                    logger.error(f"Error in universal handler: {e}")
+                    logger.error(f"Error in handler for {stream_name}: {e}")
+                break
 
     async def _ping_handler(self) -> None:
         """Handle periodic ping to keep connection alive"""
