@@ -711,7 +711,7 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 	if len(content) > 0 {
 		channel.Summary = content[0]
 		logrus.Debugf("Setting channel summary from first content: '%s'", channel.Summary)
-		
+
 		// Extract security type from summary if present (e.g., "Place new order (TRADE)")
 		p.extractSecurityType(channel, channel.Summary)
 	}
@@ -853,11 +853,11 @@ func (p *DocumentParser) extractSecurityType(channel *parser.Channel, text strin
 	// Examples: "Place new order (TRADE)", "Account information (USER_DATA)", "Log in with API key (SIGNED)"
 	securityRegex := regexp.MustCompile(`\((TRADE|USER_DATA|USER_STREAM|MARKET_DATA|SIGNED)\)`)
 	matches := securityRegex.FindStringSubmatch(text)
-	
+
 	if len(matches) > 1 {
 		securityType := matches[1]
 		logrus.Debugf("Found security type '%s' in method: %s", securityType, text)
-		
+
 		// Map Binance security types to camelCase for AsyncAPI
 		var securityName string
 		switch securityType {
@@ -877,35 +877,35 @@ func (p *DocumentParser) extractSecurityType(channel *parser.Channel, text strin
 			logrus.Warnf("Unknown security type: %s", securityType)
 			return
 		}
-		
+
 		// Set security requirement for the channel
 		channel.Security = []map[string][]string{
 			{securityName: []string{}},
 		}
-		
+
 		// Add extension to track original Binance security type
 		if channel.Extensions == nil {
 			channel.Extensions = make(map[string]interface{})
 		}
 		channel.Extensions["x-binance-security-type"] = securityType
-		
+
 		// Initialize SecuritySchemas if needed
 		if channel.SecuritySchemas == nil {
 			channel.SecuritySchemas = make(map[string]*parser.SecuritySchema)
 		}
-		
+
 		// Add the security schema reference
 		channel.SecuritySchemas[securityName] = &parser.SecuritySchema{
 			Type: "apiKey",
 			In:   "user",
 			Name: securityName,
 		}
-		
+
 		logrus.Debugf("Set security for channel %s: %s (%s)", channel.Name, securityName, securityType)
 	} else {
 		// Check for patterns in the method name itself
 		methodLower := strings.ToLower(text)
-		
+
 		// Apply heuristics based on method patterns
 		if strings.Contains(methodLower, "user data stream") || strings.Contains(methodLower, "userDataStream") {
 			channel.Security = []map[string][]string{
@@ -928,7 +928,7 @@ func (p *DocumentParser) extractSecurityType(channel *parser.Channel, text strin
 				channel.Extensions["x-binance-security-type"] = "TRADE"
 				logrus.Debugf("Applied TRADE security based on method name pattern: %s", text)
 			}
-		} else if strings.Contains(methodLower, "account") || strings.Contains(methodLower, "balance") || 
+		} else if strings.Contains(methodLower, "account") || strings.Contains(methodLower, "balance") ||
 			strings.Contains(methodLower, "my trades") || strings.Contains(methodLower, "commission") {
 			// Account-related endpoints require USER_DATA permission
 			channel.Security = []map[string][]string{

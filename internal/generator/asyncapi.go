@@ -79,19 +79,19 @@ type AsyncAPIChannel struct {
 
 // AsyncAPIOperation represents an operation in AsyncAPI 3.0.0
 type AsyncAPIOperation struct {
-	Title        string                  `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                  `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                  `json:"description,omitempty" yaml:"description,omitempty"`
-	Action       string                  `json:"action" yaml:"action"`   // "send" or "receive"
-	Channel      map[string]string       `json:"channel" yaml:"channel"` // $ref to channel
-	Messages     []map[string]string     `json:"messages,omitempty" yaml:"messages,omitempty"`
-	Reply        *AsyncAPIOperationReply `json:"reply,omitempty" yaml:"reply,omitempty"`
-	Tags         []*AsyncAPITag          `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Bindings     map[string]interface{}  `json:"bindings,omitempty" yaml:"bindings,omitempty"`
-	Traits       []interface{}           `json:"traits,omitempty" yaml:"traits,omitempty"`
+	Title        string                   `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string                   `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Action       string                   `json:"action" yaml:"action"`   // "send" or "receive"
+	Channel      map[string]string        `json:"channel" yaml:"channel"` // $ref to channel
+	Messages     []map[string]string      `json:"messages,omitempty" yaml:"messages,omitempty"`
+	Reply        *AsyncAPIOperationReply  `json:"reply,omitempty" yaml:"reply,omitempty"`
+	Tags         []*AsyncAPITag           `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Bindings     map[string]interface{}   `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Traits       []interface{}            `json:"traits,omitempty" yaml:"traits,omitempty"`
 	Security     []map[string]interface{} `json:"security,omitempty" yaml:"security,omitempty"` // Can be requirements or references
-	ExternalDocs *AsyncAPIExternalDocs   `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
-	Extensions   map[string]interface{}  `json:"-" yaml:",inline"`  // For x-* extension fields
+	ExternalDocs *AsyncAPIExternalDocs    `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+	Extensions   map[string]interface{}   `json:"-" yaml:",inline"` // For x-* extension fields
 }
 
 // AsyncAPIOperationReply represents the reply object for request-reply pattern
@@ -176,7 +176,7 @@ type AsyncAPISecurityScheme struct {
 	In          string `json:"in,omitempty" yaml:"in,omitempty"`
 	Scheme      string `json:"scheme,omitempty" yaml:"scheme,omitempty"`
 	// For OAuth2
-	Flows       map[string]interface{} `json:"flows,omitempty" yaml:"flows,omitempty"`
+	Flows map[string]interface{} `json:"flows,omitempty" yaml:"flows,omitempty"`
 }
 
 // AsyncAPITag represents a tag
@@ -473,7 +473,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 			Channel:     map[string]string{"$ref": channelRef},
 			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, messageKey)}},
 		}
-		
+
 		// Add security if defined in the channel
 		// Convert to AsyncAPI 3.0 format with $ref
 		if channel.Security != nil && len(channel.Security) > 0 {
@@ -488,7 +488,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 				}
 			}
 		}
-		
+
 		// Add extensions if defined in the channel
 		if channel.Extensions != nil && len(channel.Extensions) > 0 {
 			operation.Extensions = make(map[string]interface{})
@@ -499,7 +499,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 				}
 			}
 		}
-		
+
 		operations[operationID] = operation
 	}
 
@@ -514,7 +514,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 			Channel:     map[string]string{"$ref": channelRef},
 			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, messageKey)}},
 		}
-		
+
 		// Add security if defined in the channel (receive operations typically inherit the same security)
 		// Convert to AsyncAPI 3.0 format with $ref
 		if channel.Security != nil && len(channel.Security) > 0 {
@@ -529,7 +529,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 				}
 			}
 		}
-		
+
 		// Add extensions if defined in the channel
 		if channel.Extensions != nil && len(channel.Extensions) > 0 {
 			operation.Extensions = make(map[string]interface{})
@@ -540,7 +540,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 				}
 			}
 		}
-		
+
 		operations[operationID] = operation
 	}
 
@@ -708,7 +708,7 @@ func (g *Generator) convertToAsyncAPISecurityScheme(securitySchema *wsParser.Sec
 	default:
 		description = "API key authentication in message parameters"
 	}
-	
+
 	// Use apiKey type with in: user for WebSocket message parameter authentication
 	// Note: AsyncAPI 3.0 apiKey doesn't use 'name' property (that's for httpApiKey)
 	return &AsyncAPISecurityScheme{

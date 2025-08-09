@@ -271,9 +271,11 @@ function generateApiHandlers(moduleName, asyncapi) {
           // Convert WebSocket method name to Python method name
           if (wsMethodName === 'exchangeInfo') {
             pythonMethodName = 'exchange_info';
-          } else if (wsMethodName.includes('.')) {
-            // Handle dot notation like account.commission, ticker.tradingDay
-            const parts = wsMethodName.split('.');
+          } else if (wsMethodName.includes('/') || wsMethodName.includes('.')) {
+            // Handle slash and dot notation like v2/account.balance, account.commission
+            // Replace slashes with underscores and split by dots
+            const cleanedName = wsMethodName.replace(/\//g, '_');
+            const parts = cleanedName.split('.');
             pythonMethodName = parts.map(part => {
               // Convert each part from camelCase to snake_case
               return part.replace(/([A-Z])/g, '_$1').toLowerCase();
@@ -386,11 +388,24 @@ function generateApiHandlers(moduleName, asyncapi) {
  * @returns {string} Response model class name (e.g., 'PingResponse', 'ExchangeInfoResponse', 'AccountCommissionResponse', 'TickerTradingDayResponse')
  */
 function getResponseModelName(wsMethodName) {
-  // Handle special cases and dot notation
+  // Handle special cases, slashes, and dot notation
   let modelName = wsMethodName;
   
+  // Handle slashes specially: v2/account.balance -> V2AccountBalance
+  if (modelName.includes('/')) {
+    const parts = modelName.split('/');
+    modelName = parts.map(part => {
+      // If part contains dots, handle them separately
+      if (part.includes('.')) {
+        const dotParts = part.split('.');
+        return dotParts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+      }
+      // Otherwise just capitalize first letter
+      return part.charAt(0).toUpperCase() + part.slice(1);
+    }).join('');
+  }
   // Convert dot notation to PascalCase: account.commission -> AccountCommission, ticker.tradingDay -> TickerTradingDay
-  if (modelName.includes('.')) {
+  else if (modelName.includes('.')) {
     const parts = modelName.split('.');
     modelName = parts.map(part => {
       // Convert each part to PascalCase (handle camelCase properly)

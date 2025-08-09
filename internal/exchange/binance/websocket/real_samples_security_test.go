@@ -17,9 +17,9 @@ func TestRealSamplesSecurity(t *testing.T) {
 	samplesDir := filepath.Join("..", "..", "..", "..", "samples", "binance", "websocket", "spot")
 
 	testCases := []struct {
-		filename         string
-		url              string
-		expectedMethods  map[string]string // method name -> expected security type
+		filename        string
+		url             string
+		expectedMethods map[string]string // method name -> expected security type
 	}{
 		{
 			filename: "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_general-requests.html",
@@ -34,27 +34,27 @@ func TestRealSamplesSecurity(t *testing.T) {
 			filename: "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_market-data-requests.html",
 			url:      "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/market-data-requests",
 			expectedMethods: map[string]string{
-				"depth":              "", // No security (market data)
-				"trades.recent":      "", // No security (market data)
-				"trades.historical":  "", // No security (market data)
-				"trades.aggregate":   "", // No security (market data)
-				"klines":             "", // No security (market data)
-				"uiKlines":           "", // No security (market data)
-				"avgPrice":           "", // No security (market data)
-				"ticker.24hr":        "", // No security (market data)
-				"ticker.tradingDay":  "", // No security (market data)
-				"ticker":             "", // No security (market data)
-				"ticker.price":       "", // No security (market data)
-				"ticker.book":        "", // No security (market data)
+				"depth":             "", // No security (market data)
+				"trades.recent":     "", // No security (market data)
+				"trades.historical": "", // No security (market data)
+				"trades.aggregate":  "", // No security (market data)
+				"klines":            "", // No security (market data)
+				"uiKlines":          "", // No security (market data)
+				"avgPrice":          "", // No security (market data)
+				"ticker.24hr":       "", // No security (market data)
+				"ticker.tradingDay": "", // No security (market data)
+				"ticker":            "", // No security (market data)
+				"ticker.price":      "", // No security (market data)
+				"ticker.book":       "", // No security (market data)
 			},
 		},
 		{
 			filename: "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_authentication-requests.html",
 			url:      "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/authentication-requests",
 			expectedMethods: map[string]string{
-				"session.logon":   "userData", // SIGNED -> userData
-				"session.status":  "",          // No security (status check)
-				"session.logout":  "",          // No security (logout)
+				"session.logon":  "userData", // SIGNED -> userData
+				"session.status": "",         // No security (status check)
+				"session.logout": "",         // No security (logout)
 			},
 		},
 		{
@@ -80,17 +80,17 @@ func TestRealSamplesSecurity(t *testing.T) {
 			filename: "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_trading-requests.html",
 			url:      "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/trading-requests",
 			expectedMethods: map[string]string{
-				"order.test":            "trade", // TRADE
-				"order.place":           "trade", // TRADE
-				"order.cancel":          "trade", // TRADE
-				"order.cancelReplace":   "trade", // TRADE
+				"order.test":               "trade", // TRADE
+				"order.place":              "trade", // TRADE
+				"order.cancel":             "trade", // TRADE
+				"order.cancelReplace":      "trade", // TRADE
 				"order.amend.keepPriority": "trade", // TRADE
-				"openOrders.cancelAll":  "trade", // TRADE
-				"orderList.place":       "trade", // TRADE
-				"orderList.place.oco":   "trade", // TRADE
-				"orderList.place.oto":   "trade", // TRADE
-				"orderList.place.otoco": "trade", // TRADE
-				"orderList.cancel":      "trade", // TRADE
+				"openOrders.cancelAll":     "trade", // TRADE
+				"orderList.place":          "trade", // TRADE
+				"orderList.place.oco":      "trade", // TRADE
+				"orderList.place.oto":      "trade", // TRADE
+				"orderList.place.otoco":    "trade", // TRADE
+				"orderList.cancel":         "trade", // TRADE
 				// Note: sor.order.test and sor.order.place might not have explicit (TRADE) in title
 			},
 		},
@@ -98,9 +98,9 @@ func TestRealSamplesSecurity(t *testing.T) {
 			filename: "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_user-data-stream-requests.html",
 			url:      "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/user-data-stream-requests",
 			expectedMethods: map[string]string{
-				"userDataStream.start":       "userStream", // USER_STREAM
-				"userDataStream.ping":        "userStream", // USER_STREAM
-				"userDataStream.stop":        "userStream", // USER_STREAM
+				"userDataStream.start": "userStream", // USER_STREAM
+				"userDataStream.ping":  "userStream", // USER_STREAM
+				"userDataStream.stop":  "userStream", // USER_STREAM
 				// Note: subscribe/unsubscribe might not have explicit security in titles
 			},
 		},
@@ -134,9 +134,9 @@ func TestRealSamplesSecurity(t *testing.T) {
 					}
 				}
 				actualMethods[channel.Name] = securityType
-				
+
 				// Log what we found for debugging
-				t.Logf("Found method: %s, Security: %s, Extension: %v", 
+				t.Logf("Found method: %s, Security: %s, Extension: %v",
 					channel.Name, securityType, channel.Extensions["x-binance-security-type"])
 			}
 
@@ -144,7 +144,7 @@ func TestRealSamplesSecurity(t *testing.T) {
 			for methodName, expectedSecurity := range tc.expectedMethods {
 				actualSecurity, found := actualMethods[methodName]
 				assert.True(t, found, "Expected to find method %s in %s", methodName, tc.filename)
-				
+
 				if found {
 					assert.Equal(t, expectedSecurity, actualSecurity,
 						"Method %s in %s should have security '%s' but has '%s'",
@@ -162,45 +162,45 @@ func TestSpecificSecurityTypes(t *testing.T) {
 
 	// Test specific files known to have certain security types
 	testCases := []struct {
-		name            string
-		filename        string
-		methodName      string
-		expectedSecurity string
+		name              string
+		filename          string
+		methodName        string
+		expectedSecurity  string
 		expectedExtension string
 	}{
 		{
-			name:            "TRADE security in order.place",
-			filename:        "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_trading-requests.html",
-			methodName:      "order.place",
-			expectedSecurity: "trade",
+			name:              "TRADE security in order.place",
+			filename:          "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_trading-requests.html",
+			methodName:        "order.place",
+			expectedSecurity:  "trade",
 			expectedExtension: "TRADE",
 		},
 		{
-			name:            "USER_DATA security in account.status",
-			filename:        "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_account-requests.html",
-			methodName:      "account.status",
-			expectedSecurity: "userData",
+			name:              "USER_DATA security in account.status",
+			filename:          "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_account-requests.html",
+			methodName:        "account.status",
+			expectedSecurity:  "userData",
 			expectedExtension: "USER_DATA",
 		},
 		{
-			name:            "USER_STREAM security in userDataStream.start",
-			filename:        "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_user-data-stream-requests.html",
-			methodName:      "userDataStream.start",
-			expectedSecurity: "userStream",
+			name:              "USER_STREAM security in userDataStream.start",
+			filename:          "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_user-data-stream-requests.html",
+			methodName:        "userDataStream.start",
+			expectedSecurity:  "userStream",
 			expectedExtension: "USER_STREAM",
 		},
 		{
-			name:            "SIGNED security in session.logon",
-			filename:        "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_authentication-requests.html",
-			methodName:      "session.logon",
-			expectedSecurity: "userData",
+			name:              "SIGNED security in session.logon",
+			filename:          "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_authentication-requests.html",
+			methodName:        "session.logon",
+			expectedSecurity:  "userData",
 			expectedExtension: "SIGNED",
 		},
 		{
-			name:            "No security in ping",
-			filename:        "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_general-requests.html",
-			methodName:      "ping",
-			expectedSecurity: "",
+			name:              "No security in ping",
+			filename:          "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_general-requests.html",
+			methodName:        "ping",
+			expectedSecurity:  "",
 			expectedExtension: "",
 		},
 	}
@@ -234,23 +234,23 @@ func TestSpecificSecurityTypes(t *testing.T) {
 
 			// Check security
 			if tc.expectedSecurity == "" {
-				assert.Nil(t, targetChannel.Security, 
+				assert.Nil(t, targetChannel.Security,
 					"Method %s should have no security", tc.methodName)
-				assert.Nil(t, targetChannel.Extensions, 
+				assert.Nil(t, targetChannel.Extensions,
 					"Method %s should have no extensions", tc.methodName)
 			} else {
-				require.NotNil(t, targetChannel.Security, 
+				require.NotNil(t, targetChannel.Security,
 					"Method %s should have security", tc.methodName)
-				require.Len(t, targetChannel.Security, 1, 
+				require.Len(t, targetChannel.Security, 1,
 					"Method %s should have exactly one security requirement", tc.methodName)
-				
+
 				// Check the security scheme name
 				assert.Contains(t, targetChannel.Security[0], tc.expectedSecurity,
 					"Method %s should have security scheme '%s'", tc.methodName, tc.expectedSecurity)
-				
+
 				// Check the extension
 				if tc.expectedExtension != "" {
-					require.NotNil(t, targetChannel.Extensions, 
+					require.NotNil(t, targetChannel.Extensions,
 						"Method %s should have extensions", tc.methodName)
 					assert.Equal(t, tc.expectedExtension, targetChannel.Extensions["x-binance-security-type"],
 						"Method %s should have x-binance-security-type '%s'", tc.methodName, tc.expectedExtension)
@@ -267,8 +267,8 @@ func TestSecurityConsistency(t *testing.T) {
 
 	// Files that should have security on most/all methods
 	securedFiles := []struct {
-		filename        string
-		shouldHaveSecurity []string // Methods that must have security
+		filename              string
+		shouldHaveSecurity    []string // Methods that must have security
 		shouldNotHaveSecurity []string // Methods that should not have security
 	}{
 		{
@@ -289,14 +289,14 @@ func TestSecurityConsistency(t *testing.T) {
 			shouldNotHaveSecurity: []string{}, // All account operations require security
 		},
 		{
-			filename: "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_general-requests.html",
+			filename:           "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_general-requests.html",
 			shouldHaveSecurity: []string{},
 			shouldNotHaveSecurity: []string{
 				"ping", "time", "exchangeInfo", // All general requests are public
 			},
 		},
 		{
-			filename: "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_market-data-requests.html",
+			filename:           "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_market-data-requests.html",
 			shouldHaveSecurity: []string{},
 			shouldNotHaveSecurity: []string{
 				"depth", "trades.recent", "klines", "ticker.24hr", // All market data is public
@@ -331,7 +331,7 @@ func TestSecurityConsistency(t *testing.T) {
 			for _, methodName := range tc.shouldHaveSecurity {
 				hasSecurity, found := methodSecurity[methodName]
 				if found {
-					assert.True(t, hasSecurity, 
+					assert.True(t, hasSecurity,
 						"Method %s in %s should have security defined", methodName, tc.filename)
 				}
 			}
@@ -340,7 +340,7 @@ func TestSecurityConsistency(t *testing.T) {
 			for _, methodName := range tc.shouldNotHaveSecurity {
 				hasSecurity, found := methodSecurity[methodName]
 				if found {
-					assert.False(t, hasSecurity, 
+					assert.False(t, hasSecurity,
 						"Method %s in %s should NOT have security defined", methodName, tc.filename)
 				}
 			}
@@ -375,7 +375,7 @@ func TestSecuritySchemaReferences(t *testing.T) {
 				securitySchemes[schemeName] = true
 			}
 		}
-		
+
 		// Also check that SecuritySchemas are set
 		if channel.SecuritySchemas != nil {
 			for schemeName, schema := range channel.SecuritySchemas {
@@ -387,6 +387,6 @@ func TestSecuritySchemaReferences(t *testing.T) {
 	}
 
 	// We expect to find at least 'trade' and 'userData' schemes in trading requests
-	assert.True(t, securitySchemes["trade"] || securitySchemes["userData"], 
+	assert.True(t, securitySchemes["trade"] || securitySchemes["userData"],
 		"Should find 'trade' or 'userData' security schemes in trading requests")
 }

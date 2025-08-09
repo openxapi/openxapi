@@ -14,10 +14,10 @@ func TestConvertToAsyncAPISecurityScheme(t *testing.T) {
 	g := &Generator{}
 
 	testCases := []struct {
-		name               string
-		inputSchema        *wsparser.SecuritySchema
-		expectedType       string
-		expectedIn         string
+		name                 string
+		inputSchema          *wsparser.SecuritySchema
+		expectedType         string
+		expectedIn           string
 		expectedDescContains string
 	}{
 		{
@@ -27,8 +27,8 @@ func TestConvertToAsyncAPISecurityScheme(t *testing.T) {
 				Name: "trade",
 				In:   "user",
 			},
-			expectedType:       "apiKey",
-			expectedIn:         "user",
+			expectedType:         "apiKey",
+			expectedIn:           "user",
 			expectedDescContains: "Trading operations",
 		},
 		{
@@ -38,8 +38,8 @@ func TestConvertToAsyncAPISecurityScheme(t *testing.T) {
 				Name: "userData",
 				In:   "user",
 			},
-			expectedType:       "apiKey",
-			expectedIn:         "user",
+			expectedType:         "apiKey",
+			expectedIn:           "user",
 			expectedDescContains: "Private user data",
 		},
 		{
@@ -49,8 +49,8 @@ func TestConvertToAsyncAPISecurityScheme(t *testing.T) {
 				Name: "userStream",
 				In:   "user",
 			},
-			expectedType:       "apiKey",
-			expectedIn:         "user",
+			expectedType:         "apiKey",
+			expectedIn:           "user",
 			expectedDescContains: "User Data Stream",
 		},
 		{
@@ -60,8 +60,8 @@ func TestConvertToAsyncAPISecurityScheme(t *testing.T) {
 				Name: "customAuth",
 				In:   "user",
 			},
-			expectedType:       "apiKey",
-			expectedIn:         "user",
+			expectedType:         "apiKey",
+			expectedIn:           "user",
 			expectedDescContains: "API key authentication",
 		},
 	}
@@ -73,9 +73,9 @@ func TestConvertToAsyncAPISecurityScheme(t *testing.T) {
 			assert.NotNil(t, result, "Converted schema should not be nil")
 			assert.Equal(t, tc.expectedType, result.Type, "Security type should match")
 			assert.Equal(t, tc.expectedIn, result.In, "Security 'in' should match")
-			assert.Contains(t, result.Description, tc.expectedDescContains, 
+			assert.Contains(t, result.Description, tc.expectedDescContains,
 				"Description should contain expected text")
-			
+
 			// Name should NOT be set for apiKey type in AsyncAPI 3.0
 			assert.Empty(t, result.Name, "Name should not be set for apiKey type")
 		})
@@ -119,7 +119,7 @@ func TestAsyncAPIOperationSecurityGeneration(t *testing.T) {
 	for _, channel := range channels {
 		// Create operations from channel
 		operations := g.convertToAsyncAPIOperations([]wsparser.Channel{channel})
-		
+
 		// Should have both send and receive operations
 		assert.Contains(t, operations, "send"+capitalize(channel.Name),
 			"Should have send operation for %s", channel.Name)
@@ -133,14 +133,14 @@ func TestAsyncAPIOperationSecurityGeneration(t *testing.T) {
 			// Both operations should have security references
 			require.NotNil(t, sendOp.Security, "Send operation should have security for %s", channel.Name)
 			require.NotNil(t, receiveOp.Security, "Receive operation should have security for %s", channel.Name)
-			
+
 			// Check that security is a reference
 			assert.Len(t, sendOp.Security, 1, "Should have one security requirement")
 			assert.Contains(t, sendOp.Security[0], "$ref", "Security should be a reference")
-			
+
 			// Check extension
 			if channel.Extensions != nil {
-				assert.Equal(t, channel.Extensions["x-binance-security-type"], 
+				assert.Equal(t, channel.Extensions["x-binance-security-type"],
 					sendOp.Extensions["x-binance-security-type"],
 					"Extension should be propagated to operation")
 			}
@@ -192,13 +192,13 @@ func TestAsyncAPISecuritySchemesGeneration(t *testing.T) {
 
 	// Generate AsyncAPI spec
 	spec := g.GenerateAsyncAPISpecFromChannels(channels, "Test API", "1.0.0", nil)
-	
+
 	require.NotNil(t, spec, "Generated spec should not be nil")
 	require.NotNil(t, spec.Components, "Components should not be nil")
 	require.NotNil(t, spec.Components.SecuritySchemes, "SecuritySchemes should not be nil")
 
 	// Check that security schemes are correctly generated
-	assert.Contains(t, spec.Components.SecuritySchemes, "trade", 
+	assert.Contains(t, spec.Components.SecuritySchemes, "trade",
 		"Should have trade security scheme")
 	assert.Contains(t, spec.Components.SecuritySchemes, "userData",
 		"Should have userData security scheme")
@@ -224,8 +224,8 @@ func TestAsyncAPISecurityValidation(t *testing.T) {
 
 	// Create a complete channel with security
 	channel := wsparser.Channel{
-		Name:    "order.place",
-		Summary: "Place new order",
+		Name:        "order.place",
+		Summary:     "Place new order",
 		Description: "Place a new order on the exchange",
 		Security: []map[string][]string{
 			{"trade": {}},
@@ -247,10 +247,10 @@ func TestAsyncAPISecurityValidation(t *testing.T) {
 				Payload: &wsparser.Schema{
 					Type: "object",
 					Properties: map[string]*wsparser.Schema{
-						"symbol": {Type: "string"},
-						"side":   {Type: "string"},
-						"type":   {Type: "string"},
-						"price":  {Type: "string"},
+						"symbol":   {Type: "string"},
+						"side":     {Type: "string"},
+						"type":     {Type: "string"},
+						"price":    {Type: "string"},
 						"quantity": {Type: "string"},
 					},
 				},
@@ -271,7 +271,7 @@ func TestAsyncAPISecurityValidation(t *testing.T) {
 
 	// Generate AsyncAPI spec
 	spec := g.GenerateAsyncAPISpecFromChannels([]wsparser.Channel{channel}, "Test API", "1.0.0", nil)
-	
+
 	// Marshal to YAML to verify structure
 	yamlData, err := yaml.Marshal(spec)
 	require.NoError(t, err, "Should marshal spec to YAML")
@@ -287,27 +287,27 @@ func TestAsyncAPISecurityValidation(t *testing.T) {
 	// Verify security schemes exist in components
 	components, ok := parsedSpec["components"].(map[string]interface{})
 	require.True(t, ok, "Should have components")
-	
+
 	securitySchemes, ok := components["securitySchemes"].(map[string]interface{})
 	require.True(t, ok, "Should have securitySchemes in components")
-	
+
 	tradeScheme, ok := securitySchemes["trade"].(map[string]interface{})
 	require.True(t, ok, "Should have trade security scheme")
-	
+
 	assert.Equal(t, "apiKey", tradeScheme["type"], "Trade scheme should have type apiKey")
 	assert.Equal(t, "user", tradeScheme["in"], "Trade scheme should have in: user")
-	
+
 	// Verify operations have security references
 	operations, ok := parsedSpec["operations"].(map[string]interface{})
 	require.True(t, ok, "Should have operations")
-	
+
 	sendOp, ok := operations["sendOrderPlace"].(map[string]interface{})
 	require.True(t, ok, "Should have sendOrderPlace operation")
-	
+
 	security, ok := sendOp["security"].([]interface{})
 	require.True(t, ok, "Should have security array")
 	require.Len(t, security, 1, "Should have one security requirement")
-	
+
 	securityRef, ok := security[0].(map[string]interface{})
 	require.True(t, ok, "Security should be a map")
 	assert.Contains(t, securityRef, "$ref", "Security should have $ref")

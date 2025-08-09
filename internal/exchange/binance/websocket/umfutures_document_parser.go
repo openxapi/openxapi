@@ -392,7 +392,7 @@ func (p *UmfuturesDocumentParser) extractContent(channel *parser.Channel, conten
 	if len(content) > 0 {
 		channel.Summary = content[0]
 		logrus.Debugf("Setting channel summary from first content: '%s'", channel.Summary)
-		
+
 		// Extract security type from summary if present (e.g., "Place new order (TRADE)")
 		p.DocumentParser.extractSecurityType(channel, channel.Summary)
 	}

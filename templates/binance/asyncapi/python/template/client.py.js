@@ -490,6 +490,7 @@ ${serverInfoList.map(server => `            "${server.name}": {
                 "title": "${server.title}",
                 "summary": "${server.summary}",
                 "description": "${server.description}",
+                "variables": ${JSON.stringify(server.variables || {})},
                 "active": False
             }`).join(',\n')}
         }
@@ -571,27 +572,39 @@ ${serverInfoList.map(server => `            "${server.name}": {
         """
         return list(self.servers.keys())
     
-    def get_connection_url(self, custom_path: Optional[str] = None) -> str:
+    def get_connection_url(self, **variables) -> str:
         """
-        Get the connection URL, optionally with a custom path
+        Get the connection URL with resolved server variables
         
         Args:
-            custom_path: Optional custom path to append (for streams)
+            **variables: Server variables to resolve (e.g., streamPath='ws')
             
         Returns:
-            Full WebSocket URL
+            Full WebSocket URL with variables resolved
         """
-        if custom_path:
-            # Handle stream-specific paths
-            base = self.base_url
-            if base.endswith('/ws') or base.endswith('/ws/'):
-                # Replace /ws with custom path
-                base = base.replace('/ws', custom_path)
-            else:
-                # Append custom path
-                base = base.rstrip('/') + custom_path
-            return base
-        return self.base_url
+        base = self.base_url
+        
+        # Get server variables configuration for the active server
+        if self.active_server and self.active_server in self.servers:
+            server_vars = self.servers[self.active_server].get('variables', {})
+            
+            # Process each variable defined in the server configuration
+            for var_name, var_config in server_vars.items():
+                placeholder = f'{{{var_name}}}'
+                
+                if placeholder in base:
+                    # Use provided value, or fall back to default
+                    if var_name in variables:
+                        value = variables[var_name]
+                    elif var_config.get('default'):
+                        value = var_config['default']
+                    else:
+                        # If no value and no default, use first enum value if available
+                        value = var_config['enum'][0] if var_config.get('enum') else ''
+                    
+                    base = base.replace(placeholder, value)
+        
+        return base
 
     def _generate_request_id(self) -> int:
         """Generate a unique request ID"""
@@ -662,7 +675,7 @@ ${serverInfoList.map(server => `            "${server.name}": {
                 connect_uri = uri
             else:
                 # For stream modules, default to single stream connection
-                ${moduleType === 'streams' ? `return await self.connect_to_single_stream()` : `connect_uri = self.base_url`}
+                ${moduleType === 'streams' ? `return await self.connect_to_single_stream()` : `connect_uri = self.get_connection_url()`}
                 
             logger.info(f"Connecting to WebSocket: {connect_uri} (module: {self.module}, server: {self.active_server})")
             
@@ -700,82 +713,24 @@ ${serverInfoList.map(server => `            "${server.name}": {
     async def connect_to_single_stream(self, time_unit: Optional[str] = None) -> None:
         """
         Connect to single stream endpoint with optional timeUnit parameter
-        (For stream modules only)
+        (For stream modules only - uses streamPath='ws' server variable)
         
         Args:
             time_unit: Optional time unit parameter (e.g., "?timeUnit=MICROSECOND")
         """
-        async with self._connection_lock:
-            if self._is_connected:
-                logger.warning("Already connected to WebSocket")
-                return
-                
-            # Build endpoint URL with timeUnit parameter
-            endpoint = "/ws"
-            if time_unit:
-                endpoint += time_unit
-                
-            connect_uri = self.get_connection_url(endpoint)
-            logger.info(f"Connecting to single stream: {connect_uri} (module: {self.module}, server: {self.active_server})")
-            
-            try:
-                self._websocket = await websockets.connect(
-                    connect_uri,
-                    ping_interval=self.ping_interval,
-                    ping_timeout=self.ping_timeout,
-                    max_size=self.max_message_size
-                )
-                self._is_connected = True
-                
-                # Start background tasks
-                self._listen_task = asyncio.create_task(self._listen_for_messages())
-                self._ping_task = asyncio.create_task(self._ping_handler())
-                
-                logger.info("Single stream WebSocket connection established")
-                
-            except Exception as e:
-                logger.error(f"Failed to connect to single stream: {e}")
-                raise WebSocketError(f"Single stream connection failed: {e}")
+        # Use connect_with_variables to handle the template replacement
+        await self.connect_with_variables(streamPath='ws', timeUnit=time_unit)
 
     async def connect_to_combined_stream(self, time_unit: Optional[str] = None) -> None:
         """
         Connect to combined stream endpoint with optional timeUnit parameter
-        (For stream modules only)
+        (For stream modules only - uses streamPath='stream' server variable)
         
         Args:
             time_unit: Optional time unit parameter (e.g., "?timeUnit=MICROSECOND")
         """
-        async with self._connection_lock:
-            if self._is_connected:
-                logger.warning("Already connected to WebSocket")
-                return
-                
-            # Build endpoint URL with timeUnit parameter
-            endpoint = "/stream"
-            if time_unit:
-                endpoint += time_unit
-                
-            connect_uri = self.get_connection_url(endpoint)
-            logger.info(f"Connecting to combined stream: {connect_uri} (module: {self.module}, server: {self.active_server})")
-            
-            try:
-                self._websocket = await websockets.connect(
-                    connect_uri,
-                    ping_interval=self.ping_interval,
-                    ping_timeout=self.ping_timeout,
-                    max_size=self.max_message_size
-                )
-                self._is_connected = True
-                
-                # Start background tasks
-                self._listen_task = asyncio.create_task(self._listen_for_messages())
-                self._ping_task = asyncio.create_task(self._ping_handler())
-                
-                logger.info("Combined stream WebSocket connection established")
-                
-            except Exception as e:
-                logger.error(f"Failed to connect to combined stream: {e}")
-                raise WebSocketError(f"Combined stream connection failed: {e}")
+        # Use connect_with_variables to handle the template replacement
+        await self.connect_with_variables(streamPath='stream', timeUnit=time_unit)
 
     async def connect_to_single_stream_microsecond(self) -> None:
         """
@@ -797,24 +752,27 @@ ${serverInfoList.map(server => `            "${server.name}": {
         
         Args:
             **variables: Server variables to resolve in the URL template
+                        Special handling for 'timeUnit' which becomes a query parameter
             
         Example:
             await client.connect_with_variables(streamPath="ws", listenKey="your_listen_key")
+            await client.connect_with_variables(streamPath="stream")
+            await client.connect_with_variables(streamPath="ws", timeUnit="?timeUnit=MICROSECOND")
         """
         async with self._connection_lock:
             if self._is_connected:
                 logger.warning("Already connected to WebSocket")
                 return
                 
-            # Start with base URL
-            connect_uri = self.base_url
+            # Extract timeUnit if present (it's a query param, not a server variable)
+            time_unit = variables.pop('timeUnit', None)
             
-            # Replace variables in the URL
-            for var_name, var_value in variables.items():
-                template = "{" + var_name + "}"
-                if template in connect_uri:
-                    connect_uri = connect_uri.replace(template, str(var_value))
-                    logger.debug(f"Replaced {template} with {var_value}")
+            # Use get_connection_url to properly resolve server variables with defaults
+            connect_uri = self.get_connection_url(**variables)
+            
+            # Append timeUnit as query parameter if provided
+            if time_unit:
+                connect_uri += time_unit
                     
             logger.info(f"Connecting with variables: {connect_uri} (module: {self.module}, server: {self.active_server})")
             
@@ -1028,7 +986,7 @@ ${serverInfoList.map(server => `            "${server.name}": {
                 handler(data)  # Don't await - this is a lambda function, not a coroutine
             return
             
-        # Handle stream data
+        # Handle combined stream data (wrapped with stream name)
         if 'stream' in data and 'data' in data:
             stream_name = data['stream']
             stream_data = data['data']
@@ -1042,17 +1000,30 @@ ${serverInfoList.map(server => `            "${server.name}": {
                         logger.error(f"Error in handler for {stream_name}: {e}")
                     break
         
-        # Handle direct event data (user data stream)
-        elif 'e' in data:  # Event type field
-            event_type = data['e']
+        # Handle single stream data (direct event data)
+        # This includes events with 'e' field and those without (ticker, bookTicker, depth, etc.)
+        else:
+            # For events with explicit event type
+            event_type = data.get('e')
             
-            for pattern, handler in self._handlers.items():
-                if event_type == pattern or pattern == '*':
-                    try:
-                        await handler(data)
-                    except Exception as e:
-                        logger.error(f"Error in handler for event {event_type}: {e}")
-                    break
+            # Track if we found a specific handler
+            handled = False
+            
+            # First, try to find a specific handler matching the event type
+            if event_type and event_type in self._handlers:
+                handler = self._handlers[event_type]
+                try:
+                    await handler(data)
+                    handled = True
+                except Exception as e:
+                    logger.error(f"Error in handler for event {event_type}: {e}")
+            
+            # If no specific handler was found, use the universal handler
+            if not handled and '*' in self._handlers:
+                try:
+                    await self._handlers['*'](data)
+                except Exception as e:
+                    logger.error(f"Error in universal handler: {e}")
 
     async def _ping_handler(self) -> None:
         """Handle periodic ping to keep connection alive"""

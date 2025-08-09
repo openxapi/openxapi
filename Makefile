@@ -145,16 +145,17 @@ generate-ws-sdk:
 		elif [ "${LANGUAGE}" == "python" ]; then \
 			for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
 				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
-				echo "Generating ${EXCHANGE} ${LANGUAGE} WebSocket SDK for module: $$subdir"; \
-				rm -rf ${OUTPUT_DIR}/$$subdir; \
+				python_subdir=$$(echo "$$subdir" | tr '-' '_'); \
+				echo "Generating ${EXCHANGE} ${LANGUAGE} WebSocket SDK for module: $$subdir (output: $$python_subdir)"; \
+				rm -rf ${OUTPUT_DIR}/$$python_subdir; \
 				(cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
 				$${ASYNCAPI_CLI:-asyncapi} generate fromTemplate \
 				../../../../specs/${EXCHANGE}/asyncapi/$$subdir.yaml \
 				./ \
-				--output ${OUTPUT_DIR}/$$subdir \
+				--output ${OUTPUT_DIR}/$$python_subdir \
 				--force-write \
 				-p moduleName=$${MODULE_NAME:-binance-websocket-client} \
-				-p packageName=$$subdir \
+				-p packageName=$$python_subdir \
 				-p version=$${VERSION:-0.1.0} \
 				-p author=$${AUTHOR:-openxapi} \
 				2>&1 | grep -v "ExperimentalWarning: CommonJS module" | grep -v "Support for loading ES Module in require()" | grep -v "Use \`node --trace-warnings"); \

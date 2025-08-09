@@ -96,7 +96,7 @@ func TestExtractSecurityType(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			parser := &DocumentParser{} // Create fresh parser for each test
 			channel := &wsparser.Channel{
-				Name:    "testMethod",
+				Name: "testMethod",
 			}
 
 			parser.extractSecurityType(channel, tc.summary)
@@ -104,22 +104,22 @@ func TestExtractSecurityType(t *testing.T) {
 			if tc.expectSecurity {
 				require.NotNil(t, channel.Security, "Expected security to be set for %s", tc.summary)
 				assert.Len(t, channel.Security, 1, "Expected exactly one security requirement")
-				
+
 				// Check the security name
 				securityMap := channel.Security[0]
-				assert.Contains(t, securityMap, tc.expectedSecurityName, 
+				assert.Contains(t, securityMap, tc.expectedSecurityName,
 					"Expected security name '%s' in security map", tc.expectedSecurityName)
-				
+
 				// Check the extension
 				require.NotNil(t, channel.Extensions, "Expected extensions to be set")
 				assert.Equal(t, tc.expectedSecurityType, channel.Extensions["x-binance-security-type"],
 					"Expected x-binance-security-type to be '%s'", tc.expectedSecurityType)
-				
+
 				// Check that SecuritySchemas contains the security scheme
 				require.NotNil(t, channel.SecuritySchemas, "Expected SecuritySchemas to be initialized")
 				assert.Contains(t, channel.SecuritySchemas, tc.expectedSecurityName,
 					"Expected SecuritySchemas to contain '%s'", tc.expectedSecurityName)
-				
+
 				// Verify the security schema properties
 				schema := channel.SecuritySchemas[tc.expectedSecurityName]
 				assert.Equal(t, "apiKey", schema.Type, "Expected security type to be 'apiKey'")
@@ -267,9 +267,9 @@ func TestParseWithSecurity(t *testing.T) {
 				methodSecurity[channel.Name] = secName
 			}
 		}
-		
+
 		// Log for debugging
-		t.Logf("Channel %s: security=%v, extension=%v", 
+		t.Logf("Channel %s: security=%v, extension=%v",
 			channel.Name, methodSecurity[channel.Name], channel.Extensions["x-binance-security-type"])
 	}
 
@@ -283,7 +283,7 @@ func TestParseWithSecurity(t *testing.T) {
 func TestSecurityPropagationToAsyncAPI(t *testing.T) {
 	// This test verifies that channels with security requirements
 	// will have their security properly set in the AsyncAPI spec generation
-	
+
 	testCases := []struct {
 		name             string
 		channelSecurity  []map[string][]string
@@ -344,7 +344,7 @@ func TestSecuritySchemaDeduplication(t *testing.T) {
 	}
 
 	channels := make([]*wsparser.Channel, 0, len(methods))
-	
+
 	for _, m := range methods {
 		channel := &wsparser.Channel{
 			Name:    m.name,
@@ -358,11 +358,11 @@ func TestSecuritySchemaDeduplication(t *testing.T) {
 	for i, channel := range channels {
 		require.NotNil(t, channel.Security, "Channel %d should have security", i)
 		require.Len(t, channel.Security, 1, "Channel %d should have exactly one security requirement", i)
-		
+
 		// All should have "trade" security
-		assert.Contains(t, channel.Security[0], "trade", 
+		assert.Contains(t, channel.Security[0], "trade",
 			"Channel %s should have 'trade' security", channel.Name)
-		
+
 		// All should have the same SecuritySchemas entry
 		require.NotNil(t, channel.SecuritySchemas, "Channel %d should have SecuritySchemas", i)
 		assert.Contains(t, channel.SecuritySchemas, "trade",
@@ -384,7 +384,7 @@ func TestInvalidSecurityTypes(t *testing.T) {
 		},
 		{
 			name:           "Malformed security type",
-			summary:        "Some operation (TRADE",  // Missing closing parenthesis
+			summary:        "Some operation (TRADE", // Missing closing parenthesis
 			expectSecurity: false,
 		},
 		{
@@ -403,7 +403,7 @@ func TestInvalidSecurityTypes(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			parser := &DocumentParser{} // Create fresh parser for each test
 			channel := &wsparser.Channel{
-				Name:    "testMethod",
+				Name: "testMethod",
 			}
 
 			parser.extractSecurityType(channel, tc.summary)

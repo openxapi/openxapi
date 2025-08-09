@@ -80,21 +80,20 @@ export function extractServerInfo(asyncapi) {
     let pathname = server.pathname() || '';
     let url;
     
-    // Handle server variables (streamPath, listenKey, etc.)
+    // Extract server variables with their metadata
     const serverJson = server.json ? server.json() : (server._json || {});
+    const variables = {};
+    
     if (serverJson.variables) {
-      // Handle streamPath variable - keep as template for options-streams and other stream modules
-      if (serverJson.variables.streamPath) {
-        // For stream modules, keep {streamPath} as template for runtime replacement
-        // This allows dynamic path selection (/ws, /stream, etc.)
-        // Note: streamPath variables are resolved at connection time, not initialization time
-      }
-      
-      // Handle listenKey variable - leave as template for runtime replacement
-      if (pathname.includes('{listenKey}')) {
-        // Keep {listenKey} as template - it will be replaced at runtime
-        // This is intentional for user data stream URLs
-      }
+      // Extract all variables with their metadata (enum, default, description)
+      Object.entries(serverJson.variables).forEach(([varName, varConfig]) => {
+        variables[varName] = {
+          description: varConfig.description || '',
+          enum: varConfig.enum || [],
+          default: varConfig.default || '',
+          examples: varConfig.examples || []
+        };
+      });
     }
     
     url = `${protocol}://${host}${pathname}`;
@@ -111,6 +110,7 @@ export function extractServerInfo(asyncapi) {
       title: title,
       summary: summary,
       description: description,
+      variables: variables,  // Include the extracted variables
       active: false // Will be set by ServerManager
     });
   });
