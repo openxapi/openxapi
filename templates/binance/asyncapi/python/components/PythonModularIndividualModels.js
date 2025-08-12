@@ -102,7 +102,7 @@ function generatePythonModelFile(name, schema, message, componentSchemas, isEven
   const className = toPascalCase(name);
   const isRequestMessage = name.toLowerCase().includes('request');
   
-  let content = `from pydantic import BaseModel, Field, validator
+  let content = `from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Union, List, Dict, Any, Literal
 from datetime import datetime
 from decimal import Decimal
@@ -253,12 +253,18 @@ function generateNestedClasses(schema, parentClassName, isRequestMessage) {
     if (fieldName === 'rateLimits' && schemaData.type === 'array' && schemaData.items) {
       // Generate RateLimits nested class
       nestedClasses += generateRateLimitsClass(parentClassName, schemaData.items);
-    } else if (fieldName === 'result' && schemaData.type === 'object' && schemaData.properties) {
-      // First generate nested classes for array items within the result (must come before Result class)
-      nestedClasses += generateArrayItemClasses(schemaData, parentClassName);
-      
-      // Then generate Result nested class for object results
-      nestedClasses += generateResultClass(parentClassName, schemaData);
+    } else if (fieldName === 'result') {
+      if (schemaData.type === 'object' && schemaData.properties) {
+        // First generate nested classes for array items within the result (must come before Result class)
+        nestedClasses += generateArrayItemClasses(schemaData, parentClassName);
+        
+        // Then generate Result nested class for object results
+        nestedClasses += generateResultClass(parentClassName, schemaData);
+      } else if (schemaData.type === 'array' && schemaData.items && schemaData.items.type === 'object' && schemaData.items.properties) {
+        // Result is directly an array of objects - generate ResultItem class
+        const itemClassName = `${parentClassName}ResultItem`;
+        nestedClasses += generateArrayItemClass(itemClassName, schemaData.items);
+      }
     } else if (fieldName === 'params' && isRequestMessage) {
       // Generate Params nested class for requests - be more flexible about detection
       if (schemaData.type === 'object' || schemaData.properties || schemaData.$ref) {
@@ -327,12 +333,12 @@ function generateArrayItemClass(className, itemSchema) {
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
-        populate_by_name = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
 
 `;
@@ -373,12 +379,12 @@ function generateRateLimitsClass(parentClassName, itemsSchema) {
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
-        populate_by_name = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
 
 `;
@@ -431,12 +437,12 @@ function generateResultClass(parentClassName, resultSchema) {
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
-        populate_by_name = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
 
 `;
@@ -512,12 +518,12 @@ function generateParamsClass(parentClassName, paramsSchema) {
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
-        populate_by_name = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
 
 `;
@@ -627,12 +633,12 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
-        populate_by_name = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
     def __str__(self) -> str:
         """String representation of the model"""
@@ -686,8 +692,15 @@ function getResultType(resultSchema, parentClassName) {
       // Array of arrays (like klines: [[timestamp, open, high, low, close, volume...]])
       return 'List[List[Any]]';
     } else if (schemaData.items?.type === 'object') {
-      // Array of objects (like trades: [{id: 1, price: "1.00", qty: "1.00"}, ...])
-      return 'List[Dict[str, Any]]';
+      // Check if the array items have defined properties
+      if (schemaData.items.properties && Object.keys(schemaData.items.properties).length > 0) {
+        // Array of objects with defined properties - use nested class
+        // For result field, we generate a ResultItem class
+        return `List[${parentClassName}ResultItem]`;
+      } else {
+        // Array of generic objects without defined structure
+        return 'List[Dict[str, Any]]';
+      }
     } else {
       return 'List[Any]';
     }
@@ -784,7 +797,7 @@ function getFieldAlias(fieldName) {
 function generateComponentSchemaFile(schemaName, schema) {
   const className = toPascalCase(schemaName);
   
-  let content = `from pydantic import BaseModel, Field
+  let content = `from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Union, List, Dict, Any, Literal
 from datetime import datetime
 from decimal import Decimal
@@ -797,28 +810,48 @@ class ${className}(BaseModel):
 `;
 
   if (schema.properties) {
+    // Track used field names to avoid duplicates
+    const usedFieldNames = new Set();
+    
     Object.entries(schema.properties).forEach(([fieldName, fieldSchema]) => {
       const pythonType = getPythonTypeFromSchema(fieldSchema);
       const description = getDescription(fieldSchema, `${fieldName} field`);
-      const alias = getFieldAlias(fieldName);
       
-      if (alias) {
-        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${alias}")
+      // Generate Python field name
+      let pythonFieldName = toSnakeCase(fieldName);
+      
+      // Handle case where field name would be duplicate (e.g., 'E' and 'e' both become 'e')
+      if (usedFieldNames.has(pythonFieldName)) {
+        // For single uppercase letters that conflict, use the original as the field name
+        if (fieldName.length === 1 && fieldName === fieldName.toUpperCase()) {
+          pythonFieldName = fieldName.toLowerCase() + '_upper';
+        } else {
+          pythonFieldName = pythonFieldName + '_alt';
+        }
+      }
+      usedFieldNames.add(pythonFieldName);
+      
+      // For single-letter fields or fields that differ from Python name, always use alias
+      const needsAlias = fieldName !== pythonFieldName || fieldName.length === 1 || 
+                        fieldName !== toSnakeCase(fieldName);
+      
+      if (needsAlias) {
+        content += `    ${pythonFieldName}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${fieldName}")
 `;
       } else {
-        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}")
+        content += `    ${pythonFieldName}: Optional[${pythonType}] = Field(default=None, description="${description}")
 `;
       }
     });
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
-        populate_by_name = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
     def __str__(self) -> str:
         """String representation of the model"""
@@ -847,6 +880,17 @@ function toPascalCase(str) {
 }
 
 function toSnakeCase(str) {
+  // For single letter fields, preserve case distinction
+  if (str.length === 1) {
+    return str.toLowerCase();
+  }
+  
+  // For fields that are already lowercase, return as-is
+  if (str === str.toLowerCase()) {
+    return str;
+  }
+  
+  // Convert camelCase/PascalCase to snake_case
   return str.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
 }
 

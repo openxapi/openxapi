@@ -1235,6 +1235,34 @@ func (p *DocumentParser) convertToSchema(key string, data interface{}, descripti
 					schema.Properties[key].Enum = []interface{}{methodValue}
 				}
 			}
+
+			// Special handling for WebSocket API event wrapper pattern
+			// If this is an 'event' property containing an object with 'e' field, add const
+			if key == "event" {
+				if eventMap, ok := value.(map[string]interface{}); ok {
+					if eValue, hasE := eventMap["e"]; hasE {
+						// The 'e' field should have a const value based on its example
+						if eStr, ok := eValue.(string); ok && eStr != "" {
+							if schema.Properties[key].Properties != nil && schema.Properties[key].Properties["e"] != nil {
+								// Set const value for event type field
+								schema.Properties[key].Properties["e"].Const = eStr
+								logrus.Debugf("Added const '%s' to event.e field", eStr)
+							}
+						}
+					}
+				}
+			}
+
+			// Special handling for 'e' field at root level or within event wrapper
+			// This ensures const is set based on example value for event type fields
+			if key == "e" && schema.Properties[key] != nil {
+				if example := schema.Properties[key].Example; example != nil {
+					if exampleStr, ok := example.(string); ok && exampleStr != "" {
+						schema.Properties[key].Const = exampleStr
+						logrus.Debugf("Added const '%s' to e field based on example", exampleStr)
+					}
+				}
+			}
 		}
 
 		return schema

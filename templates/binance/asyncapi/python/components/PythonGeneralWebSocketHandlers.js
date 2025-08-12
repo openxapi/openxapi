@@ -22,7 +22,7 @@ export function PythonGeneralWebSocketHandlers({ asyncapi, context }) {
   
   switch (specType) {
     case 'streams':
-      return generateStreamHandlers(detectedModule);
+      return generateStreamHandlers(detectedModule, asyncapi);
     case 'api':
       return generateApiHandlers(detectedModule, asyncapi);
     default:
@@ -154,7 +154,76 @@ function analyzeSpecType(asyncapi) {
  * @param {string} moduleName - Detected module name
  * @returns {string} Generated stream handlers
  */
-function generateStreamHandlers(moduleName) {
+function generateStreamHandlers(moduleName, asyncapi) {
+  // Generate type-safe handlers dynamically based on available schemas
+  let typedHandlers = '';
+  
+  try {
+    // Get component schemas from the AsyncAPI spec
+    const components = asyncapi.components();
+    if (components && components.schemas) {
+      const schemas = typeof components.schemas === 'function' ? components.schemas() : components.schemas;
+      const eventHandlers = [];
+      
+      // Handle different schema formats
+      let schemaEntries = [];
+      if (schemas && typeof schemas.all === 'function') {
+        // AsyncAPI parser object with .all() method
+        const allSchemas = schemas.all();
+        schemaEntries = allSchemas.map(s => [s.id ? s.id() : s.name(), s]);
+      } else if (schemas && typeof schemas.forEach === 'function') {
+        // Map-like object
+        schemas.forEach((schema, name) => {
+          schemaEntries.push([name, schema]);
+        });
+      } else if (schemas && typeof schemas === 'object') {
+        // Plain object
+        schemaEntries = Object.entries(schemas);
+      }
+      
+      // Look for event schemas (those with 'Event' in the name or with 'e' field)
+      for (const [schemaName, schema] of schemaEntries) {
+        const schemaObj = schema && schema.json ? schema.json() : schema;
+        
+        // Check if this looks like an event schema
+        if (schemaName.endsWith('Event') || 
+            (schemaObj.properties && schemaObj.properties.e) ||
+            (schemaObj.properties && schemaObj.properties.event && 
+             schemaObj.properties.event.properties && schemaObj.properties.event.properties.e)) {
+          
+          // Extract event type from schema
+          let eventType = null;
+          if (schemaObj.properties && schemaObj.properties.e && schemaObj.properties.e.const) {
+            eventType = schemaObj.properties.e.const;
+          } else if (schemaObj.properties && schemaObj.properties.event && 
+                     schemaObj.properties.event.properties && 
+                     schemaObj.properties.event.properties.e &&
+                     schemaObj.properties.event.properties.e.const) {
+            eventType = schemaObj.properties.event.properties.e.const;
+          }
+          
+          if (eventType) {
+            // Generate handler method name
+            const handlerMethodName = `on_${eventType.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')}`;
+            const className = schemaName;
+            
+            eventHandlers.push(`
+    def ${handlerMethodName}(self, handler: Callable[['${className}'], Awaitable[None]]) -> None:
+        """Register handler for ${eventType} events with type safety"""
+        self._typed_handlers['${eventType}'] = handler`);
+          }
+        }
+      }
+      
+      if (eventHandlers.length > 0) {
+        typedHandlers = '\n    # Type-safe event handlers (dynamically generated from AsyncAPI spec)\n' + 
+                       eventHandlers.join('\n');
+      }
+    }
+  } catch (e) {
+    console.warn('Could not generate typed handlers:', e.message);
+  }
+  
   return `    # Market Data Stream Subscription Methods (matching Go SDK)
     
     async def subscribe(self, streams: List[str], *, id: Optional[Union[int, str]] = None) -> None:
@@ -225,7 +294,7 @@ function generateStreamHandlers(moduleName) {
             "id": request_id
         }
         
-        await self._send_message(message)`;
+        await self._send_message(message)${typedHandlers}`;
 }
 
 /**

@@ -121,6 +121,7 @@ type AsyncAPIMessage struct {
 	Traits        []interface{}          `json:"traits,omitempty" yaml:"traits,omitempty"`
 	CorrelationId *AsyncAPICorrelationId `json:"correlationId,omitempty" yaml:"correlationId,omitempty"`
 	Ref           string                 `json:"$ref,omitempty" yaml:"$ref,omitempty"`
+	Extensions    map[string]interface{} `json:"-" yaml:",inline"` // For x-* extension fields
 }
 
 // AsyncAPICorrelationId represents correlation ID for request-reply
@@ -147,6 +148,7 @@ type AsyncAPISchema struct {
 	Default              interface{}                `json:"default,omitempty" yaml:"default,omitempty"`
 	Example              interface{}                `json:"example,omitempty" yaml:"example,omitempty"`
 	Enum                 []interface{}              `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Const                interface{}                `json:"const,omitempty" yaml:"const,omitempty"`
 	Properties           map[string]*AsyncAPISchema `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Items                *AsyncAPISchema            `json:"items,omitempty" yaml:"items,omitempty"`
 	Required             []string                   `json:"required,omitempty" yaml:"required,omitempty"`
@@ -623,6 +625,16 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 			}
 		}
 
+		// Add x-event-type extension for event-based messages
+		// This is particularly important for userDataStream.events
+		if eventType := g.extractEventType(receiveMsg.Payload); eventType != "" {
+			if asyncMessage.Extensions == nil {
+				asyncMessage.Extensions = make(map[string]interface{})
+			}
+			asyncMessage.Extensions["x-event-type"] = eventType
+			logrus.Debugf("Added x-event-type '%s' to message %s", eventType, messageKey)
+		}
+
 		componentMessages[messageKey] = asyncMessage
 	}
 
@@ -652,6 +664,41 @@ func (g *Generator) populateParamsRequired(schema *AsyncAPISchema, parameters []
 	}
 }
 
+// extractEventType extracts the event type from a schema, looking for const values in event.e or e fields
+func (g *Generator) extractEventType(schema *wsParser.Schema) string {
+	if schema == nil {
+		return ""
+	}
+
+	// Check for event wrapper pattern (event.e)
+	if eventProp, hasEvent := schema.Properties["event"]; hasEvent && eventProp != nil {
+		if eProp, hasE := eventProp.Properties["e"]; hasE && eProp != nil {
+			// If there's a const value, use it as the event type
+			if constValue, ok := eProp.Const.(string); ok && constValue != "" {
+				return constValue
+			}
+			// Fall back to example if no const
+			if exampleValue, ok := eProp.Example.(string); ok && exampleValue != "" {
+				return exampleValue
+			}
+		}
+	}
+
+	// Check for direct event type field (e) at root level
+	if eProp, hasE := schema.Properties["e"]; hasE && eProp != nil {
+		// If there's a const value, use it as the event type
+		if constValue, ok := eProp.Const.(string); ok && constValue != "" {
+			return constValue
+		}
+		// Fall back to example if no const
+		if exampleValue, ok := eProp.Example.(string); ok && exampleValue != "" {
+			return exampleValue
+		}
+	}
+
+	return ""
+}
+
 // convertToAsyncAPISchema converts a WebSocket schema to AsyncAPI schema
 func (g *Generator) convertToAsyncAPISchema(schema *wsParser.Schema) *AsyncAPISchema {
 	if schema == nil {
@@ -672,6 +719,7 @@ func (g *Generator) convertToAsyncAPISchema(schema *wsParser.Schema) *AsyncAPISc
 		Default:     schema.Default,
 		Example:     schema.Example,
 		Enum:        schema.Enum,
+		Const:       schema.Const,
 		Required:    schema.Required,
 	}
 

@@ -24,6 +24,7 @@ type Schema struct {
 	Format      string        `json:"format,omitempty"`
 	Description string        `json:"description,omitempty"`
 	Enum        []interface{} `json:"enum,omitempty"`
+	Const       interface{}   `json:"const,omitempty"`
 	Default     interface{}   `json:"default,omitempty"`
 	Example     interface{}   `json:"example,omitempty"`
 

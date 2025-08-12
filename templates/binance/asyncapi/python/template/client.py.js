@@ -475,9 +475,13 @@ ${serverInfoList.map(server => `      * ${server.name}: ${server.url}`).join('\n
         
         # Message handling
         self._handlers: Dict[str, Callable] = {}
+        self._typed_handlers: Dict[str, Callable] = {}  # Type-safe handlers
         self._response_handlers: Dict[str, Callable] = {}
         self._request_id = 0
         self._message_history: List[Dict] = []
+        
+        # Event type mapping for automatic parsing
+        self._event_parsers = self._initialize_event_parsers()
         
         # Server configuration from AsyncAPI spec
         self.servers = {
@@ -1011,18 +1015,53 @@ ${serverInfoList.map(server => `            "${server.name}": {
             await self._handle_single_event(data)
     
     async def _handle_single_event(self, data: Dict[str, Any]) -> None:
-        """Handle a single event (not wrapped in stream format)"""
-        # Try to get event type from 'e' field (if present)
-        event_type = data.get('e')
+        """Handle a single event (not wrapped in stream format) with automatic parsing"""
+        # Detect event type using improved logic
+        event_type = self._get_event_type(data)
+        
+        # Check if this is a WebSocket API event with 'event' wrapper
+        # (User Data Stream events from WebSocket API have this format)
+        if 'event' in data and isinstance(data['event'], dict) and 'e' in data['event']:
+            # Extract the actual event from the wrapper
+            actual_event = data['event']
+            event_type = actual_event.get('e')
+            # Pass the wrapped format to handlers (they expect the full structure)
+            event_data = data
+        else:
+            # WebSocket Streams format - event type at root level
+            event_data = data
+        
+        # Try to parse event to typed model if parser exists
+        parsed_event = None
+        if event_type and event_type in self._event_parsers:
+            try:
+                from pydantic import ValidationError
+                parser_class = self._event_parsers[event_type]
+                parsed_event = parser_class(**event_data)
+                logger.debug(f"Successfully parsed {event_type} event to {parser_class.__name__}")
+            except ValidationError as e:
+                logger.error(f"Validation error parsing {event_type} event: {e}")
+                # Continue with raw data if parsing fails
+            except Exception as e:
+                logger.error(f"Error parsing {event_type} event: {e}")
         
         # Track if we found a specific handler
         handled = False
         
-        # First, try to find a specific handler matching the event type
-        if event_type and event_type in self._handlers:
+        # First, try typed handlers with parsed models
+        if event_type and parsed_event and event_type in self._typed_handlers:
+            handler = self._typed_handlers[event_type]
+            try:
+                await handler(parsed_event)
+                handled = True
+            except Exception as e:
+                logger.error(f"Error in typed handler for event {event_type}: {e}")
+        
+        # Then try regular handlers with raw data
+        if not handled and event_type and event_type in self._handlers:
             handler = self._handlers[event_type]
             try:
-                await handler(data)
+                await handler(event_data)
                 handled = True
             except Exception as e:
                 logger.error(f"Error in handler for event {event_type}: {e}")
@@ -1030,7 +1069,7 @@ ${serverInfoList.map(server => `            "${server.name}": {
         # If no specific handler was found, use the universal handler
         if not handled and '*' in self._handlers:
             try:
-                await self._handlers['*'](data)
+                await self._handlers['*'](event_data)
             except Exception as e:
                 logger.error(f"Error in universal handler: {e}")
     
@@ -1189,6 +1228,176 @@ ${handlersCode}
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit"""
         await self.disconnect()
+    
+    def _initialize_event_parsers(self) -> Dict[str, Any]:
+        """Initialize event type to model class mapping dynamically"""
+        parsers = {}
+        
+        # Dynamically discover available event models from the models module
+        try:
+            import inspect
+            import importlib
+            
+            # Try to import the models module
+            try:
+                models_module = importlib.import_module('.models', package=self.__module__)
+            except ImportError:
+                try:
+                    # Fallback to direct import
+                    import models as models_module
+                except ImportError:
+                    logger.debug("Models module not available")
+                    return parsers
+            
+            # Iterate through all classes in the models module
+            for name, obj in inspect.getmembers(models_module, inspect.isclass):
+                # Look for event classes (those ending with 'Event' or containing event-like names)
+                if name.endswith('Event'):
+                    # Extract event type from class name
+                    # e.g., TradeEvent -> trade, KlineEvent -> kline
+                    event_type = None
+                    
+                    # Try to get event type from the class itself (if it has 'e' field)
+                    try:
+                        if hasattr(obj, '__fields__'):
+                            # Pydantic v1
+                            fields = obj.__fields__
+                        elif hasattr(obj, 'model_fields'):
+                            # Pydantic v2
+                            fields = obj.model_fields
+                        else:
+                            fields = {}
+                        
+                        # Check if there's an 'e' field with a const/default value
+                        if 'e' in fields:
+                            field_info = fields['e']
+                            if hasattr(field_info, 'default') and field_info.default is not None:
+                                event_type = field_info.default
+                            elif hasattr(field_info, 'json_schema_extra') and 'const' in field_info.json_schema_extra:
+                                event_type = field_info.json_schema_extra['const']
+                    except:
+                        pass
+                    
+                    # If no event type found from field, derive from class name
+                    if not event_type:
+                        # Convert class name to event type
+                        # TradeEvent -> trade, KlineEvent -> kline
+                        # OutboundAccountPositionEvent -> outboundAccountPosition
+                        base_name = name.replace('Event', '')
+                        # Convert PascalCase to camelCase for event type
+                        event_type = base_name[0].lower() + base_name[1:] if base_name else None
+                    
+                    if event_type:
+                        parsers[event_type] = obj
+                        logger.debug(f"Registered event parser: {event_type} -> {name}")
+            
+            logger.debug(f"Initialized {len(parsers)} event parsers")
+                
+        except Exception as e:
+            logger.debug(f"Could not dynamically import event models: {e}")
+        
+        return parsers
+    
+    def _get_event_type(self, data: Dict[str, Any]) -> Optional[str]:
+        """
+        Generic event type detection logic
+        
+        Args:
+            data: Event data dictionary
+            
+        Returns:
+            Event type string or None if not detected
+        """
+        # Check for event type field (most common pattern across exchanges)
+        # Common field names for event type: 'e', 'event', 'type', 'eventType', 'event_type'
+        event_type_fields = ['e', 'event', 'type', 'eventType', 'event_type', 'action', 'method']
+        
+        for field in event_type_fields:
+            if field in data:
+                value = data[field]
+                # If it's a string, return it directly
+                if isinstance(value, str):
+                    return value
+                # If it's a dict with nested 'e' or 'type' field (wrapped format)
+                elif isinstance(value, dict):
+                    for nested_field in event_type_fields:
+                        if nested_field in value and isinstance(value[nested_field], str):
+                            return value[nested_field]
+        
+        # Check for response format (has 'result' and 'id')
+        if 'result' in data and 'id' in data:
+            # This is likely a response to a request, not an event
+            return None
+        
+        # Try to detect event type from stream name if available
+        if 'stream' in data and isinstance(data['stream'], str):
+            stream_name = data['stream']
+            # Extract event type from stream name pattern (e.g., "btcusdt@trade" -> "trade")
+            if '@' in stream_name:
+                parts = stream_name.split('@')
+                if len(parts) >= 2:
+                    # Get the part after @ which usually indicates the event type
+                    stream_type = parts[-1].split('_')[0]  # Handle patterns like "trade_1m"
+                    return stream_type
+        
+        # Try pattern matching against known event parsers
+        # This allows detection of events without explicit type fields
+        if self._event_parsers:
+            for event_type, parser_class in self._event_parsers.items():
+                # Check if the data matches the expected structure of this event type
+                if self._matches_event_structure(data, parser_class):
+                    return event_type
+        
+        return None
+    
+    def _matches_event_structure(self, data: Dict[str, Any], parser_class: Any) -> bool:
+        """
+        Check if data matches the expected structure of a parser class
+        
+        Args:
+            data: Event data to check
+            parser_class: Pydantic model class to match against
+            
+        Returns:
+            True if data appears to match the model structure
+        """
+        try:
+            # Get required fields from the Pydantic model
+            required_fields = set()
+            optional_fields = set()
+            
+            if hasattr(parser_class, '__fields__'):
+                # Pydantic v1
+                for field_name, field_info in parser_class.__fields__.items():
+                    if field_info.required:
+                        required_fields.add(field_name)
+                    else:
+                        optional_fields.add(field_name)
+            elif hasattr(parser_class, 'model_fields'):
+                # Pydantic v2
+                for field_name, field_info in parser_class.model_fields.items():
+                    if field_info.is_required():
+                        required_fields.add(field_name)
+                    else:
+                        optional_fields.add(field_name)
+            
+            # Check if all required fields are present in data
+            data_fields = set(data.keys())
+            if required_fields and not required_fields.issubset(data_fields):
+                return False
+            
+            # Check if most of the model's fields are present (heuristic)
+            all_model_fields = required_fields | optional_fields
+            if all_model_fields:
+                matching_fields = data_fields & all_model_fields
+                match_ratio = len(matching_fields) / len(all_model_fields)
+                # If more than 60% of fields match, consider it a match
+                return match_ratio > 0.6
+            
+        except Exception:
+            pass
+        
+        return False
 
 
 # Example usage
