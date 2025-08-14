@@ -278,6 +278,8 @@ export default function ({ asyncapi, params }) {
   
   // Detect module type from spec content rather than hardcoded detection
   const detectedModule = detectModuleFromSpec(asyncapi);
+  // Debug AsyncAPI object
+  
   const moduleType = getModuleType(detectedModule, asyncapi);
   const authCapabilities = getAuthCapabilities(asyncapi);
   // Try to build operation security map from AsyncAPI spec
@@ -1025,8 +1027,8 @@ ${serverInfoList.map(server => `            "${server.name}": {
             # Extract the actual event from the wrapper
             actual_event = data['event']
             event_type = actual_event.get('e')
-            # Pass the wrapped format to handlers (they expect the full structure)
-            event_data = data
+            # Pass only the event data to parsers, not the wrapper
+            event_data = actual_event
         else:
             # WebSocket Streams format - event type at root level
             event_data = data

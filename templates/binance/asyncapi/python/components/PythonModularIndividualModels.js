@@ -55,29 +55,67 @@ export function PythonModularIndividualModels({ asyncapi }) {
   // Generate model files array
   const modelFiles = [];
   
-  // Generate regular message models
+  // Build a map of which messages reference which schemas
+  const messageToSchemaMap = new Map();
+  
+  // Generate message models (but skip if they just reference a component schema)
   messages.forEach((messageData, messageName) => {
+    // Check if this message's payload is just a $ref to a component schema
+    const payload = messageData.payload;
+    let referencedSchemaName = null;
+    
+    // Try to extract the referenced schema name from the payload
+    if (payload && payload.json && typeof payload.json === 'function') {
+      const payloadJson = payload.json();
+      if (payloadJson && payloadJson['$ref']) {
+        // Extract schema name from $ref like "#/components/schemas/AggregateTradeEvent"
+        const refMatch = payloadJson['$ref'].match(/#\/components\/schemas\/(.+)/);
+        if (refMatch && refMatch[1]) {
+          referencedSchemaName = refMatch[1];
+        }
+      }
+    }
+    
+    // If this message just references a component schema, skip generating a model for it
+    if (referencedSchemaName && componentSchemas.has(referencedSchemaName)) {
+      messageToSchemaMap.set(messageName, referencedSchemaName);
+      return; // Skip this message model, use the component schema instead
+    }
+    
+    // Also skip if the message name closely matches a component schema name
+    // This handles cases where the message and schema have similar names
+    // Normalize names by removing underscores, hyphens, and 'Event' suffix
+    const normalizeForComparison = (name) => {
+      return name.toLowerCase()
+        .replace(/event$/i, '')  // Remove 'Event' suffix
+        .replace(/[_-]/g, '')    // Remove underscores and hyphens
+        .replace(/aggregate/g, 'agg'); // Normalize 'aggregate' to 'agg'
+    };
+    
+    const messageNameNormalized = normalizeForComparison(messageName);
+    let shouldSkip = false;
+    
+    componentSchemas.forEach((schema, schemaName) => {
+      const schemaNameNormalized = normalizeForComparison(schemaName);
+      // Check if normalized names match
+      if (messageNameNormalized === schemaNameNormalized) {
+        shouldSkip = true;
+      }
+    });
+    
+    if (shouldSkip) {
+      return; // Skip this message model
+    }
+    
     const modelContent = generatePythonModelFile(messageName, messageData.payload, messageData.message, componentSchemas, messageData.isEvent);
     modelFiles.push({
       name: `${toSnakeCase(messageName)}.py`,
       content: modelContent
     });
   });
-
-  // Generate component schema models (for event schemas)
-  const generatedTypeNames = new Set();
-  messages.forEach((messageData, messageName) => {
-    const className = toPascalCase(messageName);
-    generatedTypeNames.add(className);
-  });
   
+  // Generate component schema models (these take priority)
   componentSchemas.forEach((schema, schemaName) => {
-    // Skip if we already generated this type from channel messages
-    const componentTypeName = toPascalCase(schemaName);
-    if (generatedTypeNames.has(componentTypeName)) {
-      return;
-    }
-    
     const modelContent = generateComponentSchemaFile(schemaName, schema);
     modelFiles.push({
       name: `${toSnakeCase(schemaName)}.py`,
@@ -544,7 +582,34 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
 `;
 
   // Parse properties from schema
-  const properties = getProperties(schema);
+  let properties = getProperties(schema);
+
+  // For event models, check if there's a wrapper 'event' property with the actual fields
+  if (isEvent && properties.event) {
+    // Check if 'event' is an object with properties inside
+    const eventProp = properties.event;
+    let eventProperties = null;
+    
+    try {
+      if (eventProp && typeof eventProp.json === 'function') {
+        const eventData = eventProp.json();
+        if (eventData && eventData.type === 'object' && eventData.properties) {
+          eventProperties = eventData.properties;
+        }
+      } else if (eventProp && eventProp.properties) {
+        eventProperties = getProperties(eventProp);
+      } else if (eventProp && eventProp._json && eventProp._json.properties) {
+        eventProperties = eventProp._json.properties;
+      }
+    } catch (e) {
+      console.warn('Error accessing event properties:', e.message);
+    }
+    
+    // If we found properties inside the event wrapper, use those instead
+    if (eventProperties && Object.keys(eventProperties).length > 0) {
+      properties = eventProperties;
+    }
+  }
 
   // For request messages, flatten the params into the main class
   if (isRequestMessage && properties.params) {
@@ -612,6 +677,9 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
     });
   } else {
     // Generate fields from actual schema properties (for non-request or non-nested models)
+    // Track used field names to avoid duplicates
+    const usedFieldNames = new Set();
+    
     Object.entries(properties).forEach(([fieldName, fieldSchema]) => {
       // Skip id, method, and params for request messages since we're flattening
       if (isRequestMessage && (fieldName === 'id' || fieldName === 'method' || fieldName === 'params')) {
@@ -620,13 +688,20 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
       
       const pythonType = getFieldTypeFromSchema(fieldName, fieldSchema, className);
       const description = getDescription(fieldSchema, `${fieldName} field`);
-      const alias = getFieldAlias(fieldName);
       
-      if (alias) {
-        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${alias}")
+      // Generate Python field name from description (like Go template does)
+      let pythonFieldName = generatePythonFieldNameFromDescription(fieldName, fieldSchema, usedFieldNames);
+      usedFieldNames.add(pythonFieldName);
+      
+      // For single-letter fields or fields that differ from Python name, always use alias
+      const needsAlias = fieldName !== pythonFieldName || fieldName.length === 1 || 
+                        fieldName !== toSnakeCase(fieldName);
+      
+      if (needsAlias) {
+        content += `    ${pythonFieldName}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${fieldName}")
 `;
       } else {
-        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}")
+        content += `    ${pythonFieldName}: Optional[${pythonType}] = Field(default=None, description="${description}")
 `;
       }
     });
@@ -809,26 +884,26 @@ class ${className}(BaseModel):
     """
 `;
 
-  if (schema.properties) {
+  // Check if this is an event schema with wrapped structure
+  let propertiesToGenerate = schema.properties;
+  
+  // For event schemas, check if there's a single 'event' property that contains the actual fields
+  if (schema.isEvent && schema.properties && schema.properties.event && 
+      schema.properties.event.type === 'object' && schema.properties.event.properties) {
+    // Use the properties from inside the 'event' wrapper
+    propertiesToGenerate = schema.properties.event.properties;
+  }
+
+  if (propertiesToGenerate) {
     // Track used field names to avoid duplicates
     const usedFieldNames = new Set();
     
-    Object.entries(schema.properties).forEach(([fieldName, fieldSchema]) => {
+    Object.entries(propertiesToGenerate).forEach(([fieldName, fieldSchema]) => {
       const pythonType = getPythonTypeFromSchema(fieldSchema);
       const description = getDescription(fieldSchema, `${fieldName} field`);
       
-      // Generate Python field name
-      let pythonFieldName = toSnakeCase(fieldName);
-      
-      // Handle case where field name would be duplicate (e.g., 'E' and 'e' both become 'e')
-      if (usedFieldNames.has(pythonFieldName)) {
-        // For single uppercase letters that conflict, use the original as the field name
-        if (fieldName.length === 1 && fieldName === fieldName.toUpperCase()) {
-          pythonFieldName = fieldName.toLowerCase() + '_upper';
-        } else {
-          pythonFieldName = pythonFieldName + '_alt';
-        }
-      }
+      // Generate Python field name from description (like Go template does)
+      let pythonFieldName = generatePythonFieldNameFromDescription(fieldName, fieldSchema, usedFieldNames);
       usedFieldNames.add(pythonFieldName);
       
       // For single-letter fields or fields that differ from Python name, always use alias
@@ -877,6 +952,52 @@ function toPascalCase(str) {
   return str.split(/[_\-\.]/).map(word => 
     word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
   ).join('');
+}
+
+/*
+ * Generate Python field name from description (similar to Go template approach)
+ * Converts descriptions to readable snake_case field names
+ */
+function generatePythonFieldNameFromDescription(originalFieldName, fieldSchema, usedFieldNames) {
+  // First try to generate from description
+  const description = getDescription(fieldSchema, '');
+  
+  if (description && description !== 'Property description' && description !== `${originalFieldName} field`) {
+    // Clean and convert description to Python snake_case field name
+    let fieldName = description
+      .replace(/\s*\([^)]*\)\s*/g, '') // Remove (xxx) patterns
+      .replace(/[^\w\s]/g, '') // Remove punctuation
+      .trim()
+      .split(/\s+/) // Split on whitespace
+      .map(word => word.toLowerCase()) // All lowercase for Python
+      .join('_'); // Join with underscores for snake_case
+    
+    // Ensure it's a valid Python identifier
+    if (fieldName && /^[a-z][a-z0-9_]*$/.test(fieldName)) {
+      // Handle collisions
+      let finalFieldName = fieldName;
+      let counter = 2;
+      while (usedFieldNames.has(finalFieldName)) {
+        finalFieldName = fieldName + '_' + counter.toString();
+        counter++;
+      }
+      return finalFieldName;
+    }
+  }
+  
+  // Fallback to original field name handling for single letters
+  if (originalFieldName.length === 1) {
+    if (originalFieldName === originalFieldName.toUpperCase()) {
+      // Single uppercase letter: E -> e_upper (fallback if no good description)
+      return originalFieldName.toLowerCase() + '_upper';
+    } else {
+      // Single lowercase letter: e -> e
+      return originalFieldName.toLowerCase();
+    }
+  }
+  
+  // Multi-character field names: use standard snake_case conversion
+  return toSnakeCase(originalFieldName);
 }
 
 function toSnakeCase(str) {

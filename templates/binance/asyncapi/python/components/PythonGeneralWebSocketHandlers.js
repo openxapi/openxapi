@@ -155,74 +155,8 @@ function analyzeSpecType(asyncapi) {
  * @returns {string} Generated stream handlers
  */
 function generateStreamHandlers(moduleName, asyncapi) {
-  // Generate type-safe handlers dynamically based on available schemas
-  let typedHandlers = '';
-  
-  try {
-    // Get component schemas from the AsyncAPI spec
-    const components = asyncapi.components();
-    if (components && components.schemas) {
-      const schemas = typeof components.schemas === 'function' ? components.schemas() : components.schemas;
-      const eventHandlers = [];
-      
-      // Handle different schema formats
-      let schemaEntries = [];
-      if (schemas && typeof schemas.all === 'function') {
-        // AsyncAPI parser object with .all() method
-        const allSchemas = schemas.all();
-        schemaEntries = allSchemas.map(s => [s.id ? s.id() : s.name(), s]);
-      } else if (schemas && typeof schemas.forEach === 'function') {
-        // Map-like object
-        schemas.forEach((schema, name) => {
-          schemaEntries.push([name, schema]);
-        });
-      } else if (schemas && typeof schemas === 'object') {
-        // Plain object
-        schemaEntries = Object.entries(schemas);
-      }
-      
-      // Look for event schemas (those with 'Event' in the name or with 'e' field)
-      for (const [schemaName, schema] of schemaEntries) {
-        const schemaObj = schema && schema.json ? schema.json() : schema;
-        
-        // Check if this looks like an event schema
-        if (schemaName.endsWith('Event') || 
-            (schemaObj.properties && schemaObj.properties.e) ||
-            (schemaObj.properties && schemaObj.properties.event && 
-             schemaObj.properties.event.properties && schemaObj.properties.event.properties.e)) {
-          
-          // Extract event type from schema
-          let eventType = null;
-          if (schemaObj.properties && schemaObj.properties.e && schemaObj.properties.e.const) {
-            eventType = schemaObj.properties.e.const;
-          } else if (schemaObj.properties && schemaObj.properties.event && 
-                     schemaObj.properties.event.properties && 
-                     schemaObj.properties.event.properties.e &&
-                     schemaObj.properties.event.properties.e.const) {
-            eventType = schemaObj.properties.event.properties.e.const;
-          }
-          
-          if (eventType) {
-            // Generate handler method name
-            const handlerMethodName = `on_${eventType.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')}`;
-            const className = schemaName;
-            
-            eventHandlers.push(`
-    def ${handlerMethodName}(self, handler: Callable[['${className}'], Awaitable[None]]) -> None:
-        """Register handler for ${eventType} events with type safety"""
-        self._typed_handlers['${eventType}'] = handler`);
-          }
-        }
-      }
-      
-      if (eventHandlers.length > 0) {
-        typedHandlers = '\n    # Type-safe event handlers (dynamically generated from AsyncAPI spec)\n' + 
-                       eventHandlers.join('\n');
-      }
-    }
-  } catch (e) {
-    console.warn('Could not generate typed handlers:', e.message);
-  }
+  // Generate typed event handlers using x-event-type
+  const typedHandlers = generateTypedEventHandlers(asyncapi);
   
   return `    # Market Data Stream Subscription Methods (matching Go SDK)
     
@@ -438,11 +372,14 @@ function generateApiHandlers(moduleName, asyncapi) {
       }
     });
     
-    if (methods.length === 0) {
+    // Generate typed event handlers for API modules with events
+    const eventHandlers = generateTypedEventHandlers(asyncapi);
+    
+    if (methods.length === 0 && !eventHandlers) {
       return generateStaticApiHandlers();
     }
     
-    return `    # WebSocket API Methods (generated from AsyncAPI operations)${methods.join('')}`;
+    return `    # WebSocket API Methods (generated from AsyncAPI operations)${methods.join('')}${eventHandlers}`;
     
   } catch (e) {
     console.warn('Error generating API handlers:', e.message);
@@ -450,6 +387,361 @@ function generateApiHandlers(moduleName, asyncapi) {
   }
 }
 
+
+/**
+ * Generate typed event handlers for API modules with events
+ * Uses x-event-type extension field from AsyncAPI spec
+ * @param {Object} asyncapi - AsyncAPI document
+ * @returns {string} Generated event handler methods
+ */
+function generateTypedEventHandlers(asyncapi) {
+  try {
+    const eventHandlers = [];
+    const eventTypes = new Map(); // Map event type to schema name
+    
+    // Try to access channels and their raw JSON
+    try {
+      const channels = asyncapi.channels();
+      
+      if (channels) {
+        const channelKeys = Object.keys(channels);
+        
+        channelKeys.forEach(channelName => {
+          const channel = channels[channelName];
+          
+          // Access the raw JSON from the channel object
+          if (channel && channel._json && channel._json.messages) {
+            const rawMessages = channel._json.messages;
+            
+            Object.keys(rawMessages).forEach(msgKey => {
+              const message = rawMessages[msgKey];
+              
+              // Check for x-event-type in the raw message
+              if (message && message['x-event-type']) {
+                // Get schema name from payload
+                let schemaName = null;
+                
+                // First check if payload has a $ref
+                if (message.payload && message.payload.$ref) {
+                  const refParts = message.payload.$ref.split('/');
+                  schemaName = refParts[refParts.length - 1];
+                } 
+                // If payload has x-parser-schema-id, use that (this is how AsyncAPI parser marks resolved schemas)
+                else if (message.payload && message.payload['x-parser-schema-id']) {
+                  schemaName = message.payload['x-parser-schema-id'];
+                  // Remove any angle brackets if present (e.g., <anonymous-schema-1> -> anonymous-schema-1)
+                  schemaName = schemaName.replace(/^<|>$/g, '');
+                }
+                
+                // Fallback: try to extract schema name from msgKey if it matches pattern
+                if (!schemaName && msgKey.endsWith('Event')) {
+                  // Convert msgKey to schema name (e.g., accountUpdateEvent -> AccountUpdateEvent)
+                  schemaName = msgKey.charAt(0).toUpperCase() + msgKey.slice(1);
+                }
+                
+                if (schemaName) {
+                  eventTypes.set(message['x-event-type'], schemaName);
+                }
+              }
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Could not access channels _json:', e.message);
+    }
+    
+    // Also check if the root asyncapi object has _json (for messages defined at root level)
+    try {
+      let rawSpec = null;
+      if (asyncapi && typeof asyncapi.json === 'function') {
+        rawSpec = asyncapi.json();
+      } else if (asyncapi && asyncapi._json) {
+        rawSpec = asyncapi._json;
+      }
+      
+      // Check for events defined in components/messages
+      if (rawSpec && rawSpec.components && rawSpec.components.messages) {
+        Object.keys(rawSpec.components.messages).forEach(msgKey => {
+          const message = rawSpec.components.messages[msgKey];
+          if (message && message['x-event-type']) {
+            // Get schema name from payload $ref
+            let schemaName = null;
+            if (message.payload && message.payload.$ref) {
+              const refParts = message.payload.$ref.split('/');
+              schemaName = refParts[refParts.length - 1];
+            }
+            if (schemaName) {
+              eventTypes.set(message['x-event-type'], schemaName);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // Continue without root spec
+    }
+    
+    // If we got event types from raw spec, generate handlers
+    if (eventTypes.size > 0) {
+      for (const [eventType, schemaName] of eventTypes) {
+        // Convert event type to Python method name with _event suffix
+        let methodName = '';
+        if (eventType.includes('_')) {
+          // SNAKE_CASE: ACCOUNT_UPDATE -> handle_account_update_event
+          methodName = `handle_${eventType.toLowerCase()}_event`;
+        } else if (eventType[0] === eventType[0].toLowerCase()) {
+          // camelCase: listenKeyExpired -> handle_listen_key_expired_event
+          methodName = `handle_${eventType.replace(/([A-Z])/g, '_$1').toLowerCase()}_event`;
+        } else {
+          // PascalCase: AccountUpdate -> handle_account_update_event
+          methodName = `handle_${eventType.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')}_event`;
+        }
+        
+        eventHandlers.push(`
+    def ${methodName}(self, handler: Callable[['models.${schemaName}'], Awaitable[None]]) -> None:
+        """
+        Register typed handler for ${eventType} events
+        
+        Args:
+            handler: Async function that receives a ${schemaName} object
+            
+        Example:
+            async def on_${eventType.toLowerCase().replace(/-/g, '_')}(event: models.${schemaName}):
+                print(f"Received ${eventType}: {event}")
+            
+            client.${methodName}(on_${eventType.toLowerCase().replace(/-/g, '_')})
+        """
+        self._typed_handlers['${eventType}'] = handler`);
+      }
+      
+      return `
+    
+    # Typed Event Handlers (generated from AsyncAPI spec)` + eventHandlers.join('');
+    }
+    
+    // Fall back to the original approach using the AsyncAPI object model
+    // Get all channels
+    const channels = asyncapi.channels();
+    if (!channels) {
+      return '';
+    }
+    
+    // Iterate through channels to find messages with x-event-type
+    let channelObj = {};
+    if (typeof channels === 'function') {
+      channelObj = channels();
+    } else if (typeof channels.all === 'function') {
+      const allChannels = channels.all();
+      allChannels.forEach(ch => {
+        const name = ch.id ? ch.id() : ch.name();
+        channelObj[name] = ch;
+      });
+    } else {
+      channelObj = channels;
+    }
+    
+    // Also check components/messages for events with x-event-type
+    // This handles cases where events are defined in components but not directly in channels
+    try {
+      const components = asyncapi.components();
+      if (components && components.messages) {
+        const messagesObj = typeof components.messages === 'function' ? components.messages() : components.messages;
+        
+        Object.keys(messagesObj).forEach(msgKey => {
+          const message = messagesObj[msgKey];
+          
+          // Check for x-event-type extension
+          let eventType = null;
+          
+          // Try multiple ways to access x-event-type
+          // 1. Direct property access (most common)
+          if (message && message['x-event-type']) {
+            eventType = message['x-event-type'];
+          }
+          // 2. Through extensions() function
+          else if (message && typeof message.extensions === 'function') {
+            const extensions = message.extensions();
+            eventType = extensions && extensions['x-event-type'];
+          }
+          // 3. Through extensions property
+          else if (message && message.extensions) {
+            eventType = message.extensions['x-event-type'];
+          }
+          // 4. Check the raw JSON if available
+          else if (message && typeof message.json === 'function') {
+            const jsonMsg = message.json();
+            eventType = jsonMsg && jsonMsg['x-event-type'];
+          }
+          
+          if (eventType) {
+            // Get schema name from payload reference
+            let schemaName = null;
+            
+            if (message.payload) {
+              const payload = typeof message.payload === 'function' ? message.payload() : message.payload;
+              
+              if (payload && payload.$ref) {
+                const refParts = payload.$ref.split('/');
+                schemaName = refParts[refParts.length - 1];
+              } else if (payload && payload.json && typeof payload.json === 'function') {
+                const jsonPayload = payload.json();
+                if (jsonPayload && jsonPayload.$ref) {
+                  const refParts = jsonPayload.$ref.split('/');
+                  schemaName = refParts[refParts.length - 1];
+                }
+              }
+            }
+            
+            if (schemaName && !eventTypes.has(eventType)) {
+              eventTypes.set(eventType, schemaName);
+            }
+          }
+        });
+      }
+    } catch (e) {
+      // Continue if components access fails
+    }
+    
+    // Process each channel
+    Object.keys(channelObj).forEach(channelName => {
+      const channel = channelObj[channelName];
+      
+      // Get messages from channel
+      let messages = {};
+      if (channel && typeof channel.messages === 'function') {
+        messages = channel.messages();
+      } else if (channel && channel.messages) {
+        messages = channel.messages;
+      }
+      
+      // Process each message
+      Object.keys(messages).forEach(msgKey => {
+        const message = messages[msgKey];
+        
+        // Handle both direct message objects and references
+        // In main spec files, messages might be references ($ref)
+        let actualMessage = message;
+        
+        // If it's a reference, we need to handle it differently
+        if (message && message.$ref) {
+          // This is a reference to components/messages
+          // The AsyncAPI parser should have already resolved it
+          // But we might need to look it up in components
+          try {
+            const components = asyncapi.components();
+            if (components && components.messages) {
+              const messagesObj = typeof components.messages === 'function' ? components.messages() : components.messages;
+              // Extract message name from $ref like '#/components/messages/balanceUpdateEvent'
+              const msgName = message.$ref.split('/').pop();
+              if (messagesObj[msgName]) {
+                actualMessage = messagesObj[msgName];
+              }
+            }
+          } catch (e) {
+            // If we can't resolve the reference, continue with original
+          }
+        }
+        
+        // Check for x-event-type extension
+        let eventType = null;
+        
+        // Try multiple ways to access x-event-type
+        // 1. Direct property access (most common in AsyncAPI 3.0)
+        if (actualMessage && actualMessage['x-event-type']) {
+          eventType = actualMessage['x-event-type'];
+        }
+        // 2. Through extensions() function
+        else if (actualMessage && typeof actualMessage.extensions === 'function') {
+          const extensions = actualMessage.extensions();
+          eventType = extensions && extensions['x-event-type'];
+        }
+        // 3. Through extensions property
+        else if (actualMessage && actualMessage.extensions) {
+          eventType = actualMessage.extensions['x-event-type'];
+        }
+        // 4. Check the raw JSON if available
+        else if (actualMessage && typeof actualMessage.json === 'function') {
+          const jsonMsg = actualMessage.json();
+          eventType = jsonMsg && jsonMsg['x-event-type'];
+        }
+        
+        if (eventType) {
+          // Get schema name from payload reference
+          let schemaName = null;
+          
+          if (actualMessage.payload) {
+            const payload = typeof actualMessage.payload === 'function' ? actualMessage.payload() : actualMessage.payload;
+            
+            // Check for $ref
+            if (payload && payload.$ref) {
+              // Extract schema name from reference like '#/components/schemas/AccountUpdateEvent'
+              const refParts = payload.$ref.split('/');
+              schemaName = refParts[refParts.length - 1];
+            } else if (payload && payload.json && typeof payload.json === 'function') {
+              const jsonPayload = payload.json();
+              if (jsonPayload && jsonPayload.$ref) {
+                const refParts = jsonPayload.$ref.split('/');
+                schemaName = refParts[refParts.length - 1];
+              }
+            }
+          }
+          
+          if (schemaName && !eventTypes.has(eventType)) {
+            eventTypes.set(eventType, schemaName);
+          }
+        }
+      });
+    });
+    
+    // Generate handler methods for each event type
+    for (const [eventType, schemaName] of eventTypes) {
+      // Convert event type to Python method name with _event suffix
+      // ACCOUNT_UPDATE -> handle_account_update_event
+      // listenKeyExpired -> handle_listen_key_expired_event
+      // outboundAccountPosition -> handle_outbound_account_position_event
+      let methodName = '';
+      
+      // Check if it's SNAKE_CASE or camelCase
+      if (eventType.includes('_')) {
+        // SNAKE_CASE: ACCOUNT_UPDATE -> handle_account_update_event
+        methodName = `handle_${eventType.toLowerCase()}_event`;
+      } else if (eventType[0] === eventType[0].toLowerCase()) {
+        // camelCase: listenKeyExpired -> handle_listen_key_expired_event
+        methodName = `handle_${eventType.replace(/([A-Z])/g, '_$1').toLowerCase()}_event`;
+      } else {
+        // PascalCase (shouldn't happen, but handle it)
+        methodName = `handle_${eventType.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '')}_event`;
+      }
+      
+      eventHandlers.push(`
+    def ${methodName}(self, handler: Callable[['models.${schemaName}'], Awaitable[None]]) -> None:
+        """
+        Register typed handler for ${eventType} events
+        
+        Args:
+            handler: Async function that receives a ${schemaName} object
+            
+        Example:
+            async def on_${eventType.toLowerCase().replace(/-/g, '_')}(event: models.${schemaName}):
+                print(f"Received ${eventType}: {event}")
+            
+            client.${methodName}(on_${eventType.toLowerCase().replace(/-/g, '_')})
+        """
+        self._typed_handlers['${eventType}'] = handler`);
+    }
+    
+    if (eventHandlers.length > 0) {
+      return `
+    
+    # Typed Event Handlers (generated from AsyncAPI spec)` + eventHandlers.join('');
+    }
+    
+    return '';
+  } catch (e) {
+    console.warn('Could not generate typed event handlers:', e.message);
+    return '';
+  }
+}
 
 /**
  * Generate response model class name from WebSocket method name
