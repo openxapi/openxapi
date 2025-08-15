@@ -962,17 +962,33 @@ function generatePythonFieldNameFromDescription(originalFieldName, fieldSchema, 
   // First try to generate from description
   const description = getDescription(fieldSchema, '');
   
-  if (description && description !== 'Property description' && description !== `${originalFieldName} field`) {
+  // Check if description is just "{fieldName} property" or similar generic patterns
+  const genericPatterns = [
+    `${originalFieldName} property`,
+    `${originalFieldName} field`,
+    `${originalFieldName} parameter`,
+    'Property description'
+  ];
+  
+  const isGenericDescription = genericPatterns.some(pattern => 
+    description.toLowerCase() === pattern.toLowerCase()
+  );
+  
+  if (description && !isGenericDescription && description !== `${originalFieldName} field`) {
     // Clean and convert description to Python snake_case field name
     let fieldName = description
       .replace(/\s*\([^)]*\)\s*/g, '') // Remove (xxx) patterns
+      .replace(/\bproperty\b/gi, '') // Remove the word "property"
+      .replace(/\bfield\b/gi, '') // Remove the word "field"
+      .replace(/\bparameter\b/gi, '') // Remove the word "parameter"
       .replace(/[^\w\s]/g, '') // Remove punctuation
       .trim()
       .split(/\s+/) // Split on whitespace
+      .filter(word => word.length > 0) // Remove empty strings
       .map(word => word.toLowerCase()) // All lowercase for Python
       .join('_'); // Join with underscores for snake_case
     
-    // Ensure it's a valid Python identifier
+    // Ensure it's a valid Python identifier and not empty
     if (fieldName && /^[a-z][a-z0-9_]*$/.test(fieldName)) {
       // Handle collisions
       let finalFieldName = fieldName;

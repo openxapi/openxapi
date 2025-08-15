@@ -1238,18 +1238,39 @@ ${handlersCode}
         # Dynamically discover available event models from the models module
         try:
             import inspect
-            import importlib
             
-            # Try to import the models module
+            # Import the models module
+            # Try different import strategies based on context
+            models_module = None
+            
+            # Strategy 1: Try relative import (works when client is part of a package)
             try:
-                models_module = importlib.import_module('.models', package=self.__module__)
+                from . import models as models_module
             except ImportError:
+                pass
+            
+            # Strategy 2: Try direct import (works when running from the same directory)
+            if models_module is None:
                 try:
-                    # Fallback to direct import
                     import models as models_module
                 except ImportError:
-                    logger.debug("Models module not available")
-                    return parsers
+                    pass
+            
+            # Strategy 3: Try importing from the package if we know it
+            if models_module is None and '.' in self.__module__:
+                try:
+                    import importlib
+                    # Get package name from module
+                    package_parts = self.__module__.split('.')[:-1]
+                    if package_parts:
+                        package_name = '.'.join(package_parts)
+                        models_module = importlib.import_module(f'{package_name}.models')
+                except ImportError:
+                    pass
+            
+            if models_module is None:
+                logger.debug("Models module not available - event parsers not initialized")
+                return parsers
             
             # Iterate through all classes in the models module
             for name, obj in inspect.getmembers(models_module, inspect.isclass):
