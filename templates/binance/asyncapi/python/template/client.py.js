@@ -1,6 +1,92 @@
 import { File, Text } from '@asyncapi/generator-react-sdk';
 import { PythonGeneralWebSocketHandlers } from '../components/PythonGeneralWebSocketHandlers.js';
 import { extractServerInfo } from '../components/PythonModuleRegistry.js';
+import yaml from 'js-yaml';
+
+/**
+ * Extract event type mappings from AsyncAPI spec
+ * Maps schema names to their x-event-type values
+ */
+function extractEventTypeMappings(asyncapi) {
+  const mappings = {};
+  
+  try {
+    // Get the raw JSON spec which has the x-event-type extensions
+    const rawSpec = asyncapi.json();
+    
+    // Check channels for messages with x-event-type
+    if (rawSpec && rawSpec.channels) {
+      Object.keys(rawSpec.channels).forEach(channelKey => {
+        const channel = rawSpec.channels[channelKey];
+        if (channel && channel.messages) {
+          Object.keys(channel.messages).forEach(msgKey => {
+            const message = channel.messages[msgKey];
+            
+            // Check if message is a reference
+            if (message && message['$ref']) {
+              // Resolve the reference
+              const refPath = message['$ref'];
+              const refParts = refPath.split('/').slice(1); // Remove '#'
+              let referencedMessage = rawSpec;
+              for (const part of refParts) {
+                if (referencedMessage) {
+                  referencedMessage = referencedMessage[part];
+                }
+              }
+              if (referencedMessage && referencedMessage['x-event-type']) {
+                // Get schema name from payload $ref
+                if (referencedMessage.payload && referencedMessage.payload.$ref) {
+                  const schemaRefParts = referencedMessage.payload.$ref.split('/');
+                  const schemaName = schemaRefParts[schemaRefParts.length - 1];
+                  if (schemaName) {
+                    mappings[schemaName] = referencedMessage['x-event-type'];
+                  }
+                }
+              }
+            }
+            // Check direct messages (not references) with x-event-type
+            else if (message && message['x-event-type']) {
+              // Get schema name from payload $ref
+              if (message.payload && message.payload.$ref) {
+                const refParts = message.payload.$ref.split('/');
+                const schemaName = refParts[refParts.length - 1];
+                if (schemaName) {
+                  mappings[schemaName] = message['x-event-type'];
+                }
+              }
+            }
+          });
+        }
+      });
+    }
+    
+    // Also check components/messages
+    if (rawSpec && rawSpec.components && rawSpec.components.messages) {
+      Object.keys(rawSpec.components.messages).forEach(msgKey => {
+        const message = rawSpec.components.messages[msgKey];
+        if (message && message['x-event-type']) {
+          // Get schema name from payload $ref
+          if (message.payload && message.payload.$ref) {
+            const refParts = message.payload.$ref.split('/');
+            const schemaName = refParts[refParts.length - 1];
+            if (schemaName) {
+              mappings[schemaName] = message['x-event-type'];
+            }
+          }
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('Error extracting event type mappings:', e);
+  }
+  
+  // Log warning if no mappings were extracted from spec
+  if (Object.keys(mappings).length === 0) {
+    console.warn('Warning: No x-event-type mappings found in AsyncAPI spec. Event parsers will use default naming.');
+  }
+  
+  return mappings;
+}
 
 /**
  * Detect module information directly from AsyncAPI spec content
@@ -155,12 +241,173 @@ function getAuthCapabilities(asyncapi) {
 }
 
 /**
+ * Extract zero-parameter methods from AsyncAPI spec
+ * These are methods that should not have any parameters added during authentication
+ */
+function extractZeroParamMethods(asyncapi) {
+  const zeroParamMethods = [];
+  
+  try {
+    const rawSpec = asyncapi.json();
+    const operations = asyncapi.operations();
+    
+    // Try different ways to get operations
+    let operationsList = [];
+    if (operations) {
+      if (typeof operations.all === 'function') {
+        operationsList = operations.all();
+      } else if (Array.isArray(operations)) {
+        operationsList = operations;
+      } else if (typeof operations === 'object') {
+        operationsList = Object.keys(operations).map(key => operations[key]);
+      }
+    }
+    
+    if (operationsList && operationsList.length > 0) {
+      operationsList.forEach(operation => {
+        const operationId = operation.id();
+        if (!operationId) return;
+        
+        // Extract method name from operation ID
+        let methodName = '';
+        if (operationId.startsWith('send')) {
+          const title = operation.title ? operation.title() : '';
+          if (title && title.includes('Send to ')) {
+            methodName = title.replace('Send to ', '').trim();
+          } else {
+            // Fallback: convert sendOrderPlace -> order.place
+            methodName = operationId.replace('send', '');
+            methodName = methodName.replace(/([A-Z])/g, '.$1').toLowerCase();
+            if (methodName.startsWith('.')) {
+              methodName = methodName.substring(1);
+            }
+          }
+        }
+        
+        if (methodName) {
+          // Check if this operation has security requirements but no request parameters
+          // These methods authenticate at session level, not per-request
+          const security = operation.security();
+          const hasAuth = security && security.length > 0;
+          
+          // Check if operation has request message with parameters
+          let hasRequestParams = false;
+          try {
+            // Get the operation's channel and messages
+            const channel = operation.channel();
+            if (channel) {
+              const messages = channel.messages();
+              if (messages) {
+                // Check each message for parameters
+                Object.values(messages).forEach(message => {
+                  if (message.payload) {
+                    const payload = message.payload();
+                    // Check if payload has properties that aren't auth-related
+                    if (payload && payload.properties) {
+                      const props = Object.keys(payload.properties());
+                      // Filter out standard wrapper fields
+                      const nonAuthProps = props.filter(p => 
+                        p !== 'id' && p !== 'method' && p !== 'params'
+                      );
+                      if (nonAuthProps.length > 0) {
+                        hasRequestParams = true;
+                      }
+                    }
+                  }
+                });
+              }
+            }
+          } catch (e) {
+            // Fallback: check raw spec for operation parameters
+            if (rawSpec && rawSpec.operations && rawSpec.operations[operationId]) {
+              const opSpec = rawSpec.operations[operationId];
+              if (opSpec.channel && rawSpec.channels) {
+                const channelSpec = rawSpec.channels[opSpec.channel.replace('#/channels/', '')];
+                if (channelSpec && channelSpec.messages) {
+                  Object.values(channelSpec.messages).forEach(msg => {
+                    if (msg.payload && msg.payload.$ref) {
+                      // Check the referenced schema
+                      const schemaRef = msg.payload.$ref.replace('#/components/schemas/', '');
+                      if (rawSpec.components && rawSpec.components.schemas && rawSpec.components.schemas[schemaRef]) {
+                        const schema = rawSpec.components.schemas[schemaRef];
+                        if (schema.properties && schema.properties.params) {
+                          // Check if params has required fields or properties
+                          const paramsSchema = schema.properties.params;
+                          if (paramsSchema.properties && Object.keys(paramsSchema.properties).length === 0) {
+                            // Empty params object
+                            hasRequestParams = false;
+                          } else if (paramsSchema.required && paramsSchema.required.length === 0) {
+                            // No required params
+                            hasRequestParams = false;
+                          } else {
+                            hasRequestParams = true;
+                          }
+                        }
+                      }
+                    }
+                  });
+                }
+              }
+            }
+          }
+          
+          // If method has auth but no request params, it's a zero-param method
+          if (hasAuth && !hasRequestParams) {
+            zeroParamMethods.push(methodName);
+          }
+        }
+      });
+    }
+  } catch (e) {
+    console.warn('Error extracting zero-param methods:', e.message);
+  }
+  
+  // If extraction failed or found nothing, return empty array
+  // The SDK will handle this gracefully
+  return zeroParamMethods;
+}
+
+/**
  * Build operation security map from AsyncAPI spec
  */
 function buildOperationSecurityMap(asyncapi) {
   const operationSecurityMap = {};
   
   try {
+    const rawSpec = asyncapi.json();
+    
+    // First try to use raw spec operations which is more reliable
+    if (rawSpec && rawSpec.operations) {
+      Object.keys(rawSpec.operations).forEach(operationId => {
+        const op = rawSpec.operations[operationId];
+        
+        // Extract method name from title
+        let methodName = '';
+        if (op.title && op.title.includes('Send to ')) {
+          methodName = op.title.replace('Send to ', '').trim();
+        }
+        
+        if (methodName) {
+          // Extract security scheme name
+          if (op.security && op.security.length > 0) {
+            const secRef = op.security[0];
+            if (secRef && secRef['$ref']) {
+              const schemeName = secRef['$ref'].split('/').pop();
+              if (schemeName) {
+                operationSecurityMap[methodName] = schemeName;
+              }
+            }
+          }
+        }
+      });
+      
+      // If we got mappings from raw spec, return them
+      if (Object.keys(operationSecurityMap).length > 0) {
+        return operationSecurityMap;
+      }
+    }
+    
+    // Fallback to parsed operations if raw spec doesn't work
     const operations = asyncapi.operations();
     
     // Try different ways to get operations
@@ -202,38 +449,64 @@ function buildOperationSecurityMap(asyncapi) {
         
         if (methodName) {
           // Get security requirements for this operation
-          const security = operation.security();
-          if (security && security.length > 0) {
-            // Handle both direct security and $ref format
-            const secReq = security[0];
-            if (secReq) {
-              // Check if it's a $ref format
-              if (secReq['$ref']) {
+          // First try the raw spec approach which is more reliable
+          let securitySchemeName = null;
+          
+          // Check raw spec for security
+          if (rawSpec && rawSpec.operations && rawSpec.operations[operationId]) {
+            const opSpec = rawSpec.operations[operationId];
+            if (opSpec.security && opSpec.security.length > 0) {
+              const securityRef = opSpec.security[0];
+              if (securityRef && securityRef['$ref']) {
                 // Extract security scheme name from $ref
                 // Format: #/components/securitySchemes/userData
-                const refPath = secReq['$ref'];
+                const refPath = securityRef['$ref'];
                 const schemeName = refPath.split('/').pop();
                 if (schemeName) {
-                  operationSecurityMap[methodName] = schemeName;
-                }
-              } else if (secReq.all) {
-                // Handle the parsed format
-                const schemes = secReq.all();
-                if (schemes && schemes.length > 0) {
-                  const scheme = schemes[0].scheme();
-                  if (scheme) {
-                    const schemeName = scheme.id();
-                    operationSecurityMap[methodName] = schemeName;
-                  }
-                }
-              } else {
-                // Check for direct scheme names in the security object
-                const schemeNames = Object.keys(secReq);
-                if (schemeNames.length > 0) {
-                  operationSecurityMap[methodName] = schemeNames[0];
+                  securitySchemeName = schemeName;
                 }
               }
             }
+          }
+          
+          // Fallback to parsed operation security
+          if (!securitySchemeName) {
+            const security = operation.security();
+            if (security && security.length > 0) {
+              // Handle both direct security and $ref format
+              const secReq = security[0];
+              if (secReq) {
+                // Check if it's a $ref format
+                if (secReq['$ref']) {
+                  // Extract security scheme name from $ref
+                  // Format: #/components/securitySchemes/userData
+                  const refPath = secReq['$ref'];
+                  const schemeName = refPath.split('/').pop();
+                  if (schemeName) {
+                    securitySchemeName = schemeName;
+                  }
+                } else if (secReq.all) {
+                  // Handle the parsed format
+                  const schemes = secReq.all();
+                  if (schemes && schemes.length > 0) {
+                    const scheme = schemes[0].scheme();
+                    if (scheme) {
+                      securitySchemeName = scheme.id();
+                    }
+                  }
+                } else {
+                  // Check for direct scheme names in the security object
+                  const schemeNames = Object.keys(secReq);
+                  if (schemeNames.length > 0) {
+                    securitySchemeName = schemeNames[0];
+                  }
+                }
+              }
+            }
+          }
+          
+          if (securitySchemeName) {
+            operationSecurityMap[methodName] = securitySchemeName;
           }
         }
         
@@ -264,7 +537,7 @@ function buildOperationSecurityMap(asyncapi) {
   return operationSecurityMap;
 }
 
-export default function ({ asyncapi, params }) {
+export default function ({ asyncapi, params, originalAsyncAPI }) {
   const packageName = params.packageName || 'binance-websocket';
   const moduleName = params.moduleName || 'binance-websocket-client';
   const version = params.version || '0.1.0';
@@ -278,64 +551,84 @@ export default function ({ asyncapi, params }) {
   
   // Detect module type from spec content rather than hardcoded detection
   const detectedModule = detectModuleFromSpec(asyncapi);
-  // Debug AsyncAPI object
   
   const moduleType = getModuleType(detectedModule, asyncapi);
   const authCapabilities = getAuthCapabilities(asyncapi);
-  // Try to build operation security map from AsyncAPI spec
-  let operationSecurityMap = {};
+  
+  // Try to get the raw spec for extraction
+  let rawSpec = null;
+  
+  // The originalAsyncAPI is a stringified version of the spec
+  // We need to parse it to get the actual JSON object
   try {
-    operationSecurityMap = buildOperationSecurityMap(asyncapi);
+    if (originalAsyncAPI) {
+      // originalAsyncAPI is a string, parse it
+      try {
+        rawSpec = JSON.parse(originalAsyncAPI);
+      } catch (jsonErr) {
+        // If JSON parse fails, try YAML
+        try {
+          rawSpec = yaml.load(originalAsyncAPI);
+        } catch (yamlErr) {
+          console.warn('Warning: Unable to parse originalAsyncAPI as JSON or YAML');
+        }
+      }
+    }
+    
+    // Fallback to asyncapi.json() if originalAsyncAPI doesn't work
+    if (!rawSpec && typeof asyncapi.json === 'function') {
+      const jsonResult = asyncapi.json();
+      // Check if it's a valid object with expected properties
+      if (jsonResult && typeof jsonResult === 'object' && !Array.isArray(jsonResult)) {
+        // Check if it has AsyncAPI structure
+        if (jsonResult.asyncapi || jsonResult.info || jsonResult.channels || jsonResult.operations) {
+          rawSpec = jsonResult;
+        }
+      }
+    }
   } catch (e) {
-    console.warn('Failed to build operation security map from spec:', e.message);
+    console.warn('Warning: Unable to get raw spec:', e.message);
   }
   
-  // Always use hardcoded security mappings for Binance spot API
-  // (The AsyncAPI generator doesn't properly pass operation security to templates)
-  if (detectedModule === 'spot' || Object.keys(operationSecurityMap).length === 0) {
-    operationSecurityMap = {
-      // USER_STREAM: userDataStream methods (only apiKey)
-      'userDataStream.start': 'userStream',
-      'userDataStream.ping': 'userStream',
-      'userDataStream.stop': 'userStream',
-      'userDataStream.subscribe': 'userStream',
-      'userDataStream.unsubscribe': 'userStream',
-      
-      // TRADE: Trading and order methods (apiKey + timestamp + signature)
-      'order.place': 'trade',
-      'order.test': 'trade',
-      'order.cancel': 'trade',
-      'order.cancelReplace': 'trade',
-      'order.amend.keepPriority': 'trade',
-      'orderList.place': 'trade',
-      'orderList.place.oco': 'trade',
-      'orderList.place.oto': 'trade',
-      'orderList.place.otoco': 'trade',
-      'orderList.cancel': 'trade',
-      'openOrders.cancelAll': 'trade',
-      'sor.order.place': 'trade',
-      'sor.order.test': 'trade',
-      
-      // USER_DATA: Account information methods (apiKey + timestamp + signature)
-      'account.status': 'userData',
-      'account.commission': 'userData',
-      'account.rateLimits.orders': 'userData',
-      'order.status': 'userData',
-      'orderList.status': 'userData',
-      'openOrders.status': 'userData',
-      'openOrderLists.status': 'userData',
-      'allOrders': 'userData',
-      'allOrderLists': 'userData',
-      'myTrades': 'userData',
-      'myAllocations': 'userData',
-      'myPreventedMatches': 'userData',
-      'order.amendments': 'userData',
-      
-      // SIGNED: Session methods (apiKey + timestamp + signature)
-      'session.logon': 'userData',
-      'session.status': 'userData',
-      'session.logout': 'userData'
+  
+  // If we can't get raw spec, try to build mappings from parsed objects
+  let eventTypeMappings = {};
+  let operationSecurityMap = {};
+  let zeroParamMethods = [];
+  
+  if (rawSpec) {
+    console.log('Extracting from raw spec with keys:', Object.keys(rawSpec).join(', '));
+    
+    // Create a mock asyncapi object that uses rawSpec for json()
+    const mockAsyncapi = {
+      ...asyncapi,
+      json: () => rawSpec
     };
+    
+    // Extract from raw spec
+    eventTypeMappings = extractEventTypeMappings(mockAsyncapi);
+    operationSecurityMap = buildOperationSecurityMap(mockAsyncapi);
+    zeroParamMethods = extractZeroParamMethods(mockAsyncapi);
+    
+    console.log(`Extracted ${Object.keys(eventTypeMappings).length} event mappings, ${Object.keys(operationSecurityMap).length} security mappings, ${zeroParamMethods.length} zero-param methods`);
+  } else {
+    console.warn('Warning: Could not get raw spec for extraction');
+  }
+  
+  // If extraction failed, try alternative methods or leave empty for graceful degradation
+  if (Object.keys(operationSecurityMap).length === 0) {
+    console.warn('Warning: No operation security mappings extracted from AsyncAPI spec. Authentication may not work correctly.');
+    // The SDK will still work but authentication will need to be handled manually
+  }
+  
+  if (Object.keys(eventTypeMappings).length === 0) {
+    console.warn('Warning: No event type mappings extracted from AsyncAPI spec. Event parsers will use default naming.');
+    // The SDK will fall back to class name-based event type detection
+  }
+  
+  if (zeroParamMethods.length === 0) {
+    console.warn('Warning: No zero-param methods extracted from AsyncAPI spec.');
+    // The SDK may send unnecessary parameters to some methods
   }
   
   // Extract complete server information from AsyncAPI spec
@@ -350,16 +643,25 @@ export default function ({ asyncapi, params }) {
     .map(([key, value]) => `'${key}': '${value}'`)
     .join(',\n            ');
   
-  // Ensure we have a non-empty map
+  // If no security mappings were extracted, leave empty
+  // The SDK will work in public-only mode
   if (!operationSecurityMapPython) {
-    operationSecurityMapPython = `'order.place': 'trade',
-            'order.test': 'trade',
-            'order.cancel': 'trade',
-            'account.status': 'userData',
-            'account.commission': 'userData',
-            'userDataStream.start': 'userStream',
-            'userDataStream.ping': 'userStream',
-            'session.logon': 'userData'`;
+    operationSecurityMapPython = '';
+  }
+  
+  // Generate zero-param methods as Python list
+  let zeroParamMethodsPython = zeroParamMethods.map(m => `'${m}'`).join(', ');
+  if (!zeroParamMethodsPython) {
+    // If no methods extracted, use empty list
+    zeroParamMethodsPython = '';
+  }
+  
+  // Generate event type mappings as Python dictionary
+  let eventTypeMappingsPython = Object.entries(eventTypeMappings)
+    .map(([key, value]) => `'${key}': '${value}'`)
+    .join(',\n                            ');
+  if (!eventTypeMappingsPython) {
+    eventTypeMappingsPython = '';
   }
 
   // Set first server as default if available
@@ -907,12 +1209,8 @@ ${serverInfoList.map(server => `            "${server.name}": {
         # Special case: some methods should send 0 parameters
         # These methods work with session-based authentication after connection
         method = message.get('method', '')
-        zero_param_methods = [
-            'userDataStream.subscribe', 
-            'userDataStream.unsubscribe',
-            'session.status',
-            'session.logout'
-        ]
+        # Zero-param methods extracted from AsyncAPI spec
+        zero_param_methods = [${zeroParamMethodsPython}]
         if method in zero_param_methods:
             # Don't add any parameters for these methods - they send 0 parameters
             # Authentication is handled at the session/connection level
@@ -1303,12 +1601,21 @@ ${handlersCode}
                     
                     # If no event type found from field, derive from class name
                     if not event_type:
-                        # Convert class name to event type
-                        # TradeEvent -> trade, KlineEvent -> kline
-                        # OutboundAccountPositionEvent -> outboundAccountPosition
-                        base_name = name.replace('Event', '')
-                        # Convert PascalCase to camelCase for event type
-                        event_type = base_name[0].lower() + base_name[1:] if base_name else None
+                        # Use the event type mappings from the AsyncAPI spec
+                        # These were extracted from x-event-type fields
+                        event_type_mappings = {
+                            ${eventTypeMappingsPython}
+                        }
+                        
+                        # Check if we have a mapping for this class
+                        if name in event_type_mappings:
+                            event_type = event_type_mappings[name]
+                        else:
+                            # Fallback: convert class name to event type
+                            # OutboundAccountPositionEvent -> outboundAccountPosition
+                            base_name = name.replace('Event', '')
+                            # Convert PascalCase to camelCase for event type
+                            event_type = base_name[0].lower() + base_name[1:] if base_name else None
                     
                     if event_type:
                         parsers[event_type] = obj
