@@ -180,7 +180,13 @@ function getModuleType(detectedModule, asyncapi) {
  */
 function getAuthCapabilities(asyncapi) {
   try {
-    const operations = asyncapi.operations();
+    let operations = null;
+    try {
+      operations = asyncapi.operations();
+    } catch (e) {
+      // operations() method might not exist for some specs
+    }
+    
     if (!operations || typeof operations.all !== 'function') {
       return { requiresAuth: false, authTypes: [], securitySchemes: {} };
     }
@@ -249,7 +255,12 @@ function extractZeroParamMethods(asyncapi) {
   
   try {
     const rawSpec = asyncapi.json();
-    const operations = asyncapi.operations();
+    let operations = null;
+    try {
+      operations = asyncapi.operations();
+    } catch (e) {
+      // operations() method might not exist for some specs
+    }
     
     // Try different ways to get operations
     let operationsList = [];
@@ -408,7 +419,12 @@ function buildOperationSecurityMap(asyncapi) {
     }
     
     // Fallback to parsed operations if raw spec doesn't work
-    const operations = asyncapi.operations();
+    let operations = null;
+    try {
+      operations = asyncapi.operations();
+    } catch (e) {
+      // operations() method might not exist for some specs
+    }
     
     // Try different ways to get operations
     let operationsList = [];
