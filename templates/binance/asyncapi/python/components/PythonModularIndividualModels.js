@@ -3,6 +3,79 @@
  * Based on the Go template architecture for clean, dynamic model generation
  */
 
+/**
+ * Detect if a message is an event based on AsyncAPI spec metadata
+ * Uses spec-driven detection instead of hardcoded patterns
+ */
+function detectIfEventMessage(message, messageName) {
+  // Check for x-event-type extension in the message (spec-driven)
+  try {
+    const extensions = message.extensions();
+    if (extensions && extensions['x-event-type']) {
+      return true;  // Has explicit event type marking
+    }
+  } catch (e) {
+    // Extensions not available
+  }
+  
+  // Check if message has an 'event' or 'e' field in its payload
+  // This is a common pattern across many exchanges for event messages
+  try {
+    const payload = message.payload();
+    if (payload && payload.properties) {
+      const properties = payload.properties();
+      if (properties) {
+        // Check for common event indicator fields
+        const eventIndicatorFields = ['e', 'event', 'eventType', 'event_type'];
+        for (const field of eventIndicatorFields) {
+          if (properties.has && properties.has(field)) {
+            return true;
+          } else if (properties[field]) {
+            return true;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Properties not accessible
+  }
+  
+  // Check if the message is in a receive operation (events are typically received, not sent)
+  try {
+    // Get the channel this message belongs to
+    const channels = message.channels();
+    if (channels && channels.length > 0) {
+      const channel = channels[0];
+      const operations = channel.operations();
+      if (operations) {
+        // Check if any operation is a receive/subscribe operation
+        for (const op of operations) {
+          const action = op.action();
+          if (action && (action === 'receive' || action === 'subscribe')) {
+            return true;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Channel/operation info not available
+  }
+  
+  // Fallback: Check if message name suggests it's an event
+  // This is a generic pattern that works across exchanges
+  // But only as a last resort when spec metadata is not available
+  if (messageName) {
+    // Generic patterns that indicate events across different exchanges
+    return messageName.toLowerCase().includes('event') ||
+           messageName.toLowerCase().includes('update') ||
+           messageName.toLowerCase().includes('notification') ||
+           messageName.toLowerCase().includes('alert') ||
+           messageName.toLowerCase().includes('stream');
+  }
+  
+  return false;
+}
+
 export function PythonModularIndividualModels({ asyncapi }) {
   const messages = new Map();
   const componentSchemas = new Map();
@@ -20,9 +93,8 @@ export function PythonModularIndividualModels({ asyncapi }) {
         // Create unique message names based on message ID or name
         const uniqueMessageName = messageId || `${channelName}_${messageName}`;
         
-        // Determine if this is an event message
-        const isEventMessage = messageName.includes('Event') || 
-                              messageName.match(/(balanceUpdate|executionReport|listStatus|listenKeyExpired|outboundAccountPosition|externalLockUpdate)/i);
+        // Determine if this is an event message from AsyncAPI spec metadata
+        const isEventMessage = detectIfEventMessage(message, messageName);
         
         messages.set(uniqueMessageName, {
           message,
@@ -41,12 +113,33 @@ export function PythonModularIndividualModels({ asyncapi }) {
     const json = asyncapi.json();
     if (json && json.components && json.components.schemas) {
       Object.entries(json.components.schemas).forEach(([schemaName, schemaData]) => {
+        // Detect if this is an event schema from spec metadata
+        let isEvent = false;
+        
+        // Check for x-event-type extension
+        if (schemaData['x-event-type']) {
+          isEvent = true;
+        }
+        // Check if schema has event indicator fields
+        else if (schemaData.properties) {
+          const eventIndicatorFields = ['e', 'event', 'eventType', 'event_type'];
+          isEvent = eventIndicatorFields.some(field => 
+            schemaData.properties[field] !== undefined
+          );
+        }
+        // Last resort: check naming pattern (but this is generic, not Binance-specific)
+        if (!isEvent && schemaName) {
+          isEvent = schemaName.toLowerCase().includes('event') ||
+                   schemaName.toLowerCase().includes('update') ||
+                   schemaName.toLowerCase().includes('notification');
+        }
+        
         componentSchemas.set(schemaName, {
           type: schemaData.type,
           properties: schemaData.properties,
           required: schemaData.required || [],
           description: schemaData.description,
-          isEvent: schemaName.includes('Event')
+          isEvent: isEvent
         });
       });
     }
