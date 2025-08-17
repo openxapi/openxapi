@@ -55,8 +55,9 @@ function getDefaultModuleConfig() {
       }
     },
     serverConfig: {
-      mainnetUrlPattern: 'wss://stream.binance.com:9443/ws',
-      testnetUrlPattern: 'wss://testnet.dex.binance.org/api/ws'
+      // Server URLs will be extracted from AsyncAPI spec
+      mainnetUrlPattern: null,
+      testnetUrlPattern: null
     }
   };
 }
@@ -185,6 +186,7 @@ export function detectModuleName(asyncapi, context = {}) {
 }
 
 // Pre-register known modules with their specific configurations
+// Server URLs are now extracted from AsyncAPI spec, not hardcoded
 registerModule('spot', {
   authentication: {
     supportedTypes: ['HMAC_SHA256', 'RSA', 'ED25519'],
@@ -195,10 +197,6 @@ registerModule('spot', {
       requiresAuth: true,
       skipParamsCreation: true
     }
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://ws-api.binance.com:443/ws-api/v3',
-    testnetUrlPattern: 'wss://testnet.binance.vision/ws-api/v3'
   }
 });
 
@@ -209,10 +207,6 @@ registerModule('umfutures', {
   },
   specialMethods: {
     // umfutures might have different special method handling
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://fstream.binance.com/ws-fapi/v1',
-    testnetUrlPattern: 'wss://stream.binancefuture.com/ws-fapi/v1'
   }
 });
 
@@ -223,10 +217,6 @@ registerModule('cmfutures', {
   },
   specialMethods: {
     // cmfutures might have different special method handling
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://dstream.binance.com/ws-dapi/v1',
-    testnetUrlPattern: 'wss://testnet.binancefuture.com/ws-dapi/v1'
   }
 });
 
@@ -241,10 +231,6 @@ registerModule('spot-streams', {
       requiresAuth: false,
       useStreamFormat: true
     }
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://stream.binance.com:9443/ws',
-    testnetUrlPattern: 'wss://testnet.binance.vision/ws'
   }
 });
 
@@ -260,10 +246,6 @@ registerModule('umfutures-streams', {
       useStreamFormat: true,
       futuresSpecific: true
     }
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://fstream.binance.com/ws',
-    testnetUrlPattern: 'wss://stream.binancefuture.com/ws'
   }
 });
 
@@ -279,10 +261,6 @@ registerModule('cmfutures-streams', {
       useStreamFormat: true,
       futuresSpecific: true
     }
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://dstream.binance.com/ws',
-    testnetUrlPattern: 'wss://testnet.binancefuture.com/ws'
   }
 });
 
@@ -298,10 +276,6 @@ registerModule('options-streams', {
       useStreamFormat: true,
       optionsSpecific: true
     }
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://nbstream.binance.com:9443/ws',
-    testnetUrlPattern: 'wss://testnet.binance.vision/ws'
   }
 });
 
@@ -317,10 +291,6 @@ registerModule('options', {
       useListenKey: true,
       skipParamsCreation: true
     }
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://nbstream.binance.com/eoptions/ws',
-    testnetUrlPattern: 'wss://testnet.binance.vision/eoptions/ws'
   }
 });
 
@@ -335,9 +305,5 @@ registerModule('pmargin', {
       requiresAuth: true,
       useListenKey: true
     }
-  },
-  serverConfig: {
-    mainnetUrlPattern: 'wss://fstream.binance.com/pm/ws',
-    testnetUrlPattern: 'wss://stream.binancefuture.com/pm/ws'
   }
 });
