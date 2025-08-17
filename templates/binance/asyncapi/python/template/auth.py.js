@@ -5,13 +5,14 @@ export default function ({ asyncapi, params }) {
   const moduleName = params.moduleName || 'binance-websocket-client';
   const version = params.version || '0.1.0';
   const author = params.author || 'openxapi';
+  const exchangeName = params.exchangeName || 'Binance';  // Make exchange name configurable
 
   return (
     <File name="auth.py">
       <Text>{`"""
-Binance WebSocket Authentication
+${exchangeName} WebSocket Authentication
 
-This module provides authentication utilities for the Binance WebSocket API,
+This module provides authentication utilities for the ${exchangeName} WebSocket API,
 supporting multiple signing methods including HMAC-SHA256, RSA, and Ed25519.
 
 Author: ${author}
@@ -39,9 +40,9 @@ class AuthenticationError(Exception):
     pass
 
 
-class BinanceAuth:
+class ${exchangeName}Auth:
     """
-    Binance API authentication handler
+    ${exchangeName} API authentication handler
     
     Supports multiple authentication methods:
     - HMAC-SHA256 (default)
@@ -65,8 +66,8 @@ class BinanceAuth:
             private_key: Private key for RSA/Ed25519 signing (PEM format)
             auth_type: Authentication type ("hmac", "rsa", "ed25519")
         """
-        self.api_key = api_key or os.getenv("BINANCE_API_KEY")
-        self.secret_key = secret_key or os.getenv("BINANCE_SECRET_KEY")
+        self.api_key = api_key or os.getenv("${exchangeName.toUpperCase()}_API_KEY")
+        self.secret_key = secret_key or os.getenv("${exchangeName.toUpperCase()}_SECRET_KEY")
         self.auth_type = auth_type.lower()
         
         if not self.api_key:
@@ -83,7 +84,7 @@ class BinanceAuth:
                 raise AuthenticationError("cryptography library is required for RSA/Ed25519 authentication")
                 
             if not private_key:
-                private_key = os.getenv("BINANCE_PRIVATE_KEY")
+                private_key = os.getenv("${exchangeName.toUpperCase()}_PRIVATE_KEY")
             if not private_key:
                 raise AuthenticationError(f"Private key is required for {self.auth_type.upper()} authentication")
                 
@@ -198,25 +199,25 @@ class BinanceAuth:
         }
 
     @classmethod
-    def from_env(cls, auth_type: str = "hmac") -> 'BinanceAuth':
+    def from_env(cls, auth_type: str = "hmac") -> '${exchangeName}Auth':
         """
         Create authentication from environment variables
         
         Environment variables:
-        - BINANCE_API_KEY: API key
-        - BINANCE_SECRET_KEY: Secret key (for HMAC)
-        - BINANCE_PRIVATE_KEY: Private key (for RSA/Ed25519)
+        - ${exchangeName.toUpperCase()}_API_KEY: API key
+        - ${exchangeName.toUpperCase()}_SECRET_KEY: Secret key (for HMAC)
+        - ${exchangeName.toUpperCase()}_PRIVATE_KEY: Private key (for RSA/Ed25519)
         
         Args:
             auth_type: Authentication type ("hmac", "rsa", "ed25519")
             
         Returns:
-            Configured BinanceAuth instance
+            Configured ${exchangeName}Auth instance
         """
         return cls(auth_type=auth_type)
 
     def __repr__(self) -> str:
-        return f"BinanceAuth(auth_type='{self.auth_type}', api_key='***')"
+        return f"${exchangeName}Auth(auth_type='{self.auth_type}', api_key='***')"
 
 
 # Utility functions for key generation and validation
@@ -305,7 +306,7 @@ if __name__ == "__main__":
     
     # Example with HMAC authentication
     try:
-        auth = BinanceAuth(
+        auth = ${exchangeName}Auth(
             api_key="test_api_key",
             secret_key="test_secret_key",
             auth_type="hmac"
@@ -330,7 +331,7 @@ if __name__ == "__main__":
             private_key_pem, public_key_pem = generate_rsa_keypair()
             print("Generated RSA key pair for testing")
             
-            auth_rsa = BinanceAuth(
+            auth_rsa = ${exchangeName}Auth(
                 api_key="test_api_key",
                 private_key=private_key_pem,
                 auth_type="rsa"

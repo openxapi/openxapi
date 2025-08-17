@@ -599,6 +599,7 @@ export default function ({ asyncapi, params, originalAsyncAPI }) {
   const moduleName = params.moduleName || 'binance-websocket-client';
   const version = params.version || '0.1.0';
   const author = params.author || 'openxapi';
+  const exchangeName = params.exchangeName || 'Binance';  // Make exchange name configurable
   
   // Extract module information directly from AsyncAPI spec
   const apiInfo = asyncapi.info();
@@ -757,12 +758,12 @@ from pydantic import BaseModel, ValidationError
 
 try:
     from .models import *
-    from .auth import BinanceAuth
+    from .auth import ${exchangeName}Auth
 except ImportError:
     # For standalone usage
     try:
         from models import *
-        from auth import BinanceAuth
+        from auth import ${exchangeName}Auth
     except ImportError:
         pass
 
@@ -782,7 +783,7 @@ class AuthenticationError(Exception):
     pass
 
 
-class BinanceWebSocketClient:
+class ${exchangeName}WebSocketClient:
     """
     ${apiTitle} - Async WebSocket Client
     
@@ -806,7 +807,7 @@ ${serverInfoList.map(server => `      * ${server.name}: ${server.url}`).join('\n
     
     def __init__(
         self,
-        auth: Optional[BinanceAuth] = None,
+        auth: Optional[${exchangeName}Auth] = None,
         auto_reconnect: bool = True,
         ping_interval: int = 20,
         ping_timeout: int = 10,
@@ -1792,7 +1793,7 @@ async def main():
     """Example usage of the WebSocket client"""
     
     # Initialize client for ${apiTitle} (${detectedModule} module)
-    client = BinanceWebSocketClient()
+    client = ${exchangeName}WebSocketClient()
     
     # Check server configuration
     server_info = client.get_server_info()
@@ -1830,7 +1831,7 @@ async def main():
         await asyncio.sleep(10)
     
     # Example 2: Connect to specific server
-    client2 = BinanceWebSocketClient()
+    client2 = ${exchangeName}WebSocketClient()
     available_servers = client2.get_available_servers()
     if len(available_servers) > 1:
         await client2.connect_to_server(available_servers[1])
@@ -1840,7 +1841,7 @@ async def main():
     # Example 3: Spec-specific usage based on ${apiTitle}
     ${moduleType === 'streams' ? `
     # Stream module usage (${detectedModule})
-    client3 = BinanceWebSocketClient()
+    client3 = ${exchangeName}WebSocketClient()
     
     async with client3:
         # Connect to single stream endpoint  
@@ -1862,7 +1863,7 @@ async def main():
         
         await asyncio.sleep(10)` : `
     # API module usage (${detectedModule})
-    client3 = BinanceWebSocketClient()
+    client3 = ${exchangeName}WebSocketClient()
     
     async with client3:
         # Connect to WebSocket API endpoint
