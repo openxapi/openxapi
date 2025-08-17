@@ -274,7 +274,58 @@ function extractZeroParamMethods(asyncapi) {
       }
     }
     
-    if (operationsList && operationsList.length > 0) {
+    // If no operations from parsed asyncapi, fall back to raw spec
+    if ((!operationsList || operationsList.length === 0) && rawSpec && rawSpec.operations) {
+      Object.keys(rawSpec.operations).forEach(operationId => {
+        const op = rawSpec.operations[operationId];
+        
+        // Only process 'send' operations
+        if (!operationId.startsWith('send')) return;
+        
+        // Extract method name from title
+        let methodName = '';
+        if (op.title && op.title.includes('Send to ')) {
+          methodName = op.title.replace('Send to ', '').trim();
+        }
+        
+        if (methodName) {
+          // Check for security
+          const hasAuth = op.security && op.security.length > 0;
+          
+          // Check for params in request message
+          let hasRequestParams = false;
+          if (op.channel && rawSpec.channels) {
+            const channelKey = op.channel.$ref ? op.channel.$ref.replace('#/channels/', '') : op.channel;
+            const channel = rawSpec.channels[channelKey];
+            if (channel && op.messages) {
+              op.messages.forEach(msgRef => {
+                const msgKey = msgRef.$ref ? msgRef.$ref.split('/').pop() : msgRef;
+                if (channel.messages && channel.messages[msgKey]) {
+                  const msg = channel.messages[msgKey];
+                  if (msg.$ref) {
+                    const refParts = msg.$ref.split('/');
+                    const msgName = refParts[refParts.length - 1];
+                    if (rawSpec.components && rawSpec.components.messages && rawSpec.components.messages[msgName]) {
+                      const message = rawSpec.components.messages[msgName];
+                      if (message.payload && message.payload.properties) {
+                        if (message.payload.properties.params) {
+                          hasRequestParams = true;
+                        }
+                      }
+                    }
+                  }
+                }
+              });
+            }
+          }
+          
+          // If method has auth but no request params, it's a zero-param method
+          if (hasAuth && !hasRequestParams) {
+            zeroParamMethods.push(methodName);
+          }
+        }
+      });
+    } else if (operationsList && operationsList.length > 0) {
       operationsList.forEach(operation => {
         const operationId = operation.id();
         if (!operationId) return;
@@ -313,14 +364,11 @@ function extractZeroParamMethods(asyncapi) {
                 Object.values(messages).forEach(message => {
                   if (message.payload) {
                     const payload = message.payload();
-                    // Check if payload has properties that aren't auth-related
+                    // Check if payload has a 'params' property
                     if (payload && payload.properties) {
                       const props = Object.keys(payload.properties());
-                      // Filter out standard wrapper fields
-                      const nonAuthProps = props.filter(p => 
-                        p !== 'id' && p !== 'method' && p !== 'params'
-                      );
-                      if (nonAuthProps.length > 0) {
+                      // If the message has a 'params' property, it has request parameters
+                      if (props.includes('params')) {
                         hasRequestParams = true;
                       }
                     }
@@ -336,21 +384,14 @@ function extractZeroParamMethods(asyncapi) {
                 const channelSpec = rawSpec.channels[opSpec.channel.replace('#/channels/', '')];
                 if (channelSpec && channelSpec.messages) {
                   Object.values(channelSpec.messages).forEach(msg => {
-                    if (msg.payload && msg.payload.$ref) {
-                      // Check the referenced schema
-                      const schemaRef = msg.payload.$ref.replace('#/components/schemas/', '');
-                      if (rawSpec.components && rawSpec.components.schemas && rawSpec.components.schemas[schemaRef]) {
-                        const schema = rawSpec.components.schemas[schemaRef];
-                        if (schema.properties && schema.properties.params) {
-                          // Check if params has required fields or properties
-                          const paramsSchema = schema.properties.params;
-                          if (paramsSchema.properties && Object.keys(paramsSchema.properties).length === 0) {
-                            // Empty params object
-                            hasRequestParams = false;
-                          } else if (paramsSchema.required && paramsSchema.required.length === 0) {
-                            // No required params
-                            hasRequestParams = false;
-                          } else {
+                    // Check if message references a component
+                    if (msg.$ref) {
+                      const msgRef = msg.$ref.replace('#/components/messages/', '');
+                      if (rawSpec.components && rawSpec.components.messages && rawSpec.components.messages[msgRef]) {
+                        const message = rawSpec.components.messages[msgRef];
+                        if (message.payload && message.payload.properties) {
+                          // Check if the payload has a 'params' property
+                          if (message.payload.properties.params) {
                             hasRequestParams = true;
                           }
                         }
