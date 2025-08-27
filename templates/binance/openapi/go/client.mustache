@@ -143,10 +143,21 @@ func parameterValueToString(obj interface{}, key string) string {
 
 		return fmt.Sprintf("%v", obj)
 	}
-	var param, ok = obj.(MappedNullable)
-	if !ok {
+	
+	// Handle regular pointer types (e.g., *string, *int, etc.)
+	v := reflect.ValueOf(obj)
+	if v.IsNil() {
 		return ""
 	}
+	
+	// Check if it's a MappedNullable type
+	var param, ok = obj.(MappedNullable)
+	if !ok {
+		// Not MappedNullable, dereference the pointer and return its value
+		return fmt.Sprintf("%v", v.Elem().Interface())
+	}
+	
+	// Handle MappedNullable types
 	dataMap, err := param.ToMap()
 	if err != nil {
 		return ""
@@ -317,14 +328,41 @@ func (c *APIClient) prepareRequest(
 		}
 	}
 
-	if strings.HasPrefix(headerParams["Content-Type"], "application/x-www-form-urlencoded") && len(formParams) > 0 {
+	// Store the encoded form data for GetBody function
+	var formData []byte
+	if strings.HasPrefix(headerParams["Content-Type"], "application/x-www-form-urlencoded") && (len(formParams) > 0 || ctx != nil) {
 		if body != nil {
 			return nil, errors.New("Cannot specify postBody and x-www-form-urlencoded form at the same time.")
 		}
-		body = &bytes.Buffer{}
-		body.WriteString(formParams.Encode())
+		
+		// Check if we have raw parameters from context
+		if rawParams, ok := ctx.Value(ContextRawParams).(map[string]string); ok && len(rawParams) > 0 {
+			// Remove raw parameter keys from formParams to avoid duplicates
+			for key := range rawParams {
+				formParams.Del(key)
+			}
+			
+			// Build form data with raw parameters included
+			encodedParams := formParams.Encode()
+			
+			// Add raw parameters without encoding
+			var parts []string
+			if encodedParams != "" {
+				parts = append(parts, encodedParams)
+			}
+			for key, value := range rawParams {
+				// Add raw parameter without URL encoding
+				parts = append(parts, key+"="+value)
+			}
+			formData = []byte(strings.Join(parts, "&"))
+		} else {
+			// No raw parameters, use normal encoding
+			formData = []byte(formParams.Encode())
+		}
+		
+		body = bytes.NewBuffer(formData)
 		// Set Content-Length
-		headerParams["Content-Length"] = fmt.Sprintf("%d", body.Len())
+		headerParams["Content-Length"] = fmt.Sprintf("%d", len(formData))
 	}
 
 	// Setup path and query parameters
@@ -366,6 +404,13 @@ func (c *APIClient) prepareRequest(
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	// Set up GetBody function for form-encoded requests (needed for signing)
+	if len(formData) > 0 {
+		localVarRequest.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(bytes.NewBuffer(formData)), nil
+		}
 	}
 
 	// add header parameters, if any

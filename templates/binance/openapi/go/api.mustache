@@ -253,6 +253,8 @@ func (a *{{{classname}}}Service) {{nickname}}Execute(r {{#structPrefix}}{{&class
 	}
 	{{/required}}
 {{/headerParams}}
+	// Prepare raw parameters for signature if needed
+	var rawParams map[string]string
 {{#formParams}}
 {{#isFile}}
 {{#isArray}}
@@ -295,7 +297,16 @@ func (a *{{{classname}}}Service) {{nickname}}Execute(r {{#structPrefix}}{{&class
 {{/isFile}}
 {{^isFile}}
 {{#required}}
+{{#vendorExtensions.x-no-encode}}
+	// x-no-encode parameter: store raw value, don't add to form params
+	if rawParams == nil {
+		rawParams = make(map[string]string)
+	}
+	rawParams["{{{baseName}}}"] = parameterValueToString(r.{{paramName}}, "{{{baseName}}}")
+{{/vendorExtensions.x-no-encode}}
+{{^vendorExtensions.x-no-encode}}
 	parameterAddToHeaderOrQuery(localVarFormParams, "{{{baseName}}}", r.{{paramName}}, "{{style}}", "{{collectionFormat}}")
+{{/vendorExtensions.x-no-encode}}
 {{/required}}
 {{^required}}
 {{#isModel}}
@@ -304,12 +315,30 @@ func (a *{{{classname}}}Service) {{nickname}}Execute(r {{#structPrefix}}{{&class
 		if err != nil {
 			return {{#returnType}}localVarReturnValue, {{/returnType}}nil, err
 		}
+{{#vendorExtensions.x-no-encode}}
+		// x-no-encode parameter: store raw value, don't add to form params
+		if rawParams == nil {
+			rawParams = make(map[string]string)
+		}
+		rawParams["{{{baseName}}}"] = paramJson
+{{/vendorExtensions.x-no-encode}}
+{{^vendorExtensions.x-no-encode}}
 		localVarFormParams.Add("{{{baseName}}}", paramJson)
+{{/vendorExtensions.x-no-encode}}
 	}
 {{/isModel}}
 {{^isModel}}
 	if r.{{paramName}} != nil {
+{{#vendorExtensions.x-no-encode}}
+		// x-no-encode parameter: store raw value, don't add to form params
+		if rawParams == nil {
+			rawParams = make(map[string]string)
+		}
+		rawParams["{{{baseName}}}"] = parameterValueToString(r.{{paramName}}, "{{{baseName}}}")
+{{/vendorExtensions.x-no-encode}}
+{{^vendorExtensions.x-no-encode}}
 		parameterAddToHeaderOrQuery(localVarFormParams, "{{{baseName}}}", r.{{paramName}}, "{{style}}", "{{collectionFormat}}")
+{{/vendorExtensions.x-no-encode}}
 	}
 {{/isModel}}
 {{/required}}
@@ -319,6 +348,10 @@ func (a *{{{classname}}}Service) {{nickname}}Execute(r {{#structPrefix}}{{&class
 	// body params
 	localVarPostBody = r.{{paramName}}
 {{/bodyParams}}
+	// Add raw parameters to context if any
+	if len(rawParams) > 0 {
+		r.ctx = context.WithValue(r.ctx, ContextRawParams, rawParams)
+	}
 {{#authMethods}}
 {{#isApiKey}}
 {{^isKeyInCookie}}

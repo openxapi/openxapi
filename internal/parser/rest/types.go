@@ -52,6 +52,9 @@ type Schema struct {
 
 	// OpenAPI specific fields
 	Ref string `json:"$ref,omitempty"`
+
+	// Vendor extensions (x-* fields)
+	Extensions map[string]interface{} `json:"-"`
 }
 
 // Security represents a security requirement for an endpoint
