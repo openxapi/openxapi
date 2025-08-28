@@ -37,15 +37,30 @@ export function PythonGeneralWebSocketHandlers({ asyncapi, context }) {
  */
 function analyzeSpecType(asyncapi) {
   try {
-    // Check title for obvious indicators first (most reliable method)
+    // Check for x-module-type extension (highest priority - spec-driven)
+    try {
+      const extensions = asyncapi.extensions && asyncapi.extensions();
+      if (extensions && extensions['x-module-type']) {
+        return extensions['x-module-type'];
+      }
+    } catch (e) {
+      // Extensions not available
+    }
+    
+    // Check title for obvious indicators (reliable method)
     const info = asyncapi.info && asyncapi.info();
     if (info) {
       const title = typeof info.title === 'function' ? info.title() : info.title;
-      if (title && title.toLowerCase().includes('streams')) {
-        return 'streams';
-      }
-      if (title && (title.toLowerCase().includes('websocket api') || title.toLowerCase().includes('ws api'))) {
-        return 'api';
+      if (title) {
+        // Generic patterns that work across exchanges
+        if (title.toLowerCase().includes('stream')) {
+          return 'streams';
+        }
+        if (title.toLowerCase().includes('websocket api') || 
+            title.toLowerCase().includes('ws api') ||
+            title.toLowerCase().includes('api websocket')) {
+          return 'api';
+        }
       }
     }
     
@@ -98,7 +113,7 @@ function analyzeSpecType(asyncapi) {
       );
       
       if (hasReceiveOperations && !hasSendOperations) {
-        // This is an event-only module (like options) - treat as streams for subscription behavior
+        // This is an event-only module - treat as streams for subscription behavior
         return 'streams';
       }
     }
@@ -131,10 +146,41 @@ function analyzeSpecType(asyncapi) {
         return 'streams';
       }
       
-      // API channels are often simple like "spot", "futures"
-      const hasApiChannels = channelNames.some(name => 
-        ['spot', 'futures', 'margin', 'api'].includes(name.toLowerCase())
-      );
+      // Check for API-style channels based on spec metadata
+      const hasApiChannels = channelNames.some(name => {
+        const channel = channels[name];
+        
+        // Check if channel has request-response pattern operations
+        try {
+          if (channel && channel.operations) {
+            const ops = typeof channel.operations === 'function' ? channel.operations() : channel.operations;
+            if (ops) {
+              // Check for send/request operations indicating API-style interaction
+              const operationKeys = Object.keys(ops);
+              return operationKeys.some(opKey => 
+                opKey.toLowerCase().includes('send') ||
+                opKey.toLowerCase().includes('request') ||
+                opKey.toLowerCase().includes('call')
+              );
+            }
+          }
+        } catch (e) {
+          // Ignore operation access errors
+        }
+        
+        // Check if channel has bindings indicating API usage
+        try {
+          const bindings = channel.bindings && channel.bindings();
+          if (bindings && bindings.ws) {
+            // If it has WebSocket bindings with method/query indicators, it's likely an API
+            return bindings.ws.method || bindings.ws.query;
+          }
+        } catch (e) {
+          // Ignore bindings access errors
+        }
+        
+        return false;
+      });
       
       if (hasApiChannels) {
         return 'api';
@@ -232,7 +278,7 @@ function generateStreamHandlers(moduleName, asyncapi) {
 }
 
 /**
- * Generate API method handlers (for API modules like spot, umfutures, etc.)
+ * Generate API method handlers (for WebSocket API modules)
  * @param {string} moduleName - Detected module name
  * @param {Object} asyncapi - AsyncAPI document for dynamic method generation
  * @returns {string} Generated API handlers
