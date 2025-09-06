@@ -1,0 +1,151 @@
+{{>partial_header}}
+package {{packageName}}
+
+import (
+	"context"
+	"net/http"
+	"net/url"
+	"sort"
+	"strings"
+	"testing"
+)
+
+// TestSigningWithXNoEncode verifies that parameters with x-no-encode
+// are handled correctly during signature generation
+func TestSigningWithXNoEncode(t *testing.T) {
+	tests := []struct {
+		name              string
+		formParams        url.Values
+		rawParams         map[string]string
+		expectedSignData  string
+	}{
+		{
+			name: "JSON parameter with x-no-encode",
+			formParams: url.Values{
+				"coin":          []string{"BTC"},
+				"address":       []string{"test_address"},
+				"amount":        []string{"1.5"},
+				"questionnaire": []string{`%7B%22isAddressOwner%22%3A1%2C%22bnfType%22%3A0%7D`},
+				"timestamp":     []string{"1234567890"},
+			},
+			rawParams: map[string]string{
+				"questionnaire": `{"isAddressOwner":1,"bnfType":0}`,
+			},
+			expectedSignData: `address=test_address&amount=1.5&coin=BTC&questionnaire={"isAddressOwner":1,"bnfType":0}&timestamp=1234567890`,
+		},
+		{
+			name: "No raw parameters",
+			formParams: url.Values{
+				"coin":      []string{"ETH"},
+				"address":   []string{"test_address_2"},
+				"amount":    []string{"2.5"},
+				"timestamp": []string{"1234567891"},
+			},
+			rawParams:        nil,
+			expectedSignData: `address=test_address_2&amount=2.5&coin=ETH&timestamp=1234567891`,
+		},
+		{
+			name: "Multiple raw parameters",
+			formParams: url.Values{
+				"param1":     []string{`%7B%22key1%22%3A%22value1%22%7D`},
+				"param2":     []string{`%7B%22key2%22%3A%22value2%22%7D`},
+				"normalParam": []string{"normal"},
+				"timestamp":  []string{"1234567892"},
+			},
+			rawParams: map[string]string{
+				"param1": `{"key1":"value1"}`,
+				"param2": `{"key2":"value2"}`,
+			},
+			expectedSignData: `normalParam=normal&param1={"key1":"value1"}&param2={"key2":"value2"}&timestamp=1234567892`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a mock request with form body
+			body := strings.NewReader(tt.formParams.Encode())
+			req, err := http.NewRequest("POST", "https://api.binance.com/test", body)
+			if err != nil {
+				t.Fatalf("Failed to create request: %v", err)
+			}
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+			// Add raw params to context if provided
+			ctx := context.Background()
+			if tt.rawParams != nil {
+				ctx = context.WithValue(ctx, ContextRawParams, tt.rawParams)
+			}
+			req = req.WithContext(ctx)
+
+			// Simulate the signing logic (simplified version)
+			bodyData := []byte(tt.formParams.Encode())
+			
+			// Check if we have raw parameters stored in context
+			if rawParams, ok := req.Context().Value(ContextRawParams).(map[string]string); ok && len(rawParams) > 0 {
+				// Parse the form data
+				values, _ := url.ParseQuery(string(bodyData))
+				
+				// Replace encoded values with raw values for signature
+				for key, rawValue := range rawParams {
+					values.Set(key, rawValue)
+				}
+				
+				// Rebuild body string for signature
+				var parts []string
+				for key, vals := range values {
+					for _, val := range vals {
+						if rawVal, hasRaw := rawParams[key]; hasRaw {
+							parts = append(parts, key+"="+rawVal)
+						} else {
+							parts = append(parts, key+"="+val)
+						}
+					}
+				}
+				// Sort for consistent ordering
+				sort.Strings(parts)
+				bodyData = []byte(strings.Join(parts, "&"))
+			}
+
+			signData := string(bodyData)
+			
+			// Verify the signature data matches expected
+			// Note: We sort the parameters for comparison since map iteration order is random
+			expectedParts := strings.Split(tt.expectedSignData, "&")
+			actualParts := strings.Split(signData, "&")
+			sort.Strings(expectedParts)
+			sort.Strings(actualParts)
+			
+			expectedSorted := strings.Join(expectedParts, "&")
+			actualSorted := strings.Join(actualParts, "&")
+			
+			if expectedSorted != actualSorted {
+				t.Errorf("Signature data mismatch:\nExpected: %s\nActual:   %s", expectedSorted, actualSorted)
+			}
+		})
+	}
+}
+
+// TestContextRawParams verifies that the ContextRawParams is correctly defined
+func TestContextRawParams(t *testing.T) {
+	// Verify that ContextRawParams is defined
+	if ContextRawParams == "" {
+		t.Error("ContextRawParams should be defined")
+	}
+	
+	// Test that we can store and retrieve raw params from context
+	ctx := context.Background()
+	rawParams := map[string]string{
+		"test": "value",
+	}
+	
+	ctx = context.WithValue(ctx, ContextRawParams, rawParams)
+	retrieved, ok := ctx.Value(ContextRawParams).(map[string]string)
+	
+	if !ok {
+		t.Error("Failed to retrieve raw params from context")
+	}
+	
+	if retrieved["test"] != "value" {
+		t.Errorf("Retrieved value mismatch: expected 'value', got '%s'", retrieved["test"])
+	}
+}

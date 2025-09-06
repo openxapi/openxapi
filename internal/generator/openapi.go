@@ -213,6 +213,16 @@ func (g *Generator) convertSchema(schema *parser.Schema) *openapi3.SchemaRef {
 		MaxItems:     schema.MaxItems,
 		Required:     schema.Required,
 	}
+
+	// Copy vendor extensions (x-* fields)
+	if schema.Extensions != nil {
+		if result.Extensions == nil {
+			result.Extensions = make(map[string]interface{})
+		}
+		for key, value := range schema.Extensions {
+			result.Extensions[key] = value
+		}
+	}
 	if len(schema.OneOf) > 0 {
 		result.OneOf = make([]*openapi3.SchemaRef, len(schema.OneOf))
 		for i, oneOf := range schema.OneOf {
