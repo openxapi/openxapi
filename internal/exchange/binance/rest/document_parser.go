@@ -364,6 +364,23 @@ func (p *SpotDocumentParser) extractParameters(endpoint *parser.Endpoint) error 
 			return
 		}
 
+		// Check if this parameter contains JSON and should not be URL-encoded for signature
+		// This applies to any parameter that is described as containing JSON objects or structures
+		// Common patterns: "JSON object", "JSON string", "JSON format", "JSON-encoded", etc.
+		descLower := strings.ToLower(description)
+		if strings.Contains(descLower, "json object") ||
+			strings.Contains(descLower, "json string") ||
+			strings.Contains(descLower, "json format") ||
+			strings.Contains(descLower, "json-encoded") ||
+			strings.Contains(descLower, "json encoded") ||
+			strings.Contains(descLower, "json structure") ||
+			strings.Contains(descLower, "json data") {
+			if schema.Extensions == nil {
+				schema.Extensions = make(map[string]interface{})
+			}
+			schema.Extensions["x-no-encode"] = true
+		}
+
 		// Extract enum values from description if present
 		if strings.Contains(description, "Supported values") ||
 			strings.Contains(description, "Possible values") ||
