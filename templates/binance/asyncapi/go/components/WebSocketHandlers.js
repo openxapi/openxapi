@@ -131,12 +131,54 @@ function generateEventHandler(message, asyncapi) {
   const eventName = capitalizeFirst(messageId || messageName);
   const structName = getModelStructName('', eventName);
   
+  // Get the actual event type from x-event-type extension
+  let eventType = messageId || messageName;
+  
+  // Try multiple ways to access x-event-type
+  // 1. Through extensions() function
+  if (message.extensions && typeof message.extensions === 'function') {
+    const extensions = message.extensions();
+    // Extensions is an array-like object, need to find x-event-type
+    if (extensions) {
+      // Try direct access first
+      if (extensions['x-event-type']) {
+        eventType = extensions['x-event-type'];
+      }
+      // Try iterating if it's an array-like object
+      else if (extensions.forEach) {
+        extensions.forEach(ext => {
+          if (ext.id && ext.id() === 'x-event-type') {
+            eventType = ext.value();
+          }
+        });
+      }
+      // Try get() method if available
+      else if (extensions.get && typeof extensions.get === 'function') {
+        const xEventType = extensions.get('x-event-type');
+        if (xEventType) {
+          eventType = xEventType.value ? xEventType.value() : xEventType;
+        }
+      }
+    }
+  }
+  // 2. Direct property access
+  else if (message['x-event-type']) {
+    eventType = message['x-event-type'];
+  }
+  // 3. Through json() function
+  else if (message.json && typeof message.json === 'function') {
+    const jsonMsg = message.json();
+    if (jsonMsg && jsonMsg['x-event-type']) {
+      eventType = jsonMsg['x-event-type'];
+    }
+  }
+  
   let handler = '';
   
   handler += `// Handle${eventName} registers a handler for ${messageName} events\n`;
   handler += `// This method allows you to handle real-time ${messageName} events from the WebSocket stream\n`;
   handler += `func (c *Client) Handle${eventName}(handler func(*models.${structName}) error) {\n`;
-  handler += `\tc.eventHandler.RegisterHandler("${messageId || messageName}", func(data interface{}) error {\n`;
+  handler += `\tc.eventHandler.RegisterHandler("${eventType}", func(data interface{}) error {\n`;
   handler += `\t\t// Parse the event data - handle both nested and direct event structures\n`;
   handler += `\t\tvar event models.${structName}\n`;
   handler += `\t\t\n`;
