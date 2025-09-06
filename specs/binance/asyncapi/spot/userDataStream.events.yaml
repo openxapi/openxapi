@@ -1,7 +1,10 @@
 asyncapi: 3.0.0
 info:
-    title: ""
-    version: ""
+    title: "Binance User Data Stream Events"
+    version: "1.0.0"
+    description: |
+        User Data Stream events for Binance Spot trading.
+        These events are sent through the user data stream after subscription.
 channels:
     spot:
         address: /
@@ -14,42 +17,49 @@ channels:
                 name: Outbound Account Position Event
                 title: Account Update Event
                 description: Sent when account balance changes
+                x-event-type: outboundAccountPosition
                 payload:
                     $ref: '#/components/schemas/OutboundAccountPositionEvent'
             balanceUpdateEvent:
                 name: Balance Update Event
                 title: Balance Update Event
                 description: Occurs during deposits, withdrawals, or transfers
+                x-event-type: balanceUpdate
                 payload:
                     $ref: '#/components/schemas/BalanceUpdateEvent'
             executionReportEvent:
                 name: Execution Report Event
                 title: Order Update Event
                 description: Orders are updated with executionReport event
+                x-event-type: executionReport
                 payload:
                     $ref: '#/components/schemas/ExecutionReportEvent'
             listStatusEvent:
                 name: List Status Event
                 title: List Status Event
                 description: Sent with executionReport for order lists (OCO orders)
+                x-event-type: listStatus
                 payload:
                     $ref: '#/components/schemas/ListStatusEvent'
             listenKeyExpiredEvent:
                 name: Listen Key Expired Event
                 title: Listen Key Expired Event
                 description: Sent when the listen key expires
+                x-event-type: listenKeyExpired
                 payload:
                     $ref: '#/components/schemas/ListenKeyExpiredEvent'
             externalLockUpdateEvent:
                 name: External Lock Update Event
                 title: External Lock Update Event
                 description: Sent when spot wallet balance is locked/unlocked by external system
+                x-event-type: externalLockUpdate
                 payload:
                     $ref: '#/components/schemas/ExternalLockUpdateEvent'
             eventStreamTerminatedEvent:
                 name: Event Stream Terminated Event
                 title: Event Stream Terminated Event
                 description: Sent when User Data Stream is stopped (WebSocket API only)
+                x-event-type: eventStreamTerminated
                 payload:
                     $ref: '#/components/schemas/EventStreamTerminatedEvent'
 operations:
@@ -72,14 +82,21 @@ components:
         OutboundAccountPositionEvent:
             type: object
             description: Account Update - sent when account balance changes
+            required:
+                - event
             properties:
                 event:
                     type: object
+                    required:
+                        - e
+                        - E
+                        - u
+                        - B
                     properties:
                         e:
                             type: string
                             description: Event type
-                            example: outboundAccountPosition
+                            const: outboundAccountPosition
                         E:
                             type: integer
                             format: int64
@@ -111,14 +128,22 @@ components:
         BalanceUpdateEvent:
             type: object
             description: Balance Update - occurs during deposits, withdrawals, or transfers
+            required:
+                - event
             properties:
                 event:
                     type: object
+                    required:
+                        - e
+                        - E
+                        - a
+                        - d
+                        - T
                     properties:
                         e:
                             type: string
                             description: Event Type
-                            example: balanceUpdate
+                            const: balanceUpdate
                         E:
                             type: integer
                             format: int64
@@ -147,7 +172,7 @@ components:
                         e:
                             type: string
                             description: Event type
-                            example: executionReport
+                            const: executionReport
                         E:
                             type: integer
                             format: int64
@@ -378,7 +403,7 @@ components:
                         e:
                             type: string
                             description: Event Type
-                            example: listStatus
+                            const: listStatus
                         E:
                             type: integer
                             format: int64
@@ -447,7 +472,7 @@ components:
                         e:
                             type: string
                             description: Event type
-                            example: listenKeyExpired
+                            const: listenKeyExpired
                         E:
                             type: integer
                             format: int64
@@ -467,7 +492,7 @@ components:
                         e:
                             type: string
                             description: Event Type
-                            example: externalLockUpdate
+                            const: externalLockUpdate
                         E:
                             type: integer
                             format: int64
@@ -496,7 +521,7 @@ components:
                         e:
                             type: string
                             description: Event Type
-                            example: eventStreamTerminated
+                            const: eventStreamTerminated
                         E:
                             type: integer
                             format: int64

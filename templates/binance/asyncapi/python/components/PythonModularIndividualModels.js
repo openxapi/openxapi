@@ -3,6 +3,79 @@
  * Based on the Go template architecture for clean, dynamic model generation
  */
 
+/**
+ * Detect if a message is an event based on AsyncAPI spec metadata
+ * Uses spec-driven detection instead of hardcoded patterns
+ */
+function detectIfEventMessage(message, messageName) {
+  // Check for x-event-type extension in the message (spec-driven)
+  try {
+    const extensions = message.extensions();
+    if (extensions && extensions['x-event-type']) {
+      return true;  // Has explicit event type marking
+    }
+  } catch (e) {
+    // Extensions not available
+  }
+  
+  // Check if message has an 'event' or 'e' field in its payload
+  // This is a common pattern across many exchanges for event messages
+  try {
+    const payload = message.payload();
+    if (payload && payload.properties) {
+      const properties = payload.properties();
+      if (properties) {
+        // Check for common event indicator fields
+        const eventIndicatorFields = ['e', 'event', 'eventType', 'event_type'];
+        for (const field of eventIndicatorFields) {
+          if (properties.has && properties.has(field)) {
+            return true;
+          } else if (properties[field]) {
+            return true;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Properties not accessible
+  }
+  
+  // Check if the message is in a receive operation (events are typically received, not sent)
+  try {
+    // Get the channel this message belongs to
+    const channels = message.channels();
+    if (channels && channels.length > 0) {
+      const channel = channels[0];
+      const operations = channel.operations();
+      if (operations) {
+        // Check if any operation is a receive/subscribe operation
+        for (const op of operations) {
+          const action = op.action();
+          if (action && (action === 'receive' || action === 'subscribe')) {
+            return true;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    // Channel/operation info not available
+  }
+  
+  // Fallback: Check if message name suggests it's an event
+  // This is a generic pattern that works across exchanges
+  // But only as a last resort when spec metadata is not available
+  if (messageName) {
+    // Generic patterns that indicate events across different exchanges
+    return messageName.toLowerCase().includes('event') ||
+           messageName.toLowerCase().includes('update') ||
+           messageName.toLowerCase().includes('notification') ||
+           messageName.toLowerCase().includes('alert') ||
+           messageName.toLowerCase().includes('stream');
+  }
+  
+  return false;
+}
+
 export function PythonModularIndividualModels({ asyncapi }) {
   const messages = new Map();
   const componentSchemas = new Map();
@@ -20,9 +93,8 @@ export function PythonModularIndividualModels({ asyncapi }) {
         // Create unique message names based on message ID or name
         const uniqueMessageName = messageId || `${channelName}_${messageName}`;
         
-        // Determine if this is an event message
-        const isEventMessage = messageName.includes('Event') || 
-                              messageName.match(/(balanceUpdate|executionReport|listStatus|listenKeyExpired|outboundAccountPosition|externalLockUpdate)/i);
+        // Determine if this is an event message from AsyncAPI spec metadata
+        const isEventMessage = detectIfEventMessage(message, messageName);
         
         messages.set(uniqueMessageName, {
           message,
@@ -41,12 +113,33 @@ export function PythonModularIndividualModels({ asyncapi }) {
     const json = asyncapi.json();
     if (json && json.components && json.components.schemas) {
       Object.entries(json.components.schemas).forEach(([schemaName, schemaData]) => {
+        // Detect if this is an event schema from spec metadata
+        let isEvent = false;
+        
+        // Check for x-event-type extension
+        if (schemaData['x-event-type']) {
+          isEvent = true;
+        }
+        // Check if schema has event indicator fields
+        else if (schemaData.properties) {
+          const eventIndicatorFields = ['e', 'event', 'eventType', 'event_type'];
+          isEvent = eventIndicatorFields.some(field => 
+            schemaData.properties[field] !== undefined
+          );
+        }
+        // Last resort: check naming pattern (but this is generic, not Binance-specific)
+        if (!isEvent && schemaName) {
+          isEvent = schemaName.toLowerCase().includes('event') ||
+                   schemaName.toLowerCase().includes('update') ||
+                   schemaName.toLowerCase().includes('notification');
+        }
+        
         componentSchemas.set(schemaName, {
           type: schemaData.type,
           properties: schemaData.properties,
           required: schemaData.required || [],
           description: schemaData.description,
-          isEvent: schemaName.includes('Event')
+          isEvent: isEvent
         });
       });
     }
@@ -55,29 +148,67 @@ export function PythonModularIndividualModels({ asyncapi }) {
   // Generate model files array
   const modelFiles = [];
   
-  // Generate regular message models
+  // Build a map of which messages reference which schemas
+  const messageToSchemaMap = new Map();
+  
+  // Generate message models (but skip if they just reference a component schema)
   messages.forEach((messageData, messageName) => {
+    // Check if this message's payload is just a $ref to a component schema
+    const payload = messageData.payload;
+    let referencedSchemaName = null;
+    
+    // Try to extract the referenced schema name from the payload
+    if (payload && payload.json && typeof payload.json === 'function') {
+      const payloadJson = payload.json();
+      if (payloadJson && payloadJson['$ref']) {
+        // Extract schema name from $ref like "#/components/schemas/AggregateTradeEvent"
+        const refMatch = payloadJson['$ref'].match(/#\/components\/schemas\/(.+)/);
+        if (refMatch && refMatch[1]) {
+          referencedSchemaName = refMatch[1];
+        }
+      }
+    }
+    
+    // If this message just references a component schema, skip generating a model for it
+    if (referencedSchemaName && componentSchemas.has(referencedSchemaName)) {
+      messageToSchemaMap.set(messageName, referencedSchemaName);
+      return; // Skip this message model, use the component schema instead
+    }
+    
+    // Also skip if the message name closely matches a component schema name
+    // This handles cases where the message and schema have similar names
+    // Normalize names by removing underscores, hyphens, and 'Event' suffix
+    const normalizeForComparison = (name) => {
+      return name.toLowerCase()
+        .replace(/event$/i, '')  // Remove 'Event' suffix
+        .replace(/[_-]/g, '')    // Remove underscores and hyphens
+        .replace(/aggregate/g, 'agg'); // Normalize 'aggregate' to 'agg'
+    };
+    
+    const messageNameNormalized = normalizeForComparison(messageName);
+    let shouldSkip = false;
+    
+    componentSchemas.forEach((schema, schemaName) => {
+      const schemaNameNormalized = normalizeForComparison(schemaName);
+      // Check if normalized names match
+      if (messageNameNormalized === schemaNameNormalized) {
+        shouldSkip = true;
+      }
+    });
+    
+    if (shouldSkip) {
+      return; // Skip this message model
+    }
+    
     const modelContent = generatePythonModelFile(messageName, messageData.payload, messageData.message, componentSchemas, messageData.isEvent);
     modelFiles.push({
       name: `${toSnakeCase(messageName)}.py`,
       content: modelContent
     });
   });
-
-  // Generate component schema models (for event schemas)
-  const generatedTypeNames = new Set();
-  messages.forEach((messageData, messageName) => {
-    const className = toPascalCase(messageName);
-    generatedTypeNames.add(className);
-  });
   
+  // Generate component schema models (these take priority)
   componentSchemas.forEach((schema, schemaName) => {
-    // Skip if we already generated this type from channel messages
-    const componentTypeName = toPascalCase(schemaName);
-    if (generatedTypeNames.has(componentTypeName)) {
-      return;
-    }
-    
     const modelContent = generateComponentSchemaFile(schemaName, schema);
     modelFiles.push({
       name: `${toSnakeCase(schemaName)}.py`,
@@ -102,7 +233,7 @@ function generatePythonModelFile(name, schema, message, componentSchemas, isEven
   const className = toPascalCase(name);
   const isRequestMessage = name.toLowerCase().includes('request');
   
-  let content = `from pydantic import BaseModel, Field, validator
+  let content = `from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Union, List, Dict, Any, Literal
 from datetime import datetime
 from decimal import Decimal
@@ -253,12 +384,18 @@ function generateNestedClasses(schema, parentClassName, isRequestMessage) {
     if (fieldName === 'rateLimits' && schemaData.type === 'array' && schemaData.items) {
       // Generate RateLimits nested class
       nestedClasses += generateRateLimitsClass(parentClassName, schemaData.items);
-    } else if (fieldName === 'result' && schemaData.type === 'object' && schemaData.properties) {
-      // First generate nested classes for array items within the result (must come before Result class)
-      nestedClasses += generateArrayItemClasses(schemaData, parentClassName);
-      
-      // Then generate Result nested class for object results
-      nestedClasses += generateResultClass(parentClassName, schemaData);
+    } else if (fieldName === 'result') {
+      if (schemaData.type === 'object' && schemaData.properties) {
+        // First generate nested classes for array items within the result (must come before Result class)
+        nestedClasses += generateArrayItemClasses(schemaData, parentClassName);
+        
+        // Then generate Result nested class for object results
+        nestedClasses += generateResultClass(parentClassName, schemaData);
+      } else if (schemaData.type === 'array' && schemaData.items && schemaData.items.type === 'object' && schemaData.items.properties) {
+        // Result is directly an array of objects - generate ResultItem class
+        const itemClassName = `${parentClassName}ResultItem`;
+        nestedClasses += generateArrayItemClass(itemClassName, schemaData.items);
+      }
     } else if (fieldName === 'params' && isRequestMessage) {
       // Generate Params nested class for requests - be more flexible about detection
       if (schemaData.type === 'object' || schemaData.properties || schemaData.$ref) {
@@ -327,11 +464,12 @@ function generateArrayItemClass(className, itemSchema) {
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
 
 `;
@@ -372,11 +510,12 @@ function generateRateLimitsClass(parentClassName, itemsSchema) {
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
 
 `;
@@ -429,11 +568,12 @@ function generateResultClass(parentClassName, resultSchema) {
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
 
 `;
@@ -509,11 +649,12 @@ function generateParamsClass(parentClassName, paramsSchema) {
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
 
 `;
@@ -534,7 +675,34 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
 `;
 
   // Parse properties from schema
-  const properties = getProperties(schema);
+  let properties = getProperties(schema);
+
+  // For event models, check if there's a wrapper 'event' property with the actual fields
+  if (isEvent && properties.event) {
+    // Check if 'event' is an object with properties inside
+    const eventProp = properties.event;
+    let eventProperties = null;
+    
+    try {
+      if (eventProp && typeof eventProp.json === 'function') {
+        const eventData = eventProp.json();
+        if (eventData && eventData.type === 'object' && eventData.properties) {
+          eventProperties = eventData.properties;
+        }
+      } else if (eventProp && eventProp.properties) {
+        eventProperties = getProperties(eventProp);
+      } else if (eventProp && eventProp._json && eventProp._json.properties) {
+        eventProperties = eventProp._json.properties;
+      }
+    } catch (e) {
+      console.warn('Error accessing event properties:', e.message);
+    }
+    
+    // If we found properties inside the event wrapper, use those instead
+    if (eventProperties && Object.keys(eventProperties).length > 0) {
+      properties = eventProperties;
+    }
+  }
 
   // For request messages, flatten the params into the main class
   if (isRequestMessage && properties.params) {
@@ -602,6 +770,9 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
     });
   } else {
     // Generate fields from actual schema properties (for non-request or non-nested models)
+    // Track used field names to avoid duplicates
+    const usedFieldNames = new Set();
+    
     Object.entries(properties).forEach(([fieldName, fieldSchema]) => {
       // Skip id, method, and params for request messages since we're flattening
       if (isRequestMessage && (fieldName === 'id' || fieldName === 'method' || fieldName === 'params')) {
@@ -610,24 +781,32 @@ function generateMainClass(className, schema, message, isEvent, isRequestMessage
       
       const pythonType = getFieldTypeFromSchema(fieldName, fieldSchema, className);
       const description = getDescription(fieldSchema, `${fieldName} field`);
-      const alias = getFieldAlias(fieldName);
       
-      if (alias) {
-        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${alias}")
+      // Generate Python field name from description (like Go template does)
+      let pythonFieldName = generatePythonFieldNameFromDescription(fieldName, fieldSchema, usedFieldNames);
+      usedFieldNames.add(pythonFieldName);
+      
+      // For single-letter fields or fields that differ from Python name, always use alias
+      const needsAlias = fieldName !== pythonFieldName || fieldName.length === 1 || 
+                        fieldName !== toSnakeCase(fieldName);
+      
+      if (needsAlias) {
+        content += `    ${pythonFieldName}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${fieldName}")
 `;
       } else {
-        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}")
+        content += `    ${pythonFieldName}: Optional[${pythonType}] = Field(default=None, description="${description}")
 `;
       }
     });
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
     def __str__(self) -> str:
         """String representation of the model"""
@@ -681,8 +860,15 @@ function getResultType(resultSchema, parentClassName) {
       // Array of arrays (like klines: [[timestamp, open, high, low, close, volume...]])
       return 'List[List[Any]]';
     } else if (schemaData.items?.type === 'object') {
-      // Array of objects (like trades: [{id: 1, price: "1.00", qty: "1.00"}, ...])
-      return 'List[Dict[str, Any]]';
+      // Check if the array items have defined properties
+      if (schemaData.items.properties && Object.keys(schemaData.items.properties).length > 0) {
+        // Array of objects with defined properties - use nested class
+        // For result field, we generate a ResultItem class
+        return `List[${parentClassName}ResultItem]`;
+      } else {
+        // Array of generic objects without defined structure
+        return 'List[Dict[str, Any]]';
+      }
     } else {
       return 'List[Any]';
     }
@@ -779,7 +965,7 @@ function getFieldAlias(fieldName) {
 function generateComponentSchemaFile(schemaName, schema) {
   const className = toPascalCase(schemaName);
   
-  let content = `from pydantic import BaseModel, Field
+  let content = `from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, Union, List, Dict, Any, Literal
 from datetime import datetime
 from decimal import Decimal
@@ -791,28 +977,49 @@ class ${className}(BaseModel):
     """
 `;
 
-  if (schema.properties) {
-    Object.entries(schema.properties).forEach(([fieldName, fieldSchema]) => {
+  // Check if this is an event schema with wrapped structure
+  let propertiesToGenerate = schema.properties;
+  
+  // For event schemas, check if there's a single 'event' property that contains the actual fields
+  if (schema.isEvent && schema.properties && schema.properties.event && 
+      schema.properties.event.type === 'object' && schema.properties.event.properties) {
+    // Use the properties from inside the 'event' wrapper
+    propertiesToGenerate = schema.properties.event.properties;
+  }
+
+  if (propertiesToGenerate) {
+    // Track used field names to avoid duplicates
+    const usedFieldNames = new Set();
+    
+    Object.entries(propertiesToGenerate).forEach(([fieldName, fieldSchema]) => {
       const pythonType = getPythonTypeFromSchema(fieldSchema);
       const description = getDescription(fieldSchema, `${fieldName} field`);
-      const alias = getFieldAlias(fieldName);
       
-      if (alias) {
-        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${alias}")
+      // Generate Python field name from description (like Go template does)
+      let pythonFieldName = generatePythonFieldNameFromDescription(fieldName, fieldSchema, usedFieldNames);
+      usedFieldNames.add(pythonFieldName);
+      
+      // For single-letter fields or fields that differ from Python name, always use alias
+      const needsAlias = fieldName !== pythonFieldName || fieldName.length === 1 || 
+                        fieldName !== toSnakeCase(fieldName);
+      
+      if (needsAlias) {
+        content += `    ${pythonFieldName}: Optional[${pythonType}] = Field(default=None, description="${description}", alias="${fieldName}")
 `;
       } else {
-        content += `    ${toSnakeCase(fieldName)}: Optional[${pythonType}] = Field(default=None, description="${description}")
+        content += `    ${pythonFieldName}: Optional[${pythonType}] = Field(default=None, description="${description}")
 `;
       }
     });
   }
 
   content += `
-    class Config:
-        """Pydantic model configuration"""
-        extra = "allow"
-        validate_assignment = True
-        use_enum_values = True
+    model_config = ConfigDict(
+        extra="allow",
+        validate_assignment=True,
+        use_enum_values=True,
+        populate_by_name=True
+    )
 
     def __str__(self) -> str:
         """String representation of the model"""
@@ -840,7 +1047,80 @@ function toPascalCase(str) {
   ).join('');
 }
 
+/*
+ * Generate Python field name from description (similar to Go template approach)
+ * Converts descriptions to readable snake_case field names
+ */
+function generatePythonFieldNameFromDescription(originalFieldName, fieldSchema, usedFieldNames) {
+  // First try to generate from description
+  const description = getDescription(fieldSchema, '');
+  
+  // Check if description is just "{fieldName} property" or similar generic patterns
+  const genericPatterns = [
+    `${originalFieldName} property`,
+    `${originalFieldName} field`,
+    `${originalFieldName} parameter`,
+    'Property description'
+  ];
+  
+  const isGenericDescription = genericPatterns.some(pattern => 
+    description.toLowerCase() === pattern.toLowerCase()
+  );
+  
+  if (description && !isGenericDescription && description !== `${originalFieldName} field`) {
+    // Clean and convert description to Python snake_case field name
+    let fieldName = description
+      .replace(/\s*\([^)]*\)\s*/g, '') // Remove (xxx) patterns
+      .replace(/\bproperty\b/gi, '') // Remove the word "property"
+      .replace(/\bfield\b/gi, '') // Remove the word "field"
+      .replace(/\bparameter\b/gi, '') // Remove the word "parameter"
+      .replace(/[^\w\s]/g, '') // Remove punctuation
+      .trim()
+      .split(/\s+/) // Split on whitespace
+      .filter(word => word.length > 0) // Remove empty strings
+      .map(word => word.toLowerCase()) // All lowercase for Python
+      .join('_'); // Join with underscores for snake_case
+    
+    // Ensure it's a valid Python identifier and not empty
+    if (fieldName && /^[a-z][a-z0-9_]*$/.test(fieldName)) {
+      // Handle collisions
+      let finalFieldName = fieldName;
+      let counter = 2;
+      while (usedFieldNames.has(finalFieldName)) {
+        finalFieldName = fieldName + '_' + counter.toString();
+        counter++;
+      }
+      return finalFieldName;
+    }
+  }
+  
+  // Fallback to original field name handling for single letters
+  if (originalFieldName.length === 1) {
+    if (originalFieldName === originalFieldName.toUpperCase()) {
+      // Single uppercase letter: E -> e_upper (fallback if no good description)
+      return originalFieldName.toLowerCase() + '_upper';
+    } else {
+      // Single lowercase letter: e -> e
+      return originalFieldName.toLowerCase();
+    }
+  }
+  
+  // Multi-character field names: use standard snake_case conversion
+  return toSnakeCase(originalFieldName);
+}
+
 function toSnakeCase(str) {
+  // For single letter fields, preserve case distinction
+  if (str.length === 1) {
+    return str.toLowerCase();
+  }
+  
+  // For fields that are already lowercase, return as-is
+  if (str === str.toLowerCase()) {
+    return str;
+  }
+  
+  // Convert camelCase/PascalCase to snake_case
   return str.replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, '');
 }
 

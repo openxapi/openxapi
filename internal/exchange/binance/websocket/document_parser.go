@@ -712,6 +712,8 @@ func (p *DocumentParser) extractContent(channel *parser.Channel, content []strin
 		channel.Summary = content[0]
 		logrus.Debugf("Setting channel summary from first content: '%s'", channel.Summary)
 
+		// Extract security type from summary if present (e.g., "Place new order (TRADE)")
+		p.extractSecurityType(channel, channel.Summary)
 	}
 
 	var description strings.Builder
@@ -843,6 +845,103 @@ func getMapKeys(m map[string]*parser.Schema) []string {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+// extractSecurityType extracts Binance security type from method summary
+func (p *DocumentParser) extractSecurityType(channel *parser.Channel, text string) {
+	// Regular expression to match security types in parentheses
+	// Examples: "Place new order (TRADE)", "Account information (USER_DATA)", "Log in with API key (SIGNED)"
+	securityRegex := regexp.MustCompile(`\((TRADE|USER_DATA|USER_STREAM|MARKET_DATA|SIGNED)\)`)
+	matches := securityRegex.FindStringSubmatch(text)
+
+	if len(matches) > 1 {
+		securityType := matches[1]
+		logrus.Debugf("Found security type '%s' in method: %s", securityType, text)
+
+		// Map Binance security types to camelCase for AsyncAPI
+		var securityName string
+		switch securityType {
+		case "TRADE":
+			securityName = "trade"
+		case "USER_DATA":
+			securityName = "userData"
+		case "USER_STREAM":
+			securityName = "userStream"
+		case "SIGNED":
+			// SIGNED is a general authentication requirement, use userData
+			securityName = "userData"
+		case "MARKET_DATA":
+			// Market data is public, no security required
+			return
+		default:
+			logrus.Warnf("Unknown security type: %s", securityType)
+			return
+		}
+
+		// Set security requirement for the channel
+		channel.Security = []map[string][]string{
+			{securityName: []string{}},
+		}
+
+		// Add extension to track original Binance security type
+		if channel.Extensions == nil {
+			channel.Extensions = make(map[string]interface{})
+		}
+		channel.Extensions["x-binance-security-type"] = securityType
+
+		// Initialize SecuritySchemas if needed
+		if channel.SecuritySchemas == nil {
+			channel.SecuritySchemas = make(map[string]*parser.SecuritySchema)
+		}
+
+		// Add the security schema reference
+		channel.SecuritySchemas[securityName] = &parser.SecuritySchema{
+			Type: "apiKey",
+			In:   "user",
+			Name: securityName,
+		}
+
+		logrus.Debugf("Set security for channel %s: %s (%s)", channel.Name, securityName, securityType)
+	} else {
+		// Check for patterns in the method name itself
+		methodLower := strings.ToLower(text)
+
+		// Apply heuristics based on method patterns
+		if strings.Contains(methodLower, "user data stream") || strings.Contains(methodLower, "userDataStream") {
+			channel.Security = []map[string][]string{
+				{"userStream": []string{}},
+			}
+			if channel.Extensions == nil {
+				channel.Extensions = make(map[string]interface{})
+			}
+			channel.Extensions["x-binance-security-type"] = "USER_STREAM"
+			logrus.Debugf("Applied USER_STREAM security based on method name pattern: %s", text)
+		} else if strings.Contains(methodLower, "order") || strings.Contains(methodLower, "cancel") {
+			// Orders and cancellations typically require TRADE permission
+			if !strings.Contains(methodLower, "book") { // Exclude order book (public data)
+				channel.Security = []map[string][]string{
+					{"trade": []string{}},
+				}
+				if channel.Extensions == nil {
+					channel.Extensions = make(map[string]interface{})
+				}
+				channel.Extensions["x-binance-security-type"] = "TRADE"
+				logrus.Debugf("Applied TRADE security based on method name pattern: %s", text)
+			}
+		} else if strings.Contains(methodLower, "account") || strings.Contains(methodLower, "balance") ||
+			strings.Contains(methodLower, "my trades") || strings.Contains(methodLower, "commission") {
+			// Account-related endpoints require USER_DATA permission
+			channel.Security = []map[string][]string{
+				{"userData": []string{}},
+			}
+			if channel.Extensions == nil {
+				channel.Extensions = make(map[string]interface{})
+			}
+			channel.Extensions["x-binance-security-type"] = "USER_DATA"
+			logrus.Debugf("Applied USER_DATA security based on method name pattern: %s", text)
+		}
+		// No security for public endpoints (ticker, klines, depth, etc.)
+	}
 }
 
 // extractMethodNameFromJSON extracts method name from JSON content
@@ -1134,6 +1233,34 @@ func (p *DocumentParser) convertToSchema(key string, data interface{}, descripti
 			if key == "method" {
 				if methodValue, ok := value.(string); ok && methodValue != "" {
 					schema.Properties[key].Enum = []interface{}{methodValue}
+				}
+			}
+
+			// Special handling for WebSocket API event wrapper pattern
+			// If this is an 'event' property containing an object with 'e' field, add const
+			if key == "event" {
+				if eventMap, ok := value.(map[string]interface{}); ok {
+					if eValue, hasE := eventMap["e"]; hasE {
+						// The 'e' field should have a const value based on its example
+						if eStr, ok := eValue.(string); ok && eStr != "" {
+							if schema.Properties[key].Properties != nil && schema.Properties[key].Properties["e"] != nil {
+								// Set const value for event type field
+								schema.Properties[key].Properties["e"].Const = eStr
+								logrus.Debugf("Added const '%s' to event.e field", eStr)
+							}
+						}
+					}
+				}
+			}
+
+			// Special handling for 'e' field at root level or within event wrapper
+			// This ensures const is set based on example value for event type fields
+			if key == "e" && schema.Properties[key] != nil {
+				if example := schema.Properties[key].Example; example != nil {
+					if exampleStr, ok := example.(string); ok && exampleStr != "" {
+						schema.Properties[key].Const = exampleStr
+						logrus.Debugf("Added const '%s' to e field based on example", exampleStr)
+					}
 				}
 			}
 		}

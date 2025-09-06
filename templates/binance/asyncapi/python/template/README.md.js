@@ -5,12 +5,13 @@ export default function ({ asyncapi, params }) {
   const moduleName = params.moduleName || 'binance-websocket-client';
   const version = params.version || '0.1.0';
   const author = params.author || 'openxapi';
+  const exchangeName = params.exchangeName || 'Binance';  // Make exchange name configurable
 
   return (
     <File name="README.md">
-      <Text>{`# Binance ${packageName.toUpperCase()} WebSocket Client
+      <Text>{`# ${exchangeName} ${packageName.toUpperCase()} WebSocket Client
 
-An async WebSocket client for the Binance ${packageName.toUpperCase()} API, automatically generated from AsyncAPI specification.
+An async WebSocket client for the ${exchangeName} ${packageName.toUpperCase()} API, automatically generated from AsyncAPI specification.
 
 ## Features
 
@@ -50,11 +51,11 @@ pip install websockets pydantic cryptography python-dotenv
 
 \`\`\`python
 import asyncio
-from client import BinanceWebSocketClient
+from client import ${exchangeName}WebSocketClient
 
 async def main():
     # Initialize client
-    client = BinanceWebSocketClient(testnet=True)
+    client = ${exchangeName}WebSocketClient(testnet=True)
     
     # Set up message handler
     async def handle_ticker(data):
@@ -79,19 +80,19 @@ if __name__ == "__main__":
 
 \`\`\`python
 import asyncio
-from client import BinanceWebSocketClient
-from auth import BinanceAuth
+from client import ${exchangeName}WebSocketClient
+from auth import ${exchangeName}Auth
 
 async def main():
     # Set up authentication
-    auth = BinanceAuth(
+    auth = ${exchangeName}Auth(
         api_key="your_api_key",
         secret_key="your_secret_key",
         auth_type="hmac"  # or "rsa", "ed25519"
     )
     
     # Initialize authenticated client
-    client = BinanceWebSocketClient(
+    client = ${exchangeName}WebSocketClient(
         testnet=True,
         auth=auth
     )
@@ -116,29 +117,29 @@ if __name__ == "__main__":
 
 \`\`\`bash
 # Create .env file
-BINANCE_API_KEY=your_api_key_here
-BINANCE_SECRET_KEY=your_secret_key_here
+${exchangeName.toUpperCase()}_API_KEY=your_api_key_here
+${exchangeName.toUpperCase()}_SECRET_KEY=your_secret_key_here
 # For RSA/Ed25519 authentication
-BINANCE_PRIVATE_KEY=your_private_key_pem_here
+${exchangeName.toUpperCase()}_PRIVATE_KEY=your_private_key_pem_here
 \`\`\`
 
 \`\`\`python
-from auth import BinanceAuth
+from auth import ${exchangeName}Auth
 
 # Authentication will be loaded from environment variables
-auth = BinanceAuth.from_env(auth_type="hmac")
+auth = ${exchangeName}Auth.from_env(auth_type="hmac")
 \`\`\`
 
 ## API Reference
 
-### BinanceWebSocketClient
+### ${exchangeName}WebSocketClient
 
 #### Constructor
 
 \`\`\`python
-BinanceWebSocketClient(
+${exchangeName}WebSocketClient(
     testnet: bool = False,
-    auth: Optional[BinanceAuth] = None,
+    auth: Optional[${exchangeName}Auth] = None,
     auto_reconnect: bool = True,
     ping_interval: int = 20,
     ping_timeout: int = 10
@@ -155,12 +156,12 @@ BinanceWebSocketClient(
 - \`remove_handler(pattern: str)\` - Remove message handler
 - \`get_message_history(limit: Optional[int] = None)\` - Get message history
 
-### BinanceAuth
+### ${exchangeName}Auth
 
 #### Constructor
 
 \`\`\`python
-BinanceAuth(
+${exchangeName}Auth(
     api_key: Optional[str] = None,
     secret_key: Optional[str] = None,
     private_key: Optional[Union[str, bytes]] = None,
@@ -173,14 +174,14 @@ BinanceAuth(
 - \`sign(message: str) -> str\` - Sign message
 - \`create_signed_params(params: dict) -> dict\` - Create signed parameters
 - \`get_headers() -> dict\` - Get authentication headers
-- \`from_env(auth_type: str = "hmac") -> BinanceAuth\` - Create from environment
+- \`from_env(auth_type: str = "hmac") -> ${exchangeName}Auth\` - Create from environment
 
 ## Authentication Types
 
 ### HMAC-SHA256 (Default)
 
 \`\`\`python
-auth = BinanceAuth(
+auth = ${exchangeName}Auth(
     api_key="your_api_key",
     secret_key="your_secret_key",
     auth_type="hmac"
@@ -194,7 +195,7 @@ auth = BinanceAuth(
 from auth import generate_rsa_keypair
 private_key_pem, public_key_pem = generate_rsa_keypair()
 
-auth = BinanceAuth(
+auth = ${exchangeName}Auth(
     api_key="your_api_key",
     private_key=private_key_pem,
     auth_type="rsa"
@@ -208,7 +209,7 @@ auth = BinanceAuth(
 from auth import generate_ed25519_keypair
 private_key_pem, public_key_pem = generate_ed25519_keypair()
 
-auth = BinanceAuth(
+auth = ${exchangeName}Auth(
     api_key="your_api_key",
     private_key=private_key_pem,
     auth_type="ed25519"

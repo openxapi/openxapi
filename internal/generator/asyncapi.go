@@ -79,18 +79,19 @@ type AsyncAPIChannel struct {
 
 // AsyncAPIOperation represents an operation in AsyncAPI 3.0.0
 type AsyncAPIOperation struct {
-	Title        string                  `json:"title,omitempty" yaml:"title,omitempty"`
-	Summary      string                  `json:"summary,omitempty" yaml:"summary,omitempty"`
-	Description  string                  `json:"description,omitempty" yaml:"description,omitempty"`
-	Action       string                  `json:"action" yaml:"action"`   // "send" or "receive"
-	Channel      map[string]string       `json:"channel" yaml:"channel"` // $ref to channel
-	Messages     []map[string]string     `json:"messages,omitempty" yaml:"messages,omitempty"`
-	Reply        *AsyncAPIOperationReply `json:"reply,omitempty" yaml:"reply,omitempty"`
-	Tags         []*AsyncAPITag          `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Bindings     map[string]interface{}  `json:"bindings,omitempty" yaml:"bindings,omitempty"`
-	Traits       []interface{}           `json:"traits,omitempty" yaml:"traits,omitempty"`
-	Security     []map[string][]string   `json:"security,omitempty" yaml:"security,omitempty"`
-	ExternalDocs *AsyncAPIExternalDocs   `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+	Title        string                   `json:"title,omitempty" yaml:"title,omitempty"`
+	Summary      string                   `json:"summary,omitempty" yaml:"summary,omitempty"`
+	Description  string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Action       string                   `json:"action" yaml:"action"`   // "send" or "receive"
+	Channel      map[string]string        `json:"channel" yaml:"channel"` // $ref to channel
+	Messages     []map[string]string      `json:"messages,omitempty" yaml:"messages,omitempty"`
+	Reply        *AsyncAPIOperationReply  `json:"reply,omitempty" yaml:"reply,omitempty"`
+	Tags         []*AsyncAPITag           `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Bindings     map[string]interface{}   `json:"bindings,omitempty" yaml:"bindings,omitempty"`
+	Traits       []interface{}            `json:"traits,omitempty" yaml:"traits,omitempty"`
+	Security     []map[string]interface{} `json:"security,omitempty" yaml:"security,omitempty"` // Can be requirements or references
+	ExternalDocs *AsyncAPIExternalDocs    `json:"externalDocs,omitempty" yaml:"externalDocs,omitempty"`
+	Extensions   map[string]interface{}   `json:"-" yaml:",inline"` // For x-* extension fields
 }
 
 // AsyncAPIOperationReply represents the reply object for request-reply pattern
@@ -120,6 +121,7 @@ type AsyncAPIMessage struct {
 	Traits        []interface{}          `json:"traits,omitempty" yaml:"traits,omitempty"`
 	CorrelationId *AsyncAPICorrelationId `json:"correlationId,omitempty" yaml:"correlationId,omitempty"`
 	Ref           string                 `json:"$ref,omitempty" yaml:"$ref,omitempty"`
+	Extensions    map[string]interface{} `json:"-" yaml:",inline"` // For x-* extension fields
 }
 
 // AsyncAPICorrelationId represents correlation ID for request-reply
@@ -146,6 +148,7 @@ type AsyncAPISchema struct {
 	Default              interface{}                `json:"default,omitempty" yaml:"default,omitempty"`
 	Example              interface{}                `json:"example,omitempty" yaml:"example,omitempty"`
 	Enum                 []interface{}              `json:"enum,omitempty" yaml:"enum,omitempty"`
+	Const                interface{}                `json:"const,omitempty" yaml:"const,omitempty"`
 	Properties           map[string]*AsyncAPISchema `json:"properties,omitempty" yaml:"properties,omitempty"`
 	Items                *AsyncAPISchema            `json:"items,omitempty" yaml:"items,omitempty"`
 	Required             []string                   `json:"required,omitempty" yaml:"required,omitempty"`
@@ -174,6 +177,8 @@ type AsyncAPISecurityScheme struct {
 	Name        string `json:"name,omitempty" yaml:"name,omitempty"`
 	In          string `json:"in,omitempty" yaml:"in,omitempty"`
 	Scheme      string `json:"scheme,omitempty" yaml:"scheme,omitempty"`
+	// For OAuth2
+	Flows map[string]interface{} `json:"flows,omitempty" yaml:"flows,omitempty"`
 }
 
 // AsyncAPITag represents a tag
@@ -462,7 +467,7 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 	if sendMsg, exists := channel.Messages["request"]; exists {
 		operationID := g.toCamelCase(fmt.Sprintf("send_%s", channelName))
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_request", channelName))
-		operations[operationID] = &AsyncAPIOperation{
+		operation := &AsyncAPIOperation{
 			Title:       fmt.Sprintf("Send to %s", channel.Name),
 			Summary:     sendMsg.Summary,
 			Description: sendMsg.Description,
@@ -470,12 +475,40 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 			Channel:     map[string]string{"$ref": channelRef},
 			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, messageKey)}},
 		}
+
+		// Add security if defined in the channel
+		// Convert to AsyncAPI 3.0 format with $ref
+		if channel.Security != nil && len(channel.Security) > 0 {
+			operation.Security = []map[string]interface{}{}
+			for _, sec := range channel.Security {
+				for schemeName := range sec {
+					// Create a reference to the security scheme
+					secRef := map[string]interface{}{
+						"$ref": fmt.Sprintf("#/components/securitySchemes/%s", schemeName),
+					}
+					operation.Security = append(operation.Security, secRef)
+				}
+			}
+		}
+
+		// Add extensions if defined in the channel
+		if channel.Extensions != nil && len(channel.Extensions) > 0 {
+			operation.Extensions = make(map[string]interface{})
+			for key, value := range channel.Extensions {
+				// Only copy x-* extensions
+				if strings.HasPrefix(key, "x-") {
+					operation.Extensions[key] = value
+				}
+			}
+		}
+
+		operations[operationID] = operation
 	}
 
 	if receiveMsg, exists := channel.Messages["response"]; exists {
 		operationID := g.toCamelCase(fmt.Sprintf("receive_%s", channelName))
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_response", channelName))
-		operations[operationID] = &AsyncAPIOperation{
+		operation := &AsyncAPIOperation{
 			Title:       fmt.Sprintf("Receive from %s", channel.Name),
 			Summary:     receiveMsg.Summary,
 			Description: receiveMsg.Description,
@@ -483,6 +516,34 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 			Channel:     map[string]string{"$ref": channelRef},
 			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, messageKey)}},
 		}
+
+		// Add security if defined in the channel (receive operations typically inherit the same security)
+		// Convert to AsyncAPI 3.0 format with $ref
+		if channel.Security != nil && len(channel.Security) > 0 {
+			operation.Security = []map[string]interface{}{}
+			for _, sec := range channel.Security {
+				for schemeName := range sec {
+					// Create a reference to the security scheme
+					secRef := map[string]interface{}{
+						"$ref": fmt.Sprintf("#/components/securitySchemes/%s", schemeName),
+					}
+					operation.Security = append(operation.Security, secRef)
+				}
+			}
+		}
+
+		// Add extensions if defined in the channel
+		if channel.Extensions != nil && len(channel.Extensions) > 0 {
+			operation.Extensions = make(map[string]interface{})
+			for key, value := range channel.Extensions {
+				// Only copy x-* extensions
+				if strings.HasPrefix(key, "x-") {
+					operation.Extensions[key] = value
+				}
+			}
+		}
+
+		operations[operationID] = operation
 	}
 
 	return operations
@@ -564,6 +625,16 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 			}
 		}
 
+		// Add x-event-type extension for event-based messages
+		// This is particularly important for userDataStream.events
+		if eventType := g.extractEventType(receiveMsg.Payload); eventType != "" {
+			if asyncMessage.Extensions == nil {
+				asyncMessage.Extensions = make(map[string]interface{})
+			}
+			asyncMessage.Extensions["x-event-type"] = eventType
+			logrus.Debugf("Added x-event-type '%s' to message %s", eventType, messageKey)
+		}
+
 		componentMessages[messageKey] = asyncMessage
 	}
 
@@ -593,6 +664,41 @@ func (g *Generator) populateParamsRequired(schema *AsyncAPISchema, parameters []
 	}
 }
 
+// extractEventType extracts the event type from a schema, looking for const values in event.e or e fields
+func (g *Generator) extractEventType(schema *wsParser.Schema) string {
+	if schema == nil {
+		return ""
+	}
+
+	// Check for event wrapper pattern (event.e)
+	if eventProp, hasEvent := schema.Properties["event"]; hasEvent && eventProp != nil {
+		if eProp, hasE := eventProp.Properties["e"]; hasE && eProp != nil {
+			// If there's a const value, use it as the event type
+			if constValue, ok := eProp.Const.(string); ok && constValue != "" {
+				return constValue
+			}
+			// Fall back to example if no const
+			if exampleValue, ok := eProp.Example.(string); ok && exampleValue != "" {
+				return exampleValue
+			}
+		}
+	}
+
+	// Check for direct event type field (e) at root level
+	if eProp, hasE := schema.Properties["e"]; hasE && eProp != nil {
+		// If there's a const value, use it as the event type
+		if constValue, ok := eProp.Const.(string); ok && constValue != "" {
+			return constValue
+		}
+		// Fall back to example if no const
+		if exampleValue, ok := eProp.Example.(string); ok && exampleValue != "" {
+			return exampleValue
+		}
+	}
+
+	return ""
+}
+
 // convertToAsyncAPISchema converts a WebSocket schema to AsyncAPI schema
 func (g *Generator) convertToAsyncAPISchema(schema *wsParser.Schema) *AsyncAPISchema {
 	if schema == nil {
@@ -613,6 +719,7 @@ func (g *Generator) convertToAsyncAPISchema(schema *wsParser.Schema) *AsyncAPISc
 		Default:     schema.Default,
 		Example:     schema.Example,
 		Enum:        schema.Enum,
+		Const:       schema.Const,
 		Required:    schema.Required,
 	}
 
@@ -636,10 +743,26 @@ func (g *Generator) convertToAsyncAPISchema(schema *wsParser.Schema) *AsyncAPISc
 
 // convertToAsyncAPISecurityScheme converts a WebSocket security schema to AsyncAPI security scheme
 func (g *Generator) convertToAsyncAPISecurityScheme(securitySchema *wsParser.SecuritySchema) *AsyncAPISecurityScheme {
+	// Add descriptions based on Binance security types from official documentation
+	// Binance uses apiKey, signature, and timestamp in message parameters
+	description := ""
+	switch securitySchema.Name {
+	case "userStream":
+		description = "User Data Stream management - Requires API key in message parameters"
+	case "userData":
+		description = "Private user data - Requires API key, signature, and timestamp in message parameters"
+	case "trade":
+		description = "Trading operations - Requires API key, signature, and timestamp in message parameters"
+	default:
+		description = "API key authentication in message parameters"
+	}
+
+	// Use apiKey type with in: user for WebSocket message parameter authentication
+	// Note: AsyncAPI 3.0 apiKey doesn't use 'name' property (that's for httpApiKey)
 	return &AsyncAPISecurityScheme{
-		Type: securitySchema.Type,
-		Name: securitySchema.Name,
-		In:   securitySchema.In,
+		Type:        "apiKey",
+		In:          "user",
+		Description: description,
 	}
 }
 
