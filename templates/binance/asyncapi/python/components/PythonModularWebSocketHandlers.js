@@ -4,7 +4,7 @@
  * This provides proper isolation between different modules (spot, spot-streams, umfutures, etc.)
  */
 
-import { detectModuleName, getModuleConfig } from './PythonModuleRegistry.js';
+import { detectModuleName } from './PythonModuleRegistry.js';
 import { PythonWebSocketHandlers } from './PythonWebSocketHandlers.js';
 import { PythonSpotStreamsWebSocketHandlers } from './PythonSpotStreamsWebSocketHandlers.js';
 
@@ -18,9 +18,8 @@ import { PythonSpotStreamsWebSocketHandlers } from './PythonSpotStreamsWebSocket
 export function PythonModularWebSocketHandlers({ asyncapi, context }) {
   const { packageName, moduleName } = context;
   const detectedModule = detectModuleName(asyncapi, context);
-  const moduleConfig = getModuleConfig(detectedModule);
   
-  // Route to appropriate module-specific handlers
+  // Route to appropriate module-specific handlers based on detected module name
   switch (detectedModule) {
     case 'spot-streams':
       return generateSpotStreamsHandlers(asyncapi, context);

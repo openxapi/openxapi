@@ -1,66 +1,8 @@
 /*
- * Python Module Registry for organizing module-specific generation logic
- * This allows each module (spot, umfutures, cmfutures, etc.) to have dedicated configurations
- * Based on the Go SDK ModuleRegistry pattern
+ * Python Module Registry - Simplified version
+ * Only handles module name detection from x-module-name extension
+ * All other configuration is handled by module-specific generators
  */
-
-// Registry of module-specific configurations
-const moduleRegistry = new Map();
-
-/*
- * Register a module with its specific configuration
- */
-export function registerModule(moduleName, config) {
-  moduleRegistry.set(moduleName, {
-    name: moduleName,
-    ...config
-  });
-}
-
-/*
- * Get module configuration by name
- */
-export function getModuleConfig(moduleName) {
-  return moduleRegistry.get(moduleName) || getDefaultModuleConfig();
-}
-
-/*
- * Get all registered modules
- */
-export function getAllModules() {
-  return Array.from(moduleRegistry.keys());
-}
-
-/*
- * Check if a module is registered
- */
-export function isModuleRegistered(moduleName) {
-  return moduleRegistry.has(moduleName);
-}
-
-/*
- * Get default module configuration for unregistered modules
- */
-function getDefaultModuleConfig() {
-  return {
-    name: 'default',
-    authentication: {
-      supportedTypes: ['HMAC_SHA256'],
-      defaultType: 'HMAC_SHA256'
-    },
-    specialMethods: {
-      userDataStream: {
-        requiresAuth: true,
-        skipParamsCreation: true
-      }
-    },
-    serverConfig: {
-      // Server URLs will be extracted from AsyncAPI spec
-      mainnetUrlPattern: null,
-      testnetUrlPattern: null
-    }
-  };
-}
 
 /*
  * Extract complete server information from AsyncAPI spec (similar to Go SDK)
@@ -84,6 +26,7 @@ export function extractServerInfo(asyncapi) {
     // Extract server variables with their metadata
     const serverJson = server.json ? server.json() : (server._json || {});
     const variables = {};
+    let hasListenKey = false;
     
     if (serverJson.variables) {
       // Extract all variables with their metadata (enum, default, description)
@@ -94,6 +37,11 @@ export function extractServerInfo(asyncapi) {
           default: varConfig.default || '',
           examples: varConfig.examples || []
         };
+        
+        // Detect if this server uses listen key authentication
+        if (varName.toLowerCase() === 'listenkey') {
+          hasListenKey = true;
+        }
       });
     }
     
@@ -112,6 +60,7 @@ export function extractServerInfo(asyncapi) {
       summary: summary,
       description: description,
       variables: variables,  // Include the extracted variables
+      hasListenKey: hasListenKey,  // Indicate if listen key auth is used
       active: false // Will be set by ServerManager
     });
   });
@@ -119,59 +68,111 @@ export function extractServerInfo(asyncapi) {
   return serverInfo;
 }
 
+
 /*
- * Utility function to determine module name from AsyncAPI spec or context
- * Based on the Go SDK detectModuleName function
+ * Utility function to determine module name from context
+ * 
+ * Priority order:
+ * 1. Context packageName (corresponds to the spec file name)
+ * 2. Context moduleName (fallback)
+ * 3. Auto-detection from title (fallback)
+ * 4. Default fallback
  */
 export function detectModuleName(asyncapi, context = {}) {
-  // Try to detect module name from various sources
-  
-  // 1. Check context parameters first
-  if (context.moduleName) {
-    // Extract just the module name from full path
-    const parts = context.moduleName.split('/');
-    const lastPart = parts[parts.length - 1];
-    // If it looks like a known module, return it
-    if (['spot', 'umfutures', 'cmfutures', 'pmargin', 'spot-streams', 'umfutures-streams', 'cmfutures-streams', 'options-streams', 'options'].includes(lastPart)) {
-      return lastPart;
-    }
-  }
-  
-  // 2. Check package name
+  // 1. Use packageName from context (this matches the spec file name)
   if (context.packageName) {
     return context.packageName;
   }
   
-  // 3. Check AsyncAPI info title
+  // 2. Check moduleName as fallback
+  if (context.moduleName) {
+    // Extract just the module name from full path
+    const parts = context.moduleName.split('/');
+    const lastPart = parts[parts.length - 1];
+    return lastPart;
+  }
+  
+  // 4. Check AsyncAPI info title (generic detection)
   if (asyncapi && asyncapi.info && asyncapi.info()) {
     const info = asyncapi.info();
     const title = typeof info.title === 'function' ? info.title() : info.title;
     if (title) {
       const titleLower = title.toLowerCase();
-      if (titleLower.includes('spot') && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'spot-streams';
-      if ((titleLower.includes('umfutures') || titleLower.includes('usd-s') || titleLower.includes('usd-m')) && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'umfutures-streams';
-      if ((titleLower.includes('cmfutures') || titleLower.includes('coin-m')) && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'cmfutures-streams';
-      if (titleLower.includes('options') && (titleLower.includes('stream') || titleLower.includes('streams'))) return 'options-streams';
+      
+      // Generic patterns for module detection
+      // Look for common patterns like "spot streams", "futures streams", etc.
+      const hasStreams = titleLower.includes('stream') || titleLower.includes('streams');
+      
+      // Check for market type indicators
+      if (titleLower.includes('spot') && hasStreams) return 'spot-streams';
       if (titleLower.includes('spot')) return 'spot';
-      if (titleLower.includes('umfutures') || titleLower.includes('usd-m') || titleLower.includes('usd-s')) return 'umfutures';
-      if (titleLower.includes('cmfutures') || titleLower.includes('coin-m')) return 'cmfutures';
-      if (titleLower.includes('pmargin') || titleLower.includes('portfolio margin')) return 'pmargin';
+      
+      // Futures detection (generic)
+      if ((titleLower.includes('futures') || titleLower.includes('usd-m') || titleLower.includes('linear')) && hasStreams) {
+        return 'futures-streams';
+      }
+      if (titleLower.includes('futures') || titleLower.includes('usd-m') || titleLower.includes('linear')) {
+        return 'futures';
+      }
+      
+      // Coin-margined futures detection
+      if ((titleLower.includes('coin-m') || titleLower.includes('inverse')) && hasStreams) {
+        return 'coin-futures-streams';
+      }
+      if (titleLower.includes('coin-m') || titleLower.includes('inverse')) {
+        return 'coin-futures';
+      }
+      
+      // Options detection
+      if (titleLower.includes('options') && hasStreams) return 'options-streams';
+      if (titleLower.includes('options')) return 'options';
+      
+      // Portfolio/Cross margin detection
+      if (titleLower.includes('portfolio') || titleLower.includes('cross')) {
+        return 'portfolio-margin';
+      }
+      
+      // Exchange-specific patterns (kept for backward compatibility)
+      if (titleLower.includes('umfutures') && hasStreams) return 'umfutures-streams';
+      if (titleLower.includes('umfutures')) return 'umfutures';
+      if (titleLower.includes('cmfutures') && hasStreams) return 'cmfutures-streams';
+      if (titleLower.includes('cmfutures')) return 'cmfutures';
+      if (titleLower.includes('pmargin')) return 'pmargin';
     }
   }
   
-  // 4. Check servers for hints
+  // 5. Check servers for hints (using generic patterns)
   if (asyncapi && asyncapi.servers) {
     const servers = asyncapi.servers();
     if (servers) {
       const serverMap = typeof servers.all === 'function' ? servers.all() : servers;
       const serverUrls = Object.values(serverMap).map(server => {
         const url = typeof server.url === 'function' ? server.url() : server.url;
-        return url || '';
-      }).join(' ');
+        const host = typeof server.host === 'function' ? server.host() : server.host;
+        return `${url || ''} ${host || ''}`;
+      }).join(' ').toLowerCase();
       
-      if (serverUrls.includes('dstream') && serverUrls.includes('/stream')) return 'cmfutures-streams';
-      if (serverUrls.includes('fstream') && serverUrls.includes('/stream')) return 'umfutures-streams';
-      if (serverUrls.includes('nbstream') && serverUrls.includes('/stream')) return 'options-streams';
+      // Generic patterns for WebSocket servers
+      const hasStream = serverUrls.includes('stream');
+      const hasWs = serverUrls.includes('/ws') || serverUrls.includes('websocket');
+      
+      // Look for market type indicators in URLs
+      if (serverUrls.includes('spot') && hasStream) return 'spot-streams';
+      if (serverUrls.includes('spot') && hasWs) return 'spot';
+      
+      if ((serverUrls.includes('futures') || serverUrls.includes('linear')) && hasStream) return 'futures-streams';
+      if ((serverUrls.includes('futures') || serverUrls.includes('linear')) && hasWs) return 'futures';
+      
+      if ((serverUrls.includes('coin') || serverUrls.includes('inverse')) && hasStream) return 'coin-futures-streams';
+      if ((serverUrls.includes('coin') || serverUrls.includes('inverse')) && hasWs) return 'coin-futures';
+      
+      if (serverUrls.includes('options') && hasStream) return 'options-streams';
+      if (serverUrls.includes('options') && hasWs) return 'options';
+      
+      // Keep exchange-specific patterns for backward compatibility
+      if (serverUrls.includes('dstream') && hasStream) return 'cmfutures-streams';
+      if (serverUrls.includes('fstream') && hasStream) return 'umfutures-streams';
+      if (serverUrls.includes('nbstream') && hasStream) return 'options-streams';
       if (serverUrls.includes('nbstream') && serverUrls.includes('/eoptions/ws')) return 'options';
       if (serverUrls.includes('dstream')) return 'cmfutures';
       if (serverUrls.includes('fstream') && serverUrls.includes('/pm/ws')) return 'pmargin';
@@ -181,129 +182,27 @@ export function detectModuleName(asyncapi, context = {}) {
     }
   }
   
-  // 5. Default fallback
+  // 6. Default fallback
   return 'spot';
 }
 
-// Pre-register known modules with their specific configurations
-// Server URLs are now extracted from AsyncAPI spec, not hardcoded
-registerModule('spot', {
-  authentication: {
-    supportedTypes: ['HMAC_SHA256', 'RSA', 'ED25519'],
-    defaultType: 'HMAC_SHA256'
-  },
-  specialMethods: {
-    userDataStream: {
-      requiresAuth: true,
-      skipParamsCreation: true
-    }
-  }
-});
+// NOTE: Module configurations are now primarily extracted from AsyncAPI specs
+// These pre-registered modules are kept for backwards compatibility only
+// New modules will automatically get their configuration from the spec
 
-registerModule('umfutures', {
-  authentication: {
-    supportedTypes: ['HMAC_SHA256', 'RSA', 'ED25519'],
-    defaultType: 'HMAC_SHA256'
-  },
-  specialMethods: {
-    // umfutures might have different special method handling
-  }
-});
+// The module registry can be used to override spec-based configuration if needed
+// For example, if an exchange has special requirements not captured in the spec
 
-registerModule('cmfutures', {
-  authentication: {
-    supportedTypes: ['HMAC_SHA256', 'RSA', 'ED25519'],
-    defaultType: 'HMAC_SHA256'
-  },
-  specialMethods: {
-    // cmfutures might have different special method handling
-  }
-});
-
-registerModule('spot-streams', {
-  authentication: {
-    supportedTypes: [], // Spot streams are public, no authentication required
-    defaultType: null
-  },
-  specialMethods: {
-    // Spot streams use subscription model, not request-response
-    subscriptions: {
-      requiresAuth: false,
-      useStreamFormat: true
-    }
-  }
-});
-
-registerModule('umfutures-streams', {
-  authentication: {
-    supportedTypes: [], // USD-M Futures streams are public, no authentication required
-    defaultType: null
-  },
-  specialMethods: {
-    // USD-M Futures streams use subscription model, not request-response
-    subscriptions: {
-      requiresAuth: false,
-      useStreamFormat: true,
-      futuresSpecific: true
-    }
-  }
-});
-
-registerModule('cmfutures-streams', {
-  authentication: {
-    supportedTypes: [], // COIN-M Futures streams are public, no authentication required
-    defaultType: null
-  },
-  specialMethods: {
-    // COIN-M Futures streams use subscription model, not request-response
-    subscriptions: {
-      requiresAuth: false,
-      useStreamFormat: true,
-      futuresSpecific: true
-    }
-  }
-});
-
-registerModule('options-streams', {
-  authentication: {
-    supportedTypes: [], // Options streams are public, no authentication required
-    defaultType: null
-  },
-  specialMethods: {
-    // Options streams use subscription model, not request-response
-    subscriptions: {
-      requiresAuth: false,
-      useStreamFormat: true,
-      optionsSpecific: true
-    }
-  }
-});
-
-registerModule('options', {
-  authentication: {
-    supportedTypes: [], // Options user data streams use listen key, no direct auth required
-    defaultType: null
-  },
-  specialMethods: {
-    // Options user data streams use listen key subscription model
-    userDataStream: {
-      requiresAuth: true,
-      useListenKey: true,
-      skipParamsCreation: true
-    }
-  }
-});
-
-registerModule('pmargin', {
-  authentication: {
-    supportedTypes: ['HMAC_SHA256', 'RSA', 'ED25519'],
-    defaultType: 'HMAC_SHA256'
-  },
-  specialMethods: {
-    // Portfolio margin user data streams require authentication via listen key
-    userDataStream: {
-      requiresAuth: true,
-      useListenKey: true
-    }
-  }
-});
+// Example of how to register a module with custom configuration:
+// registerModule('custom-module', {
+//   authentication: {
+//     supportedTypes: ['CUSTOM_AUTH'],
+//     defaultType: 'CUSTOM_AUTH'
+//   },
+//   specialMethods: {
+//     customMethod: {
+//       requiresAuth: true,
+//       customParam: 'value'
+//     }
+//   }
+// });
