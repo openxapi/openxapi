@@ -3,31 +3,42 @@ info:
   title: Binance Options WebSocket Streams
   version: 1.0.0
   description: |
-    AsyncAPI specification for Binance Options WebSocket Streams (Market Data).
+    AsyncAPI specification for Binance Options WebSocket Streams (Market Data and User Data).
     
-    WebSocket Streams provide real-time options market data without authentication.
-    These are different from WebSocket API and User Data Streams.
+    This specification covers both:
+    1. **Market Data Streams**: Real-time options market data without authentication
+    2. **User Data Streams**: Account and order updates requiring authentication via listenKey
     
     ## Connection Types
     
-    ### Single Streams
+    ### Market Data Streams
+    
+    #### Single Streams
     - **Connection**: Connect to `/ws/<streamName>` directly
     - **Data Format**: Direct stream data (not wrapped)
     - **Property**: `combined = false`
     - **Example**: `wss://nbstream.binance.com/eoptions/ws/BTC-210630-9000-P@ticker`
     
-    ### Combined Streams (Multiple Streams)  
+    #### Combined Streams (Multiple Streams)  
     - **Connection**: Connect to `/stream?streams=<streamName1>/<streamName2>`
     - **Data Format**: Wrapped as `{"stream":"<streamName>","data":<rawPayload>}`
     - **Property**: `combined = true`
     - **Max Streams**: 200 streams per connection
     - **Example**: `wss://nbstream.binance.com/eoptions/stream?streams=BTC-210630-9000-P@trade/BTC-210630-9000-P@ticker`
     
+    ### User Data Streams
+    
+    - **Connection**: Connect to `/ws/<listenKey>`
+    - **Authentication**: Requires valid listenKey obtained from REST API
+    - **Data Format**: Direct event data for account updates, order updates, and risk level changes
+    - **Example**: `wss://nbstream.binance.com/eoptions/ws/XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh`
+    
     ## Connection Management
     
     ### Initial Connection
-    - Connect to `/ws/<streamName>` for single streams or `/stream` for combined streams
-    - Use SUBSCRIBE method to add streams dynamically
+    - Market Streams: Connect to `/ws/<streamName>` for single streams or `/stream` for combined streams
+    - User Data Streams: Connect to `/ws/<listenKey>` with valid listenKey
+    - Use SUBSCRIBE method to add streams dynamically (market streams only)
     
     ### Heartbeat
     - Server sends ping frame every 5 minutes
@@ -36,17 +47,19 @@ info:
     - Unsolicited pong frames are allowed
     
     ### Limits and Validity
-    - **Connection Validity**: 24 hours maximum
+    - **Connection Validity**: 24 hours maximum for market streams, 60 minutes for user data streams
     - **Rate Limit**: 10 incoming messages per second
-    - **Streams per Connection**: Maximum 200 streams
+    - **Streams per Connection**: Maximum 200 streams (market streams)
     - **Connections per IP**: Rate limiting applies
     - **IP Banning**: Repeated disconnections may result in IP ban
+    - **ListenKey Validity**: 60 minutes, can be extended with userDataStream.ping
     
     ### Stream Naming Conventions
     - All symbols must be provided in UPPERCASE
     - All stream names are lowercase (except symbol parts)
     - Multiple streams can be combined in a single connection
     - Options use specific naming patterns (e.g., BTC-210630-9000-P, ETH-220930-1500-C)
+    - ListenKey is a 64-character string obtained from REST API
 
 servers:
   mainnet:
@@ -55,17 +68,19 @@ servers:
     pathname: /eoptions/{streamPath}
     title: Binance Options Server
     summary: Binance Options WebSocket Streams Server (Mainnet)
-    description: WebSocket server for binance exchange options market data streams (mainnet environment)
+    description: WebSocket server for binance exchange options market data and user data streams (mainnet environment)
     variables:
       streamPath:
         description: |
           WebSocket stream path for different connection types.
           
-          - Single Stream: '/ws/<streamName>' - Connect to individual stream
+          - Market Single Stream: '/ws/<streamName>' - Connect to individual market stream
           - Combined Stream: '/stream?streams=<streamName1>/<streamName2>' - Connect to combined streams
+          - User Data Stream: '/ws/<listenKey>' - Connect to user data stream with authentication
         examples:
           - /ws/BTC-210630-9000-P@ticker
           - /stream?streams=BTC-210630-9000-P@trade/BTC-210630-9000-P@ticker
+          - /ws/XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
 
 channels:
   # Single stream connection (connect to /ws/<streamName> directly)
@@ -159,6 +174,31 @@ channels:
       # Combined stream data messages (wrapped format)
       combinedData:
         $ref: '#/components/messages/combinedStreamEvent'
+  
+  # User data stream connection (connect to /ws/{listenKey})
+  userDataStreamConnection:
+    address: /ws/{listenKey}
+    title: User Data Stream Connection
+    description: |
+      Connection endpoint for user data streams. Connect with a valid listenKey to receive
+      account updates, order updates, and risk level changes. The listenKey is obtained from
+      the REST API endpoint userDataStream.start and is valid for 60 minutes.
+    parameters:
+      listenKey:
+        description: |
+          64-character authentication key for user data stream.
+          Obtained from REST API userDataStream.start request.
+          Valid for 60 minutes, can be extended with userDataStream.ping.
+        examples:
+          - XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
+          - pqia91ma19a5s61cv6a81va65sdf19v8a65a1a5s61cv6a81va65sdf19v8a65a1
+    messages:
+      accountUpdateEvent:
+        $ref: '#/components/messages/accountUpdateEvent'
+      orderTradeUpdateEvent:
+        $ref: '#/components/messages/orderTradeUpdateEvent'
+      riskLevelChangeEvent:
+        $ref: '#/components/messages/riskLevelChangeEvent'
 
 operations:
   # Single stream operations
@@ -273,6 +313,23 @@ operations:
     action: receive
     channel:
       $ref: '#/channels/combinedStreamConnection'
+  
+  # User data stream operations
+  
+  receiveUserDataStreamEvents:
+    title: Receive User Data Stream Events
+    summary: Receive user data stream events
+    description: |
+      Receive various user data stream events after connecting with a valid listenKey.
+      Events include account updates, order updates, and risk level changes.
+      The listenKey must be obtained from REST API and kept alive with periodic pings.
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStreamConnection'
+    messages:
+      - $ref: '#/channels/userDataStreamConnection/messages/accountUpdateEvent'
+      - $ref: '#/channels/userDataStreamConnection/messages/orderTradeUpdateEvent'
+      - $ref: '#/channels/userDataStreamConnection/messages/riskLevelChangeEvent'
 
 components:
   messages:
@@ -437,6 +494,31 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/CombinedStreamEvent'
+    
+    # User data stream messages
+    accountUpdateEvent:
+      name: Account Update Event
+      title: Account Data Update Event
+      summary: Sent when account balance or position changes
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/AccountUpdateEvent'
+    
+    orderTradeUpdateEvent:
+      name: Order Trade Update Event
+      title: Order Update Event
+      summary: Orders are updated with orderTradeUpdate event
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/OrderTradeUpdateEvent'
+    
+    riskLevelChangeEvent:
+      name: Risk Level Change Event
+      title: Risk Level Change Event
+      summary: Sent when risk level changes (applicable only to VIP and Market Maker accounts)
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/RiskLevelChangeEvent'
 
   schemas:
     # Control schemas (same patterns as other Binance streams)
@@ -1483,3 +1565,288 @@ components:
           hl: "0"
           ll: "0"
           eep: "0"
+    
+    # User data stream event schemas
+    AccountUpdateEvent:
+      type: object
+      description: Account Data Update - sent when account balance or position changes
+      required:
+        - e
+        - E
+        - uid
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: ACCOUNT_UPDATE
+          example: ACCOUNT_UPDATE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1564034571105
+        uid:
+          type: number
+          description: User ID
+          example: 12345678
+        B:
+          type: array
+          description: Account Balance Array
+          items:
+            type: object
+            properties:
+              a:
+                type: string
+                description: Margin asset
+                example: USDT
+              b:
+                type: string
+                description: Account balance
+                example: "1000.00000000"
+              m:
+                type: string
+                description: Position value
+                example: "500.00000000"
+              u:
+                type: string
+                description: Unrealized profit/loss
+                example: "50.00000000"
+              i:
+                type: string
+                description: Initial margin
+                example: "200.00000000"
+              M:
+                type: string
+                description: Maintenance margin
+                example: "100.00000000"
+              U:
+                type: number
+                description: Positive unrealized profit for long position
+                example: 25.5
+        P:
+          type: array
+          description: Positions Array
+          items:
+            type: object
+            properties:
+              s:
+                type: string
+                description: Contract symbol
+                example: BTC-220930-18000-C
+              c:
+                type: string
+                description: Current positions
+                example: "10"
+              r:
+                type: string
+                description: Positions that can be reduced
+                example: "5"
+              p:
+                type: string
+                description: Position value
+                example: "1000.00000000"
+              a:
+                type: string
+                description: Average entry price
+                example: "100.00000000"
+        G:
+          type: array
+          description: Greeks Array
+          items:
+            type: object
+            properties:
+              ui:
+                type: string
+                description: Underlying
+                example: BTCUSDT
+              d:
+                type: number
+                description: Delta
+                example: 0.5
+              g:
+                type: number
+                description: Gamma
+                example: 0.01
+              t:
+                type: number
+                description: Theta
+                example: -0.1
+              v:
+                type: number
+                description: Vega
+                example: 0.05
+    
+    OrderTradeUpdateEvent:
+      type: object
+      description: Order Update - orders are updated with orderTradeUpdate event
+      required:
+        - e
+        - E
+        - o
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: ORDER_TRADE_UPDATE
+          example: ORDER_TRADE_UPDATE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1657613775883
+        o:
+          type: array
+          description: Order details array
+          items:
+            type: object
+            required:
+              - s
+              - oid
+            properties:
+              s:
+                type: string
+                description: Symbol
+                example: BTC-220930-18000-C
+              oid:
+                type: string
+                description: Order ID
+                example: "4611869636869226548"
+              c:
+                type: string
+                description: Client Order ID
+                example: ""
+              p:
+                type: string
+                description: Order Price
+                example: "1993"
+              q:
+                type: string
+                description: Order Quantity (+ve for BUY, -ve for SELL)
+                example: "1"
+              e:
+                type: string
+                description: Completed Trade Volume
+                example: "0.1"
+              ec:
+                type: string
+                description: Completed Trade Amount
+                example: "199.3"
+              f:
+                type: string
+                description: Fee
+                example: "2"
+              T:
+                type: integer
+                format: int64
+                description: Order Create Time (milliseconds)
+                example: 1657613342918
+              t:
+                type: integer
+                format: int64
+                description: Order Update Time (milliseconds)
+                example: 1657613342918
+              oty:
+                type: string
+                description: Order Type
+                example: LIMIT
+                enum:
+                  - LIMIT
+                  - MARKET
+              S:
+                type: string
+                description: Order Status
+                example: PARTIALLY_FILLED
+                enum:
+                  - NEW
+                  - PARTIALLY_FILLED
+                  - FILLED
+                  - CANCELED
+                  - EXPIRED
+              tif:
+                type: string
+                description: Time in Force
+                example: GTC
+                enum:
+                  - GTC
+                  - IOC
+                  - FOK
+              po:
+                type: boolean
+                description: Post Only flag
+                example: true
+              r:
+                type: boolean
+                description: Reduce Only flag
+                example: false
+              stp:
+                type: integer
+                description: Not used currently
+                example: 0
+              fi:
+                type: array
+                description: Fills Array
+                items:
+                  type: object
+                  properties:
+                    t:
+                      type: string
+                      description: Trade ID
+                      example: "20"
+                    p:
+                      type: string
+                      description: Trade Price
+                      example: "1993"
+                    q:
+                      type: string
+                      description: Trade Quantity
+                      example: "0.1"
+                    f:
+                      type: string
+                      description: Commission/Rebate
+                      example: "0.0002"
+                    T:
+                      type: integer
+                      format: int64
+                      description: Trade Time (milliseconds)
+                      example: 1657613774336
+                    m:
+                      type: string
+                      description: Taker/Maker
+                      example: TAKER
+                      enum:
+                        - TAKER
+                        - MAKER
+    
+    RiskLevelChangeEvent:
+      type: object
+      description: Risk Level Change - sent when risk level changes (applicable only to VIP and Market Maker accounts)
+      required:
+        - e
+        - E
+        - s
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: RISK_LEVEL_CHANGE
+          example: RISK_LEVEL_CHANGE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1587727187525
+        mb:
+          type: string
+          description: Margin Balance
+          example: "1534.11708371"
+        mm:
+          type: string
+          description: Maintenance Margin
+          example: "254789.11708371"
+        s:
+          type: string
+          description: Risk Level
+          example: REDUCE_ONLY
+          enum:
+            - NORMAL
+            - REDUCE_ONLY
