@@ -20,6 +20,7 @@ import { CmfuturesStreamsWebSocketHandlers } from './CmfuturesStreamsWebSocketHa
 
 // Import dedicated options-streams components
 import { OptionsStreamsWebSocketHandlers } from './OptionsStreamsWebSocketHandlers.js';
+import { GenericStreamsWebSocketHandlers } from './GenericStreamsWebSocketHandlers.js';
 
 // Import dedicated pmargin components
 import { PmarginWebSocketHandlers } from './PmarginWebSocketHandlers.js';
@@ -457,11 +458,11 @@ function cmfuturesStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
 // Options Streams module generators (market data streams, no authentication)
 function optionsStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
   try {
-    // Use dedicated OptionsStreamsWebSocketHandlers for options-specific event handling
-    return OptionsStreamsWebSocketHandlers({ asyncapi });
+    // Use the new generic, spec-driven streams handler for options-streams
+    return GenericStreamsWebSocketHandlers({ asyncapi });
   } catch (error) {
-    console.warn('Could not load OptionsStreamsWebSocketHandlers for options-streams:', error.message);
-    return '// OptionsStreamsWebSocketHandlers component not available for options-streams\n';
+    console.warn('Could not load GenericStreamsWebSocketHandlers for options-streams:', error.message);
+    return '// GenericStreamsWebSocketHandlers component not available for options-streams\n';
   }
 }
 
