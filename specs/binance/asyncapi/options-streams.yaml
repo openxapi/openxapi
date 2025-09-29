@@ -62,33 +62,21 @@ info:
     - ListenKey is a 64-character string obtained from REST API
 
 servers:
-  mainnet:
+  mainnet1:
     host: nbstream.binance.com
     protocol: wss
-    pathname: /eoptions/{streamPath}
+    pathname: /eoptions
     title: Binance Options Server
     summary: Binance Options WebSocket Streams Server (Mainnet)
     description: WebSocket server for binance exchange options market data and user data streams (mainnet environment)
-    variables:
-      streamPath:
-        description: |
-          WebSocket stream path for different connection types.
-          
-          - Market Single Stream: '/ws/<streamName>' - Connect to individual market stream
-          - Combined Stream: '/stream?streams=<streamName1>/<streamName2>' - Connect to combined streams
-          - User Data Stream: '/ws/<listenKey>' - Connect to user data stream with authentication
-        examples:
-          - /ws/BTC-210630-9000-P@ticker
-          - /stream?streams=BTC-210630-9000-P@trade/BTC-210630-9000-P@ticker
-          - /ws/XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
 
 channels:
-  # Single stream connection (connect to /ws/<streamName> directly)
-  singleStreamConnection:
+  # Single market stream connection (connect to /ws/<streamName> directly)
+  marketStreams:
     address: /ws/{streamName}
-    title: Single Stream Connection
+    title: Single Market Streams Connection
     description: |
-      Direct connection endpoint for individual streams. Connect here to receive
+      Direct connection endpoint for individual market streams. Connect here to receive
       data from a specific stream. Each stream returns direct data.
     parameters:
       streamName:
@@ -141,11 +129,11 @@ channels:
         $ref: '#/components/messages/partialDepthEvent'
 
   # Combined stream connection (connect to /stream)
-  combinedStreamConnection:
+  combinedMarketStreams:
     address: /stream
-    title: Combined Stream Connection
+    title: Combined Market Streams Connection
     description: |
-      Initial connection endpoint for combined streams. Connect here first, then use
+      Initial connection endpoint for combined market streams. Connect here first, then use
       query parameters or SUBSCRIBE method to add multiple streams. Each stream returns wrapped data
       with format: {"stream":"<streamName>","data":<rawPayload>}
     messages:
@@ -171,14 +159,14 @@ channels:
         $ref: '#/components/messages/getPropertyResponse'
       error:
         $ref: '#/components/messages/errorMessage'
-      # Combined stream data messages (wrapped format)
+      # Combined market streams data messages (wrapped format)
       combinedData:
-        $ref: '#/components/messages/combinedStreamEvent'
+        $ref: '#/components/messages/combinedMarketStreamsEvent'
   
-  # User data stream connection (connect to /ws/{listenKey})
-  userDataStreamConnection:
+  # User data streams connection (connect to /ws/{listenKey})
+  userDataStreams:
     address: /ws/{listenKey}
-    title: User Data Stream Connection
+    title: User Data Streams Connection
     description: |
       Connection endpoint for user data streams. Connect with a valid listenKey to receive
       account updates, order updates, and risk level changes. The listenKey is obtained from
@@ -201,53 +189,53 @@ channels:
         $ref: '#/components/messages/riskLevelChangeEvent'
 
 operations:
-  # Single stream operations
-  subscribeToSingleStreams:
-    title: Subscribe to Single Streams
-    summary: Subscribe to streams on single connection
+  # Single market stream operations
+  subscribeToMarketStreams:
+    title: Subscribe to Single Market Streams
+    summary: Subscribe to market streams on single connection
     description: |
       Subscribe to market data streams on single connection. Each stream returns
       direct data without wrapping. Maximum 200 streams per connection.
     action: send
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStreams'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/subscribe'
+      - $ref: '#/channels/marketStreams/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStreams'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/subscribeResponse'
+        - $ref: '#/channels/marketStreams/messages/subscribeResponse'
 
-  unsubscribeFromSingleStreams:
-    title: Unsubscribe from Single Streams
-    summary: Unsubscribe from streams on single connection
+  unsubscribeFromMarketStreams:
+    title: Unsubscribe from Single Market Streams
+    summary: Unsubscribe from market streams on single connection
     action: send
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStreams'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/unsubscribe'
+      - $ref: '#/channels/marketStreams/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStreams'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/unsubscribeResponse'
+        - $ref: '#/channels/marketStreams/messages/unsubscribeResponse'
 
-  listSingleSubscriptions:
+  listSubscriptionsFromMarketStreams:
     title: List Single Stream Subscriptions
     summary: Get list of active single stream subscriptions
     action: send
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStreams'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/listSubscriptions'
+      - $ref: '#/channels/marketStreams/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStreams'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/marketStreams/messages/listSubscriptionsResponse'
 
-  receiveSingleStreamData:
+  receiveMarketStreamsData:
     title: Receive Single Stream Data
     summary: Receive direct stream data from single connection
     description: |
@@ -255,56 +243,56 @@ operations:
       without wrapping. Stream type can be determined by the event structure.
     action: receive
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStreams'
 
   # Combined stream operations
     
-  subscribeToCombinedStreams:
-    title: Subscribe to Combined Streams
-    summary: Subscribe to streams on combined connection
+  subscribeToCombinedMarketStreams:
+    title: Subscribe to Combined Market Streams
+    summary: Subscribe to market streams on combined connection
     description: |
       Subscribe to market data streams on combined connection. Each stream returns
       wrapped data with stream name identifier. Maximum 200 streams per connection.
     action: send
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStreams'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/subscribe'
+      - $ref: '#/channels/combinedMarketStreams/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStreams'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/subscribeResponse'
+        - $ref: '#/channels/combinedMarketStreams/messages/subscribeResponse'
 
-  unsubscribeFromCombinedStreams:
-    title: Unsubscribe from Combined Streams
-    summary: Unsubscribe from streams on combined connection
+  unsubscribeFromCombinedMarketStreams:
+    title: Unsubscribe from Combined Market Streams
+    summary: Unsubscribe from market streams on combined connection
     action: send
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStreams'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/unsubscribe'
+      - $ref: '#/channels/combinedMarketStreams/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStreams'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/unsubscribeResponse'
+        - $ref: '#/channels/combinedMarketStreams/messages/unsubscribeResponse'
 
-  listCombinedSubscriptions:
+  listSubscriptionsFromCombinedMarketStreams:
     title: List Combined Stream Subscriptions
     summary: Get list of active combined stream subscriptions
     action: send
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStreams'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptions'
+      - $ref: '#/channels/combinedMarketStreams/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStreams'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/combinedMarketStreams/messages/listSubscriptionsResponse'
 
-  receiveCombinedStreamData:
+  receiveCombinedMarketStreamsData:
     title: Receive Combined Stream Data
     summary: Receive wrapped stream data from combined connection
     description: |
@@ -312,7 +300,7 @@ operations:
       stream name and original data: {"stream":"<streamName>","data":<rawPayload>}
     action: receive
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStreams'
   
   # User data stream operations
   
@@ -325,11 +313,11 @@ operations:
       The listenKey must be obtained from REST API and kept alive with periodic pings.
     action: receive
     channel:
-      $ref: '#/channels/userDataStreamConnection'
+      $ref: '#/channels/userDataStreams'
     messages:
-      - $ref: '#/channels/userDataStreamConnection/messages/accountUpdateEvent'
-      - $ref: '#/channels/userDataStreamConnection/messages/orderTradeUpdateEvent'
-      - $ref: '#/channels/userDataStreamConnection/messages/riskLevelChangeEvent'
+      - $ref: '#/channels/userDataStreams/messages/accountUpdateEvent'
+      - $ref: '#/channels/userDataStreams/messages/orderTradeUpdateEvent'
+      - $ref: '#/channels/userDataStreams/messages/riskLevelChangeEvent'
 
 components:
   messages:
@@ -420,6 +408,7 @@ components:
       title: New Symbol Info Event
       summary: New option symbol information stream (option_pair)
       contentType: application/json
+      x-stream-pattern: 'option_pair'
       payload:
         $ref: '#/components/schemas/NewSymbolInfoEvent'
 
@@ -428,6 +417,7 @@ components:
       title: Open Interest Event
       summary: Open interest information for options contracts
       contentType: application/json
+      x-stream-pattern: '{underlyingAsset}@openInterest@{expirationDate}'
       payload:
         $ref: '#/components/schemas/OpenInterestEvent'
 
@@ -436,6 +426,7 @@ components:
       title: Mark Price Event
       summary: Mark price information for options contracts
       contentType: application/json
+      x-stream-pattern: '{underlyingAsset}@markPrice'
       payload:
         $ref: '#/components/schemas/MarkPriceEvent'
 
@@ -444,6 +435,7 @@ components:
       title: Kline Event
       summary: Kline/candlestick information for options contracts
       contentType: application/json
+      x-stream-pattern: '{symbol}@kline_{interval}'
       payload:
         $ref: '#/components/schemas/KlineEvent'
 
@@ -452,6 +444,9 @@ components:
       title: 24hr Ticker by Underlying and Expiration Event
       summary: 24hr ticker statistics for options by underlying asset and expiration
       contentType: application/json
+      x-stream-pattern: '{underlyingAsset}@ticker@{expirationDate}'
+      x-event-type: "24hrTicker"
+      x-response-format: array
       payload:
         $ref: '#/components/schemas/TickerByUnderlyingEvent'
 
@@ -460,6 +455,7 @@ components:
       title: Index Price Event
       summary: Index price information for underlying assets
       contentType: application/json
+      x-stream-pattern: '{symbol}@index'
       payload:
         $ref: '#/components/schemas/IndexPriceEvent'
 
@@ -468,6 +464,7 @@ components:
       title: 24hr Ticker Event
       summary: 24hr ticker statistics for individual option symbols
       contentType: application/json
+      x-stream-pattern: '{symbol}@ticker'
       payload:
         $ref: '#/components/schemas/TickerEvent'
 
@@ -476,6 +473,7 @@ components:
       title: Trade Event
       summary: Real-time trade information for options contracts
       contentType: application/json
+      x-stream-patterns: ['{symbol}@trade', '{underlyingAsset}@trade']
       payload:
         $ref: '#/components/schemas/TradeEvent'
 
@@ -484,16 +482,17 @@ components:
       title: Partial Book Depth Event
       summary: Partial order book depth information for options contracts
       contentType: application/json
+      x-stream-patterns: ['{symbol}@depth{levels}', '{symbol}@depth{levels}@{speed}']
       payload:
         $ref: '#/components/schemas/PartialDepthEvent'
 
-    combinedStreamEvent:
+    combinedMarketStreamsEvent:
       name: Combined Stream Data
       title: Combined Stream Wrapper
       summary: Wrapper for combined stream data
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/CombinedStreamEvent'
+        $ref: '#/components/schemas/CombinedMarketStreamsEvent'
     
     # User data stream messages
     accountUpdateEvent:
@@ -1489,10 +1488,10 @@ components:
             maxItems: 2
           example: [["1000", "89"]]
 
-    CombinedStreamEvent:
+    CombinedMarketStreamsEvent:
       type: object
       description: |
-        Wrapper for combined stream data. When connecting to combined streams,
+        Wrapper for combined market streams data. When connecting to combined streams,
         all events are wrapped with this structure to identify the source stream.
         
         The "stream" field contains the original stream name, and "data" contains
