@@ -232,6 +232,35 @@ export default function ({ asyncapi, params }) {
       const opName = toPascalCase(opId || 'Send');
       // Extract first request message payload type name
       let reqModelName = 'interface{}';
+      // Collect top-level const assignments from the request payload schema
+      const constAssignments = [];
+      // Helper: safe Go field name from property key (honors x-go-name when present)
+      function goFieldNameFromKey(key, propSchema) {
+        try {
+          const override = propSchema && (propSchema['x-go-name'] || (typeof propSchema.extension === 'function' && propSchema.extension && propSchema.extension('x-go-name')));
+          if (override) {
+            let n = toPascalCase(String(override));
+            if (/^[0-9]/.test(n)) n = 'X' + n;
+            return n;
+          }
+        } catch (e) {}
+        let n = toPascalCase(String(key || 'Field'));
+        if (/^[0-9]/.test(n)) n = 'X' + n;
+        return n;
+      }
+      // Helper: convert JS value to a Go literal
+      function goLiteral(val) {
+        const t = typeof val;
+        if (t === 'string') {
+          const escaped = String(val).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+          return `"${escaped}"`;
+        }
+        if (t === 'number' || t === 'bigint') return String(val);
+        if (t === 'boolean') return val ? 'true' : 'false';
+        const s = String(val);
+        const escaped = s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return `"${escaped}"`;
+      }
       try {
         const msgs = op.messages();
         if (msgs && msgs.length > 0) {
@@ -247,6 +276,66 @@ export default function ({ asyncapi, params }) {
             const modelType = toPascalCase(channelPascal + (mName || 'Request'));
             reqModelName = `models.${modelType}`;
           }
+          // Attempt to collect top-level const fields from the payload schema
+          try {
+            // Preferred: via model API
+            if (typeof m.payload === 'function') {
+              const payload = m.payload();
+              if (payload) {
+                let props;
+                try { props = typeof payload.properties === 'function' ? payload.properties() : payload.properties; } catch (e) { props = undefined; }
+                if (props) {
+                  let entries = [];
+                  try {
+                    if (typeof props.all === 'function') {
+                      const allProps = props.all();
+                      entries = Object.entries(allProps || {});
+                    } else if (props instanceof Map) {
+                      entries = Array.from(props.entries());
+                    } else if (typeof props === 'object') {
+                      entries = Object.entries(props);
+                    }
+                  } catch (e) {}
+                  entries.forEach(([k, sch]) => {
+                    try {
+                      let cval;
+                      if (sch && typeof sch.const === 'function') cval = sch.const();
+                      else if (sch && Object.prototype.hasOwnProperty.call(sch, 'const')) cval = sch.const;
+                      if (cval !== undefined) {
+                        constAssignments.push({ field: goFieldNameFromKey(k, sch), value: goLiteral(cval) });
+                      }
+                    } catch (e) {}
+                  });
+                }
+              }
+            }
+            // Fallback: via raw JSON and $ref resolution
+            if (constAssignments.length === 0 && typeof m.json === 'function') {
+              const mj = m.json();
+              if (mj) {
+                let pschema = mj.payload;
+                if (pschema && pschema.$ref && typeof pschema.$ref === 'string') {
+                  const ref = pschema.$ref;
+                  if (ref.startsWith('#/components/schemas/')) {
+                    const tail = ref.split('/').pop();
+                    if (root && root.components && root.components.schemas && root.components.schemas[tail]) {
+                      pschema = root.components.schemas[tail];
+                    }
+                  }
+                }
+                const props = pschema && pschema.properties;
+                if (props && typeof props === 'object') {
+                  Object.entries(props).forEach(([k, sch]) => {
+                    if (!sch) return;
+                    const cval = sch.const;
+                    if (cval !== undefined) {
+                      constAssignments.push({ field: goFieldNameFromKey(k, sch), value: goLiteral(cval) });
+                    }
+                  });
+                }
+              }
+            }
+          } catch (e) { /* ignore const extraction errors */ }
         }
       } catch (e) {}
 
@@ -256,6 +345,12 @@ export default function ({ asyncapi, params }) {
       content += `\tconn := ch.client.conn\n`;
       content += `\tch.client.connMu.RUnlock()\n`;
       content += `\tif conn == nil { return fmt.Errorf("not connected") }\n`;
+      if (constAssignments.length > 0) {
+        content += `\t// Apply const constraints from schema\n`;
+        constAssignments.forEach(a => {
+          content += `\treq.${a.field} = ${a.value}\n`;
+        });
+      }
       content += `\tdata, err := json.Marshal(req)\n`;
       content += `\tif err != nil { return fmt.Errorf("marshal request: %w", err) }\n`;
       content += `\treturn conn.WriteMessage(websocket.TextMessage, data)\n`;
