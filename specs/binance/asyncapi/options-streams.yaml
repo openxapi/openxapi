@@ -109,23 +109,23 @@ channels:
       error:
         $ref: '#/components/messages/errorMessage'
       # Single stream data messages (direct, not wrapped)
-      newSymbolInfo:
+      newSymbolInfoEvent:
         $ref: '#/components/messages/newSymbolInfoEvent'
-      openInterest:
+      openInterestEvent:
         $ref: '#/components/messages/openInterestEvent'
-      markPrice:
+      markPriceEvent:
         $ref: '#/components/messages/markPriceEvent'
-      kline:
+      klineEvent:
         $ref: '#/components/messages/klineEvent'
-      ticker:
+      tickerEvent:
         $ref: '#/components/messages/tickerEvent'
-      tickerByUnderlying:
+      tickerByUnderlyingEvent:
         $ref: '#/components/messages/tickerByUnderlyingEvent'
-      indexPrice:
+      indexPriceEvent:
         $ref: '#/components/messages/indexPriceEvent'
-      trade:
+      tradeEvent:
         $ref: '#/components/messages/tradeEvent'
-      partialDepth:
+      partialDepthEvent:
         $ref: '#/components/messages/partialDepthEvent'
 
   # Combined stream connection (connect to /stream?streams=...)
@@ -289,15 +289,26 @@ operations:
     channel:
       $ref: '#/channels/marketStreams'
     messages:
-      - $ref: '#/channels/marketStreams/messages/newSymbolInfo'
-      - $ref: '#/channels/marketStreams/messages/openInterest'
-      - $ref: '#/channels/marketStreams/messages/markPrice'
-      - $ref: '#/channels/marketStreams/messages/kline'
-      - $ref: '#/channels/marketStreams/messages/tickerByUnderlying'
-      - $ref: '#/channels/marketStreams/messages/indexPrice'
-      - $ref: '#/channels/marketStreams/messages/ticker'
-      - $ref: '#/channels/marketStreams/messages/trade'
-      - $ref: '#/channels/marketStreams/messages/partialDepth'
+      - $ref: '#/channels/marketStreams/messages/newSymbolInfoEvent'
+      - $ref: '#/channels/marketStreams/messages/openInterestEvent'
+      - $ref: '#/channels/marketStreams/messages/markPriceEvent'
+      - $ref: '#/channels/marketStreams/messages/klineEvent'
+      - $ref: '#/channels/marketStreams/messages/tickerByUnderlyingEvent'
+      - $ref: '#/channels/marketStreams/messages/indexPriceEvent'
+      - $ref: '#/channels/marketStreams/messages/tickerEvent'
+      - $ref: '#/channels/marketStreams/messages/tradeEvent'
+      - $ref: '#/channels/marketStreams/messages/partialDepthEvent'
+
+  receiveErrorFromMarketStreams:
+    title: Receive Error Messages from Single Market Streams
+    summary: Receive error messages from single market stream connection
+    description: |
+      Receive error messages in response to invalid requests or other issues.
+      Error messages contain an error code and descriptive message.
+    action: receive
+    channel:
+      $ref: '#/channels/marketStreams'
+    messages:
       - $ref: '#/channels/marketStreams/messages/error'
 
   # Combined stream operations
@@ -392,6 +403,17 @@ operations:
       $ref: '#/channels/combinedMarketStreams'
     messages:
       - $ref: '#/channels/combinedMarketStreams/messages/combinedMarketStreamsEvent'
+
+  receiveErrorFromCombinedMarketStreams:
+    title: Receive Error Messages from Combined Market Streams
+    summary: Receive error messages from combined market stream connection
+    description: |
+      Receive error messages in response to invalid requests or other issues.
+      Error messages contain an error code and descriptive message.
+    action: receive
+    channel:
+      $ref: '#/channels/combinedMarketStreams'
+    messages:
       - $ref: '#/channels/combinedMarketStreams/messages/error'
   
   # User data stream operations
@@ -421,6 +443,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/subscribeRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     unsubscribeRequest:
       name: Unsubscribe Request
@@ -429,6 +454,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/unsubscribeRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     subscriptionResponse:
       name: Subscription Response
@@ -437,6 +465,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/subscriptionResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     listSubscriptionsRequest:
       name: List Subscriptions Request
@@ -445,6 +476,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/listSubscriptionsRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     listSubscriptionsResponse:
       name: List Subscriptions Response
@@ -453,6 +487,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/listSubscriptionsResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     setPropertyRequest:
       name: Set Property Request
@@ -461,6 +498,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/setPropertyRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     setPropertyResponse:
       name: Set Property Response
@@ -469,6 +509,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/setPropertyResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     getPropertyRequest:
       name: Get Property Request
@@ -477,6 +520,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/getPropertyRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     getPropertyResponse:
       name: Get Property Response
@@ -485,6 +531,9 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/getPropertyResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     errorMessage:
       name: Error Message
@@ -500,6 +549,7 @@ components:
       title: New Symbol Info Event
       summary: New option symbol information stream (option_pair)
       contentType: application/json
+      x-event: true
       x-stream-pattern: 'option_pair'
       payload:
         $ref: '#/components/schemas/newSymbolInfoEvent'
@@ -509,6 +559,7 @@ components:
       title: Open Interest Event
       summary: Open interest information for options contracts
       contentType: application/json
+      x-event: true
       x-stream-pattern: '{underlyingAsset}@openInterest@{expirationDate}'
       payload:
         $ref: '#/components/schemas/openInterestEvent'
@@ -518,6 +569,7 @@ components:
       title: Mark Price Event
       summary: Mark price information for options contracts
       contentType: application/json
+      x-event: true
       x-stream-pattern: '{underlyingAsset}@markPrice'
       payload:
         $ref: '#/components/schemas/markPriceEvent'
@@ -527,6 +579,7 @@ components:
       title: Kline Event
       summary: Kline/candlestick information for options contracts
       contentType: application/json
+      x-event: true
       x-stream-pattern: '{symbol}@kline_{interval}'
       payload:
         $ref: '#/components/schemas/klineEvent'
@@ -536,6 +589,7 @@ components:
       title: 24hr Ticker by Underlying and Expiration Event
       summary: 24hr ticker statistics for options by underlying asset and expiration
       contentType: application/json
+      x-event: true
       x-stream-pattern: '{underlyingAsset}@ticker@{expirationDate}'
       x-event-type: "24hrTicker"
       x-response-format: array
@@ -547,6 +601,7 @@ components:
       title: Index Price Event
       summary: Index price information for underlying assets
       contentType: application/json
+      x-event: true
       x-stream-pattern: '{symbol}@index'
       payload:
         $ref: '#/components/schemas/indexPriceEvent'
@@ -556,6 +611,7 @@ components:
       title: 24hr Ticker Event
       summary: 24hr ticker statistics for individual option symbols
       contentType: application/json
+      x-event: true
       x-stream-pattern: '{symbol}@ticker'
       payload:
         $ref: '#/components/schemas/tickerEvent'
@@ -565,6 +621,7 @@ components:
       title: Trade Event
       summary: Real-time trade information for options contracts
       contentType: application/json
+      x-event: true
       x-stream-patterns: ['{symbol}@trade', '{underlyingAsset}@trade']
       payload:
         $ref: '#/components/schemas/tradeEvent'
@@ -574,6 +631,7 @@ components:
       title: Partial Book Depth Event
       summary: Partial order book depth information for options contracts
       contentType: application/json
+      x-event: true
       x-stream-patterns: ['{symbol}@depth{levels}', '{symbol}@depth{levels}@{speed}']
       payload:
         $ref: '#/components/schemas/partialDepthEvent'
@@ -583,6 +641,7 @@ components:
       title: Combined Stream Wrapper
       summary: Wrapper for combined stream data
       contentType: application/json
+      x-event: true
       payload:
         $ref: '#/components/schemas/combinedMarketStreamsEvent'
     
@@ -592,6 +651,7 @@ components:
       title: Account Data Update Event
       summary: Sent when account balance or position changes
       contentType: application/json
+      x-event: true
       payload:
         $ref: '#/components/schemas/accountUpdateEvent'
     
@@ -600,6 +660,7 @@ components:
       title: Order Update Event
       summary: Orders are updated with orderTradeUpdate event
       contentType: application/json
+      x-event: true
       payload:
         $ref: '#/components/schemas/orderTradeUpdateEvent'
     
@@ -608,6 +669,7 @@ components:
       title: Risk Level Change Event
       summary: Sent when risk level changes (applicable only to VIP and Market Maker accounts)
       contentType: application/json
+      x-event: true
       payload:
         $ref: '#/components/schemas/riskLevelChangeEvent'
 
