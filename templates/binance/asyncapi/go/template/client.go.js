@@ -32,13 +32,14 @@ type Client struct {
   connMu        sync.RWMutex
   isConnected   bool
   done          chan struct{}
+  readLoopStarted bool
   // registry of handlers per channel name
   handlersMu    sync.RWMutex
   handlers      map[string]map[string]func(context.Context, []byte) error
 }
 
 // NewClient creates a new client (no direct connection management)
-func NewClient() *Client { return &Client{ serverManager: NewServerManager(), handlers: make(map[string]map[string]func(context.Context, []byte) error), done: make(chan struct{}) } }
+func NewClient() *Client { return &Client{ serverManager: NewServerManager(), handlers: make(map[string]map[string]func(context.Context, []byte) error) } }
 
 // NewClientWithAuth creates a new client with authentication
 func NewClientWithAuth(auth *Auth) *Client { c := NewClient(); c.auth = auth; return c }
@@ -86,18 +87,31 @@ func (c *Client) RegisterHandlers(channel string, m map[string]func(context.Cont
 
 // ensureReadLoop starts the shared read loop once
 func (c *Client) ensureReadLoop(ctx context.Context) {
-  c.connMu.RLock()
+  c.connMu.Lock()
+  defer c.connMu.Unlock()
   running := c.isConnected && c.conn != nil
-  c.connMu.RUnlock()
   if !running { return }
-  // simple idempotence: if done channel is closed, recreate
-  select { case <-c.done: c.done = make(chan struct{}); default: }
+  if c.readLoopStarted {
+    return
+  }
+  if c.done == nil {
+    c.done = make(chan struct{})
+  }
+  c.readLoopStarted = true
   go c.readLoop(ctx)
 }
 
 // readLoop reads from the shared connection and dispatches to registered handlers
 func (c *Client) readLoop(ctx context.Context) {
-  defer func() { close(c.done) }()
+  defer func() {
+    c.connMu.Lock()
+    c.readLoopStarted = false
+    if c.done != nil {
+      close(c.done)
+      c.done = nil
+    }
+    c.connMu.Unlock()
+  }()
   for {
     c.connMu.RLock()
     conn := c.conn
