@@ -136,6 +136,16 @@ channels:
       Initial connection endpoint for combined market streams. Connect here first, then use
       query parameters or SUBSCRIBE method to add multiple streams. Each stream returns wrapped data
       with format: {"stream":"<streamName>","data":<rawPayload>}
+    x-unwrapped-event-messages:
+      - newSymbolInfoEvent
+      - openInterestEvent
+      - markPriceEvent
+      - klineEvent
+      - tickerByUnderlyingEvent
+      - indexPriceEvent
+      - tickerEvent
+      - tradeEvent
+      - partialDepthEvent
     parameters:
       streams:
         description: |
@@ -642,6 +652,13 @@ components:
       summary: Wrapper for combined stream data
       contentType: application/json
       x-event: true
+      # This wrapper should not use description-based field naming for its payload model
+      x-use-desc-naming: false
+      x-wrapper: combined
+      x-handler-key: wrap:combined
+      x-wrapper-keys:
+        stream: stream
+        data: data
       payload:
         $ref: '#/components/schemas/combinedMarketStreamsEvent'
     
@@ -1128,7 +1145,19 @@ components:
               example: "0"
 
     tickerByUnderlyingEvent:
+      type: array
+      description: |
+        Array of 24-hour ticker statistics for options by underlying asset and expiration date.
+        Stream name pattern: {underlyingAsset}@ticker@{expirationDate}
+        Example: ETH@ticker@220930
+        Update frequency: 1000ms (1 second)
+        Only symbols with changed ticker info are sent.
+      items:
+        $ref: '#/components/schemas/tickerByUnderlyingEventItem'
+
+    tickerByUnderlyingEventItem:
       type: object
+      x-event: true
       description: |
         24-hour ticker statistics for options by underlying asset and expiration date.
         Stream name pattern: {underlyingAsset}@ticker@{expirationDate}
@@ -1408,7 +1437,7 @@ components:
         Update frequency: 1000ms (1 second)
         Only symbols with changed ticker info are sent.
         
-        This is the same schema as tickerByUnderlyingEvent but for individual symbols.
+        This is the same schema as tickerByUnderlyingEventItem but for individual symbols.
       required:
         - e
         - E

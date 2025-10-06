@@ -370,10 +370,36 @@ export default function ({ asyncapi, params }) {
               const byKey = chanMsgKeyToStruct[handlerName];
               const resolvedStruct = byKey || byDisplay;
               const modelType = resolvedStruct ? `models.${resolvedStruct}` : `models.${toPascalCase(channelPascal + (rName || 'Reply'))}`;
+              // Build a lightweight predicate for reply dispatch based on schema shape
+              let preCheck = '';
+              try {
+                const mj = (typeof rm.json === 'function') ? rm.json() : null;
+                let ps = mj && mj.payload;
+                if (ps && ps.$ref && typeof ps.$ref === 'string' && ps.$ref.startsWith('#/components/schemas/')) {
+                  const tail = ps.$ref.split('/').pop();
+                  if (root && root.components && root.components.schemas) ps = root.components.schemas[tail] || ps;
+                }
+                const props = ps && ps.properties;
+                if (props && props.error) {
+                  // error response
+                  preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"error\"]; !ok { return fmt.Errorf(\"not error response\") }\n`;
+                } else if (props && props.result) {
+                  const r = props.result;
+                  if (r && r.type === 'array') {
+                    preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif v, ok := probe[\"result\"]; !ok || len(v) == 0 || v[0] != '[' { return fmt.Errorf(\"not array result\") }\n`;
+                  } else if (r && (r.type === 'string' || r.type === 'boolean' || (r.oneOf && r.oneOf.length))) {
+                    preCheck = `\n\t\tvar probe map[string]interface{}\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"result\"]; !ok { return fmt.Errorf(\"no result field\") }\n`;
+                  } else {
+                    // null or unknown -> just check for presence of id/result
+                    preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"result\"]; !ok { return fmt.Errorf(\"no result field\") }\n`;
+                  }
+                }
+              } catch (e) {}
               content += `// Handle${handlerName} registers a handler for replies of '${opId}'\n`;
               content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
               content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
               content += `\tch.msgHandlers["${rName}"] = func(ctx context.Context, b []byte) error {\n`;
+              content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
               content += `\t\treturn fn(ctx, &v)\n`;
@@ -398,19 +424,213 @@ export default function ({ asyncapi, params }) {
             const byKey = chanMsgKeyToStruct[handlerName];
             const resolvedStruct = byKey || byDisplay;
             const modelType = resolvedStruct ? `models.${resolvedStruct}` : `models.${toPascalCase(channelPascal + (mName || 'Message'))}`;
+            // Pre-compute alias keys for client-side routing
+            // Prefer spec-driven flags over name-based heuristics
+            let isCombinedWrapperFlag = false;
+            let wrapperAliasKey = '';
+            try {
+              const mjMeta = (typeof m.json === 'function') ? m.json() : null;
+              if (mjMeta) {
+                // x-wrapper: true | 'combined' | { type: 'combined' }
+                const w = mjMeta['x-wrapper'];
+                if (w === true || w === 'combined' || (w && typeof w === 'object' && (w.type === 'combined' || w.type === true))) {
+                  isCombinedWrapperFlag = true;
+                }
+                if (mjMeta['x-handler-key'] && typeof mjMeta['x-handler-key'] === 'string') {
+                  wrapperAliasKey = String(mjMeta['x-handler-key']);
+                }
+              }
+            } catch (e) {}
+            // Backward-compat fallback
+            if (!isCombinedWrapperFlag) {
+              isCombinedWrapperFlag = (mName === 'combinedMarketStreamsEvent');
+            }
+            let expectedEventTypeAlias = '';
+            let isArrayFormat = false;
+            try {
+              const mj0 = (typeof m.json === 'function') ? m.json() : null;
+              if (mj0) {
+                if (mj0['x-event-type']) expectedEventTypeAlias = mj0['x-event-type'];
+                if (mj0['x-response-format'] && String(mj0['x-response-format']).toLowerCase() === 'array') {
+                  isArrayFormat = true;
+                }
+                let ps0 = mj0.payload;
+                if (!expectedEventTypeAlias && ps0 && ps0.$ref && typeof ps0.$ref === 'string' && ps0.$ref.startsWith('#/components/schemas/')) {
+                  const tail0 = ps0.$ref.split('/').pop();
+                  if (root && root.components && root.components.schemas && root.components.schemas[tail0]) {
+                    ps0 = root.components.schemas[tail0];
+                  }
+                }
+                // If payload type is array, flag isArrayFormat
+                if (!isArrayFormat && ps0 && ps0.type === 'array') {
+                  isArrayFormat = true;
+                }
+                const props0 = ps0 && ps0.properties;
+                if (!expectedEventTypeAlias && props0 && props0.e && props0.e.const) expectedEventTypeAlias = props0.e.const;
+              }
+            } catch (e) {}
+            // Compute pre-check for event dispatch
+            let preCheck = '';
+            try {
+              const mj = (typeof m.json === 'function') ? m.json() : null;
+              // event wrapper special-case: use x-wrapper-keys if present
+              let isCombinedWrapper = false;
+              let streamKey = 'stream';
+              let dataKey = 'data';
+              try {
+                const mjMeta = (typeof m.json === 'function') ? m.json() : null;
+                if (mjMeta) {
+                  const w = mjMeta['x-wrapper'];
+                  if (w === true || w === 'combined' || (w && typeof w === 'object' && (w.type === 'combined' || w.type === true))) {
+                    isCombinedWrapper = true;
+                  }
+                  const wk = mjMeta['x-wrapper-keys'];
+                  if (wk && typeof wk === 'object') {
+                    if (wk.stream) streamKey = String(wk.stream);
+                    if (wk.data) dataKey = String(wk.data);
+                  }
+                }
+              } catch (e) {}
+              if (!isCombinedWrapper) {
+                isCombinedWrapper = (mName === 'combinedMarketStreamsEvent');
+              }
+              if (isCombinedWrapper) {
+                const esk = streamKey.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                const edk = dataKey.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"${esk}\"]; !ok { return fmt.Errorf(\"not combined wrapper\") }\n\t\tif _, ok := probe[\"${edk}\"]; !ok { return fmt.Errorf(\"not combined wrapper\") }\n`;
+              } else {
+                // Try to grab event type from x-event-type or payload e.const
+                let expectedEventType = '';
+                if (mj && mj['x-event-type']) expectedEventType = mj['x-event-type'];
+                let ps = mj && mj.payload;
+                if (!expectedEventType && ps) {
+                  if (ps.$ref && typeof ps.$ref === 'string' && ps.$ref.startsWith('#/components/schemas/')) {
+                    const tail = ps.$ref.split('/').pop();
+                    if (root && root.components && root.components.schemas) ps = root.components.schemas[tail] || ps;
+                  }
+                  const props = ps && ps.properties;
+                  if (props && props.e && props.e.const) expectedEventType = props.e.const;
+                }
+                if (isArrayFormat) {
+                  // Array payload: inspect first element's event type
+                  if (expectedEventType) {
+                    const esc = String(expectedEventType).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                    preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(arr[0], &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+                  } else {
+                    preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n`;
+                  }
+                } else {
+                  if (expectedEventType) {
+                    const esc = String(expectedEventType).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                    preCheck = `\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(b, &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+                  } else {
+                    // generic event presence check: has 'e'
+                    preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"e\"]; !ok { return fmt.Errorf(\"missing event type\") }\n`;
+                  }
+                }
+              }
+            } catch (e) {}
             content += `// Handle${handlerName} registers a handler for message '${mName}' on ${nameSource}\n`;
             content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
             content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
-            content += `\tch.msgHandlers["${mName}"] = func(ctx context.Context, b []byte) error {\n`;
-            content += `\t\tvar v ${modelType}\n`;
-            content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
-            content += `\t\treturn fn(ctx, &v)\n`;
-            content += `\t}\n`;
+            // Prefer alias keys for events and wrappers to avoid duplicate handlers
+            if (isCombinedWrapperFlag) {
+              const aliasKey = wrapperAliasKey || 'wrap:combined';
+              content += `\tch.msgHandlers["${aliasKey}"] = func(ctx context.Context, b []byte) error {\n`;
+              content += preCheck;
+              content += `\t\tvar v ${modelType}\n`;
+              content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+              content += `\t\treturn fn(ctx, &v)\n`;
+              content += `\t}\n`;
+            } else if (expectedEventTypeAlias) {
+              const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
+              content += `\tch.msgHandlers[\"${alias}\"] = func(ctx context.Context, b []byte) error {\n`;
+              content += preCheck;
+              content += `\t\tvar v ${modelType}\n`;
+              content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+              content += `\t\treturn fn(ctx, &v)\n`;
+              content += `\t}\n`;
+            } else {
+              content += `\tch.msgHandlers[\"${mName}\"] = func(ctx context.Context, b []byte) error {\n`;
+              content += preCheck;
+              content += `\t\tvar v ${modelType}\n`;
+              content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+              content += `\t\treturn fn(ctx, &v)\n`;
+              content += `\t}\n`;
+            }
             content += `}\n\n`;
           });
         }
       } catch (e) {}
     });
+
+    // Additional unwrapped event handlers for combined streams (spec-driven)
+    try {
+      const chKey = (typeof ch.id === 'function' && ch.id()) || '';
+      const chJson = (root && root.channels && chKey && root.channels[chKey]) ? root.channels[chKey] : null;
+      const unwrappedList = chJson && chJson['x-unwrapped-event-messages'];
+      if (Array.isArray(unwrappedList) && unwrappedList.length) {
+        unwrappedList.forEach((msgKey) => {
+          try {
+            const compMsg = root && root.components && root.components.messages && root.components.messages[msgKey];
+            if (!compMsg) return;
+            const msgName = compMsg.name || msgKey;
+            const handlerName = toPascalCase(msgName || 'Message');
+            const structName = toPascalCase(msgKey);
+            const modelType = `models.${structName}`;
+            // Determine expected event type alias from message metadata or payload schema
+            let expectedEventTypeAlias = '';
+            let isArrayFormat = false;
+            try {
+              if (compMsg['x-event-type']) expectedEventTypeAlias = compMsg['x-event-type'];
+              if (compMsg['x-response-format'] && String(compMsg['x-response-format']).toLowerCase() === 'array') isArrayFormat = true;
+              let ps0 = compMsg.payload;
+              if (!expectedEventTypeAlias && ps0 && ps0.$ref && typeof ps0.$ref === 'string' && ps0.$ref.startsWith('#/components/schemas/')) {
+                const tail0 = ps0.$ref.split('/').pop();
+                if (root && root.components && root.components.schemas && root.components.schemas[tail0]) {
+                  ps0 = root.components.schemas[tail0];
+                }
+              }
+              if (!isArrayFormat && ps0 && ps0.type === 'array') isArrayFormat = true;
+              const props0 = ps0 && ps0.properties;
+              if (!expectedEventTypeAlias && props0 && props0.e && props0.e.const) expectedEventTypeAlias = props0.e.const;
+            } catch (e) {}
+            // Pre-check
+            let preCheck = '';
+            if (isArrayFormat) {
+              if (expectedEventTypeAlias) {
+                const esc = String(expectedEventTypeAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(arr[0], &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+              } else {
+                preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n`;
+              }
+            } else {
+              if (expectedEventTypeAlias) {
+                const esc = String(expectedEventTypeAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                preCheck = `\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(b, &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+              } else {
+                preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"e\"]; !ok { return fmt.Errorf(\"missing event type\") }\n`;
+              }
+            }
+            content += `// Handle${handlerName} registers a handler for unwrapped event '${msgKey}' on ${nameSource}\n`;
+            content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
+            content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
+            if (expectedEventTypeAlias) {
+              const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
+              content += `\tch.msgHandlers[\"${alias}\"] = func(ctx context.Context, b []byte) error {\n`;
+            } else {
+              content += `\tch.msgHandlers[\"${msgKey}\"] = func(ctx context.Context, b []byte) error {\n`;
+            }
+            content += preCheck;
+            content += `\t\tvar v ${modelType}\n`;
+            content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+            content += `\t\treturn fn(ctx, &v)\n`;
+            content += `\t}\n`;
+            content += `}\n\n`;
+          } catch (e) { /* ignore per-msg errors */ }
+        });
+      }
+    } catch (e) { /* ignore unwrapped generation errors */ }
 
     files.push(
       <File name={fileName}>

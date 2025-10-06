@@ -80,8 +80,77 @@ export default function ({ asyncapi, params }) {
   const root = (typeof asyncapi.json === 'function') ? asyncapi.json() : {};
   const channels = (root && root.channels) ? root.channels : {};
   const generatedRefs = new Set();
+  const generatedSchemas = new Set();
   const componentMessages = (root && root.components && root.components.messages) ? root.components.messages : {};
+  const componentSchemas = (root && root.components && root.components.schemas) ? root.components.schemas : {};
   const componentMessageNamesPascal = new Set(Object.keys(componentMessages || {}).map(k => toPascalCase(k)));
+
+  // Emit a struct model for a named component schema under #/components/schemas
+function emitSchemaModel(schemaName, forceEvent = false) {
+    if (!schemaName || generatedSchemas.has(schemaName)) return;
+    const schema = componentSchemas && componentSchemas[schemaName];
+    if (!schema || typeof schema !== 'object') return;
+    const modelName = toPascalCase(schemaName);
+    const fileBase = toSnakeCase(schemaName);
+    const properties = schema.properties || {};
+    const propKeys = Object.keys(properties || {});
+    const requiredArr = Array.isArray(schema.required) ? schema.required : [];
+    const requiredSet = new Set(requiredArr);
+    const useDescNaming = !!(forceEvent || (schema && schema['x-event'] === true));
+    const map = (sch, name) => {
+      if (!sch) return { t: 'interface{}', needsTime: false };
+      if (sch.$ref) { const r = resolveRef(root, sch.$ref); if (r) return map(r, name); }
+      const type = sch.type || (sch.properties ? 'object' : (sch.items ? 'array' : undefined));
+      const format = sch.format;
+      if (type === 'string') { if (format === 'date-time' || format === 'date') return { t: 'time.Time', needsTime: true }; return { t: 'string', needsTime: false }; }
+      if (type === 'integer') { if (format === 'int64' || format === 'long') return { t: 'int64', needsTime: false }; if (format === 'int32') return { t: 'int32', needsTime: false }; return { t: 'int', needsTime: false }; }
+      if (type === 'number') { if (format === 'float32') return { t: 'float32', needsTime: false }; return { t: 'float64', needsTime: false }; }
+      if (type === 'boolean') return { t: 'bool', needsTime: false };
+      if (type === 'array') { const m = map(sch.items || {}, name + 'Item'); return { t: '[]' + m.t, needsTime: m.needsTime }; }
+      if (type === 'object') {
+        const props = sch.properties || {}; const req = new Set(Array.isArray(sch.required) ? sch.required : []);
+        let innerNeeds = false; const usedInner = new Set();
+        const fields = Object.keys(props).map((kk) => { const mm = map(props[kk], kk); if (mm.needsTime) innerNeeds = true; const fn = deriveGoFieldName(kk, props[kk], useDescNaming, usedInner); const tg = req.has(kk) ? `json:"${kk}"` : `json:"${kk},omitempty"`; const desc = (props[kk] && (props[kk].description || '')) || ''; const c = desc ? ` // ${desc.replace(/\n/g, ' ')}` : ''; return `	${fn} ${mm.t} ${'`' + tg + '`'}${c}`; });
+        const body = fields.length ? `
+${fields.join('\n')}
+` : '';
+        return { t: `struct {${body}}`, needsTime: innerNeeds };
+      }
+      return { t: 'interface{}', needsTime: false };
+    };
+    let needsTime = false;
+    for (const k of propKeys) { const mm = map(properties[k], k); if (mm.needsTime) { needsTime = true; break; } }
+    let content = '';
+    content += `package models\n\n`;
+    if (needsTime) {
+content += `import (\n`;
+    if (needsTime) content += `	"time"\n`;
+    content += `)\n\n`;
+}
+
+    content += `// ${modelName} represents schema '#/components/schemas/${schemaName}'\n`;
+    content += `type ${modelName} struct {\n`;
+    if (!propKeys.length) { content += `	// no declared properties\n`; }
+    else {
+      const used = new Set();
+propKeys.forEach((pk) => {
+        const mm = map(properties[pk], pk);
+        const isEvtSchema = !!(forceEvent || (schema && (schema['x-event'] === true || (schema.properties && (schema.properties.e || schema.properties.E)))));
+        const fn = deriveGoFieldName(pk, properties[pk], isEvtSchema, used);
+        const tg = requiredSet.has(pk) ? `json:"${pk}"` : `json:"${pk},omitempty"`;
+        const desc = (properties[pk] && (properties[pk].description || '')) || '';
+        const c = desc ? ` // ${desc.replace(/\n/g, ' ')}` : '';
+        content += `	${fn} ${mm.t} ${'`' + tg + '`'}${c}\n`;
+      });
+    }
+    content += `}\n\n`;
+    files.push(
+      <File name={`models/${fileBase}.go`} key={`schema-${schemaName}`}>
+        <Text>{content}</Text>
+      </File>
+    );
+    generatedSchemas.add(schemaName);
+  }
 
   // First, always generate global component message models
   for (const compKey of Object.keys(componentMessages || {})) {
@@ -92,12 +161,18 @@ export default function ({ asyncapi, params }) {
     if (payloadSchema && payloadSchema.$ref) {
       payloadSchema = resolveRef(root, payloadSchema.$ref) || payloadSchema;
     }
+    const payloadType = payloadSchema && (payloadSchema.type || (payloadSchema.properties ? 'object' : (payloadSchema.items ? 'array' : undefined)));
     const properties = payloadSchema && payloadSchema.properties ? payloadSchema.properties : null;
     const requiredArr = (payloadSchema && payloadSchema.required) || [];
     const requiredSet = new Set(Array.isArray(requiredArr) ? requiredArr : []);
     const propKeys = properties ? Object.keys(properties) : [];
-    // Helper: map JSON schema to Go type; isEvt controls event-based naming for nested fields
-    const isEvtTop = !!(compMsg && compMsg['x-event'] === true);
+    // Helper: map JSON schema to Go type; preferDesc controls description-based naming for nested fields
+    const preferDescTop = (function() {
+      if (compMsg && Object.prototype.hasOwnProperty.call(compMsg, 'x-use-desc-naming')) {
+        return !!compMsg['x-use-desc-naming'];
+      }
+      return !!(compMsg && compMsg['x-event'] === true);
+    })();
     const mapSchemaToGo = (schema, propName, isEvt, depth = 1) => {
       let needsTimeLocal = false;
       if (!schema) return { t: 'interface{}', needsTime: false };
@@ -138,14 +213,14 @@ export default function ({ asyncapi, params }) {
           const mapped = mapSchemaToGo(props[k], k, isEvt, depth + 1);
           if (mapped.needsTime) innerNeedsTime = true;
           const fieldName = deriveGoFieldName(k, props[k], isEvt, usedInner);
-          const tag = req.has(k) ? `json:\"${k}\"` : `json:\"${k},omitempty\"`;
+          const tag = req.has(k) ? `json:"${k}"` : `json:"${k},omitempty"`;
           const desc = (props[k] && (props[k].description || '')) || '';
           const comment = desc ? ` // ${desc.replace(/\n/g, ' ')}` : '';
-          const indent = '\t'.repeat(depth + 1);
+          const indent = '\t'.repeat(depth + 1).replace(/\\t/g, '\t');
           return `${indent}${fieldName} ${mapped.t} ${'`' + tag + '`'}${comment}`;
         });
-        const indentOpen = '\t'.repeat(depth);
-        const indentClose = '\t'.repeat(depth);
+        const indentOpen = '\t'.repeat(depth).replace(/\\t/g, '\t');
+        const indentClose = '\t'.repeat(depth).replace(/\\t/g, '\t');
         const body = fields.length ? `\n${fields.join('\n')}\n${indentClose}` : `${indentClose}`;
         return { t: `struct {${body}}`, needsTime: innerNeedsTime };
       }
@@ -155,7 +230,7 @@ export default function ({ asyncapi, params }) {
     let needsTime = false;
     if (properties) {
       for (const k of Object.keys(properties)) {
-        const mapped = mapSchemaToGo(properties[k], k, isEvtTop, 1);
+        const mapped = mapSchemaToGo(properties[k], k, preferDescTop, 1);
         if (mapped.needsTime) { needsTime = true; break; }
       }
     }
@@ -163,27 +238,115 @@ export default function ({ asyncapi, params }) {
     const modelName = toPascalCase(compKey);
     const fileBase = toSnakeCase(compKey);
 
+    // Top-level array payloads -> emit slice types with proper item models
+    if (payloadType === 'array') {
+      const modelName = toPascalCase(compKey);
+      const fileBase = toSnakeCase(compKey);
+      const items = (payloadSchema && payloadSchema.items) || {};
+      let itemType = 'interface{}';
+      let needsTimeAlias = false;
+      if (items && items.$ref && typeof items.$ref === 'string' && items.$ref.startsWith('#/components/schemas/')) {
+        const tail = items.$ref.split('/').pop();
+        emitSchemaModel(tail, preferDescTop);
+        itemType = toPascalCase(tail);
+      } else if (items && (items.type === 'object' || items.properties)) {
+        // Inline item object: emit a named item struct alongside
+        const itemName = `${modelName}Item`;
+        const props = items.properties || {};
+        const req = new Set(Array.isArray(items.required) ? items.required : []);
+        const useDescNamingItem = preferDescTop;
+        const map = (sch, name) => {
+          if (!sch) return { t: 'interface{}', needsTime: false };
+          if (sch.$ref) { const r = resolveRef(root, sch.$ref); if (r) return map(r, name); }
+          const type = sch.type || (sch.properties ? 'object' : (sch.items ? 'array' : undefined));
+          const format = sch.format;
+          if (type === 'string') { if (format === 'date-time' || format === 'date') return { t: 'time.Time', needsTime: true }; return { t: 'string', needsTime: false }; }
+          if (type === 'integer') { if (format === 'int64' || format === 'long') return { t: 'int64', needsTime: false }; if (format === 'int32') return { t: 'int32', needsTime: false }; return { t: 'int', needsTime: false }; }
+          if (type === 'number') { if (format === 'float32') return { t: 'float32', needsTime: false }; return { t: 'float64', needsTime: false }; }
+          if (type === 'boolean') return { t: 'bool', needsTime: false };
+          if (type === 'array') { const m = map(sch.items || {}, name + 'Item'); return { t: '[]' + m.t, needsTime: m.needsTime }; }
+          if (type === 'object') {
+            const p = sch.properties || {}; const rset = new Set(Array.isArray(sch.required) ? sch.required : []);
+            let innerNeeds = false; const usedInner = new Set();
+            const fields = Object.keys(p).map((kk) => { const mm = map(p[kk], kk); if (mm.needsTime) innerNeeds = true; const fn = deriveGoFieldName(kk, p[kk], useDescNamingItem, usedInner); const tg = rset.has(kk) ? `json:"${kk}"` : `json:"${kk},omitempty"`; const desc = (p[kk] && (p[kk].description || '')) || ''; const c = desc ? ` // ${desc.replace(/\n/g, ' ')}` : ''; return `	${fn} ${mm.t} ${'`' + tg + '`'}${c}`; });
+            const body = fields.length ? `
+${fields.join('\n')}
+` : '';
+            return { t: `struct {${body}}`, needsTime: innerNeeds };
+          }
+          return { t: 'interface{}', needsTime: false };
+        };
+        let needsTime = false; const used = new Set();
+        const fields = Object.keys(props).map((kk) => { const mm = map(props[kk], kk); if (mm.needsTime) needsTime = true; const fn = deriveGoFieldName(kk, props[kk], useDescNamingItem, used); const tg = req.has(kk) ? `json:"${kk}"` : `json:"${kk},omitempty"`; const desc = (props[kk] && (props[kk].description || '')) || ''; const c = desc ? ` // ${desc.replace(/\n/g, ' ')}` : ''; return { line: `	${fn} ${mm.t} ${'`' + tg + '`'}${c}`, needsTime: mm.needsTime }; });
+        let content = '';
+        content += `package models\n\n`;
+        if (needsTime) {
+          content += `import (\n`;
+          content += `	"time"\n`;
+          content += `)\n\n`;
+        }
+        content += `// ${itemName} is the item type for ${modelName}\n`;
+        content += `type ${itemName} struct {\n`;
+        if (!fields.length) { content += `	// no declared properties\n`; }
+        else { content += fields.map(f => f.line).join('\n') + "\n"; }
+        content += `}\n\n`;
+        content += `// ${modelName} is an array of ${itemName}\n`;
+        content += `type ${modelName} []${itemName}\n`;
+        files.push(
+          <File name={`models/${fileBase}.go`} key={`components-${compKey}`}>
+            <Text>{content}</Text>
+          </File>
+        );
+        generatedRefs.add(compKey);
+        continue;
+      } else {
+        // Primitive or unknown item, map to Go primitive
+        const mapPrim = (sch) => {
+          if (!sch) return { t: 'interface{}', needsTime: false };
+          const type = sch.type; const format = sch.format;
+          if (type === 'string') return { t: 'string', needsTime: false };
+          if (type === 'integer') { if (format === 'int64' || format === 'long') return { t: 'int64', needsTime: false }; if (format === 'int32') return { t: 'int32', needsTime: false }; return { t: 'int', needsTime: false }; }
+          if (type === 'number') { if (format === 'float32') return { t: 'float32', needsTime: false }; return { t: 'float64', needsTime: false }; }
+          if (type === 'boolean') return { t: 'bool', needsTime: false };
+          return { t: 'interface{}', needsTime: false };
+        };
+        const mm = mapPrim(items);
+        itemType = mm.t; needsTimeAlias = mm.needsTime;
+      }
+      let content = '';
+      content += `package models\n\n`;
+      content += `// ${modelName} is an array payload message\n`;
+      content += `type ${modelName} []${itemType}\n`;
+      files.push(
+        <File name={`models/${fileBase}.go`} key={`components-${compKey}`}>
+          <Text>{content}</Text>
+        </File>
+      );
+      generatedRefs.add(compKey);
+      continue;
+    }
+
     let content = '';
     content += `package models\n\n`;
     content += `import (\n`;
-    content += `\t"encoding/json"\n`;
-    if (needsTime) content += `\t"time"\n`;
+    content += `	"encoding/json"\n`;
+    if (needsTime) content += `	"time"\n`;
     content += `)\n\n`;
 
     content += `// ${modelName} represents global message '#/components/messages/${compKey}'\n`;
     content += `type ${modelName} struct {\n`;
-    if (propKeys.length === 0) { content += `\tRaw json.RawMessage ${'`json:"-"`'}\n`; }
+    if (propKeys.length === 0) { content += `	Raw json.RawMessage ${'`json:"-"`'}\n`; }
     else {
       const isEvent = !!(compMsg && compMsg['x-event'] === true);
       const usedNames = new Set();
       for (const pk of propKeys) {
         const prop = properties[pk] || {};
-        const mapped = mapSchemaToGo(prop, pk, isEvtTop);
-        const goField = deriveGoFieldName(pk, prop, isEvtTop, usedNames);
-        const tag = requiredSet.has(pk) ? `json:\"${pk}\"` : `json:\"${pk},omitempty\"`;
+        const mapped = mapSchemaToGo(prop, pk, preferDescTop);
+        const goField = deriveGoFieldName(pk, prop, preferDescTop, usedNames);
+        const tag = requiredSet.has(pk) ? `json:"${pk}"` : `json:"${pk},omitempty"`;
         const desc = (prop && (prop.description || '')) || '';
         const comment = desc ? ` // ${desc.replace(/\n/g, ' ')}` : '';
-        content += `\t${goField} ${mapped.t} ${'`' + tag + '`'}${comment}\n`;
+        content += `	${goField} ${mapped.t} ${'`' + tag + '`'}${comment}\n`;
       }
     }
     content += `}\n\n`;
@@ -226,21 +389,114 @@ export default function ({ asyncapi, params }) {
         if (payloadSchema && payloadSchema.$ref) {
           payloadSchema = resolveRef(root, payloadSchema.$ref) || payloadSchema;
         }
+        const payloadType = payloadSchema && (payloadSchema.type || (payloadSchema.properties ? 'object' : (payloadSchema.items ? 'array' : undefined)));
         const properties = payloadSchema && payloadSchema.properties ? payloadSchema.properties : null;
         const propKeys = properties ? Object.keys(properties) : [];
         const needsTime = propKeys.some(k => /time/i.test(k));
 
+        // Handle referenced component message with array payload
+        if (payloadType === 'array') {
+          const items = (payloadSchema && payloadSchema.items) || {};
+          let itemType = 'interface{}';
+          if (items && items.$ref && typeof items.$ref === 'string' && items.$ref.startsWith('#/components/schemas/')) {
+            const tail = items.$ref.split('/').pop();
+            const compMsgRef = componentMessages && componentMessages[refName];
+            const preferDescRef = (compMsgRef && Object.prototype.hasOwnProperty.call(compMsgRef, 'x-use-desc-naming')) ? !!compMsgRef['x-use-desc-naming'] : !!(compMsgRef && compMsgRef['x-event'] === true);
+            emitSchemaModel(tail, preferDescRef);
+            itemType = toPascalCase(tail);
+            let content = '';
+            content += `package models\n\n`;
+            content += `// ${modelName} is an array payload message\n`;
+            content += `type ${modelName} []${itemType}\n`;
+            files.push(
+              <File name={`models/${fileBase}.go`} key={`components-${refName}`}>
+                <Text>{content}</Text>
+              </File>
+            );
+            generatedRefs.add(refName);
+            continue;
+          } else if (items && (items.type === 'object' || items.properties)) {
+            // Inline item schema
+            const itemName = `${modelName}Item`;
+            const props = items.properties || {};
+            const req = new Set(Array.isArray(items.required) ? items.required : []);
+            const compMsgRef2 = componentMessages && componentMessages[refName];
+            const useDescNamingItem = (compMsgRef2 && Object.prototype.hasOwnProperty.call(compMsgRef2, 'x-use-desc-naming')) ? !!compMsgRef2['x-use-desc-naming'] : !!(compMsgRef2 && compMsgRef2['x-event'] === true);
+            const map = (sch, name) => {
+              if (!sch) return { t: 'interface{}', needsTime: false };
+              if (sch.$ref) { const r = resolveRef(root, sch.$ref); if (r) return map(r, name); }
+              const type = sch.type || (sch.properties ? 'object' : (sch.items ? 'array' : undefined));
+              const format = sch.format;
+              if (type === 'string') { if (format === 'date-time' || format === 'date') return { t: 'time.Time', needsTime: true }; return { t: 'string', needsTime: false }; }
+              if (type === 'integer') { if (format === 'int64' || format === 'long') return { t: 'int64', needsTime: false }; if (format === 'int32') return { t: 'int32', needsTime: false }; return { t: 'int', needsTime: false }; }
+              if (type === 'number') { if (format === 'float32') return { t: 'float32', needsTime: false }; return { t: 'float64', needsTime: false }; }
+              if (type === 'boolean') return { t: 'bool', needsTime: false };
+              if (type === 'array') { const m = map(sch.items || {}, name + 'Item'); return { t: '[]' + m.t, needsTime: m.needsTime }; }
+              if (type === 'object') {
+                const p = sch.properties || {}; const rset = new Set(Array.isArray(sch.required) ? sch.required : []);
+                let innerNeeds = false; const usedInner = new Set();
+              const fields = Object.keys(p).map((kk) => { const mm = map(p[kk], kk); if (mm.needsTime) innerNeeds = true; const fn = deriveGoFieldName(kk, p[kk], useDescNamingItem, usedInner); const tg = rset.has(kk) ? `json:"${kk}"` : `json:"${kk},omitempty"`; const desc = (p[kk] && (p[kk].description || '')) || ''; const c = desc ? ` // ${desc.replace(/\n/g, ' ')}` : ''; return `	${fn} ${mm.t} ${'`' + tg + '`'}${c}`; });
+              const body = fields.length ? `
+${fields.join('\n')}
+` : '';
+              return { t: `struct {${body}}`, needsTime: innerNeeds };
+              }
+              return { t: 'interface{}', needsTime: false };
+            };
+            let needsTime = false; const used = new Set();
+            const fields = Object.keys(props).map((kk) => { const mm = map(props[kk], kk); if (mm.needsTime) needsTime = true; const fn = deriveGoFieldName(kk, props[kk], useDescNamingItem, used); const tg = req.has(kk) ? `json:"${kk}"` : `json:"${kk},omitempty"`; const desc = (props[kk] && (props[kk].description || '')) || ''; const c = desc ? ` // ${desc.replace(/\n/g, ' ')}` : ''; return { line: `	${fn} ${mm.t} ${'`' + tg + '`'}${c}`, needsTime: mm.needsTime }; });
+            let content = '';
+            content += `package models\n\n`;
+            content += `import (\n`;
+        if (needsTime) content += `	"time"\n`;
+            content += `)\n\n`;
+            content += `// ${itemName} is the item type for ${modelName}\n`;
+            content += `type ${itemName} struct {\n`;
+            if (!fields.length) { content += `\t// no declared properties\n`; }
+            else { content += fields.map(f => f.line).join('\n') + "\n"; }
+            content += `}\n\n`;
+            content += `// ${modelName} is an array of ${itemName}\n`;
+            content += `type ${modelName} []${itemName}\n`;
+            files.push(
+              <File name={`models/${fileBase}.go`} key={`components-${refName}`}>
+                <Text>{content}</Text>
+              </File>
+            );
+            generatedRefs.add(refName);
+            continue;
+          } else {
+            // Primitive item
+            const type = items && items.type;
+            let goT = 'interface{}';
+            if (type === 'string') goT = 'string';
+            else if (type === 'integer') { const f = items.format; if (f === 'int64' || f === 'long') goT = 'int64'; else if (f === 'int32') goT = 'int32'; else goT = 'int'; }
+            else if (type === 'number') { const f = items.format; if (f === 'float32') goT = 'float32'; else goT = 'float64'; }
+            else if (type === 'boolean') goT = 'bool';
+            let content = '';
+            content += `package models\n\n`;
+            content += `// ${modelName} is an array payload message\n`;
+            content += `type ${modelName} []${goT}\n`;
+            files.push(
+              <File name={`models/${fileBase}.go`} key={`components-${refName}`}>
+                <Text>{content}</Text>
+              </File>
+            );
+            generatedRefs.add(refName);
+            continue;
+          }
+        }
+
         let content = '';
         content += `package models\n\n`;
         content += `import (\n`;
-        content += `\t"encoding/json"\n`;
-        if (needsTime) content += `\t"time"\n`;
+        content += `	"encoding/json"\n`;
+        if (needsTime) content += `	"time"\n`;
         content += `)\n\n`;
 
         content += `// ${modelName} represents referenced message '${refName}'\n`;
         content += `type ${modelName} struct {\n`;
         if (propKeys.length === 0) {
-          content += `\tRaw json.RawMessage ${'`json:"-"`'}\n`;
+          content += `	Raw json.RawMessage ${'`json:"-"`'}\n`;
         } else {
           // Map fields with proper Go types and comments
           const requiredArr = (messageResolved && messageResolved.payload && messageResolved.payload.required) || [];
@@ -255,25 +511,28 @@ export default function ({ asyncapi, params }) {
             if (type === 'number') { if (format === 'float32') return { t: 'float32', needsTime: false }; return { t: 'float64', needsTime: false }; }
             if (type === 'boolean') return { t: 'bool', needsTime: false };
             if (type === 'array') { const m = map(schema.items || {}, name + 'Item'); return { t: '[]' + m.t, needsTime: m.needsTime }; }
-          if (type === 'object') {
+            if (type === 'object') {
               const props = schema.properties || {}; const req = new Set(Array.isArray(schema.required) ? schema.required : []);
               let innerNeeds = false; const usedInner = new Set();
-              const fields = Object.keys(props).map((kk) => { const mm = map(props[kk], kk); if (mm.needsTime) innerNeeds = true; const fn = deriveGoFieldName(kk, props[kk], false, usedInner); const tg = req.has(kk) ? `json:\\"${kk}\\"` : `json:\\"${kk},omitempty\\"`; const desc = (props[kk] && (props[kk].description || '')) || ''; const c = desc ? ` // ${desc.replace(/\\n/g, ' ')}` : ''; return `\\t${fn} ${mm.t} ${'`' + tg + '`'}${c}`; });
-              const body = fields.length ? `\\n${fields.join('\\n')}\\n` : '';
-              return { t: `struct {${body}\\t}`, needsTime: innerNeeds };
+              const fields = Object.keys(props).map((kk) => { const mm = map(props[kk], kk); if (mm.needsTime) innerNeeds = true; const fn = deriveGoFieldName(kk, props[kk], useDescNaming, usedInner); const tg = req.has(kk) ? `json:"${kk}"` : `json:"${kk},omitempty"`; const desc = (props[kk] && (props[kk].description || '')) || ''; const c = desc ? ` // ${desc.replace(/\n/g, ' ')}` : ''; return `	${fn} ${mm.t} ${'`' + tg + '`'}${c}`; });
+              const body = fields.length ? `
+${fields.join('\n')}
+` : '';
+              return { t: `struct {${body}}`, needsTime: innerNeeds };
             }
             return { t: 'interface{}', needsTime: false };
           };
-          const isEvent = !!(componentMessages && componentMessages[refName] && componentMessages[refName]['x-event'] === true);
+          const compMsgRef3 = componentMessages && componentMessages[refName];
+          const isEvent = (compMsgRef3 && Object.prototype.hasOwnProperty.call(compMsgRef3, 'x-use-desc-naming')) ? !!compMsgRef3['x-use-desc-naming'] : !!(compMsgRef3 && compMsgRef3['x-event'] === true);
           const usedNames = new Set();
           for (const pk of propKeys) {
             const prop = properties[pk] || {};
             const mapped = map(prop, pk);
             const goField = deriveGoFieldName(pk, prop, isEvent, usedNames);
-            const tag = requiredSet.has(pk) ? `json:\"${pk}\"` : `json:\"${pk},omitempty\"`;
+            const tag = requiredSet.has(pk) ? `json:"${pk}"` : `json:"${pk},omitempty"`;
             const desc = (prop && (prop.description || '')) || '';
             const comment = desc ? ` // ${desc.replace(/\n/g, ' ')}` : '';
-            content += `\t${goField} ${mapped.t} ${'`' + tag + '`'}${comment}\n`;
+            content += `	${goField} ${mapped.t} ${'`' + tag + '`'}${comment}\n`;
           }
         }
         content += `}\n\n`;
@@ -331,19 +590,19 @@ export default function ({ asyncapi, params }) {
       let content = '';
       content += `package models\n\n`;
       content += `import (\n`;
-      content += `\t"encoding/json"\n`;
-      if (needsTime) content += `\t"time"\n`;
+      content += `	"encoding/json"\n`;
+      if (needsTime) content += `	"time"\n`;
       content += `)\n\n`;
 
       content += `// ${structName} represents message '${msgKey}' on channel '${channelKey}'\n`;
       content += `type ${structName} struct {\n`;
       if (propKeys.length === 0) {
-        content += `\tRaw json.RawMessage ${'`json:"-"`'}\n`;
+        content += `	Raw json.RawMessage ${'`json:"-"`'}\n`;
       } else {
         for (const pk of propKeys) {
           const goField = toPascalCase(pk);
           const tag = `json:"${pk},omitempty"`;
-          content += `\t${goField} interface{} ${'`' + tag + '`'}\n`;
+          content += `	${goField} interface{} ${'`' + tag + '`'}\n`;
         }
       }
       content += `}\n\n`;

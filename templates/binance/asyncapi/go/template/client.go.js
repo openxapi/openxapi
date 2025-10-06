@@ -2,6 +2,26 @@ import { File, Text } from '@asyncapi/generator-react-sdk';
 
 export default function ({ asyncapi, params }) {
   const packageName = params.packageName || 'main';
+  const root = asyncapi.json ? asyncapi.json() : {};
+
+  // Discover wrapper messages and keys from spec extensions
+  const wrappers = [];
+  try {
+    if (root && root.components && root.components.messages) {
+      Object.entries(root.components.messages).forEach(([key, msg]) => {
+        try {
+          const w = msg && msg['x-wrapper'];
+          if (w === true || w === 'combined' || (w && typeof w === 'object' && (w.type === 'combined' || w.type === true))) {
+            const wk = (msg && msg['x-wrapper-keys']) || {};
+            const streamKey = (wk && wk.stream) ? String(wk.stream) : 'stream';
+            const dataKey = (wk && wk.data) ? String(wk.data) : 'data';
+            const aliasKey = (msg && typeof msg['x-handler-key'] === 'string') ? String(msg['x-handler-key']) : 'wrap:combined';
+            wrappers.push({ streamKey, dataKey, aliasKey });
+          }
+        } catch (e) {}
+      });
+    }
+  } catch (e) {}
 
   return (
     <File name="client.go">
@@ -124,31 +144,92 @@ func (c *Client) readLoop(ctx context.Context) {
       c.connMu.Unlock()
       return 
     }
-
-    // Combined wrapper detection
-    var generic map[string]interface{}
-    _ = json.Unmarshal(data, &generic)
-
-    dispatched := false
-    if _, hasStream := generic["stream"]; hasStream {
-      // Prefer combined wrapper handler if any channel registered it
+  // Try structured dispatch first
+  dispatched := false
+  var envelope map[string]json.RawMessage
+  if err := json.Unmarshal(data, &envelope); err == nil {
+    // Combined wrapper handlers first (spec-driven)
+    // Support multiple wrapper shapes if declared in spec
+    handledWrapper := false
+    payload := data
+${(() => {
+  if (!wrappers.length) {
+    // keep a small fallback for backward-compat (stream/data)
+    return `    if _, hasStream := envelope["stream"]; hasStream {
       c.handlersMu.RLock()
       for _, hm := range c.handlers {
-        if h, ok := hm["combinedMarketStreamsEvent"]; ok { _ = h(ctx, data); dispatched = true; break }
+        if h, ok := hm["wrap:combined"]; ok {
+          if err := h(ctx, data); err == nil { dispatched = true }
+        }
       }
       c.handlersMu.RUnlock()
-      if dispatched { continue }
+      if raw, ok := envelope["data"]; ok && len(raw) > 0 { payload = raw }
+      handledWrapper = true
+    }`;
+  }
+  // Generate explicit checks per wrapper discovered
+  return wrappers.map((w, idx) => {
+    const esk = String(w.streamKey).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const edk = String(w.dataKey).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    const alias = String(w.aliasKey).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    return `    if _, ok := envelope["${esk}"]; ok {
+      c.handlersMu.RLock()
+      for _, hm := range c.handlers {
+        if h, ok := hm["${alias}"]; ok {
+          if err := h(ctx, data); err == nil { dispatched = true }
+        }
+      }
+      c.handlersMu.RUnlock()
+      if raw, ok := envelope["${edk}"]; ok && len(raw) > 0 { payload = raw }
+      handledWrapper = true
+    }`;
+  }).join("\n");
+})()}
+    // Event-type dispatch with array/object shape detection
+    // 1) Try object payload
+    var typ map[string]interface{}
+    if err := json.Unmarshal(payload, &typ); err == nil {
+      if ev, ok := typ["e"].(string); ok && ev != "" {
+        key := "evt:" + ev
+        c.handlersMu.RLock()
+        for _, hm := range c.handlers {
+          if h, ok := hm[key]; ok {
+            if err := h(ctx, payload); err == nil { dispatched = true }
+          }
+        }
+        c.handlersMu.RUnlock()
+      }
+    } else {
+      // 2) Try array payload; inspect first element for event type
+      var arr []json.RawMessage
+      if err2 := json.Unmarshal(payload, &arr); err2 == nil && len(arr) > 0 {
+        var first map[string]interface{}
+        if err3 := json.Unmarshal(arr[0], &first); err3 == nil {
+          if ev, ok := first["e"].(string); ok && ev != "" {
+            key := "evt:" + ev + ":array"
+            c.handlersMu.RLock()
+            for _, hm := range c.handlers {
+              if h, ok := hm[key]; ok {
+                if err := h(ctx, payload); err == nil { dispatched = true }
+              }
+            }
+            c.handlersMu.RUnlock()
+          }
+        }
+      }
     }
+  }
 
-    // Try each registered handler until one succeeds
+  // Fallback: fan-out to all handlers; their pre-checks will filter
+  if !dispatched {
     c.handlersMu.RLock()
-    outer:
     for _, hm := range c.handlers {
-      for name, h := range hm {
-        if err := h(ctx, data); err == nil { _ = name; dispatched = true; break outer }
+      for _, h := range hm {
+        if err := h(ctx, data); err == nil { dispatched = true }
       }
     }
     c.handlersMu.RUnlock()
+  }
 
     if !dispatched { log.Printf("unhandled message: %s", string(data)) }
   }
