@@ -21,6 +21,7 @@ export default function ({ asyncapi, params }) {
   const moduleName = params.moduleName || 'websocket-sdk';
   const root = (typeof asyncapi.json === 'function') ? asyncapi.json() : {};
   const messages = (root && root.components && root.components.messages) ? root.components.messages : {};
+  const componentSchemas = (root && root.components && root.components.schemas) ? root.components.schemas : {};
 
   // Collect event entries with stream metadata
   const entries = [];
@@ -108,6 +109,30 @@ export default function ({ asyncapi, params }) {
     return cur || null;
   }
 
+  // Stable stringify and schema signature map to locate component schema names for dereferenced objects
+  function stableStringify(obj) {
+    const seen = new WeakSet();
+    const helper = (val) => {
+      if (val && typeof val === 'object') {
+        if (seen.has(val)) return '"__cycle__"';
+        seen.add(val);
+        if (Array.isArray(val)) return `[${val.map(helper).join(',')}]`;
+        const keys = Object.keys(val).sort();
+        return `{${keys.map(k => JSON.stringify(k)+':'+helper(val[k])).join(',')}}`;
+      }
+      return JSON.stringify(val);
+    };
+    return helper(obj);
+  }
+  const schemaSignatureToName = (() => {
+    const map = new Map();
+    Object.entries(componentSchemas || {}).forEach(([name, sch]) => {
+      if (!sch || typeof sch !== 'object') return;
+      map.set(stableStringify(sch), name);
+    });
+    return map;
+  })();
+
   // Map JSON schema to Go primitive string type for stringification
   function mapSchemaToGoPrimitive(sch) {
     if (!sch || typeof sch !== 'object') return { t: 'string' };
@@ -183,10 +208,17 @@ export default function ({ asyncapi, params }) {
         let fieldName = String(pk).split(/[^a-zA-Z0-9]+/).filter(Boolean).map(seg => seg.charAt(0).toUpperCase() + seg.slice(1)).join('');
         if (!/^[A-Za-z]/.test(fieldName)) fieldName = 'X' + fieldName;
         let fieldType = mapped.t;
-        if (sch && sch.$ref && typeof sch.$ref === 'string' && sch.$ref.startsWith('#/components/schemas/')) {
-          const tail = sch.$ref.split('/').pop();
-          if (tail) {
-            fieldType = `models.${toPascalCase(tail)}`;
+        if (sch && typeof sch === 'object') {
+          let schemaName = null;
+          if (sch.$ref && typeof sch.$ref === 'string' && sch.$ref.startsWith('#/components/schemas/')) {
+            schemaName = sch.$ref.split('/').pop();
+          } else {
+            const sig = stableStringify(sch);
+            const found = schemaSignatureToName.get(sig);
+            if (found) schemaName = found;
+          }
+          if (schemaName) {
+            fieldType = `models.${toPascalCase(schemaName)}`;
             needsModelsImport = true;
           }
         }

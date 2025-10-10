@@ -30,18 +30,6 @@ export default function ({ asyncapi, params }) {
   const combinedChanAddr = combinedEntry ? addrOf(combinedEntry[1]) : '';
   const singleChanPascal = toPascalCase(singleChanKey || 'Channel');
   const combinedChanPascal = toPascalCase(combinedChanKey || 'Channel');
-  const singleArgs = extractPlaceholders(singleChanAddr).map(p => {
-    if (p === 'streamName') return '"btcusdt@trade"';
-    if (p === 'streams') return '"btcusdt@trade/btcusdt@ticker"';
-    if (p.toLowerCase().includes('timeunit')) return '"" // or "?timeUnit=MICROSECOND"';
-    if (p.toLowerCase().includes('listenkey')) return '"<listenKey>"';
-    return '""';
-  }).join(', ');
-  const combinedArgs = extractPlaceholders(combinedChanAddr).map(p => {
-    if (p === 'streams') return '"btcusdt@trade/btcusdt@ticker"';
-    if (p.toLowerCase().includes('timeunit')) return '"" // or "?timeUnit=MICROSECOND"';
-    return '""';
-  }).join(', ');
   // Derive a server URL hint from first server
   const firstServer = Object.values(servers || {})[0] || {};
   const serverHost = firstServer.host || firstServer.url || '';
@@ -57,6 +45,22 @@ export default function ({ asyncapi, params }) {
   });
 
   const sampleEvent = eventMetas[0];
+  const exampleStreams = eventMetas.flatMap(ev => ev.examples || []).filter(Boolean);
+  const defaultSingleStream = exampleStreams[0] || 'btcusdt@trade';
+  const defaultSecondStream = exampleStreams[1] || exampleStreams[0] || 'btcusdt@ticker';
+
+  const singleArgs = extractPlaceholders(singleChanAddr).map(p => {
+    if (p === 'streamName') return JSON.stringify(defaultSingleStream);
+    if (p === 'streams') return JSON.stringify(`${defaultSingleStream}/${defaultSecondStream}`);
+    if (p.toLowerCase().includes('timeunit')) return '"" // or "?timeUnit=MICROSECOND"';
+    if (p.toLowerCase().includes('listenkey')) return '"<listenKey>"';
+    return '""';
+  }).join(', ');
+  const combinedArgs = extractPlaceholders(combinedChanAddr).map(p => {
+    if (p === 'streams') return JSON.stringify(`${defaultSingleStream}/${defaultSecondStream}`);
+    if (p.toLowerCase().includes('timeunit')) return '"" // or "?timeUnit=MICROSECOND"';
+    return '""';
+  }).join(', ');
 
   return (
     <File name="README.md">
@@ -140,7 +144,7 @@ if err := comb.Connect(ctx${combinedArgs ? ', ' : ''}${combinedArgs}); err != ni
 
 ### 3) Build stream names and subscribe
 
-Use generated builders from stream patterns and speeds.
+Use generated builders from stream patterns and speeds. Patterns, examples, and speeds are arrays when provided in the spec.
 
 \`\`\`go
 streams := []string{}
@@ -189,7 +193,7 @@ For each event with patterns, the SDK generates:
     - \`type <Event>StreamParams struct { ... }\`
     - \`func (p <Event>StreamParams) Values() map[string]string\` to convert to placeholder values
 
-Example (typed speeds where available):
+Example (typed params and speeds where available):
 
 \`\`\`go
 // Build with speed as a regular param
@@ -200,10 +204,23 @@ s, err := ws.BuildPartialDepthEventStream(
 // Or use typed params, then convert to values
 ps := ws.PartialDepthEventStreamParams{
   Symbol: "BTC-210630-9000-P",
-  Levels: 10,
-  Speed:  "100ms", // speed is just another param when defined in x-stream-params
+  Levels: wsmodels.DepthLevels10,
+  Speed:  wsmodels.DepthSpeed100ms, // speed is just another param when defined in x-stream-params
 }
 s2, err := ws.BuildPartialDepthEventStream(1, ps.Values())
+
+// More typed params examples (types are generated from x-stream-params):
+// - KlineEvent: Symbol (string), Interval (models.Interval)
+ks := ws.KlineEventStreamParams{
+  Symbol:   "BTC-200630-9000-P",
+  Interval: wsmodels.Interval("1m"),
+}
+ksVals := ks.Values()
+_ = ksVals
+
+// - MarkPriceEvent: UnderlyingAsset (models.UnderlyingAsset)
+mps := ws.MarkPriceEventStreamParams{UnderlyingAsset: wsmodels.UnderlyingAsset("ETH")}
+_ = mps
 \`\`\`
 
 ## Handler Registration

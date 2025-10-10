@@ -85,6 +85,33 @@ export default function ({ asyncapi, params }) {
   const componentSchemas = (root && root.components && root.components.schemas) ? root.components.schemas : {};
   const componentMessageNamesPascal = new Set(Object.keys(componentMessages || {}).map(k => toPascalCase(k)));
 
+  // Build a stable string key for deep-equality comparison (sorted keys)
+  function stableStringify(obj) {
+    const seen = new WeakSet();
+    const helper = (val) => {
+      if (val && typeof val === 'object') {
+        if (seen.has(val)) return '"__cycle__"';
+        seen.add(val);
+        if (Array.isArray(val)) return `[${val.map(helper).join(',')}]`;
+        const keys = Object.keys(val).sort();
+        return `{${keys.map(k => JSON.stringify(k)+':'+helper(val[k])).join(',')}}`;
+      }
+      return JSON.stringify(val);
+    };
+    return helper(obj);
+  }
+
+  // Map of component schema deep signature -> schemaName for dereferenced matching
+  const schemaSignatureToName = (() => {
+    const map = new Map();
+    Object.entries(componentSchemas || {}).forEach(([name, sch]) => {
+      // Only consider plain schema objects
+      if (!sch || typeof sch !== 'object') return;
+      map.set(stableStringify(sch), name);
+    });
+    return map;
+  })();
+
   // Emit a struct model for a named component schema under #/components/schemas
 function emitSchemaModel(schemaName, forceEvent = false) {
     if (!schemaName || generatedSchemas.has(schemaName)) return;
@@ -370,16 +397,26 @@ ${fields.join('\n')}
   // Emit param alias types for schemas referenced by x-stream-params (components.messages and channel messages)
   try {
     const paramSchemaNames = new Set();
+    // Helper to add a schema name based on value (handles $ref, deref via deep-signature, or placeholder fallback)
+    const addByValue = (placeholderKey, val) => {
+      if (!val || typeof val !== 'object') return;
+      if (val.$ref && typeof val.$ref === 'string' && val.$ref.startsWith('#/components/schemas/')) {
+        const tail = val.$ref.split('/').pop(); if (tail) { paramSchemaNames.add(tail); return; }
+      }
+      // Try to locate the component schema by deep signature (to handle dereferenced objects)
+      const sig = stableStringify(val);
+      const found = schemaSignatureToName.get(sig);
+      if (found) { paramSchemaNames.add(found); return; }
+      // Fallback: derive from placeholder key (ensures a type is still emitted)
+      if (placeholderKey) paramSchemaNames.add(placeholderKey);
+    };
+
     // Scan component messages
     Object.entries(componentMessages || {}).forEach(([key, msg]) => {
       try {
         const paramsMap = msg && msg['x-stream-params'];
         if (!paramsMap || typeof paramsMap !== 'object') return;
-        Object.values(paramsMap).forEach((val) => {
-          if (val && typeof val === 'object' && val.$ref && typeof val.$ref === 'string' && val.$ref.startsWith('#/components/schemas/')) {
-            const tail = val.$ref.split('/').pop(); if (tail) paramSchemaNames.add(tail);
-          }
-        });
+        Object.entries(paramsMap).forEach(([ph, val]) => addByValue(ph, val));
       } catch (e) {}
     });
     // Scan channel messages (resolve $ref to component message and check there too)
@@ -394,16 +431,20 @@ ${fields.join('\n')}
           }
           const paramsMap = msgJson && msgJson['x-stream-params'];
           if (!paramsMap || typeof paramsMap !== 'object') return;
-          Object.values(paramsMap).forEach((val) => {
-            if (val && typeof val === 'object' && val.$ref && typeof val.$ref === 'string' && val.$ref.startsWith('#/components/schemas/')) {
-              const tail = val.$ref.split('/').pop(); if (tail) paramSchemaNames.add(tail);
-            }
-          });
+          Object.entries(paramsMap).forEach(([ph, val]) => addByValue(ph, val));
         } catch (e) {}
       });
     });
-    // Emit alias types
-    paramSchemaNames.forEach((schemaName) => {
+    // Emit alias types for collected schemas
+    paramSchemaNames.forEach((schemaNameRaw) => {
+      // Normalize to actual component schema name if possible
+      let schemaName = schemaNameRaw;
+      if (!componentSchemas[schemaName] && typeof schemaName === 'string') {
+        // Try PascalCase matching to component schema keys
+        const pas = toPascalCase(schemaName);
+        const foundKey = Object.keys(componentSchemas || {}).find(k => toPascalCase(k) === pas);
+        if (foundKey) schemaName = foundKey;
+      }
       if (generatedSchemas.has(schemaName)) return;
       const schema = componentSchemas && componentSchemas[schemaName];
       if (!schema || typeof schema !== 'object') return;
