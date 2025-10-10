@@ -560,7 +560,8 @@ components:
       summary: New option symbol information stream (option_pair)
       contentType: application/json
       x-event: true
-      x-stream-pattern: 'option_pair'
+      x-stream-pattern: ['option_pair']
+      x-update-speed: ['50ms']
       payload:
         $ref: '#/components/schemas/newSymbolInfoEvent'
 
@@ -570,7 +571,14 @@ components:
       summary: Open interest information for options contracts
       contentType: application/json
       x-event: true
-      x-stream-pattern: '{underlyingAsset}@openInterest@{expirationDate}'
+      x-stream-pattern: ['{underlyingAsset}@openInterest@{expirationDate}']
+      x-stream-params:
+        underlyingAsset:
+          $ref: '#/components/schemas/underlyingAsset'
+        expirationDate:
+          $ref: '#/components/schemas/expirationDate'
+      x-stream-example: ['ETH@openInterest@221125']
+      x-update-speed: ['60s']
       payload:
         $ref: '#/components/schemas/openInterestEvent'
 
@@ -580,7 +588,14 @@ components:
       summary: Mark price information for options contracts
       contentType: application/json
       x-event: true
-      x-stream-pattern: '{underlyingAsset}@markPrice'
+      x-response-format: array
+      x-event-type: markPrice
+      x-stream-pattern: ['{underlyingAsset}@markPrice']
+      x-stream-params:
+        underlyingAsset:
+          $ref: '#/components/schemas/underlyingAsset'
+      x-stream-example: ['ETH@markPrice']
+      x-update-speed: ['1000ms']
       payload:
         $ref: '#/components/schemas/markPriceEvent'
 
@@ -590,7 +605,14 @@ components:
       summary: Kline/candlestick information for options contracts
       contentType: application/json
       x-event: true
-      x-stream-pattern: '{symbol}@kline_{interval}'
+      x-stream-pattern: ['{symbol}@kline_{interval}']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        interval:
+          $ref: '#/components/schemas/interval'
+      x-stream-example: ['BTC-200630-9000-P@kline_1m']
+      x-update-speed: ['1000ms']
       payload:
         $ref: '#/components/schemas/klineEvent'
 
@@ -600,7 +622,14 @@ components:
       summary: 24hr ticker statistics for options by underlying asset and expiration
       contentType: application/json
       x-event: true
-      x-stream-pattern: '{underlyingAsset}@ticker@{expirationDate}'
+      x-stream-pattern: ['{underlyingAsset}@ticker@{expirationDate}']
+      x-stream-params:
+        underlyingAsset:
+          $ref: '#/components/schemas/underlyingAsset'
+        expirationDate:
+          $ref: '#/components/schemas/expirationDate'
+      x-stream-example: ['ETH@ticker@220930']
+      x-update-speed: ['1000ms']
       x-event-type: "24hrTicker"
       x-response-format: array
       payload:
@@ -612,7 +641,12 @@ components:
       summary: Index price information for underlying assets
       contentType: application/json
       x-event: true
-      x-stream-pattern: '{symbol}@index'
+      x-stream-pattern: ['{symbol}@index']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['ETHUSDT@index']
+      x-update-speed: ['1000ms']
       payload:
         $ref: '#/components/schemas/indexPriceEvent'
 
@@ -622,7 +656,12 @@ components:
       summary: 24hr ticker statistics for individual option symbols
       contentType: application/json
       x-event: true
-      x-stream-pattern: '{symbol}@ticker'
+      x-stream-pattern: ['{symbol}@ticker']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['BTC-210630-9000-P@ticker']
+      x-update-speed: ['1000ms']
       payload:
         $ref: '#/components/schemas/tickerEvent'
 
@@ -632,7 +671,14 @@ components:
       summary: Real-time trade information for options contracts
       contentType: application/json
       x-event: true
-      x-stream-patterns: ['{symbol}@trade', '{underlyingAsset}@trade']
+      x-stream-pattern: ['{symbol}@trade', '{underlyingAsset}@trade']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        underlyingAsset:
+          $ref: '#/components/schemas/underlyingAsset'
+      x-stream-example: ['BTC-210630-9000-P@trade', 'ETH@trade']
+      x-update-speed: ['50ms']
       payload:
         $ref: '#/components/schemas/tradeEvent'
 
@@ -642,7 +688,16 @@ components:
       summary: Partial order book depth information for options contracts
       contentType: application/json
       x-event: true
-      x-stream-patterns: ['{symbol}@depth{levels}', '{symbol}@depth{levels}@{speed}']
+      x-stream-pattern: ['{symbol}@depth{levels}', '{symbol}@depth{levels}@{speed}']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        levels:
+          $ref: '#/components/schemas/depthLevels'
+        speed:
+          $ref: '#/components/schemas/depthSpeed'
+      x-stream-example: ['BTC-210630-9000-P@depth10', 'BTC-210630-9000-P@depth10@100ms']
+      x-update-speed: ['100ms', '1000ms', '500ms']
       payload:
         $ref: '#/components/schemas/partialDepthEvent'
 
@@ -691,6 +746,40 @@ components:
         $ref: '#/components/schemas/riskLevelChangeEvent'
 
   schemas:
+    underlyingAsset:
+      type: string
+      description: Underlying asset symbol (e.g., BTC, ETH)
+      example: ETH
+    symbol:
+      type: string
+      description: Full option symbol (e.g., BTC-210630-9000-P)
+      example: BTC-210630-9000-P
+    expirationDate:
+      type: string
+      description: Expiration date in YYMMDD format (e.g., 221125 for Nov 25, 2022)
+      example: 221125
+    interval:
+      type: string
+      description: Kline interval (e.g., 1m, 5m, 1h, 1d)
+      example: 1m
+    depthLevels:
+      type: integer
+      description: Depth levels (e.g., 5, 10, 20)
+      example: 10
+      enum:
+        - 10
+        - 20
+        - 50
+        - 100
+    depthSpeed:
+      type: string
+      description: Update speed (e.g., 100ms, 500ms, 1000ms)
+      example: 100ms
+      enum:
+        - 100ms
+        - 500ms
+        - 1000ms
+      default: 500ms
     # Control schemas (same patterns as other Binance streams)
     subscribeRequest:
       type: object
@@ -995,6 +1084,17 @@ components:
           example: "1912992.178168204"
 
     markPriceEvent:
+      type: array
+      description: |
+        Array of mark price information events for options contracts.
+        Stream name pattern: {underlyingAsset}@markPrice
+        Example: ETH@markPrice
+        Update frequency: 1000ms (1 second)
+        Provides mark prices for all option symbols on a specific underlying asset.
+      items:
+        $ref: '#/components/schemas/markPriceEventItem'
+
+    markPriceEventItem:
       type: object
       description: |
         Mark price information event for options contracts.
