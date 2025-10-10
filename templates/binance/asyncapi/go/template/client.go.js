@@ -34,9 +34,7 @@ export default function ({ asyncapi, params }) {
   "fmt"
   "log"
   "net/url"
-  "strings"
   "sync"
-  "time"
   "github.com/gorilla/websocket"
 )`}
       </Text>
@@ -97,7 +95,8 @@ func (c *Client) GetCurrentURL() string { return c.serverManager.GetActiveServer
 // Deprecated: use GetCurrentURL
 func (c *Client) GetURL() string { return c.GetCurrentURL() }
  
-// RegisterHandlers registers channel-specific message handlers to the client dispatcher
+// RegisterHandlers registers channel-specific message handlers to the client dispatcher.
+// Note: This replaces any previously registered handler map for the given channel key.
 func (c *Client) RegisterHandlers(channel string, m map[string]func(context.Context, []byte) error) {
   c.handlersMu.Lock()
   defer c.handlersMu.Unlock()
@@ -119,6 +118,23 @@ func (c *Client) ensureReadLoop(ctx context.Context) {
   }
   c.readLoopStarted = true
   go c.readLoop(ctx)
+}
+
+// Wait blocks until the read loop terminates or the context is cancelled.
+// If the read loop hasn't started, it returns immediately.
+func (c *Client) Wait(ctx context.Context) error {
+  c.connMu.RLock()
+  d := c.done
+  c.connMu.RUnlock()
+  if d == nil {
+    return nil
+  }
+  select {
+  case <-d:
+    return nil
+  case <-ctx.Done():
+    return ctx.Err()
+  }
 }
 
 // readLoop reads from the shared connection and dispatches to registered handlers
@@ -150,7 +166,6 @@ func (c *Client) readLoop(ctx context.Context) {
   if err := json.Unmarshal(data, &envelope); err == nil {
     // Combined wrapper handlers first (spec-driven)
     // Support multiple wrapper shapes if declared in spec
-    handledWrapper := false
     payload := data
 ${(() => {
   if (!wrappers.length) {
@@ -164,7 +179,6 @@ ${(() => {
       }
       c.handlersMu.RUnlock()
       if raw, ok := envelope["data"]; ok && len(raw) > 0 { payload = raw }
-      handledWrapper = true
     }`;
   }
   // Generate explicit checks per wrapper discovered
@@ -181,7 +195,6 @@ ${(() => {
       }
       c.handlersMu.RUnlock()
       if raw, ok := envelope["${edk}"]; ok && len(raw) > 0 { payload = raw }
-      handledWrapper = true
     }`;
   }).join("\n");
 })()}

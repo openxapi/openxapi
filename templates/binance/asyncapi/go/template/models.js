@@ -328,10 +328,14 @@ ${fields.join('\n')}
 
     let content = '';
     content += `package models\n\n`;
-    content += `import (\n`;
-    content += `	"encoding/json"\n`;
-    if (needsTime) content += `	"time"\n`;
-    content += `)\n\n`;
+    // Import only when needed to avoid unused imports
+    const needsJSONImport = propKeys.length === 0;
+    if (needsJSONImport || needsTime) {
+      content += `import (\n`;
+      if (needsJSONImport) content += `\t"encoding/json"\n`;
+      if (needsTime) content += `\t"time"\n`;
+      content += `)\n\n`;
+    }
 
     content += `// ${modelName} represents global message '#/components/messages/${compKey}'\n`;
     content += `type ${modelName} struct {\n`;
@@ -362,6 +366,84 @@ ${fields.join('\n')}
     );
     generatedRefs.add(compKey);
   }
+
+  // Emit param alias types for schemas referenced by x-stream-params (components.messages and channel messages)
+  try {
+    const paramSchemaNames = new Set();
+    // Scan component messages
+    Object.entries(componentMessages || {}).forEach(([key, msg]) => {
+      try {
+        const paramsMap = msg && msg['x-stream-params'];
+        if (!paramsMap || typeof paramsMap !== 'object') return;
+        Object.values(paramsMap).forEach((val) => {
+          if (val && typeof val === 'object' && val.$ref && typeof val.$ref === 'string' && val.$ref.startsWith('#/components/schemas/')) {
+            const tail = val.$ref.split('/').pop(); if (tail) paramSchemaNames.add(tail);
+          }
+        });
+      } catch (e) {}
+    });
+    // Scan channel messages (resolve $ref to component message and check there too)
+    Object.values(channels || {}).forEach((ch) => {
+      const chMsgs = ch && ch.messages ? ch.messages : {};
+      Object.values(chMsgs || {}).forEach((m) => {
+        try {
+          let msgJson = m;
+          if (m && m.$ref && typeof m.$ref === 'string' && m.$ref.startsWith('#/components/messages/')) {
+            const tail = m.$ref.split('/').pop();
+            if (tail && componentMessages && componentMessages[tail]) msgJson = componentMessages[tail];
+          }
+          const paramsMap = msgJson && msgJson['x-stream-params'];
+          if (!paramsMap || typeof paramsMap !== 'object') return;
+          Object.values(paramsMap).forEach((val) => {
+            if (val && typeof val === 'object' && val.$ref && typeof val.$ref === 'string' && val.$ref.startsWith('#/components/schemas/')) {
+              const tail = val.$ref.split('/').pop(); if (tail) paramSchemaNames.add(tail);
+            }
+          });
+        } catch (e) {}
+      });
+    });
+    // Emit alias types
+    paramSchemaNames.forEach((schemaName) => {
+      if (generatedSchemas.has(schemaName)) return;
+      const schema = componentSchemas && componentSchemas[schemaName];
+      if (!schema || typeof schema !== 'object') return;
+      const t = schema.type || (schema.properties ? 'object' : (schema.items ? 'array' : 'string'));
+      let goType = null;
+      if (t === 'string') goType = 'string';
+      else if (t === 'integer') {
+        const f = schema.format;
+        if (f === 'int64' || f === 'long') goType = 'int64'; else if (f === 'int32') goType = 'int32'; else goType = 'int';
+      } else if (t === 'number') {
+        const f = schema.format; if (f === 'float32') goType = 'float32'; else goType = 'float64';
+      } else if (t === 'boolean') goType = 'bool';
+      if (!goType) return;
+      const typeName = toPascalCase(schemaName);
+      const fileBase = toSnakeCase(schemaName);
+      const enums = Array.isArray(schema.enum) ? schema.enum.slice() : [];
+      let content = '';
+      content += `package models\n\n`;
+      content += `// ${typeName} is a parameter model referenced by x-stream-params\n`;
+      content += `type ${typeName} ${goType}\n\n`;
+      if (enums.length) {
+        content += `// ${typeName} enum values\n`;
+        enums.forEach((ev) => {
+          const raw = String(ev);
+          const suffix = raw.replace(/[^a-zA-Z0-9]+/g, '');
+          const constName = `${typeName}${suffix}`;
+          if (goType === 'string') content += `const ${constName} ${typeName} = ${JSON.stringify(raw)}\n`;
+          else if (goType.startsWith('int') || goType.startsWith('float')) content += `const ${constName} ${typeName} = ${raw}\n`;
+          else if (goType === 'bool') content += `const ${constName} ${typeName} = ${raw === 'true' ? 'true' : 'false'}\n`;
+        });
+        content += `\n`;
+      }
+      files.push(
+        <File name={`models/${fileBase}.go`} key={`param-alias-${schemaName}`}>
+          <Text>{content}</Text>
+        </File>
+      );
+      generatedSchemas.add(schemaName);
+    });
+  } catch (e) { /* ignore param alias generation errors */ }
 
   for (const channelKey of Object.keys(channels)) {
     const channelDef = channels[channelKey] || {};
@@ -488,10 +570,14 @@ ${fields.join('\n')}
 
         let content = '';
         content += `package models\n\n`;
-        content += `import (\n`;
-        content += `	"encoding/json"\n`;
-        if (needsTime) content += `	"time"\n`;
-        content += `)\n\n`;
+        // Import only when needed to avoid unused imports
+        const needsJSONImport2 = propKeys.length === 0;
+        if (needsJSONImport2 || needsTime) {
+          content += `import (\n`;
+          if (needsJSONImport2) content += `	"encoding/json"\n`;
+          if (needsTime) content += `	"time"\n`;
+          content += `)\n\n`;
+        }
 
         content += `// ${modelName} represents referenced message '${refName}'\n`;
         content += `type ${modelName} struct {\n`;
@@ -589,10 +675,14 @@ ${fields.join('\n')}
 
       let content = '';
       content += `package models\n\n`;
-      content += `import (\n`;
-      content += `	"encoding/json"\n`;
-      if (needsTime) content += `	"time"\n`;
-      content += `)\n\n`;
+      // Import only when needed to avoid unused imports
+      const needsJSONImport3 = propKeys.length === 0;
+      if (needsJSONImport3 || needsTime) {
+        content += `import (\n`;
+        if (needsJSONImport3) content += `	"encoding/json"\n`;
+        if (needsTime) content += `	"time"\n`;
+        content += `)\n\n`;
+      }
 
       content += `// ${structName} represents message '${msgKey}' on channel '${channelKey}'\n`;
       content += `type ${structName} struct {\n`;

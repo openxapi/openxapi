@@ -139,7 +139,6 @@ export default function ({ asyncapi, params }) {
     content += `\t"context"\n`;
     content += `\t"encoding/json"\n`;
     content += `\t"fmt"\n`;
-    content += `\t"log"\n`;
     content += `\t"strings"\n`;
     content += `\t"sync"\n`;
     content += `\t"time"\n`;
@@ -183,6 +182,24 @@ export default function ({ asyncapi, params }) {
     content += `\t}\n`;
     content += `\tpath := ch.addrTemplate\n`;
     content += `${connectReplaceCode ? connectReplaceCode + '\n' : ''}`;
+    // Normalize query: drop any empty query parameters like "streams=" and trim trailing '?'
+    content += `\tif i := strings.Index(path, "?"); i >= 0 {\n`;
+    content += `\t\tbasePath := path[:i]\n`;
+    content += `\t\tq := path[i+1:]\n`;
+    content += `\t\tparts := strings.Split(q, "&")\n`;
+    content += `\t\tkept := make([]string, 0, len(parts))\n`;
+    content += `\t\tfor _, p := range parts {\n`;
+    content += `\t\t\tif p == "" { continue }\n`;
+    content += `\t\t\tkv := strings.SplitN(p, "=", 2)\n`;
+    content += `\t\t\tif len(kv) == 2 && kv[1] == "" { continue }\n`;
+    content += `\t\t\tkept = append(kept, p)\n`;
+    content += `\t\t}\n`;
+    content += `\t\tif len(kept) > 0 {\n`;
+    content += `\t\t\tpath = basePath + "?" + strings.Join(kept, "&")\n`;
+    content += `\t\t} else {\n`;
+    content += `\t\t\tpath = basePath\n`;
+    content += `\t\t}\n`;
+    content += `\t}\n`;
     content += `\tfull := strings.TrimRight(base, "/") + path\n`;
     content += `\tch.client.connMu.RLock()\n`;
     content += `\tclConn := ch.client.conn\n`;
@@ -225,6 +242,9 @@ export default function ({ asyncapi, params }) {
     content += `}\n\n`;
 
     // Shared read loop is managed by Client; this channel only registers handlers.
+
+    // Track emitted handler method names to avoid duplicates across sections
+    const emittedHandlerNames = new Set();
 
     // Generate send operation methods
     sendOps.forEach(op => {
@@ -395,16 +415,19 @@ export default function ({ asyncapi, params }) {
                   }
                 }
               } catch (e) {}
-              content += `// Handle${handlerName} registers a handler for replies of '${opId}'\n`;
-              content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
-              content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
-              content += `\tch.msgHandlers["${rName}"] = func(ctx context.Context, b []byte) error {\n`;
-              content += preCheck;
-              content += `\t\tvar v ${modelType}\n`;
-              content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
-              content += `\t\treturn fn(ctx, &v)\n`;
-              content += `\t}\n`;
-              content += `}\n\n`;
+              if (!emittedHandlerNames.has(handlerName)) {
+                emittedHandlerNames.add(handlerName);
+                content += `// Handle${handlerName} registers a handler for replies of '${opId}'\n`;
+                content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
+                content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
+                content += `\tch.msgHandlers["${rName}"] = func(ctx context.Context, b []byte) error {\n`;
+                content += preCheck;
+                content += `\t\tvar v ${modelType}\n`;
+                content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+                content += `\t\treturn fn(ctx, &v)\n`;
+                content += `\t}\n`;
+                content += `}\n\n`;
+              }
             });
           }
         }
@@ -530,9 +553,38 @@ export default function ({ asyncapi, params }) {
                 }
               }
             } catch (e) {}
-            content += `// Handle${handlerName} registers a handler for message '${mName}' on ${nameSource}\n`;
-            content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
-            content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
+            // Compose handler documentation from spec extensions (patterns/examples/speeds)
+            let docLines = [];
+            try {
+              const docsMeta = (typeof m.json === 'function') ? m.json() : null;
+              const toArr = (v) => Array.isArray(v) ? v : (v ? [v] : []);
+              if (docsMeta) {
+                const patList = [
+                  ...toArr(docsMeta['x-stream-pattern']),
+                  ...(Array.isArray(docsMeta['x-stream-patterns']) ? docsMeta['x-stream-patterns'] : []),
+                ].filter(Boolean).map(String);
+                const exList = toArr(docsMeta['x-stream-example']).filter(Boolean).map(String);
+                const spList = toArr(docsMeta['x-update-speed']).filter(Boolean).map(String);
+                if (patList.length) {
+                  docLines.push('// Patterns:');
+                  patList.forEach(p => { docLines.push(`//   - ${p}`); });
+                }
+                if (exList.length) {
+                  docLines.push('// Examples:');
+                  exList.forEach(e => { docLines.push(`//   - ${e}`); });
+                }
+                if (spList.length) {
+                  docLines.push('// Update speeds:');
+                  spList.forEach(s => { docLines.push(`//   - ${s}`); });
+                }
+              }
+            } catch (e) { /* ignore doc extraction errors */ }
+            if (!emittedHandlerNames.has(handlerName)) {
+              emittedHandlerNames.add(handlerName);
+              if (docLines.length) { content += docLines.join('\n') + `\n`; }
+              content += `// Handle${handlerName} registers a handler for message '${mName}' on ${nameSource}\n`;
+              content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
+              content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
             // Prefer alias keys for events and wrappers to avoid duplicate handlers
             if (isCombinedWrapperFlag) {
               const aliasKey = wrapperAliasKey || 'wrap:combined';
@@ -559,6 +611,7 @@ export default function ({ asyncapi, params }) {
               content += `\t}\n`;
             }
             content += `}\n\n`;
+            }
           });
         }
       } catch (e) {}
@@ -612,9 +665,26 @@ export default function ({ asyncapi, params }) {
                 preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"e\"]; !ok { return fmt.Errorf(\"missing event type\") }\n`;
               }
             }
-            content += `// Handle${handlerName} registers a handler for unwrapped event '${msgKey}' on ${nameSource}\n`;
-            content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
-            content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
+            if (!emittedHandlerNames.has(handlerName)) {
+              emittedHandlerNames.add(handlerName);
+              // Compose documentation for unwrapped event
+              try {
+                const toArr = (v) => Array.isArray(v) ? v : (v ? [v] : []);
+                const patList = [
+                  ...toArr(compMsg['x-stream-pattern']),
+                  ...(Array.isArray(compMsg['x-stream-patterns']) ? compMsg['x-stream-patterns'] : []),
+                ].filter(Boolean).map(String);
+                const exList = toArr(compMsg['x-stream-example']).filter(Boolean).map(String);
+                const spList = toArr(compMsg['x-update-speed']).filter(Boolean).map(String);
+                const docLines = [];
+                if (patList.length) { docLines.push('// Patterns:'); patList.forEach(p => docLines.push(`//   - ${p}`)); }
+                if (exList.length) { docLines.push('// Examples:'); exList.forEach(e => docLines.push(`//   - ${e}`)); }
+                if (spList.length) { docLines.push('// Update speeds:'); spList.forEach(s => docLines.push(`//   - ${s}`)); }
+                if (docLines.length) { content += docLines.join('\n') + `\n`; }
+              } catch (e) { /* ignore doc extraction errors */ }
+              content += `// Handle${handlerName} registers a handler for unwrapped event '${msgKey}' on ${nameSource}\n`;
+              content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
+              content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
             if (expectedEventTypeAlias) {
               const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
               content += `\tch.msgHandlers[\"${alias}\"] = func(ctx context.Context, b []byte) error {\n`;
@@ -627,6 +697,7 @@ export default function ({ asyncapi, params }) {
             content += `\t\treturn fn(ctx, &v)\n`;
             content += `\t}\n`;
             content += `}\n\n`;
+            }
           } catch (e) { /* ignore per-msg errors */ }
         });
       }

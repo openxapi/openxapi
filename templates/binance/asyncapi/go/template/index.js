@@ -6,3 +6,4 @@ export { default as models } from './models.js';
 export { default as modelsPackage } from './models/models.go.js';
 export { default as channels } from './channels.js';
 export { default as serverManager } from './server_manager.go.js';
+export { default as streams } from './streams.go.js';

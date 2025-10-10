@@ -149,18 +149,16 @@ export function GenericStreamsWebSocketHandlers({ asyncapi }) {
       if (isArray) arrayEventTypeToModel.set(eventTypeForMsg, schemaName);
     }
 
-    // x-stream-pattern(s)
-    if (msg['x-stream-pattern']) {
-      const pat = msg['x-stream-pattern'];
-      const tokens = pat.split(/\{[^}]+\}/g).filter(Boolean).map(s => s.trim()).filter(Boolean);
-      streamPatternEntries.push({ tokens: tokens.length ? tokens : [pat], modelName: schemaName, isArray });
-    }
-    if (Array.isArray(msg['x-stream-patterns'])) {
-      msg['x-stream-patterns'].forEach(p => {
-        const tokens = p.split(/\{[^}]+\}/g).filter(Boolean).map(s => s.trim()).filter(Boolean);
-        streamPatternEntries.push({ tokens: tokens.length ? tokens : [p], modelName: schemaName, isArray });
-      });
-    }
+    // x-stream-pattern can be an array or a string; also accept legacy x-stream-patterns
+    const patternList = [];
+    if (Array.isArray(msg['x-stream-pattern'])) patternList.push(...msg['x-stream-pattern']);
+    else if (typeof msg['x-stream-pattern'] === 'string') patternList.push(msg['x-stream-pattern']);
+    if (Array.isArray(msg['x-stream-patterns'])) patternList.push(...msg['x-stream-patterns']);
+    patternList.forEach(p => {
+      const ps = String(p);
+      const tokens = ps.split(/\{[^}]+\}/g).filter(Boolean).map(s => s.trim()).filter(Boolean);
+      streamPatternEntries.push({ tokens: tokens.length ? tokens : [ps], modelName: schemaName, isArray });
+    });
   });
 
   // Ensure array event types are mapped from schema e-const too
