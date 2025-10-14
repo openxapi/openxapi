@@ -93,7 +93,7 @@ channels:
       subscribeResponse:
         $ref: '#/components/messages/subscriptionResponse'
       unsubscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/unsubscriptionResponse'
       listSubscriptions:
         $ref: '#/components/messages/listSubscriptionsRequest'
       listSubscriptionsResponse:
@@ -164,7 +164,7 @@ channels:
       subscribeResponse:
         $ref: '#/components/messages/subscriptionResponse'
       unsubscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/unsubscriptionResponse'
       listSubscriptions:
         $ref: '#/components/messages/listSubscriptionsRequest'
       listSubscriptionsResponse:
@@ -475,6 +475,17 @@ components:
       contentType: application/json
       payload:
         $ref: '#/components/schemas/subscriptionResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    unsubscriptionResponse:
+      name: Unsubscribe Response
+      title: Unsubscribe Response
+      summary: Response to unsubscription request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/unsubscriptionResponse'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
@@ -854,8 +865,20 @@ components:
       type: object
       properties:
         result:
-          type: "null"
+          type: object
+          nullable: true
           description: Always null for successful subscription
+        id:
+          type: integer
+          format: int64
+
+    unsubscriptionResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          nullable: true
+          description: Always null for successful unsubscription
         id:
           type: integer
           format: int64
