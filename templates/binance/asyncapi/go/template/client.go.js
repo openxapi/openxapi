@@ -3,6 +3,36 @@ import { File, Text } from '@asyncapi/generator-react-sdk';
 export default function ({ asyncapi, params }) {
   const packageName = params.packageName || 'main';
   const root = asyncapi.json ? asyncapi.json() : {};
+  
+  // Extract servers from spec for codegen
+  const serversList = [];
+  try {
+    const srv = root && root.servers;
+    if (srv && typeof srv === 'object') {
+      Object.entries(srv).forEach(([name, conf]) => {
+        if (!conf || typeof conf !== 'object') return;
+        const protocol = String(conf.protocol || conf.scheme || '').trim();
+        const host = String(conf.host || conf.url || '').trim();
+        const pathname = String(conf.pathname || conf.basePath || '').trim();
+        const title = String(conf.title || '').trim();
+        const summary = String(conf.summary || '').trim();
+        const description = String(conf.description || '').trim();
+        let url = '';
+        if (host && protocol) {
+          // If host already contains protocol, avoid doubling
+          if (/^wss?:\/\//i.test(host)) {
+            url = host + (pathname || '');
+          } else {
+            url = `${protocol}://${host}${pathname || ''}`;
+          }
+        } else if (host) {
+          url = host + (pathname || '');
+        }
+        if (!url) return;
+        serversList.push({ name, url, title, summary, description });
+      });
+    }
+  } catch (e) { /* ignore server extraction errors */ }
 
   // Discover wrapper messages and keys from spec extensions
   const wrappers = [];
@@ -57,7 +87,16 @@ type Client struct {
 }
 
 // NewClient creates a new client (no direct connection management)
-func NewClient() *Client { return &Client{ serverManager: NewServerManager(), handlers: make(map[string]map[string]func(context.Context, []byte) error) } }
+func NewClient() *Client {
+  c := &Client{ serverManager: NewServerManager(), handlers: make(map[string]map[string]func(context.Context, []byte) error) }
+  // Preload servers from AsyncAPI spec (first becomes active by default)
+${(() => {
+  if (!serversList.length) return '';
+  function esc(s) { return String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"'); }
+  return serversList.map(s => `  _ = c.AddServer("${esc(s.name)}", "${esc(s.url)}", "${esc(s.title)}", "${esc(s.description || s.summary)}")`).join("\n");
+})()}
+  return c
+}
 
 // NewClientWithAuth creates a new client with authentication
 func NewClientWithAuth(auth *Auth) *Client { c := NewClient(); c.auth = auth; return c }
