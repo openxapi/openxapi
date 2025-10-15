@@ -105,6 +105,8 @@ type Client struct {
   // registry of handlers per channel name
   handlersMu    sync.RWMutex
   handlers      map[string]map[string]func(context.Context, []byte) error
+  // pendingByID holds one-shot RPC response handlers keyed by id
+  pendingByID  sync.Map // key: string (id), val: func(context.Context, []byte) error
 }
 
 // NewClient creates a new client (no direct connection management)
@@ -366,16 +368,29 @@ ${(() => {
           default:
             idStr = fmt.Sprintf("%v", v)
           }
-          key := "id:" + idStr
-          // First collect all id-matched handlers across channels
-          c.handlersMu.RLock()
-          var idHandlers []func(context.Context, []byte) error
-          for _, hm := range c.handlers {
-            if h, ok := hm[key]; ok && h != nil { idHandlers = append(idHandlers, h) }
+          // Prefer client-level pendingByID registry to avoid map-aliasing issues
+          if h, ok := c.pendingByID.Load(idStr); ok {
+            if fn, ok2 := h.(func(context.Context, []byte) error); ok2 && fn != nil {
+              // one-shot: remove before invoking to avoid double-dispatch
+              c.pendingByID.Delete(idStr)
+              if err := fn(ctx, data); err == nil { dispatched = true }
+            } else {
+              // cleanup invalid entry
+              c.pendingByID.Delete(idStr)
+            }
           }
-          c.handlersMu.RUnlock()
-          if len(idHandlers) > 0 {
-            for _, h := range idHandlers { if err := h(ctx, data); err == nil { dispatched = true } }
+          if !dispatched {
+            // Fallback to legacy per-channel id: handlers
+            key := "id:" + idStr
+            c.handlersMu.RLock()
+            var idHandlers []func(context.Context, []byte) error
+            for _, hm := range c.handlers {
+              if h, ok := hm[key]; ok && h != nil { idHandlers = append(idHandlers, h) }
+            }
+            c.handlersMu.RUnlock()
+            if len(idHandlers) > 0 {
+              for _, h := range idHandlers { if err := h(ctx, data); err == nil { dispatched = true } }
+            }
           }
         }
       }

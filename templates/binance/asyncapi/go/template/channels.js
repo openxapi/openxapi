@@ -428,18 +428,15 @@ export default function ({ asyncapi, params }) {
       content += `\tif conn == nil { return fmt.Errorf("not connected") }\n`;
       if (replyModelType) {
         content += `\tif handler != nil && *handler != nil {\n`;
-        content += `\t\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
-        content += `\t\thandlerKey := fmt.Sprintf(\"id:%v\", req.${reqIDField})\n`;
-        content += `\t\tch.client.handlersMu.Lock()\n`;
-        content += `\t\tch.msgHandlers[handlerKey] = func(ctx context.Context, b []byte) error {\n`;
-        content += `\t\t\tdefer func() { ch.client.handlersMu.Lock(); delete(ch.msgHandlers, handlerKey); ch.client.handlersMu.Unlock() }()\n`;
+        content += `\t\tidStr := fmt.Sprintf(\"%v\", req.${reqIDField})\n`;
+        // store one-shot handler in client-level pendingByID to avoid per-channel map aliasing issues
+        content += `\t\tch.client.pendingByID.Store(idStr, func(ctx context.Context, b []byte) error {\n`;
         content += replyPreCheck;
         content += `\t\t\tvar v ${replyModelType}\n`;
         content += `\t\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
         content += `\t\t\tif handler == nil || *handler == nil { return nil }\n`;
         content += `\t\t\treturn (*handler)(ctx, &v)\n`;
-        content += `\t\t}\n`;
-        content += `\t\tch.client.handlersMu.Unlock()\n`;
+        content += `\t\t})\n`;
         content += `\t}\n`;
       }
       if (constAssignments.length > 0) {
