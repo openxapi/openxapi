@@ -223,21 +223,22 @@ export default function ({ asyncapi, params }) {
     content += `\treturn nil\n`;
     content += `}\n\n`;
 
-    // Disconnect closes the shared client connection and removes handlers for this channel
-    content += `// Disconnect closes the underlying client connection and removes channel handlers\n`;
+    // Disconnect cancels the read loop first to avoid lock-order inversions,
+    // then removes channel handlers. It respects ctx via Client.Wait(ctx).
+    content += `// Disconnect tears down channel handlers and cancels the client's read loop\n`;
     content += `func (ch *${channelPascal}Channel) Disconnect(ctx context.Context) error {\n`;
-    content += `\tch.mu.Lock()\n`;
-    content += `\tdefer ch.mu.Unlock()\n`;
-    content += `\t// remove handlers for this channel\n`;
+    content += `\t// Stop the read loop and underlying connection early to avoid handler lock contention\n`;
+    content += `\tch.client.StopReadLoop()\n`;
+    content += `\t// Wait for the read loop to exit or the context to cancel\n`;
+    content += `\tif err := ch.client.Wait(ctx); err != nil && err != context.Canceled { return err }\n`;
+    content += `\t// Remove handlers for this channel\n`;
     content += `\tch.client.handlersMu.Lock()\n`;
     content += `\tdelete(ch.client.handlers, "${nameSource}")\n`;
     content += `\tch.client.handlersMu.Unlock()\n`;
-    content += `\t// close client connection\n`;
-    content += `\tch.client.connMu.Lock()\n`;
-    content += `\tif ch.client.conn != nil { _ = ch.client.conn.Close(); ch.client.conn = nil }\n`;
-    content += `\tch.client.isConnected = false\n`;
-    content += `\tch.client.connMu.Unlock()\n`;
+    content += `\t// Mark channel as disconnected\n`;
+    content += `\tch.mu.Lock()\n`;
     content += `\tch.isConnected = false\n`;
+    content += `\tch.mu.Unlock()\n`;
     content += `\treturn nil\n`;
     content += `}\n\n`;
 
@@ -359,12 +360,88 @@ export default function ({ asyncapi, params }) {
         }
       } catch (e) {}
 
+      // Prepare reply model and precheck for id-based response handlers
+      let replyModelType = '';
+      let replyPreCheck = '';
+      let reqIDField = 'Id';
+      try {
+        // infer request id field name
+        const msgs0 = op.messages && op.messages();
+        if (msgs0 && msgs0.length) {
+          const m0 = msgs0[0];
+          const mj0 = (typeof m0.json === 'function') ? m0.json() : null;
+          let ps0 = mj0 && mj0.payload;
+          if (ps0 && ps0.$ref && typeof ps0.$ref === 'string' && ps0.$ref.startsWith('#/components/schemas/')) {
+            const tail0 = ps0.$ref.split('/').pop();
+            if (root && root.components && root.components.schemas && root.components.schemas[tail0]) {
+              ps0 = root.components.schemas[tail0];
+            }
+          }
+          const pr = ps0 && ps0.properties;
+          if (pr && pr.id) reqIDField = goFieldNameFromKey('id', pr.id);
+        }
+      } catch (e) {}
+      try {
+        const reply = op.reply && op.reply();
+        if (reply && reply.messages) {
+          const rmsgs = reply.messages();
+          if (rmsgs && rmsgs.length) {
+            const rm = rmsgs[0];
+            const rName = rm.name ? (rm.name() || rm.id && rm.id()) : (rm.id && rm.id());
+            const handlerName = toPascalCase(rName || 'Reply');
+            const displayPascal = toPascalCase(rName || '');
+            const byDisplay = compNameToStruct[displayPascal];
+            const byKey = chanMsgKeyToStruct[handlerName];
+            const resolvedStruct = byKey || byDisplay;
+            replyModelType = resolvedStruct ? `models.${resolvedStruct}` : `models.${toPascalCase(channelPascal + (rName || 'Reply'))}`;
+            const mjr = (typeof rm.json === 'function') ? rm.json() : null;
+            let psr = mjr && mjr.payload;
+            if (psr && psr.$ref && typeof psr.$ref === 'string' && psr.$ref.startsWith('#/components/schemas/')) {
+              const tail = psr.$ref.split('/').pop();
+              if (root && root.components && root.components.schemas) psr = root.components.schemas[tail] || psr;
+            }
+            const props = psr && psr.properties;
+            if (props && props.error) {
+              replyPreCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"error\"]; !ok { return fmt.Errorf(\"not error response\") }\n`;
+            } else if (props && props.result) {
+              const r = props.result;
+              if (r && r.type === 'array') {
+                replyPreCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif v, ok := probe[\"result\"]; !ok || len(v) == 0 || v[0] != '[' { return fmt.Errorf(\"not array result\") }\n`;
+              } else if (r && (r.type === 'string' || r.type === 'boolean' || (r.oneOf && r.oneOf.length))) {
+                replyPreCheck = `\n\t\tvar probe map[string]interface{}\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"result\"]; !ok { return fmt.Errorf(\"no result field\") }\n`;
+              } else {
+                replyPreCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"result\"]; !ok { return fmt.Errorf(\"no result field\") }\n`;
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
       content += `// ${opName} sends a message for operation '${opId}' on ${nameSource}\n`;
-      content += `func (ch *${channelPascal}Channel) ${opName}(ctx context.Context, req *${reqModelName}) error {\n`;
+      content += replyModelType
+        ? `func (ch *${channelPascal}Channel) ${opName}(ctx context.Context, req *${reqModelName}, handler *func(context.Context, *${replyModelType}) error) error {\n`
+        : `func (ch *${channelPascal}Channel) ${opName}(ctx context.Context, req *${reqModelName}) error {\n`;
+      // function signature already emitted above based on replyModelType
       content += `\tch.client.connMu.RLock()\n`;
       content += `\tconn := ch.client.conn\n`;
       content += `\tch.client.connMu.RUnlock()\n`;
       content += `\tif conn == nil { return fmt.Errorf("not connected") }\n`;
+      if (replyModelType) {
+        content += `\tif handler != nil && *handler != nil {\n`;
+        content += `\t\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
+        content += `\t\thandlerKey := fmt.Sprintf(\"id:%v\", req.${reqIDField})\n`;
+        content += `\t\tch.client.handlersMu.Lock()\n`;
+        content += `\t\tch.msgHandlers[handlerKey] = func(ctx context.Context, b []byte) error {\n`;
+        content += `\t\t\tdefer func() { ch.client.handlersMu.Lock(); delete(ch.msgHandlers, handlerKey); ch.client.handlersMu.Unlock() }()\n`;
+        content += replyPreCheck;
+        content += `\t\t\tvar v ${replyModelType}\n`;
+        content += `\t\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+        content += `\t\t\tif handler == nil || *handler == nil { return nil }\n`;
+        content += `\t\t\treturn (*handler)(ctx, &v)\n`;
+        content += `\t\t}\n`;
+        content += `\t\tch.client.handlersMu.Unlock()\n`;
+        content += `\t}\n`;
+      }
       if (constAssignments.length > 0) {
         content += `\t// Apply const constraints from schema\n`;
         constAssignments.forEach(a => {
@@ -376,8 +453,8 @@ export default function ({ asyncapi, params }) {
       content += `\treturn conn.WriteMessage(websocket.TextMessage, data)\n`;
       content += `}\n\n`;
 
-      // Reply handlers if any
-      try {
+      // Reply handlers omitted: using per-request id-based responses
+      if (false) try {
         const reply = op.reply && op.reply();
         if (reply && reply.messages) {
           const rmsgs = reply.messages();
@@ -470,12 +547,18 @@ export default function ({ asyncapi, params }) {
             }
             let expectedEventTypeAlias = '';
             let isArrayFormat = false;
+            let isErrorMessageFlag = false;
+            let errorAliasKey = 'error';
             try {
               const mj0 = (typeof m.json === 'function') ? m.json() : null;
               if (mj0) {
                 if (mj0['x-event-type']) expectedEventTypeAlias = mj0['x-event-type'];
                 if (mj0['x-response-format'] && String(mj0['x-response-format']).toLowerCase() === 'array') {
                   isArrayFormat = true;
+                }
+                if (mj0['x-error'] === true) isErrorMessageFlag = true;
+                if (typeof mj0['x-handler-key'] === 'string' && mj0['x-handler-key'].trim()) {
+                  errorAliasKey = String(mj0['x-handler-key']).trim();
                 }
                 let ps0 = mj0.payload;
                 if (!expectedEventTypeAlias && ps0 && ps0.$ref && typeof ps0.$ref === 'string' && ps0.$ref.startsWith('#/components/schemas/')) {
@@ -489,6 +572,7 @@ export default function ({ asyncapi, params }) {
                   isArrayFormat = true;
                 }
                 const props0 = ps0 && ps0.properties;
+                if (props0 && Object.prototype.hasOwnProperty.call(props0, 'error')) isErrorMessageFlag = true;
                 if (!expectedEventTypeAlias && props0 && props0.e && props0.e.const) expectedEventTypeAlias = props0.e.const;
               }
             } catch (e) {}
@@ -534,7 +618,10 @@ export default function ({ asyncapi, params }) {
                   const props = ps && ps.properties;
                   if (props && props.e && props.e.const) expectedEventType = props.e.const;
                 }
-                if (isArrayFormat) {
+                // Error message pre-check takes priority over event checks
+                if (isErrorMessageFlag) {
+                  preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"error\"]; !ok { return fmt.Errorf(\"not error message\") }\n`;
+                } else if (isArrayFormat) {
                   // Array payload: inspect first element's event type
                   if (expectedEventType) {
                     const esc = String(expectedEventType).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
@@ -584,33 +671,73 @@ export default function ({ asyncapi, params }) {
               if (docLines.length) { content += docLines.join('\n') + `\n`; }
               content += `// Handle${handlerName} registers a handler for message '${mName}' on ${nameSource}\n`;
               content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
+              content += `\tif fn == nil { return }\n`;
               content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
             // Prefer alias keys for events and wrappers to avoid duplicate handlers
             if (isCombinedWrapperFlag) {
               const aliasKey = wrapperAliasKey || 'wrap:combined';
+              content += `\tch.client.handlersMu.Lock()\n`;
               content += `\tch.msgHandlers["${aliasKey}"] = func(ctx context.Context, b []byte) error {\n`;
               content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
               content += `\t\treturn fn(ctx, &v)\n`;
               content += `\t}\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              // unregister
+              content += `}\n`;
+              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tdelete(ch.msgHandlers, "${aliasKey}")\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n\n`;
+            } else if (isErrorMessageFlag) {
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tch.msgHandlers[\"${errorAliasKey}\"] = func(ctx context.Context, b []byte) error {\n`;
+              content += preCheck;
+              content += `\t\tvar v ${modelType}\n`;
+              content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+              content += `\t\treturn fn(ctx, &v)\n`;
+              content += `\t}\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n`;
+              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tdelete(ch.msgHandlers, \"${errorAliasKey}\")\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n\n`;
             } else if (expectedEventTypeAlias) {
               const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
+              content += `\tch.client.handlersMu.Lock()\n`;
               content += `\tch.msgHandlers[\"${alias}\"] = func(ctx context.Context, b []byte) error {\n`;
               content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
               content += `\t\treturn fn(ctx, &v)\n`;
               content += `\t}\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n`;
+              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tdelete(ch.msgHandlers, \"${alias}\")\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n\n`;
             } else {
+              content += `\tch.client.handlersMu.Lock()\n`;
               content += `\tch.msgHandlers[\"${mName}\"] = func(ctx context.Context, b []byte) error {\n`;
               content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
               content += `\t\treturn fn(ctx, &v)\n`;
               content += `\t}\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n`;
+              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tdelete(ch.msgHandlers, \"${mName}\")\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n\n`;
             }
-            content += `}\n\n`;
             }
           });
         }
@@ -634,9 +761,15 @@ export default function ({ asyncapi, params }) {
             // Determine expected event type alias from message metadata or payload schema
             let expectedEventTypeAlias = '';
             let isArrayFormat = false;
+            let isErrorMessageFlag = false;
+            let errorAliasKey = 'error';
             try {
               if (compMsg['x-event-type']) expectedEventTypeAlias = compMsg['x-event-type'];
               if (compMsg['x-response-format'] && String(compMsg['x-response-format']).toLowerCase() === 'array') isArrayFormat = true;
+              if (compMsg['x-error'] === true) isErrorMessageFlag = true;
+              if (typeof compMsg['x-handler-key'] === 'string' && compMsg['x-handler-key'].trim()) {
+                errorAliasKey = String(compMsg['x-handler-key']).trim();
+              }
               let ps0 = compMsg.payload;
               if (!expectedEventTypeAlias && ps0 && ps0.$ref && typeof ps0.$ref === 'string' && ps0.$ref.startsWith('#/components/schemas/')) {
                 const tail0 = ps0.$ref.split('/').pop();
@@ -646,11 +779,15 @@ export default function ({ asyncapi, params }) {
               }
               if (!isArrayFormat && ps0 && ps0.type === 'array') isArrayFormat = true;
               const props0 = ps0 && ps0.properties;
+              if (props0 && Object.prototype.hasOwnProperty.call(props0, 'error')) isErrorMessageFlag = true;
               if (!expectedEventTypeAlias && props0 && props0.e && props0.e.const) expectedEventTypeAlias = props0.e.const;
             } catch (e) {}
             // Pre-check
             let preCheck = '';
-            if (isArrayFormat) {
+            // Error payloads take priority over event checks
+            if (isErrorMessageFlag) {
+              preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"error\"]; !ok { return fmt.Errorf(\"not error message\") }\n`;
+            } else if (isArrayFormat) {
               if (expectedEventTypeAlias) {
                 const esc = String(expectedEventTypeAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(arr[0], &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
@@ -684,11 +821,17 @@ export default function ({ asyncapi, params }) {
               } catch (e) { /* ignore doc extraction errors */ }
               content += `// Handle${handlerName} registers a handler for unwrapped event '${msgKey}' on ${nameSource}\n`;
               content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
+              content += `\tif fn == nil { return }\n`;
               content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
-            if (expectedEventTypeAlias) {
+            if (isErrorMessageFlag) {
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tch.msgHandlers[\"${errorAliasKey}\"] = func(ctx context.Context, b []byte) error {\n`;
+            } else if (expectedEventTypeAlias) {
               const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
+              content += `\tch.client.handlersMu.Lock()\n`;
               content += `\tch.msgHandlers[\"${alias}\"] = func(ctx context.Context, b []byte) error {\n`;
             } else {
+              content += `\tch.client.handlersMu.Lock()\n`;
               content += `\tch.msgHandlers[\"${msgKey}\"] = func(ctx context.Context, b []byte) error {\n`;
             }
             content += preCheck;
@@ -696,7 +839,29 @@ export default function ({ asyncapi, params }) {
             content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
             content += `\t\treturn fn(ctx, &v)\n`;
             content += `\t}\n`;
-            content += `}\n\n`;
+            content += `\tch.client.handlersMu.Unlock()\n`;
+            content += `}\n`;
+            // Unregister counterpart
+            if (isErrorMessageFlag) {
+              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tdelete(ch.msgHandlers, \"${errorAliasKey}\")\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n\n`;
+            } else if (expectedEventTypeAlias) {
+              const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
+              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tdelete(ch.msgHandlers, \"${alias}\")\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n\n`;
+            } else {
+              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+              content += `\tch.client.handlersMu.Lock()\n`;
+              content += `\tdelete(ch.msgHandlers, \"${msgKey}\")\n`;
+              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `}\n\n`;
+            }
             }
           } catch (e) { /* ignore per-msg errors */ }
         });

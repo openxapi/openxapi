@@ -53,12 +53,33 @@ export default function ({ asyncapi, params }) {
     }
   } catch (e) {}
 
+  // Discover error message handling from spec extensions
+  let hasErrorModel = false;
+  let errorAlias = 'error';
+  try {
+    const msgs = root && root.components && root.components.messages;
+    if (msgs && typeof msgs === 'object') {
+      for (const [k, m] of Object.entries(msgs)) {
+        if (!m || typeof m !== 'object') continue;
+        const isErr = (m['x-error'] === true) || (m.payload && m.payload.properties && Object.prototype.hasOwnProperty.call(m.payload.properties, 'error'));
+        if (isErr) {
+          hasErrorModel = true;
+          if (typeof m['x-handler-key'] === 'string' && m['x-handler-key'].trim()) {
+            errorAlias = String(m['x-handler-key']).trim();
+          }
+          break;
+        }
+      }
+    }
+  } catch (e) {}
+
   return (
     <File name="client.go">
       <Text>package {packageName}</Text>
 
       <Text newLines={2}>
         {`import (
+  "bytes"
   "context"
   "encoding/json"
   "fmt"
@@ -143,6 +164,17 @@ func (c *Client) RegisterHandlers(channel string, m map[string]func(context.Cont
   c.handlers[channel] = m
 }
 
+// StopReadLoop closes the underlying websocket connection and flips connection flags.
+// The read loop will observe the close and exit, and Wait(ctx) can be used to synchronize.
+func (c *Client) StopReadLoop() {
+  c.connMu.Lock()
+  conn := c.conn
+  c.conn = nil
+  c.isConnected = false
+  c.connMu.Unlock()
+  if conn != nil { _ = conn.Close() }
+}
+
 // ensureReadLoop starts the shared read loop once
 func (c *Client) ensureReadLoop(ctx context.Context) {
   c.connMu.Lock()
@@ -203,21 +235,36 @@ func (c *Client) readLoop(ctx context.Context) {
   dispatched := false
   var envelope map[string]json.RawMessage
   if err := json.Unmarshal(data, &envelope); err == nil {
+${(() => {
+  if (!hasErrorModel) return '';
+  const ek = String(errorAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `    // Top-level error dispatch (spec-declared)
+    if _, ok := envelope["error"]; ok {
+      // collect matching handlers without holding the lock during invocation
+      c.handlersMu.RLock()
+      var callList []func(context.Context, []byte) error
+      for _, hm := range c.handlers {
+        if h, ok := hm["${ek}"]; ok && h != nil { callList = append(callList, h) }
+      }
+      c.handlersMu.RUnlock()
+      for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
+    }`;
+})()}
     // Combined wrapper handlers first (spec-driven)
     // Support multiple wrapper shapes if declared in spec
     payload := data
 ${(() => {
   if (!wrappers.length) {
     // keep a small fallback for backward-compat (stream/data)
-    return `    if _, hasStream := envelope["stream"]; hasStream {
+    return `    if _, hasStream := envelope[\"stream\"]; hasStream {
       c.handlersMu.RLock()
+      var callList []func(context.Context, []byte) error
       for _, hm := range c.handlers {
-        if h, ok := hm["wrap:combined"]; ok {
-          if err := h(ctx, data); err == nil { dispatched = true }
-        }
+        if h, ok := hm[\"wrap:combined\"]; ok && h != nil { callList = append(callList, h) }
       }
       c.handlersMu.RUnlock()
-      if raw, ok := envelope["data"]; ok && len(raw) > 0 { payload = raw }
+      for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
+      if raw, ok := envelope[\"data\"]; ok && len(raw) > 0 { payload = raw }
     }`;
   }
   // Generate explicit checks per wrapper discovered
@@ -225,31 +272,45 @@ ${(() => {
     const esk = String(w.streamKey).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     const edk = String(w.dataKey).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     const alias = String(w.aliasKey).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-    return `    if _, ok := envelope["${esk}"]; ok {
+    return `    if _, ok := envelope[\"${esk}\"]; ok {
       c.handlersMu.RLock()
+      var callList []func(context.Context, []byte) error
       for _, hm := range c.handlers {
-        if h, ok := hm["${alias}"]; ok {
-          if err := h(ctx, data); err == nil { dispatched = true }
-        }
+        if h, ok := hm[\"${alias}\"]; ok && h != nil { callList = append(callList, h) }
       }
       c.handlersMu.RUnlock()
-      if raw, ok := envelope["${edk}"]; ok && len(raw) > 0 { payload = raw }
+      for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
+      if raw, ok := envelope[\"${edk}\"]; ok && len(raw) > 0 { payload = raw }
     }`;
   }).join("\n");
 })()}
-    // Event-type dispatch with array/object shape detection
+    // Event-type and error dispatch with array/object shape detection
     // 1) Try object payload
     var typ map[string]interface{}
     if err := json.Unmarshal(payload, &typ); err == nil {
+${(() => {
+  if (!hasErrorModel) return '';
+  const ek = String(errorAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `      // Object payload: check for error payload (spec-declared)
+      if _, hasErr := typ[\"error\"]; hasErr {
+        c.handlersMu.RLock()
+        var callList []func(context.Context, []byte) error
+        for _, hm := range c.handlers {
+          if h, ok := hm[\"${ek}\"]; ok && h != nil { callList = append(callList, h) }
+        }
+        c.handlersMu.RUnlock()
+        for _, h := range callList { if err := h(ctx, payload); err == nil { dispatched = true } }
+      }`;
+})()}
       if ev, ok := typ["e"].(string); ok && ev != "" {
         key := "evt:" + ev
         c.handlersMu.RLock()
+        var callList []func(context.Context, []byte) error
         for _, hm := range c.handlers {
-          if h, ok := hm[key]; ok {
-            if err := h(ctx, payload); err == nil { dispatched = true }
-          }
+          if h, ok := hm[key]; ok && h != nil { callList = append(callList, h) }
         }
         c.handlersMu.RUnlock()
+        for _, h := range callList { if err := h(ctx, payload); err == nil { dispatched = true } }
       }
     } else {
       // 2) Try array payload; inspect first element for event type
@@ -257,30 +318,79 @@ ${(() => {
       if err2 := json.Unmarshal(payload, &arr); err2 == nil && len(arr) > 0 {
         var first map[string]interface{}
         if err3 := json.Unmarshal(arr[0], &first); err3 == nil {
+${(() => {
+  if (!hasErrorModel) return '';
+  const ek = String(errorAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  return `          // Array payload first element: also check for error object (rare, but safe)
+          if _, hasErr := first[\"error\"]; hasErr {
+            c.handlersMu.RLock()
+            var callList []func(context.Context, []byte) error
+            for _, hm := range c.handlers {
+              if h, ok := hm[\"${ek}\"]; ok && h != nil { callList = append(callList, h) }
+            }
+            c.handlersMu.RUnlock()
+            for _, h := range callList { if err := h(ctx, payload); err == nil { dispatched = true } }
+          }`;
+})()}
           if ev, ok := first["e"].(string); ok && ev != "" {
             key := "evt:" + ev + ":array"
             c.handlersMu.RLock()
+            var callList []func(context.Context, []byte) error
             for _, hm := range c.handlers {
-              if h, ok := hm[key]; ok {
-                if err := h(ctx, payload); err == nil { dispatched = true }
-              }
+              if h, ok := hm[key]; ok && h != nil { callList = append(callList, h) }
             }
             c.handlersMu.RUnlock()
+            for _, h := range callList { if err := h(ctx, payload); err == nil { dispatched = true } }
           }
         }
       }
     }
   }
 
-  // Fallback: fan-out to all handlers; their pre-checks will filter
+  // ID-based dispatch for RPC-style responses (result/id)
   if !dispatched {
-    c.handlersMu.RLock()
-    for _, hm := range c.handlers {
-      for _, h := range hm {
-        if err := h(ctx, data); err == nil { dispatched = true }
+    var idProbe map[string]json.RawMessage
+    if err := json.Unmarshal(data, &idProbe); err == nil {
+      if rawID, ok := idProbe["id"]; ok && len(rawID) > 0 {
+        // Decode ID using UseNumber to avoid float64 precision issues
+        dec := json.NewDecoder(bytes.NewReader(rawID))
+        dec.UseNumber()
+        var idVal interface{}
+        if err := dec.Decode(&idVal); err == nil {
+          var idStr string
+          switch v := idVal.(type) {
+          case json.Number:
+            idStr = v.String()
+          case string:
+            idStr = v
+          default:
+            idStr = fmt.Sprintf("%v", v)
+          }
+          key := "id:" + idStr
+          // First collect all id-matched handlers across channels
+          c.handlersMu.RLock()
+          var idHandlers []func(context.Context, []byte) error
+          for _, hm := range c.handlers {
+            if h, ok := hm[key]; ok && h != nil { idHandlers = append(idHandlers, h) }
+          }
+          c.handlersMu.RUnlock()
+          if len(idHandlers) > 0 {
+            for _, h := range idHandlers { if err := h(ctx, data); err == nil { dispatched = true } }
+          }
+        }
       }
     }
+  }
+
+  // Final fallback: fan-out to all handlers; their pre-checks will filter
+  if !dispatched {
+    c.handlersMu.RLock()
+    var callList []func(context.Context, []byte) error
+    for _, hm := range c.handlers {
+      for _, h := range hm { if h != nil { callList = append(callList, h) } }
+    }
     c.handlersMu.RUnlock()
+    for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
   }
 
     if !dispatched { log.Printf("unhandled message: %s", string(data)) }
