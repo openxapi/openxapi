@@ -85,6 +85,7 @@ export default function ({ asyncapi, params }) {
   "fmt"
   "log"
   "net/url"
+  "runtime"
   "sync"
   "github.com/gorilla/websocket"
 )`}
@@ -107,11 +108,33 @@ type Client struct {
   handlers      map[string]map[string]func(context.Context, []byte) error
   // pendingByID holds one-shot RPC response handlers keyed by id
   pendingByID  sync.Map // key: string (id), val: func(context.Context, []byte) error
+
+  // async dispatch pipeline to ensure slow handlers never block ReadMessage
+  mb          *mailbox
+  workerWG    sync.WaitGroup
+  // configuration for dispatch pipeline
+  workerCount int
 }
 
 // NewClient creates a new client (no direct connection management)
-func NewClient() *Client {
+func NewClient() *Client { return NewClientWithOptions(nil) }
+
+// ClientOptions configures the dispatch pipeline behavior
+type ClientOptions struct {
+  // HandlerWorkers controls the number of concurrent handler workers
+  HandlerWorkers int
+}
+
+// NewClientWithOptions creates a new client with configurable dispatch options
+func NewClientWithOptions(opts *ClientOptions) *Client {
   c := &Client{ serverManager: NewServerManager(), handlers: make(map[string]map[string]func(context.Context, []byte) error) }
+  // apply defaults
+  wc := runtime.NumCPU()
+  if wc < 1 { wc = 1 }
+  if opts != nil {
+    if opts.HandlerWorkers > 0 { wc = opts.HandlerWorkers }
+  }
+  c.workerCount = wc
   // Preload servers from AsyncAPI spec (first becomes active by default)
 ${(() => {
   if (!serversList.length) return '';
@@ -189,6 +212,23 @@ func (c *Client) ensureReadLoop(ctx context.Context) {
   if c.done == nil {
     c.done = make(chan struct{})
   }
+  // initialize dispatch pipeline (workers + unbounded mailbox)
+  if c.mb == nil {
+    c.mb = newMailbox()
+    wnum := c.workerCount
+    if wnum <= 0 { wnum = 1 }
+    for i := 0; i < wnum; i++ {
+      c.workerWG.Add(1)
+      go func() {
+        defer c.workerWG.Done()
+        for {
+          msg, ok := c.mb.Dequeue()
+          if !ok { return }
+          c.dispatchMessage(ctx, msg)
+        }
+      }()
+    }
+  }
   c.readLoopStarted = true
   go c.readLoop(ctx)
 }
@@ -220,6 +260,9 @@ func (c *Client) readLoop(ctx context.Context) {
       c.done = nil
     }
     c.connMu.Unlock()
+    // close mailbox and wait for all workers to drain
+    if c.mb != nil { c.mb.Close(); c.mb = nil }
+    c.workerWG.Wait()
   }()
   for {
     c.connMu.RLock()
@@ -233,6 +276,13 @@ func (c *Client) readLoop(ctx context.Context) {
       c.connMu.Unlock()
       return 
     }
+    // Enqueue into unbounded mailbox; never drops
+    if c.mb != nil { c.mb.Enqueue(data) }
+  }
+}
+
+// dispatchMessage performs JSON decoding + handler routing on a worker goroutine
+func (c *Client) dispatchMessage(ctx context.Context, data []byte) {
   // Try structured dispatch first
   dispatched := false
   var envelope map[string]json.RawMessage
@@ -402,8 +452,62 @@ ${(() => { return ''; })()}
     for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
   }
 
-    if !dispatched { log.Printf("unhandled message: %s", string(data)) }
+  if !dispatched { log.Printf("unhandled message: %s", string(data)) }
+}
+
+// mailbox is an unbounded, goroutine-safe FIFO for []byte messages
+type mailbox struct {
+  mu     sync.Mutex
+  cond   *sync.Cond
+  q      [][]byte
+  closed bool
+}
+
+func newMailbox() *mailbox {
+  m := &mailbox{}
+  m.cond = sync.NewCond(&m.mu)
+  return m
+}
+
+// Enqueue adds a message to the queue; it copies the slice to avoid aliasing
+func (m *mailbox) Enqueue(b []byte) {
+  if b == nil { return }
+  m.mu.Lock()
+  if m.closed {
+    m.mu.Unlock()
+    return
   }
+  // copy to ensure immutability and avoid accidental reuse of buffers
+  cp := append([]byte(nil), b...)
+  m.q = append(m.q, cp)
+  m.cond.Signal()
+  m.mu.Unlock()
+}
+
+// Dequeue returns the next message; ok=false if closed and drained
+func (m *mailbox) Dequeue() ([]byte, bool) {
+  m.mu.Lock()
+  for len(m.q) == 0 && !m.closed {
+    m.cond.Wait()
+  }
+  if len(m.q) == 0 && m.closed {
+    m.mu.Unlock()
+    return nil, false
+  }
+  msg := m.q[0]
+  // shift
+  copy(m.q[0:], m.q[1:])
+  m.q = m.q[:len(m.q)-1]
+  m.mu.Unlock()
+  return msg, true
+}
+
+// Close marks the mailbox closed and wakes any waiters
+func (m *mailbox) Close() {
+  m.mu.Lock()
+  m.closed = true
+  m.cond.Broadcast()
+  m.mu.Unlock()
 }
 `}
       </Text>

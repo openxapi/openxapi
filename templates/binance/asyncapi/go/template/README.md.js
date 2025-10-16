@@ -24,12 +24,16 @@ export default function ({ asyncapi, params }) {
   const addrOf = (ch) => (ch && ch.address) || '';
   const singleEntry = channelEntries.find(([, ch]) => String(addrOf(ch)).includes('/ws')) || channelEntries[0];
   const combinedEntry = channelEntries.find(([, ch]) => String(addrOf(ch)).includes('/stream')) || channelEntries[1] || channelEntries[0];
+  const userDataEntry = channelEntries.find(([, ch]) => /\{listenKey\}/.test(String(addrOf(ch)))) || null;
   const singleChanKey = singleEntry ? singleEntry[0] : '';
   const combinedChanKey = combinedEntry ? combinedEntry[0] : '';
+  const userDataChanKey = userDataEntry ? userDataEntry[0] : '';
   const singleChanAddr = singleEntry ? addrOf(singleEntry[1]) : '';
   const combinedChanAddr = combinedEntry ? addrOf(combinedEntry[1]) : '';
+  const userDataChanAddr = userDataEntry ? addrOf(userDataEntry[1]) : '';
   const singleChanPascal = toPascalCase(singleChanKey || 'Channel');
   const combinedChanPascal = toPascalCase(combinedChanKey || 'Channel');
+  const userDataChanPascal = toPascalCase(userDataChanKey || 'UserDataStreams');
   // Derive a server URL hint from first server
   const firstServer = Object.values(servers || {})[0] || {};
   const serverHost = firstServer.host || firstServer.url || '';
@@ -62,6 +66,84 @@ export default function ({ asyncapi, params }) {
     return '""';
   }).join(', ');
 
+  // Discover operations to surface an accurate one-shot example (e.g., List Subscriptions)
+  const compNameToStruct = {};
+  try {
+    const compMsgs = (spec && spec.components && spec.components.messages) ? spec.components.messages : {};
+    Object.entries(compMsgs).forEach(([compKey, compMsg]) => {
+      const display = (compMsg && (compMsg.name || compMsg.title)) || compKey;
+      const displayPascal = toPascalCase(display);
+      const structName = toPascalCase(compKey);
+      if (displayPascal) compNameToStruct[displayPascal] = structName;
+    });
+  } catch (e) {}
+
+  const ops = [];
+  try { asyncapi.operations().forEach(op => ops.push(op)); } catch (e) {}
+  function opInfoFor(pred) {
+    try {
+      const op = ops.find(pred);
+      if (!op) return null;
+      const id = (op.id && op.id()) || '';
+      const methodName = toPascalCase(id || 'Send');
+      let addr = '';
+      try {
+        let chan = null;
+        if (typeof op.channel === 'function') chan = op.channel();
+        else if (typeof op.channels === 'function') { const cs = op.channels(); chan = cs && cs[0]; }
+        addr = chan && chan.address ? chan.address() : '';
+      } catch (e) {}
+      let reqStruct = 'interface{}';
+      try {
+        const msgs = op.messages && op.messages();
+        if (msgs && msgs.length) {
+          const m = msgs[0];
+          const nm = m.name ? (m.name() || (m.id && m.id())) : (m.id && m.id());
+          const byDisplay = compNameToStruct[toPascalCase(nm || '')];
+          if (byDisplay) reqStruct = byDisplay;
+        }
+      } catch (e) {}
+      let replyStruct = '';
+      try {
+        const reply = op.reply && op.reply();
+        if (reply && reply.messages) {
+          const rms = reply.messages();
+          if (rms && rms.length) {
+            const rm = rms[0];
+            const rname = rm.name ? (rm.name() || (rm.id && rm.id())) : (rm.id && rm.id());
+            const byDisplay = compNameToStruct[toPascalCase(rname || '')];
+            if (byDisplay) replyStruct = byDisplay;
+          }
+        }
+      } catch (e) {}
+      return { id, methodName, addr, reqStruct, replyStruct };
+    } catch (e) { return null; }
+  }
+  const listSingleOp = opInfoFor(o => {
+    const id = (o.id && o.id()) || '';
+    const idL = id.toLowerCase();
+    let addr = '';
+    try {
+      let chan = null;
+      if (typeof o.channel === 'function') chan = o.channel();
+      else if (typeof o.channels === 'function') { const cs = o.channels(); chan = cs && cs[0]; }
+      addr = chan && chan.address ? chan.address() : '';
+    } catch (e) {}
+    return idL.includes('listsubscriptions') && addr === singleChanAddr;
+  });
+  const listCombinedOp = opInfoFor(o => {
+    const id = (o.id && o.id()) || '';
+    const idL = id.toLowerCase();
+    let addr = '';
+    try {
+      let chan = null;
+      if (typeof o.channel === 'function') chan = o.channel();
+      else if (typeof o.channels === 'function') { const cs = o.channels(); chan = cs && cs[0]; }
+      addr = chan && chan.address ? chan.address() : '';
+    } catch (e) {}
+    return idL.includes('listsubscriptions') && addr === combinedChanAddr;
+  });
+
   return (
     <File name="README.md">
       <Text>
@@ -87,7 +169,7 @@ go get ${moduleName}
 
 ## Quick Start
 
-### 1) Create client and configure server
+### 1) Create client (server preloaded)
 
 \`\`\`go
 import (
@@ -99,26 +181,24 @@ import (
 
 func main() {
   client := ws.NewClient()
+  // Servers from the AsyncAPI spec are added automatically.
+  // The first server is active by default — no setup required.
+  // Optional: override or add another server
+  // _ = client.AddOrUpdateServer("alt", "${serverURLHint}", "Alt Server", "Optional override")
+  // _ = client.SetActiveServer("alt")
 
-  // Add a server and activate it (edit URL as needed)
-  _ = client.AddOrUpdateServer(
-    "mainnet",
-    "${serverURLHint}",
-    "Binance WebSocket Server",
-    "Mainnet WebSocket server",
-  )
-  _ = client.SetActiveServer("mainnet")
   ctx := context.Background()
   // ...
 }
 \`\`\`
 
-### 2) Connect (single stream or combined)
+### 2) Connect (single, combined, user data)
 
 Connect using generated channels (per AsyncAPI channel):
 
-- Single stream: /ws/{streamName}
-- Combined: /stream?streams={streams}
+- Market Streams (single): /ws/{streamName}
+- Combined Market Streams: /stream?streams={streams}
+- User Data Streams: /ws/{listenKey}
 
 \`\`\`go
 // Single stream channel
@@ -140,6 +220,17 @@ comb := ws.New${combinedChanPascal}Channel(client)
 if err := comb.Connect(ctx${combinedArgs ? ', ' : ''}${combinedArgs}); err != nil {
   log.Fatalf("connect combined failed: %v", err)
 }
+\n+// User Data Streams channel (requires listenKey)
+${userDataEntry ? `uds := ws.New${userDataChanPascal}Channel(client)
+// Example handler
+uds.HandleAccountUpdateEvent(func(ctx context.Context, ev *wsmodels.AccountUpdateEvent) error {
+  log.Printf("account update: %+v", ev)
+  return nil
+})
+// Connect with a valid listenKey (from REST userDataStream.start)
+if err := uds.Connect(ctx, "<listenKey>"); err != nil {
+  log.Fatalf("connect user data failed: %v", err)
+}` : `// For user data streams, connect to /ws/{listenKey} on the generated user data channel`}
 \`\`\`
 
 ### 3) Build stream names and subscribe
@@ -169,7 +260,27 @@ if err := client.Subscribe(ctx, streams); err != nil {
 }
 \`\`\`
 
-### 4) Wait and shutdown
+### 4) One-shot request/response (example)
+
+Most control actions use one-shot request/response via an id field. The SDK registers a one-time reply handler by id.
+
+\`\`\`go
+// Build request (method const set automatically by the SDK)
+${(listCombinedOp && listCombinedOp.reqStruct) ? `req := &wsmodels.${listCombinedOp.reqStruct}{ Id: 1 }` : `req := &wsmodels.ListSubscriptionsRequest{ Id: 1 }`}
+
+// Define reply handler
+${(listCombinedOp && listCombinedOp.replyStruct) ? `onReply := func(ctx context.Context, res *wsmodels.${listCombinedOp.replyStruct}) error {` : `onReply := func(ctx context.Context, res *wsmodels.ListSubscriptionsResponse) error {`}
+  log.Printf("active subscriptions: %+v", res.Result)
+  return nil
+}
+
+// Send on combined channel (similar methods exist for single channel)
+${(listCombinedOp && listCombinedOp.methodName) ? `if err := comb.${listCombinedOp.methodName}(ctx, req, &onReply); err != nil {` : `if err := comb.ListSubscriptionsFromCombinedMarketStreams(ctx, req, &onReply); err != nil {`}
+  log.Fatalf("list subscriptions failed: %v", err)
+}
+\`\`\`
+
+### 5) Wait and shutdown
 
 \`\`\`go
 // Block until read loop ends or context cancels
@@ -229,6 +340,19 @@ _ = mps
 - Combined stream wrappers are routed via alias keys; unwrapped events are dispatched by event type.
 - RegisterHandlers replaces the handler map for a channel key (subsequent calls overwrite the previous map for that channel).
 
+## Performance & Dispatch
+
+- Incoming frames are read on a dedicated loop and dispatched asynchronously to a worker pool.
+- Slow user handlers do not block \`ReadMessage()\`; an unbounded in-memory queue buffers messages between the reader and workers.
+- Defaults: workers = \`runtime.NumCPU()\`. Messages are never dropped.
+- Customize workers via \`NewClientWithOptions(&ws.ClientOptions{ HandlerWorkers: N })\`.
+
+\`\`\`go
+client := ws.NewClientWithOptions(&ws.ClientOptions{
+  HandlerWorkers: 8,
+})
+\`\`\`
+
 ## Server Management
 
 The client carries a \`ServerManager\` to manage endpoints:
@@ -257,7 +381,9 @@ Below are selected patterns/examples/speeds from this spec. Use them with the ge
 ## Notes
 
 - For combined connections, connect without \`streams\` and use \`SUBSCRIBE\`/\`UNSUBSCRIBE\` to manage streams.
+- User Data Streams use a dedicated connection (\`/ws/{listenKey}\`) and are not mixed into combined market streams.
 - The SDK normalizes empty query parameters for connect paths (avoids "/stream?streams=").
+- Servers from the spec are preloaded and first is active; override only if needed.
 - Handlers should be registered before connect to avoid missing early messages.
 
 ## License
