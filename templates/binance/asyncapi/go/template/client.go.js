@@ -250,6 +250,26 @@ ${(() => {
       }
       c.handlersMu.RUnlock()
       for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
+      // If this error correlates to a request id, clear the pending one-shot handler
+      if rawID, ok := envelope["id"]; ok && len(rawID) > 0 {
+        dec := json.NewDecoder(bytes.NewReader(rawID))
+        dec.UseNumber()
+        var idVal interface{}
+        if err := dec.Decode(&idVal); err == nil {
+          var idStr string
+          switch v := idVal.(type) {
+          case json.Number:
+            idStr = v.String()
+          case string:
+            idStr = v
+          default:
+            idStr = fmt.Sprintf("%v", v)
+          }
+          if _, ok := c.pendingByID.Load(idStr); ok {
+            c.pendingByID.Delete(idStr)
+          }
+        }
+      }
     }`;
 })()}
     // Combined wrapper handlers first (spec-driven)
@@ -286,24 +306,11 @@ ${(() => {
     }`;
   }).join("\n");
 })()}
-    // Event-type and error dispatch with array/object shape detection
+    // Event-type dispatch with array/object shape detection
     // 1) Try object payload
     var typ map[string]interface{}
     if err := json.Unmarshal(payload, &typ); err == nil {
-${(() => {
-  if (!hasErrorModel) return '';
-  const ek = String(errorAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `      // Object payload: check for error payload (spec-declared)
-      if _, hasErr := typ[\"error\"]; hasErr {
-        c.handlersMu.RLock()
-        var callList []func(context.Context, []byte) error
-        for _, hm := range c.handlers {
-          if h, ok := hm[\"${ek}\"]; ok && h != nil { callList = append(callList, h) }
-        }
-        c.handlersMu.RUnlock()
-        for _, h := range callList { if err := h(ctx, payload); err == nil { dispatched = true } }
-      }`;
-})()}
+${(() => { return ''; })()}
       if ev, ok := typ["e"].(string); ok && ev != "" {
         key := "evt:" + ev
         c.handlersMu.RLock()
@@ -320,20 +327,7 @@ ${(() => {
       if err2 := json.Unmarshal(payload, &arr); err2 == nil && len(arr) > 0 {
         var first map[string]interface{}
         if err3 := json.Unmarshal(arr[0], &first); err3 == nil {
-${(() => {
-  if (!hasErrorModel) return '';
-  const ek = String(errorAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-  return `          // Array payload first element: also check for error object (rare, but safe)
-          if _, hasErr := first[\"error\"]; hasErr {
-            c.handlersMu.RLock()
-            var callList []func(context.Context, []byte) error
-            for _, hm := range c.handlers {
-              if h, ok := hm[\"${ek}\"]; ok && h != nil { callList = append(callList, h) }
-            }
-            c.handlersMu.RUnlock()
-            for _, h := range callList { if err := h(ctx, payload); err == nil { dispatched = true } }
-          }`;
-})()}
+${(() => { return ''; })()}
           if ev, ok := first["e"].(string); ok && ev != "" {
             key := "evt:" + ev + ":array"
             c.handlersMu.RLock()
