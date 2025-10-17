@@ -229,18 +229,18 @@ channels:
           - XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
           - pqia91ma19a5s61cv6a81va65sdf19v8a65a1a5s61cv6a81va65sdf19v8a65a1
     messages:
-      userDataStreamStartRequest:
-        $ref: '#/components/messages/userDataStreamStartRequest'
-      userDataStreamStartResponse:
-        $ref: '#/components/messages/userDataStreamStartResponse'
-      userDataStreamPingRequest:
-        $ref: '#/components/messages/userDataStreamPingRequest'
-      userDataStreamPingResponse:
-        $ref: '#/components/messages/userDataStreamPingResponse'
-      userDataStreamStopRequest:
-        $ref: '#/components/messages/userDataStreamStopRequest'
-      userDataStreamStopResponse:
-        $ref: '#/components/messages/userDataStreamStopResponse'
+      userDataStreamsStartRequest:
+        $ref: '#/components/messages/userDataStreamsStartRequest'
+      userDataStreamsStartResponse:
+        $ref: '#/components/messages/userDataStreamsStartResponse'
+      userDataStreamsPingRequest:
+        $ref: '#/components/messages/userDataStreamsPingRequest'
+      userDataStreamsPingResponse:
+        $ref: '#/components/messages/userDataStreamsPingResponse'
+      userDataStreamsStopRequest:
+        $ref: '#/components/messages/userDataStreamsStopRequest'
+      userDataStreamsStopResponse:
+        $ref: '#/components/messages/userDataStreamsStopResponse'
       listenKeyExpiredEvent:
         $ref: '#/components/messages/listenKeyExpiredEvent'
       accountUpdateEvent:
@@ -259,6 +259,8 @@ channels:
         $ref: '#/components/messages/gridUpdateEvent'
       conditionalOrderTriggerRejectEvent:
         $ref: '#/components/messages/conditionalOrderTriggerRejectEvent'
+      error:
+        $ref: '#/components/messages/errorMessage'
 
 operations:
   # Single market stream operations
@@ -485,12 +487,12 @@ operations:
     channel:
       $ref: '#/channels/userDataStreams'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/userDataStreamStartRequest'
+      - $ref: '#/channels/userDataStreams/messages/userDataStreamsStartRequest'
     reply:
       channel:
         $ref: '#/channels/userDataStreams'
       messages:
-        - $ref: '#/channels/userDataStreams/messages/userDataStreamStartResponse'
+        - $ref: '#/channels/userDataStreams/messages/userDataStreamsStartResponse'
 
   userDataStreamsPing:
     title: Keepalive User Data Stream
@@ -500,12 +502,12 @@ operations:
     channel:
       $ref: '#/channels/userDataStreams'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/userDataStreamPingRequest'
+      - $ref: '#/channels/userDataStreams/messages/userDataStreamsPingRequest'
     reply:
       channel:
         $ref: '#/channels/userDataStreams'
       messages:
-        - $ref: '#/channels/userDataStreams/messages/userDataStreamPingResponse'
+        - $ref: '#/channels/userDataStreams/messages/userDataStreamsPingResponse'
 
   userDataStreamsStop:
     title: Close User Data Stream
@@ -515,12 +517,12 @@ operations:
     channel:
       $ref: '#/channels/userDataStreams'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/userDataStreamStopRequest'
+      - $ref: '#/channels/userDataStreams/messages/userDataStreamsStopRequest'
     reply:
       channel:
         $ref: '#/channels/userDataStreams'
       messages:
-        - $ref: '#/channels/userDataStreams/messages/userDataStreamStopResponse'
+        - $ref: '#/channels/userDataStreams/messages/userDataStreamsStopResponse'
 
   # User data stream operations
   UserDataStreamsReceiveEvents:
@@ -768,258 +770,68 @@ components:
         $ref: '#/components/schemas/ConditionalOrderTriggerRejectEvent'
 
     # User data stream control messages
-    userDataStreamStartRequest:
+    userDataStreamsStartRequest:
       name: Start User Data Stream (USER_STREAM) Request
       title: Start User Data Stream (USER_STREAM) Request
       summary: Send a userDataStream.start request
       contentType: application/json
       payload:
-        type: object
-        description: request schema
-        properties:
-          id:
-            type: string
-            description: id property
-            example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
-          method:
-            type: string
-            description: method property
-            example: userDataStream.start
-            enum:
-              - userDataStream.start
-          params:
-            type: object
-            description: params property
-            properties:
-              apiKey:
-                type: string
-                description: apiKey property
-                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+        $ref: '#/components/schemas/userDataStreamsStartRequest'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamStartResponse:
+    userDataStreamsStartResponse:
       name: Start User Data Stream (USER_STREAM) Response
       title: Start User Data Stream (USER_STREAM) Response
       summary: Receive response from userDataStream.start
       contentType: application/json
       payload:
-        type: object
-        description: response schema
-        properties:
-          id:
-            type: string
-            description: id property
-            example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
-          rateLimits:
-            type: array
-            description: rateLimits property
-            items:
-              type: object
-              description: array item
-              properties:
-                count:
-                  type: integer
-                  description: count property
-                  example: 2
-                interval:
-                  type: string
-                  description: interval property
-                  example: MINUTE
-                intervalNum:
-                  type: integer
-                  description: intervalNum property
-                  example: 1
-                limit:
-                  type: integer
-                  description: limit property
-                  example: 2400
-                rateLimitType:
-                  type: string
-                  description: rateLimitType property
-                  example: REQUEST_WEIGHT
-          result:
-            type: object
-            description: result property
-            properties:
-              listenKey:
-                type: string
-                description: listenKey property
-                example: xs0mRXdAKlIPDRFrlPcw0qI41Eh3ixNntmymGyhrhgqo7L6FuLaWArTD7RLP
-          status:
-            type: integer
-            description: status property
-            example: 200
+        $ref: '#/components/schemas/userDataStreamsStartResponse'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamPingRequest:
+    userDataStreamsPingRequest:
       name: Keepalive User Data Stream (USER_STREAM) Request
       title: Keepalive User Data Stream (USER_STREAM) Request
       summary: Send a userDataStream.ping request
       contentType: application/json
       payload:
-        type: object
-        description: request schema
-        properties:
-          id:
-            type: string
-            description: id property
-            example: 815d5fce-0880-4287-a567-80badf004c74
-          method:
-            type: string
-            description: method property
-            example: userDataStream.ping
-            enum:
-              - userDataStream.ping
-          params:
-            type: object
-            description: params property
-            properties:
-              apiKey:
-                type: string
-                description: apiKey property
-                example: vmPUZE6mv9SD5VNHk9HlWFsOr9aLE2zvsw0MuIgwCIPy8atIco14y7Ju91duEh8A
+        $ref: '#/components/schemas/userDataStreamsPingRequest'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamPingResponse:
+    userDataStreamsPingResponse:
       name: Keepalive User Data Stream (USER_STREAM) Response
       title: Keepalive User Data Stream (USER_STREAM) Response
       summary: Receive response from userDataStream.ping
       contentType: application/json
       payload:
-        type: object
-        description: response schema
-        properties:
-          id:
-            type: string
-            description: id property
-            example: 815d5fce-0880-4287-a567-80badf004c74
-          rateLimits:
-            type: array
-            description: rateLimits property
-            items:
-              type: object
-              description: array item
-              properties:
-                count:
-                  type: integer
-                  description: count property
-                  example: 2
-                interval:
-                  type: string
-                  description: interval property
-                  example: MINUTE
-                intervalNum:
-                  type: integer
-                  description: intervalNum property
-                  example: 1
-                limit:
-                  type: integer
-                  description: limit property
-                  example: 2400
-                rateLimitType:
-                  type: string
-                  description: rateLimitType property
-                  example: REQUEST_WEIGHT
-          result:
-            type: object
-            description: result property
-            properties:
-              listenKey:
-                type: string
-                description: listenKey property
-                example: 3HBntNTepshgEdjIwSUIBgB9keLyOCg5qv3n6bYAtktG8ejcaW5HXz9Vx1JgIieg
-          status:
-            type: integer
-            description: status property
-            example: 200
+        $ref: '#/components/schemas/userDataStreamsPingResponse'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamStopRequest:
+    userDataStreamsStopRequest:
       name: Close User Data Stream (USER_STREAM) Request
       title: Close User Data Stream (USER_STREAM) Request
       summary: Send a userDataStream.stop request
       contentType: application/json
       payload:
-        type: object
-        description: request schema
-        properties:
-          id:
-            type: string
-            description: id property
-            example: 819e1b1b-8c06-485b-a13e-131326c69599
-          method:
-            type: string
-            description: method property
-            example: userDataStream.stop
-            enum:
-              - userDataStream.stop
-          params:
-            type: object
-            description: params property
-            properties:
-              apiKey:
-                type: string
-                description: apiKey property
-                example: vmPUZE6mv9SD5VNHk9HlWFsOr9aLE2zvsw0MuIgwCIPy8atIco14y7Ju91duEh8A
+        $ref: '#/components/schemas/userDataStreamsStopRequest'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamStopResponse:
+    userDataStreamsStopResponse:
       name: Close User Data Stream (USER_STREAM) Response
       title: Close User Data Stream (USER_STREAM) Response
       summary: Receive response from userDataStream.stop
       contentType: application/json
       payload:
-        type: object
-        description: response schema
-        properties:
-          id:
-            type: string
-            description: id property
-            example: 819e1b1b-8c06-485b-a13e-131326c69599
-          rateLimits:
-            type: array
-            description: rateLimits property
-            items:
-              type: object
-              description: array item
-              properties:
-                count:
-                  type: integer
-                  description: count property
-                  example: 2
-                interval:
-                  type: string
-                  description: interval property
-                  example: MINUTE
-                intervalNum:
-                  type: integer
-                  description: intervalNum property
-                  example: 1
-                limit:
-                  type: integer
-                  description: limit property
-                  example: 2400
-                rateLimitType:
-                  type: string
-                  description: rateLimitType property
-                  example: REQUEST_WEIGHT
-          result:
-            type: object
-            description: result property
-          status:
-            type: integer
-            description: status property
-            example: 200
+        $ref: '#/components/schemas/userDataStreamsStopResponse'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
@@ -2843,7 +2655,7 @@ components:
                   type: string
                   description: Order Type
                   example: TRAILING_STOP_MARKET
-                  enum: [LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET]
+                  enum: [LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET, LIQUIDATION]
                 f:
                   type: string
                   description: Time in Force
@@ -2869,12 +2681,12 @@ components:
                   type: string
                   description: Execution Type
                   example: NEW
-                  enum: [NEW, CANCELED, CALCULATED, EXPIRED, TRADE]
+                  enum: [NEW, CANCELED, CALCULATED, EXPIRED, TRADE, AMENDMENT]
                 X:
                   type: string
                   description: Order Status
                   example: NEW
-                  enum: [NEW, PARTIALLY_FILLED, FILLED, CANCELED, EXPIRED, NEW_INSURANCE, NEW_ADL]
+                  enum: [NEW, PARTIALLY_FILLED, FILLED, CANCELED, EXPIRED, EXPIRED_IN_MATCH]
                 i:
                   type: integer
                   format: int64
@@ -2966,6 +2778,10 @@ components:
                   format: int64
                   description: Ignore
                   example: 0
+                rp:
+                  type: string
+                  description: Realized Profit
+                  example: "0"
                 V:
                   type: string
                   description: STP mode
@@ -3007,104 +2823,45 @@ components:
               type: string
               description: Symbol
               example: BTCUSDT
-            r:
+            q:
               type: string
-              description: Trade match ID (Same trade match ID will result in the same r value)
-              example: ead72a2e-30e1-44d4-8c2a-f156373b60ea
-            mq:
-              type: string
-              description: Transacted Quantity
+              description: Original Quantity
               example: "0.001"
-            mp:
+            p:
               type: string
-              description: Transaction Price
-              example: "71500"
-            Tt:
+              description: Original Price
+              example: "30000.00"
+            m:
+              type: boolean
+              description: Maker side
+              example: false
+            c:
               type: string
-              description: Transaction Time Type. Possible values are MAKER and TAKER
-              example: MAKER
-              enum: [TAKER, MAKER]
-            b:
+              description: Client Order Id
+              example: "1234567890"
+            S:
               type: string
-              description: Buyer order id
-              example: "168759951952"
-            a:
+              description: Side
+              example: BUY
+              enum: [BUY, SELL]
+            L:
               type: string
-              description: Seller order id
-              example: "168759951882"
-            bt:
+              description: Last Filled Price
+              example: "30000.00"
+            l:
               type: string
-              description: Buyer Trade ID
-              example: "164694779847"
-            at:
-              type: string
-              description: Seller Trade ID
-              example: "164694779855"
-            cr:
-              type: string
-              description: Self trade prevent contract
-              example: "EXPIRE_MAKER"
-              enum: [NONE, EXPIRE_TAKER, EXPIRE_MAKER, EXPIRE_BOTH]
-            G:
-              type: string
-              description: Strategy ID
-              example: "0"
-            Vc:
-              type: string
-              description: Trade role (if present). Possible values are MAKER_REDUCE, MAKER_OPEN, TAKER_REDUCE, TAKER_OPEN
-              example: MAKER_OPEN
-              enum: [MAKER_OPEN, MAKER_REDUCE, TAKER_OPEN, TAKER_REDUCE]
-            rp:
-              type: string
-              description: Realized PnL
-              example: "-0.79153"
-            rpP:
-              type: string
-              description: Realized overall PnL of the strategy. The value is null if cannot be calculated
-              example: "-90.16"
-            lp:
-              type: string
-              description: Price of liquidation
-              example: "66827.22"
-            bfr:
-              type: string
-              description: Binance Funding Rate
-              example: "0.00010000"
-            ifr:
-              type: string
-              description: Index Funding Rate
-              example: "0.00010"
-            tc:
-              type: string
-              description: Trade Cost
-              example: "43.41982"
-            tcap:
-              type: string
-              description: Trade Cost After PnL
-              example: "42.62829"
-            tcm:
-              type: string
-              description: Trade Cost Multiple. 0: No cost, 1: Positive cost, -1: Negative cost
-              example: "1"
-              enum: [0, 1, -1]
-            M:
-              type: string
-              description: STP mode
-              example: NONE
-              enum: [NONE, EXPIRE_TAKER, EXPIRE_MAKER, EXPIRE_BOTH]
-            pm:
-              type: string
-              description: Price match mode
-              example: NONE
-              enum: [NONE, OPPONENT, OPPONENT_5, OPPONENT_10, OPPONENT_20, QUEUE, QUEUE_5, QUEUE_10, QUEUE_20]
-            R:
-              type: string
-              description: Reduce only
-              example: "false"
-            rpG:
-              type: string
-              description: Realized PnL group. The value is null if cannot be calculated
-              example: "-50.16"
+              description: Order Last Filled Quantity
+              example: "0.001"
+            t:
+              type: integer
+              format: int64
+              description: Trade ID
+              example: 987654321
+            i:
+              type: integer
+              format: int64
+              description: Order ID
+              example: 123456789
 
     AccountConfigUpdateEvent:
       type: object
@@ -3139,74 +2896,14 @@ components:
                   type: integer
                   description: Leverage
                   example: 20
-                bc:
-                  type: string
-                  description: Bracket
-                  example: "1"
-                ms:
-                  type: string
-                  description: Margin Type Auto Switch Status. 0: not in auto-switch mode, 1: switched from crossed to isolated, 2: switched from isolated to crossed
-                  example: "0"
-                mt:
-                  type: string
-                  description: Margin Type. 1: Crossed, 2: Isolated
-                  example: "1"
-                pc:
-                  type: string
-                  description: Pair Classification. 0: None, 1: Customized, 2: Quoted
-                  example: "0"
-                ro:
-                  type: string
-                  description: Is reduce only. true: Reduce only, false: Not reduce only
-                  example: "false"
-                mcb:
-                  type: string
-                  description: Multi Assets Margin Bonus
-                  example: "0.00000000"
-                gbm:
-                  type: string
-                  description: Single Mode Grid Buying
-                  example: "10.00000000"
-                tmm:
-                  type: string
-                  description: Single Mode Trade Multiplier
-                  example: "0.010000"
-                ebl:
-                  type: string
-                  description: Self Match Protect exception implied by boss
-                  example: "1"
-                rgl:
-                  type: string
-                  description: Strategy Aptitude Level
-                  example: "0"
-                ems:
-                  type: string
-                  description: Strategy Effective Max Strategies
-                  example: "0"
-                cr:
-                  type: string
-                  description: Credit Return
-                  example: "0.100000"
-                mpp:
-                  type: string
-                  description: Maintenance Margin in Production
-                  example: "-1"
-                gtr:
-                  type: string
-                  description: Rollover GR
-                  example: "164.19877444"
-                tlm:
-                  type: string
-                  description: Total Liquidation Margin which implies Option PnL
-                  example: "-6.17497283"
-                mcv:
-                  type: string
-                  description: Money Collecting Value
-                  example: "14.45811120"
-                mp:
-                  type: string
-                  description: Additional properties
-                  example: "additional_data"
+            ai:
+              type: object
+              description: Account Configuration Update
+              properties:
+                j:
+                  type: boolean
+                  description: Multi-Assets Mode
+                  example: true
 
     StrategyUpdateEvent:
       type: object
@@ -3255,7 +2952,7 @@ components:
                   type: integer
                   description: Operation Code
                   example: 1
-                t:
+                ut:
                   type: integer
                   format: int64
                   description: Update Time (milliseconds)
@@ -3324,6 +3021,11 @@ components:
                   type: string
                   description: Additional properties
                   example: "additional_data"
+                ut:
+                  type: integer
+                  format: int64
+                  description: Update Time (milliseconds)
+                  example: 1669693493658
 
     ConditionalOrderTriggerRejectEvent:
       type: object
@@ -3363,3 +3065,212 @@ components:
                   type: string
                   description: Reject Reason
                   example: PRICE_MATCH_FAILED
+
+    # User data stream control schemas
+    userDataStreamsStartRequest:
+      type: object
+      description: request schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
+        method:
+          type: string
+          description: method property
+          example: userDataStream.start
+          enum:
+            - userDataStream.start
+        params:
+          type: object
+          description: params property
+          properties:
+            apiKey:
+              type: string
+              description: apiKey property
+              example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+
+    userDataStreamsStartResponse:
+      type: object
+      description: response schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
+        rateLimits:
+          type: array
+          description: rateLimits property
+          items:
+            type: object
+            description: array item
+            properties:
+              count:
+                type: integer
+                description: count property
+                example: 2
+              interval:
+                type: string
+                description: interval property
+                example: MINUTE
+              intervalNum:
+                type: integer
+                description: intervalNum property
+                example: 1
+              limit:
+                type: integer
+                description: limit property
+                example: 2400
+              rateLimitType:
+                type: string
+                description: rateLimitType property
+                example: REQUEST_WEIGHT
+        result:
+          type: object
+          description: result property
+          properties:
+            listenKey:
+              type: string
+              description: listenKey property
+              example: xs0mRXdAKlIPDRFrlPcw0qI41Eh3ixNntmymGyhrhgqo7L6FuLaWArTD7RLP
+        status:
+          type: integer
+          description: status property
+          example: 200
+
+    userDataStreamsPingRequest:
+      type: object
+      description: request schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: 815d5fce-0880-4287-a567-80badf004c74
+        method:
+          type: string
+          description: method property
+          example: userDataStream.ping
+          enum:
+            - userDataStream.ping
+        params:
+          type: object
+          description: params property
+          properties:
+            apiKey:
+              type: string
+              description: apiKey property
+              example: vmPUZE6mv9SD5VNHk9HlWFsOr9aLE2zvsw0MuIgwCIPy8atIco14y7Ju91duEh8A
+
+    userDataStreamsPingResponse:
+      type: object
+      description: response schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: 815d5fce-0880-4287-a567-80badf004c74
+        rateLimits:
+          type: array
+          description: rateLimits property
+          items:
+            type: object
+            description: array item
+            properties:
+              count:
+                type: integer
+                description: count property
+                example: 2
+              interval:
+                type: string
+                description: interval property
+                example: MINUTE
+              intervalNum:
+                type: integer
+                description: intervalNum property
+                example: 1
+              limit:
+                type: integer
+                description: limit property
+                example: 2400
+              rateLimitType:
+                type: string
+                description: rateLimitType property
+                example: REQUEST_WEIGHT
+        result:
+          type: object
+          description: result property
+          properties:
+            listenKey:
+              type: string
+              description: listenKey property
+              example: 3HBntNTepshgEdjIwSUIBgB9keLyOCg5qv3n6bYAtktG8ejcaW5HXz9Vx1JgIieg
+        status:
+          type: integer
+          description: status property
+          example: 200
+
+    userDataStreamsStopRequest:
+      type: object
+      description: request schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: 819e1b1b-8c06-485b-a13e-131326c69599
+        method:
+          type: string
+          description: method property
+          example: userDataStream.stop
+          enum:
+            - userDataStream.stop
+        params:
+          type: object
+          description: params property
+          properties:
+            apiKey:
+              type: string
+              description: apiKey property
+              example: vmPUZE6mv9SD5VNHk9HlWFsOr9aLE2zvsw0MuIgwCIPy8atIco14y7Ju91duEh8A
+
+    userDataStreamsStopResponse:
+      type: object
+      description: response schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: 819e1b1b-8c06-485b-a13e-131326c69599
+        rateLimits:
+          type: array
+          description: rateLimits property
+          items:
+            type: object
+            description: array item
+            properties:
+              count:
+                type: integer
+                description: count property
+                example: 2
+              interval:
+                type: string
+                description: interval property
+                example: MINUTE
+              intervalNum:
+                type: integer
+                description: intervalNum property
+                example: 1
+              limit:
+                type: integer
+                description: limit property
+                example: 2400
+              rateLimitType:
+                type: string
+                description: rateLimitType property
+                example: REQUEST_WEIGHT
+        result:
+          type: object
+          description: result property
+        status:
+          type: integer
+          description: status property
+          example: 200
