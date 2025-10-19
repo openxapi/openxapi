@@ -515,12 +515,17 @@ export default function ({ asyncapi, params }) {
         if (msgs && msgs.length) {
           msgs.forEach(m => {
             const mName = m.name ? (m.name() || m.id && m.id()) : (m.id && m.id());
-            const handlerName = toPascalCase(mName || 'Message');
             const displayPascal = toPascalCase(mName || '');
             const byDisplay = compNameToStruct[displayPascal];
-            const byKey = chanMsgKeyToStruct[handlerName];
+            // Try to resolve by the channel message key as PascalCase (preserves 'Event' suffix from spec keys)
+            // Fall back to display name mapping when necessary
+            // Note: handler name should align with model struct when available (e.g., AggregateTradeEvent)
+            let tempKey = displayPascal; // legacy key attempt
+            const byKey = chanMsgKeyToStruct[tempKey];
             const resolvedStruct = byKey || byDisplay;
             const modelType = resolvedStruct ? `models.${resolvedStruct}` : `models.${toPascalCase(channelPascal + (mName || 'Message'))}`;
+            // Prefer struct name for handler naming to keep 'Event' suffix (consistent across modules)
+            const handlerName = resolvedStruct || toPascalCase(mName || 'Message');
             // Pre-compute alias keys for client-side routing
             // Prefer spec-driven flags over name-based heuristics
             let isCombinedWrapperFlag = false;
@@ -571,6 +576,10 @@ export default function ({ asyncapi, params }) {
                 const props0 = ps0 && ps0.properties;
                 if (props0 && Object.prototype.hasOwnProperty.call(props0, 'error')) isErrorMessageFlag = true;
                 if (!expectedEventTypeAlias && props0 && props0.e && props0.e.const) expectedEventTypeAlias = props0.e.const;
+                // Also support nested event.e.const in payload
+                if (!expectedEventTypeAlias && props0 && props0.event && props0.event.properties && props0.event.properties.e && props0.event.properties.e.const) {
+                  expectedEventTypeAlias = props0.event.properties.e.const;
+                }
               }
             } catch (e) {}
             // Compute pre-check for event dispatch
@@ -603,7 +612,7 @@ export default function ({ asyncapi, params }) {
                 const edk = dataKey.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"${esk}\"]; !ok { return fmt.Errorf(\"not combined wrapper\") }\n\t\tif _, ok := probe[\"${edk}\"]; !ok { return fmt.Errorf(\"not combined wrapper\") }\n`;
               } else {
-                // Try to grab event type from x-event-type or payload e.const
+                // Try to grab event type from x-event-type or payload e.const (including nested event.e)
                 let expectedEventType = '';
                 if (mj && mj['x-event-type']) expectedEventType = mj['x-event-type'];
                 let ps = mj && mj.payload;
@@ -614,6 +623,10 @@ export default function ({ asyncapi, params }) {
                   }
                   const props = ps && ps.properties;
                   if (props && props.e && props.e.const) expectedEventType = props.e.const;
+                  // Also consider nested event.e.const
+                  if (!expectedEventType && props && props.event && props.event.properties && props.event.properties.e && props.event.properties.e.const) {
+                    expectedEventType = props.event.properties.e.const;
+                  }
                 }
                 // Error message pre-check takes priority over event checks
                 if (isErrorMessageFlag) {
@@ -622,17 +635,17 @@ export default function ({ asyncapi, params }) {
                   // Array payload: inspect first element's event type
                   if (expectedEventType) {
                     const esc = String(expectedEventType).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                    preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(arr[0], &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+                    preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(arr[0], &typ); err != nil { return err }\n\t\tvar ev string\n\t\tif v, ok := typ[\"e\"].(string); ok { ev = v } else if evobj, ok := typ[\"event\"].(map[string]interface{}); ok { if vv, ok2 := evobj[\"e\"].(string); ok2 { ev = vv } }\n\t\tif ev != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
                   } else {
                     preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n`;
                   }
                 } else {
                   if (expectedEventType) {
                     const esc = String(expectedEventType).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                    preCheck = `\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(b, &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+                    preCheck = `\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(b, &typ); err != nil { return err }\n\t\tvar ev string\n\t\tif v, ok := typ[\"e\"].(string); ok { ev = v } else if evobj, ok := typ[\"event\"].(map[string]interface{}); ok { if vv, ok2 := evobj[\"e\"].(string); ok2 { ev = vv } }\n\t\tif ev != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
                   } else {
-                    // generic event presence check: has 'e'
-                    preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"e\"]; !ok { return fmt.Errorf(\"missing event type\") }\n`;
+                    // generic event presence check: has top-level 'e' or nested 'event.e'
+                    preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"e\"]; !ok {\n\t\t\tvar nested map[string]json.RawMessage\n\t\t\tif raw, ok2 := probe[\"event\"]; !ok2 { return fmt.Errorf(\"missing event type\") } else {\n\t\t\t\tif err := json.Unmarshal(raw, &nested); err != nil { return err }\n\t\t\t\tif _, ok3 := nested[\"e\"]; !ok3 { return fmt.Errorf(\"missing event type\") }\n\t\t\t}\n\t\t}\n`;
                   }
                 }
               }
@@ -752,8 +765,9 @@ export default function ({ asyncapi, params }) {
             const compMsg = root && root.components && root.components.messages && root.components.messages[msgKey];
             if (!compMsg) return;
             const msgName = compMsg.name || msgKey;
-            const handlerName = toPascalCase(msgName || 'Message');
+            // Use struct/schema key to preserve 'Event' suffix in handler naming
             const structName = toPascalCase(msgKey);
+            const handlerName = structName;
             const modelType = `models.${structName}`;
             // Determine expected event type alias from message metadata or payload schema
             let expectedEventTypeAlias = '';
@@ -778,6 +792,10 @@ export default function ({ asyncapi, params }) {
               const props0 = ps0 && ps0.properties;
               if (props0 && Object.prototype.hasOwnProperty.call(props0, 'error')) isErrorMessageFlag = true;
               if (!expectedEventTypeAlias && props0 && props0.e && props0.e.const) expectedEventTypeAlias = props0.e.const;
+              // Also support nested event.e.const in payload
+              if (!expectedEventTypeAlias && props0 && props0.event && props0.event.properties && props0.event.properties.e && props0.event.properties.e.const) {
+                expectedEventTypeAlias = props0.event.properties.e.const;
+              }
             } catch (e) {}
             // Pre-check
             let preCheck = '';
@@ -787,16 +805,16 @@ export default function ({ asyncapi, params }) {
             } else if (isArrayFormat) {
               if (expectedEventTypeAlias) {
                 const esc = String(expectedEventTypeAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(arr[0], &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+                preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(arr[0], &typ); err != nil { return err }\n\t\tvar ev string\n\t\tif v, ok := typ[\"e\"].(string); ok { ev = v } else if evobj, ok := typ[\"event\"].(map[string]interface{}); ok { if vv, ok2 := evobj[\"e\"].(string); ok2 { ev = vv } }\n\t\tif ev != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
               } else {
                 preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n`;
               }
             } else {
               if (expectedEventTypeAlias) {
                 const esc = String(expectedEventTypeAlias).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
-                preCheck = `\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(b, &typ); err != nil { return err }\n\t\tif v, ok := typ[\"e\"].(string); !ok || v != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+                preCheck = `\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(b, &typ); err != nil { return err }\n\t\tvar ev string\n\t\tif v, ok := typ[\"e\"].(string); ok { ev = v } else if evobj, ok := typ[\"event\"].(map[string]interface{}); ok { if vv, ok2 := evobj[\"e\"].(string); ok2 { ev = vv } }\n\t\tif ev != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
               } else {
-                preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"e\"]; !ok { return fmt.Errorf(\"missing event type\") }\n`;
+                preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"e\"]; !ok {\n\t\t\tvar nested map[string]json.RawMessage\n\t\t\tif raw, ok2 := probe[\"event\"]; !ok2 { return fmt.Errorf(\"missing event type\") } else {\n\t\t\t\tif err := json.Unmarshal(raw, &nested); err != nil { return err }\n\t\t\t\tif _, ok3 := nested[\"e\"]; !ok3 { return fmt.Errorf(\"missing event type\") }\n\t\t\t}\n\t\t}\n`;
               }
             }
             if (!emittedHandlerNames.has(handlerName)) {

@@ -383,11 +383,11 @@ function spotStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
 // USD-M Futures Streams module generators (market data streams, no authentication)
 function umfuturesStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
   try {
-    // Use dedicated UmfuturesStreamsWebSocketHandlers for dynamic event type handling
-    return UmfuturesStreamsWebSocketHandlers({ asyncapi });
+    // Switch to generic, spec-driven streams handler for consistent naming (Handle{EventName}Event)
+    return GenericStreamsWebSocketHandlers({ asyncapi });
   } catch (error) {
-    console.warn('Could not load UmfuturesStreamsWebSocketHandlers for umfutures-streams:', error.message);
-    return '// UmfuturesStreamsWebSocketHandlers component not available for umfutures-streams\n';
+    console.warn('Could not load GenericStreamsWebSocketHandlers for umfutures-streams:', error.message);
+    return '// GenericStreamsWebSocketHandlers component not available for umfutures-streams\n';
   }
 }
 
