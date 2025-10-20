@@ -250,7 +250,31 @@ export default function ({ asyncapi, params }) {
     // Generate send operation methods
     sendOps.forEach(op => {
       const opId = op.id ? op.id() : '';
-      const opName = toPascalCase(opId || 'Send');
+      // Prefer x-extension override for channel method name when present.
+      // Check root.operations[opId] first, then components.operations[opId], then op.json().
+      let opJsonMeta = {};
+      try {
+        if (root && root.operations && Object.prototype.hasOwnProperty.call(root.operations, opId)) {
+          opJsonMeta = root.operations[opId] || {};
+        } else if (root && root.components && root.components.operations && Object.prototype.hasOwnProperty.call(root.components.operations, opId)) {
+          opJsonMeta = root.components.operations[opId] || {};
+        } else if (typeof op.json === 'function') {
+          opJsonMeta = op.json() || {};
+        }
+      } catch (e) { /* ignore */ }
+      const methodOverride = (() => {
+        try {
+          if (!opJsonMeta || typeof opJsonMeta !== 'object') return '';
+          const keys = ['x-channel-method', 'x-method-name', 'x-go-method'];
+          for (const k of keys) {
+            const v = opJsonMeta[k];
+            if (typeof v === 'string' && v.trim()) return v.trim();
+          }
+        } catch (e) {}
+        return '';
+      })();
+      const methodBase = methodOverride || opId || 'Send';
+      const methodName = toPascalCase(methodBase);
       // Extract first request message payload type name
       let reqModelName = 'interface{}';
       // Collect top-level const assignments from the request payload schema
@@ -417,10 +441,10 @@ export default function ({ asyncapi, params }) {
         }
       } catch (e) {}
 
-      content += `// ${opName} sends a message for operation '${opId}' on ${nameSource}\n`;
+      content += `// ${methodName} sends a message for operation '${opId}' on ${nameSource}\n`;
       content += replyModelType
-        ? `func (ch *${channelPascal}Channel) ${opName}(ctx context.Context, req *${reqModelName}, handler *func(context.Context, *${replyModelType}) error) error {\n`
-        : `func (ch *${channelPascal}Channel) ${opName}(ctx context.Context, req *${reqModelName}) error {\n`;
+        ? `func (ch *${channelPascal}Channel) ${methodName}(ctx context.Context, req *${reqModelName}, handler *func(context.Context, *${replyModelType}) error) error {\n`
+        : `func (ch *${channelPascal}Channel) ${methodName}(ctx context.Context, req *${reqModelName}) error {\n`;
       // function signature already emitted above based on replyModelType
       content += `\tch.client.connMu.RLock()\n`;
       content += `\tconn := ch.client.conn\n`;
