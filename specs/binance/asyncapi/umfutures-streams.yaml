@@ -53,7 +53,7 @@ info:
     - Futures-specific streams include liquidation, mark price, index, etc.
 
 servers:
-  mainnet1:
+  mainnet:
     host: fstream.binance.com
     protocol: wss
     pathname: /
@@ -61,7 +61,7 @@ servers:
     summary: Binance USD-S Margined Futures WebSocket Streams Server (Mainnet)
     description: WebSocket server for Binance USD-S margined futures market data streams (mainnet)
 
-  testnet1:
+  testnet:
     host: fstream.binancefuture.com
     protocol: wss
     pathname: /
@@ -71,7 +71,7 @@ servers:
 
 channels:
   # Single market stream connection (connect to /ws/<streamName> directly)
-  marketStreams:
+  marketStream:
     address: /ws/{streamName}
     title: Single Market Streams Connection
     description: |
@@ -148,7 +148,7 @@ channels:
         $ref: '#/components/messages/allAssetIndexesEvent'
 
   # Combined stream connection (connect to /stream?streams=...)
-  combinedMarketStreams:
+  combinedMarketStream:
     address: /stream?streams={streams}
     title: Combined Market Streams Connection
     description: |
@@ -208,11 +208,11 @@ channels:
       error:
         $ref: '#/components/messages/errorMessage'
       # Combined market streams data messages (wrapped format)
-      combinedMarketStreamsEvent:
-        $ref: '#/components/messages/combinedMarketStreamsEvent'
+      combinedMarketStreamEvent:
+        $ref: '#/components/messages/combinedMarketStreamEvent'
   
   # User data streams connection (connect to /ws/{listenKey})
-  userDataStreams:
+  userDataStream:
     address: /ws/{listenKey}
     title: User Data Streams Connection
     description: |
@@ -229,18 +229,18 @@ channels:
           - XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
           - pqia91ma19a5s61cv6a81va65sdf19v8a65a1a5s61cv6a81va65sdf19v8a65a1
     messages:
-      userDataStreamsStartRequest:
-        $ref: '#/components/messages/userDataStreamsStartRequest'
-      userDataStreamsStartResponse:
-        $ref: '#/components/messages/userDataStreamsStartResponse'
-      userDataStreamsPingRequest:
-        $ref: '#/components/messages/userDataStreamsPingRequest'
-      userDataStreamsPingResponse:
-        $ref: '#/components/messages/userDataStreamsPingResponse'
-      userDataStreamsStopRequest:
-        $ref: '#/components/messages/userDataStreamsStopRequest'
-      userDataStreamsStopResponse:
-        $ref: '#/components/messages/userDataStreamsStopResponse'
+      userDataStreamStartRequest:
+        $ref: '#/components/messages/userDataStreamStartRequest'
+      userDataStreamStartResponse:
+        $ref: '#/components/messages/userDataStreamStartResponse'
+      userDataStreamPingRequest:
+        $ref: '#/components/messages/userDataStreamPingRequest'
+      userDataStreamPingResponse:
+        $ref: '#/components/messages/userDataStreamPingResponse'
+      userDataStreamStopRequest:
+        $ref: '#/components/messages/userDataStreamStopRequest'
+      userDataStreamStopResponse:
+        $ref: '#/components/messages/userDataStreamStopResponse'
       listenKeyExpiredEvent:
         $ref: '#/components/messages/listenKeyExpiredEvent'
       accountUpdateEvent:
@@ -264,86 +264,91 @@ channels:
 
 operations:
   # Single market stream operations
-  marketStreamsSubscribe:
+  marketStreamSubscribe:
     title: Subscribe to Single Market Streams
     summary: Subscribe to market streams on single connection
     description: |
       Subscribe to market data streams on single connection. Each stream returns
       direct data without wrapping. Maximum 1024 streams per connection.
     action: send
+    x-channel-method: Subscribe
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/subscribe'
+      - $ref: '#/channels/marketStream/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/subscribeResponse'
+        - $ref: '#/channels/marketStream/messages/subscribeResponse'
 
-  marketStreamsUnsubscribe:
+  marketStreamUnsubscribe:
     title: Unsubscribe from Single Market Streams
     summary: Unsubscribe from market streams on single connection
     action: send
+    x-channel-method: Unsubscribe
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/unsubscribe'
+      - $ref: '#/channels/marketStream/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/unsubscribeResponse'
+        - $ref: '#/channels/marketStream/messages/unsubscribeResponse'
 
-  marketStreamsListSubscriptions:
+  marketStreamListSubscriptions:
     title: List Single Stream Subscriptions
     summary: Get list of active single stream subscriptions
     action: send
+    x-channel-method: ListSubscriptions
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/listSubscriptions'
+      - $ref: '#/channels/marketStream/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/marketStream/messages/listSubscriptionsResponse'
 
-  marketStreamsSetProperty:
+  marketStreamSetProperty:
     title: Set Property on Single Market Streams
     summary: Set a property on the single market stream connection
     description: |
       Set a property on the single market stream connection. Currently only
       the `combined` property is supported.
     action: send
+    x-channel-method: SetProperty
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/setProperty'
+      - $ref: '#/channels/marketStream/messages/setProperty'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/setPropertyResponse'
+        - $ref: '#/channels/marketStream/messages/setPropertyResponse'
 
-  marketStreamsGetProperty:
+  marketStreamGetProperty:
     title: Get Property from Single Market Streams
     summary: Get a property from the single market stream connection
     description: |
       Get a property from the single market stream connection. Currently only
       the `combined` property is supported.
     action: send
+    x-channel-method: GetProperty
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/getProperty'
+      - $ref: '#/channels/marketStream/messages/getProperty'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/getPropertyResponse'
+        - $ref: '#/channels/marketStream/messages/getPropertyResponse'
 
-  marketStreamsReceiveEvents:
+  marketStreamReceiveEvents:
     title: Receive Single Stream Data
     summary: Receive direct stream data from single connection
     description: |
@@ -351,113 +356,118 @@ operations:
       without wrapping.
     action: receive
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/aggregateTradeEvent'
-      - $ref: '#/channels/marketStreams/messages/markPriceEvent'
-      - $ref: '#/channels/marketStreams/messages/allMarkPricesEvent'
-      - $ref: '#/channels/marketStreams/messages/klineEvent'
-      - $ref: '#/channels/marketStreams/messages/continuousKlineEvent'
-      - $ref: '#/channels/marketStreams/messages/miniTickerEvent'
-      - $ref: '#/channels/marketStreams/messages/allMiniTickersEvent'
-      - $ref: '#/channels/marketStreams/messages/tickerEvent'
-      - $ref: '#/channels/marketStreams/messages/allTickersEvent'
-      - $ref: '#/channels/marketStreams/messages/bookTickerEvent'
-      - $ref: '#/channels/marketStreams/messages/allBookTickersEvent'
-      - $ref: '#/channels/marketStreams/messages/liquidationEvent'
-      - $ref: '#/channels/marketStreams/messages/allLiquidationsEvent'
-      - $ref: '#/channels/marketStreams/messages/partialDepthEvent'
-      - $ref: '#/channels/marketStreams/messages/diffDepthEvent'
-      - $ref: '#/channels/marketStreams/messages/compositeIndexEvent'
-      - $ref: '#/channels/marketStreams/messages/contractInfoEvent'
-      - $ref: '#/channels/marketStreams/messages/assetIndexEvent'
-      - $ref: '#/channels/marketStreams/messages/allAssetIndexesEvent'
+      - $ref: '#/channels/marketStream/messages/aggregateTradeEvent'
+      - $ref: '#/channels/marketStream/messages/markPriceEvent'
+      - $ref: '#/channels/marketStream/messages/allMarkPricesEvent'
+      - $ref: '#/channels/marketStream/messages/klineEvent'
+      - $ref: '#/channels/marketStream/messages/continuousKlineEvent'
+      - $ref: '#/channels/marketStream/messages/miniTickerEvent'
+      - $ref: '#/channels/marketStream/messages/allMiniTickersEvent'
+      - $ref: '#/channels/marketStream/messages/tickerEvent'
+      - $ref: '#/channels/marketStream/messages/allTickersEvent'
+      - $ref: '#/channels/marketStream/messages/bookTickerEvent'
+      - $ref: '#/channels/marketStream/messages/allBookTickersEvent'
+      - $ref: '#/channels/marketStream/messages/liquidationEvent'
+      - $ref: '#/channels/marketStream/messages/allLiquidationsEvent'
+      - $ref: '#/channels/marketStream/messages/partialDepthEvent'
+      - $ref: '#/channels/marketStream/messages/diffDepthEvent'
+      - $ref: '#/channels/marketStream/messages/compositeIndexEvent'
+      - $ref: '#/channels/marketStream/messages/contractInfoEvent'
+      - $ref: '#/channels/marketStream/messages/assetIndexEvent'
+      - $ref: '#/channels/marketStream/messages/allAssetIndexesEvent'
 
-  marketStreamsReceiveError:
+  marketStreamReceiveError:
     title: Receive Error Messages from Single Market Streams
     summary: Receive error messages from single market stream connection
     description: Receive error messages in response to invalid requests or other issues.
     action: receive
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/error'
+      - $ref: '#/channels/marketStream/messages/error'
 
   # Combined stream operations
-  combinedMarketStreamsSubscribe:
+  combinedMarketStreamSubscribe:
     title: Subscribe to Combined Market Streams
     summary: Subscribe to market streams on combined connection
     description: |
       Subscribe to market data streams on combined connection. Each stream returns
       wrapped data with stream name identifier. Maximum 1024 streams per connection.
     action: send
+    x-channel-method: Subscribe
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/subscribe'
+      - $ref: '#/channels/combinedMarketStream/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/subscribeResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/subscribeResponse'
 
-  combinedMarketStreamsUnsubscribe:
+  combinedMarketStreamUnsubscribe:
     title: Unsubscribe from Combined Market Streams
     summary: Unsubscribe from market streams on combined connection
     action: send
+    x-channel-method: Unsubscribe
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/unsubscribe'
+      - $ref: '#/channels/combinedMarketStream/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/unsubscribeResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/unsubscribeResponse'
 
-  combinedMarketStreamsListSubscriptions:
+  combinedMarketStreamListSubscriptions:
     title: List Combined Stream Subscriptions
     summary: Get list of active combined stream subscriptions
     action: send
+    x-channel-method: ListSubscriptions
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/listSubscriptions'
+      - $ref: '#/channels/combinedMarketStream/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/listSubscriptionsResponse'
 
-  combinedMarketStreamsSetProperty:
+  combinedMarketStreamSetProperty:
     title: Set Property on Combined Market Streams
     summary: Set a property on the combined market stream connection
     action: send
+    x-channel-method: SetProperty
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/setProperty'
+      - $ref: '#/channels/combinedMarketStream/messages/setProperty'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/setPropertyResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/setPropertyResponse'
 
-  combinedMarketStreamsGetProperty:
+  combinedMarketStreamGetProperty:
     title: Get Property from Combined Market Streams
     summary: Get a property from the combined market stream connection
     action: send
+    x-channel-method: GetProperty
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/getProperty'
+      - $ref: '#/channels/combinedMarketStream/messages/getProperty'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/getPropertyResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/getPropertyResponse'
 
-  combinedMarketStreamsReceiveEvents:
+  combinedMarketStreamReceiveEvents:
     title: Receive Combined Stream Data
     summary: Receive wrapped stream data from combined connection
     description: |
@@ -465,67 +475,70 @@ operations:
       stream name and original data: {"stream":"<streamName>","data":<rawPayload>}
     action: receive
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/combinedMarketStreamsEvent'
+      - $ref: '#/channels/combinedMarketStream/messages/combinedMarketStreamEvent'
 
   CombinedMarketStreamsReceiveError:
     title: Receive Error Messages from Combined Market Streams
     summary: Receive error messages from combined market stream connection
     action: receive
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/error'
+      - $ref: '#/channels/combinedMarketStream/messages/error'
 
   # User data stream control operations
-  userDataStreamsStart:
+  userDataStreamStart:
     title: Start User Data Stream
     summary: Start a new user data stream or extend an existing one
     description: Send a userDataStream.start request on the user data stream connection
     action: send
+    x-channel-method: Start
     channel:
-      $ref: '#/channels/userDataStreams'
+      $ref: '#/channels/userDataStream'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/userDataStreamsStartRequest'
+      - $ref: '#/channels/userDataStream/messages/userDataStreamStartRequest'
     reply:
       channel:
-        $ref: '#/channels/userDataStreams'
+        $ref: '#/channels/userDataStream'
       messages:
-        - $ref: '#/channels/userDataStreams/messages/userDataStreamsStartResponse'
+        - $ref: '#/channels/userDataStream/messages/userDataStreamStartResponse'
 
-  userDataStreamsPing:
+  userDataStreamPing:
     title: Keepalive User Data Stream
     summary: Keep the user data stream alive
     description: Send a userDataStream.ping request on the user data stream connection
     action: send
+    x-channel-method: Ping
     channel:
-      $ref: '#/channels/userDataStreams'
+      $ref: '#/channels/userDataStream'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/userDataStreamsPingRequest'
+      - $ref: '#/channels/userDataStream/messages/userDataStreamPingRequest'
     reply:
       channel:
-        $ref: '#/channels/userDataStreams'
+        $ref: '#/channels/userDataStream'
       messages:
-        - $ref: '#/channels/userDataStreams/messages/userDataStreamsPingResponse'
+        - $ref: '#/channels/userDataStream/messages/userDataStreamPingResponse'
 
-  userDataStreamsStop:
+  userDataStreamStop:
     title: Close User Data Stream
     summary: Close an existing user data stream
     description: Send a userDataStream.stop request on the user data stream connection
     action: send
+    x-channel-method: Stop
     channel:
-      $ref: '#/channels/userDataStreams'
+      $ref: '#/channels/userDataStream'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/userDataStreamsStopRequest'
+      - $ref: '#/channels/userDataStream/messages/userDataStreamStopRequest'
     reply:
       channel:
-        $ref: '#/channels/userDataStreams'
+        $ref: '#/channels/userDataStream'
       messages:
-        - $ref: '#/channels/userDataStreams/messages/userDataStreamsStopResponse'
+        - $ref: '#/channels/userDataStream/messages/userDataStreamStopResponse'
 
   # User data stream operations
-  UserDataStreamsReceiveEvents:
+  UserDataStreamReceiveEvents:
     title: Receive User Data Stream Events
     summary: Receive user data stream events (account, orders, risk, etc.)
     description: |
@@ -534,27 +547,27 @@ operations:
       and more for USDⓈ-M Futures.
     action: receive
     channel:
-      $ref: '#/channels/userDataStreams'
+      $ref: '#/channels/userDataStream'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/listenKeyExpiredEvent'
-      - $ref: '#/channels/userDataStreams/messages/accountUpdateEvent'
-      - $ref: '#/channels/userDataStreams/messages/marginCallEvent'
-      - $ref: '#/channels/userDataStreams/messages/orderTradeUpdateEvent'
-      - $ref: '#/channels/userDataStreams/messages/tradeLiteEvent'
-      - $ref: '#/channels/userDataStreams/messages/accountConfigUpdateEvent'
-      - $ref: '#/channels/userDataStreams/messages/strategyUpdateEvent'
-      - $ref: '#/channels/userDataStreams/messages/gridUpdateEvent'
-      - $ref: '#/channels/userDataStreams/messages/conditionalOrderTriggerRejectEvent'
+      - $ref: '#/channels/userDataStream/messages/listenKeyExpiredEvent'
+      - $ref: '#/channels/userDataStream/messages/accountUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/marginCallEvent'
+      - $ref: '#/channels/userDataStream/messages/orderTradeUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/tradeLiteEvent'
+      - $ref: '#/channels/userDataStream/messages/accountConfigUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/strategyUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/gridUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/conditionalOrderTriggerRejectEvent'
 
-  UserDataStreamsReceiveError:
+  UserDataStreamReceiveError:
     title: Receive Error Messages from User Data Streams
     summary: Receive error messages from user data stream connection
     description: Receive error messages in response to invalid requests or other issues.
     action: receive
     channel:
-      $ref: '#/channels/userDataStreams'
+      $ref: '#/channels/userDataStream'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/error'
+      - $ref: '#/channels/userDataStream/messages/error'
 
 components:
   messages:
@@ -679,7 +692,7 @@ components:
       payload:
         $ref: '#/components/schemas/errorResponse'
 
-    combinedMarketStreamsEvent:
+    combinedMarketStreamEvent:
       name: Combined Stream Data Event
       title: Combined Stream Wrapper
       summary: Wrapper for combined stream data (combined connection)
@@ -693,7 +706,7 @@ components:
         stream: stream
         data: data
       payload:
-        $ref: '#/components/schemas/combinedMarketStreamsEvent'
+        $ref: '#/components/schemas/combinedMarketStreamEvent'
 
     # User data stream messages
     listenKeyExpiredEvent:
@@ -778,68 +791,68 @@ components:
         $ref: '#/components/schemas/conditionalOrderTriggerRejectEvent'
 
     # User data stream control messages
-    userDataStreamsStartRequest:
+    userDataStreamStartRequest:
       name: Start User Data Stream (USER_STREAM) Request
       title: Start User Data Stream (USER_STREAM) Request
       summary: Send a userDataStream.start request
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/userDataStreamsStartRequest'
+        $ref: '#/components/schemas/userDataStreamStartRequest'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamsStartResponse:
+    userDataStreamStartResponse:
       name: Start User Data Stream (USER_STREAM) Response
       title: Start User Data Stream (USER_STREAM) Response
       summary: Receive response from userDataStream.start
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/userDataStreamsStartResponse'
+        $ref: '#/components/schemas/userDataStreamStartResponse'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamsPingRequest:
+    userDataStreamPingRequest:
       name: Keepalive User Data Stream (USER_STREAM) Request
       title: Keepalive User Data Stream (USER_STREAM) Request
       summary: Send a userDataStream.ping request
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/userDataStreamsPingRequest'
+        $ref: '#/components/schemas/userDataStreamPingRequest'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamsPingResponse:
+    userDataStreamPingResponse:
       name: Keepalive User Data Stream (USER_STREAM) Response
       title: Keepalive User Data Stream (USER_STREAM) Response
       summary: Receive response from userDataStream.ping
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/userDataStreamsPingResponse'
+        $ref: '#/components/schemas/userDataStreamPingResponse'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamsStopRequest:
+    userDataStreamStopRequest:
       name: Close User Data Stream (USER_STREAM) Request
       title: Close User Data Stream (USER_STREAM) Request
       summary: Send a userDataStream.stop request
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/userDataStreamsStopRequest'
+        $ref: '#/components/schemas/userDataStreamStopRequest'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
 
-    userDataStreamsStopResponse:
+    userDataStreamStopResponse:
       name: Close User Data Stream (USER_STREAM) Response
       title: Close User Data Stream (USER_STREAM) Response
       summary: Receive response from userDataStream.stop
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/userDataStreamsStopResponse'
+        $ref: '#/components/schemas/userDataStreamStopResponse'
       correlationId:
         location: $message.payload#/id
         description: Message correlation ID
@@ -883,6 +896,7 @@ components:
       summary: Mark price and funding rate for all symbols pushed every 3 seconds or every second.
       x-event: true
       x-response-format: array
+      x-event-type: markPriceUpdate
       x-stream-pattern: ['!markPrice@arr', '!markPrice@arr@{markPriceInterval}']
       x-stream-params:
         markPriceInterval:
@@ -2369,7 +2383,7 @@ components:
       items:
         $ref: '#/components/schemas/assetIndexEvent'
 
-    combinedMarketStreamsEvent:
+    combinedMarketStreamEvent:
       type: object
       description: |
         Wrapper for combined stream data. When connecting to combined market streams,
@@ -3068,7 +3082,7 @@ components:
                   example: PRICE_MATCH_FAILED
 
     # User data stream control schemas
-    userDataStreamsStartRequest:
+    userDataStreamStartRequest:
       type: object
       description: request schema
       properties:
@@ -3092,7 +3106,7 @@ components:
               description: apiKey property
               example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
 
-    userDataStreamsStartResponse:
+    userDataStreamStartResponse:
       type: object
       description: response schema
       properties:
@@ -3141,7 +3155,7 @@ components:
           description: status property
           example: 200
 
-    userDataStreamsPingRequest:
+    userDataStreamPingRequest:
       type: object
       description: request schema
       properties:
@@ -3163,7 +3177,7 @@ components:
               description: apiKey property
               example: vmPUZE6mv9SD5VNHk9HlWFsOr9aLE2zvsw0MuIgwCIPy8atIco14y7Ju91duEh8A
 
-    userDataStreamsPingResponse:
+    userDataStreamPingResponse:
       type: object
       description: response schema
       properties:
@@ -3212,7 +3226,7 @@ components:
           description: status property
           example: 200
 
-    userDataStreamsStopRequest:
+    userDataStreamStopRequest:
       type: object
       description: request schema
       properties:
@@ -3234,7 +3248,7 @@ components:
               description: apiKey property
               example: vmPUZE6mv9SD5VNHk9HlWFsOr9aLE2zvsw0MuIgwCIPy8atIco14y7Ju91duEh8A
 
-    userDataStreamsStopResponse:
+    userDataStreamStopResponse:
       type: object
       description: response schema
       properties:
