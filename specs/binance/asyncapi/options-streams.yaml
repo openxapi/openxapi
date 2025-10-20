@@ -62,7 +62,7 @@ info:
     - ListenKey is a 64-character string obtained from REST API
 
 servers:
-  mainnet1:
+  mainnet:
     host: nbstream.binance.com
     protocol: wss
     pathname: /eoptions
@@ -72,7 +72,7 @@ servers:
 
 channels:
   # Single market stream connection (connect to /ws/<streamName> directly)
-  marketStreams:
+  marketStream:
     address: /ws/{streamName}
     title: Single Market Streams Connection
     description: |
@@ -129,7 +129,7 @@ channels:
         $ref: '#/components/messages/partialDepthEvent'
 
   # Combined stream connection (connect to /stream?streams=...)
-  combinedMarketStreams:
+  combinedMarketStream:
     address: /stream?streams={streams}
     title: Combined Market Streams Connection
     description: |
@@ -151,7 +151,7 @@ channels:
         description: |
           Slash-separated list of stream names to subscribe on connect.
           Format: `<streamName1>/<streamName2>/<streamName3>`.
-          Stream names follow the same patterns as single streams (see `channels/marketStreams`).
+          Stream names follow the same patterns as single streams (see `channels/marketStream`).
         examples:
           - BTC-210630-9000-P@trade/BTC-210630-9000-P@ticker
           - ETH@markPrice/ETH@openInterest@221125
@@ -180,11 +180,11 @@ channels:
       error:
         $ref: '#/components/messages/errorMessage'
       # Combined market streams data messages (wrapped format)
-      combinedMarketStreamsEvent:
-        $ref: '#/components/messages/combinedMarketStreamsEvent'
+      combinedMarketStreamEvent:
+        $ref: '#/components/messages/combinedMarketStreamEvent'
   
   # User data streams connection (connect to /ws/{listenKey})
-  userDataStreams:
+  userDataStream:
     address: /ws/{listenKey}
     title: User Data Streams Connection
     description: |
@@ -207,89 +207,96 @@ channels:
         $ref: '#/components/messages/orderTradeUpdateEvent'
       riskLevelChangeEvent:
         $ref: '#/components/messages/riskLevelChangeEvent'
+      error:
+        $ref: '#/components/messages/errorMessage'
 
 operations:
   # Single market stream operations
-  subscribeToMarketStreams:
+  marketStreamSubscribe:
     title: Subscribe to Single Market Streams
     summary: Subscribe to market streams on single connection
     description: |
       Subscribe to market data streams on single connection. Each stream returns
       direct data without wrapping. Maximum 200 streams per connection.
     action: send
+    x-channel-method: Subscribe
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/subscribe'
+      - $ref: '#/channels/marketStream/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/subscribeResponse'
+        - $ref: '#/channels/marketStream/messages/subscribeResponse'
 
-  unsubscribeFromMarketStreams:
+  marketStreamUnsubscribe:
     title: Unsubscribe from Single Market Streams
     summary: Unsubscribe from market streams on single connection
     action: send
+    x-channel-method: Unsubscribe
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/unsubscribe'
+      - $ref: '#/channels/marketStream/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/unsubscribeResponse'
+        - $ref: '#/channels/marketStream/messages/unsubscribeResponse'
 
-  listSubscriptionsFromMarketStreams:
+  marketStreamListSubscriptions:
     title: List Single Stream Subscriptions
     summary: Get list of active single stream subscriptions
     action: send
+    x-channel-method: ListSubscriptions
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/listSubscriptions'
+      - $ref: '#/channels/marketStream/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/marketStream/messages/listSubscriptionsResponse'
 
-  setPropertyOnMarketStreams:
+  marketStreamSetProperty:
     title: Set Property on Single Market Streams
     summary: Set a property on the single market stream connection
     description: |
       Set a property on the single market stream connection. Currently only
       the `combined` property is supported to switch between single and combined modes.
     action: send
+    x-channel-method: SetProperty
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/setProperty'
+      - $ref: '#/channels/marketStream/messages/setProperty'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/setPropertyResponse'
+        - $ref: '#/channels/marketStream/messages/setPropertyResponse'
 
-  getPropertyFromMarketStreams:
+  marketStreamGetProperty:
     title: Get Property from Single Market Streams
     summary: Get a property from the single market stream connection
     description: |
       Get a property from the single market stream connection. Currently only
       the `combined` property is supported to check if in single or combined mode.
     action: send
+    x-channel-method: GetProperty
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/getProperty'
+      - $ref: '#/channels/marketStream/messages/getProperty'
     reply:
       channel:
-        $ref: '#/channels/marketStreams'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/marketStreams/messages/getPropertyResponse'
+        - $ref: '#/channels/marketStream/messages/getPropertyResponse'
 
-  receiveEventsFromMarketStreams:
+  marketStreamReceiveEvents:
     title: Receive Single Stream Data
     summary: Receive direct stream data from single connection
     description: |
@@ -297,19 +304,19 @@ operations:
       without wrapping. Stream type can be determined by the event structure.
     action: receive
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/newSymbolInfoEvent'
-      - $ref: '#/channels/marketStreams/messages/openInterestEvent'
-      - $ref: '#/channels/marketStreams/messages/markPriceEvent'
-      - $ref: '#/channels/marketStreams/messages/klineEvent'
-      - $ref: '#/channels/marketStreams/messages/tickerByUnderlyingEvent'
-      - $ref: '#/channels/marketStreams/messages/indexPriceEvent'
-      - $ref: '#/channels/marketStreams/messages/tickerEvent'
-      - $ref: '#/channels/marketStreams/messages/tradeEvent'
-      - $ref: '#/channels/marketStreams/messages/partialDepthEvent'
+      - $ref: '#/channels/marketStream/messages/newSymbolInfoEvent'
+      - $ref: '#/channels/marketStream/messages/openInterestEvent'
+      - $ref: '#/channels/marketStream/messages/markPriceEvent'
+      - $ref: '#/channels/marketStream/messages/klineEvent'
+      - $ref: '#/channels/marketStream/messages/tickerByUnderlyingEvent'
+      - $ref: '#/channels/marketStream/messages/indexPriceEvent'
+      - $ref: '#/channels/marketStream/messages/tickerEvent'
+      - $ref: '#/channels/marketStream/messages/tradeEvent'
+      - $ref: '#/channels/marketStream/messages/partialDepthEvent'
 
-  receiveErrorFromMarketStreams:
+  marketStreamReceiveError:
     title: Receive Error Messages from Single Market Streams
     summary: Receive error messages from single market stream connection
     description: |
@@ -317,92 +324,97 @@ operations:
       Error messages contain an error code and descriptive message.
     action: receive
     channel:
-      $ref: '#/channels/marketStreams'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/marketStreams/messages/error'
+      - $ref: '#/channels/marketStream/messages/error'
 
   # Combined stream operations
 
-  subscribeToCombinedMarketStreams:
+  combinedMarketStreamSubscribe:
     title: Subscribe to Combined Market Streams
     summary: Subscribe to market streams on combined connection
     description: |
       Subscribe to market data streams on combined connection. Each stream returns
       wrapped data with stream name identifier. Maximum 200 streams per connection.
     action: send
+    x-channel-method: Subscribe
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/subscribe'
+      - $ref: '#/channels/combinedMarketStream/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/subscribeResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/subscribeResponse'
 
-  unsubscribeFromCombinedMarketStreams:
+  combinedMarketStreamUnsubscribe:
     title: Unsubscribe from Combined Market Streams
     summary: Unsubscribe from market streams on combined connection
     action: send
+    x-channel-method: Unsubscribe
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/unsubscribe'
+      - $ref: '#/channels/combinedMarketStream/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/unsubscribeResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/unsubscribeResponse'
 
-  listSubscriptionsFromCombinedMarketStreams:
+  combinedMarketStreamListSubscriptions:
     title: List Combined Stream Subscriptions
     summary: Get list of active combined stream subscriptions
     action: send
+    x-channel-method: ListSubscriptions
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/listSubscriptions'
+      - $ref: '#/channels/combinedMarketStream/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/listSubscriptionsResponse'
 
-  setPropertyOnCombinedMarketStreams:
+  combinedMarketStreamSetProperty:
     title: Set Property on Combined Market Streams
     summary: Set a property on the combined market stream connection
     description: |
       Set a property on the combined market stream connection. Currently only
       the `combined` property is supported to switch between single and combined modes.
     action: send
+    x-channel-method: SetProperty
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/setProperty'
+      - $ref: '#/channels/combinedMarketStream/messages/setProperty'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/setPropertyResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/setPropertyResponse'
 
-  getPropertyFromCombinedMarketStreams:
+  combinedMarketStreamGetProperty:
     title: Get Property from Combined Market Streams
     summary: Get a property from the combined market stream connection
     description: |
       Get a property from the combined market stream connection. Currently only
       the `combined` property is supported to check if in single or combined mode.
     action: send
+    x-channel-method: GetProperty
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/getProperty'
+      - $ref: '#/channels/combinedMarketStream/messages/getProperty'
     reply:
       channel:
-        $ref: '#/channels/combinedMarketStreams'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedMarketStreams/messages/getPropertyResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/getPropertyResponse'
 
-  receiveEventsFromCombinedMarketStreams:
+  combinedMarketStreamReceiveEvents:
     title: Receive Combined Stream Data
     summary: Receive wrapped stream data from combined connection
     description: |
@@ -410,11 +422,11 @@ operations:
       stream name and original data: {"stream":"<streamName>","data":<rawPayload>}
     action: receive
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/combinedMarketStreamsEvent'
+      - $ref: '#/channels/combinedMarketStream/messages/combinedMarketStreamEvent'
 
-  receiveErrorFromCombinedMarketStreams:
+  combinedMarketStreamReceiveError:
     title: Receive Error Messages from Combined Market Streams
     summary: Receive error messages from combined market stream connection
     description: |
@@ -422,13 +434,13 @@ operations:
       Error messages contain an error code and descriptive message.
     action: receive
     channel:
-      $ref: '#/channels/combinedMarketStreams'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedMarketStreams/messages/error'
+      - $ref: '#/channels/combinedMarketStream/messages/error'
   
   # User data stream operations
   
-  receiveEventsFromUserDataStreams:
+  userDataStreamReceiveEvents:
     title: Receive User Data Stream Events
     summary: Receive user data stream events
     description: |
@@ -437,11 +449,23 @@ operations:
       The listenKey must be obtained from REST API and kept alive with periodic pings.
     action: receive
     channel:
-      $ref: '#/channels/userDataStreams'
+      $ref: '#/channels/userDataStream'
     messages:
-      - $ref: '#/channels/userDataStreams/messages/accountUpdateEvent'
-      - $ref: '#/channels/userDataStreams/messages/orderTradeUpdateEvent'
-      - $ref: '#/channels/userDataStreams/messages/riskLevelChangeEvent'
+      - $ref: '#/channels/userDataStream/messages/accountUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/orderTradeUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/riskLevelChangeEvent'
+
+  userDataStreamReceiveError:
+    title: Receive Error Messages from User Data Streams
+    summary: Receive error messages from user data stream connection
+    description: |
+      Receive error messages in response to invalid requests or other issues.
+      Error messages contain an error code and descriptive message.
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/error'
 
 components:
   messages:
@@ -716,7 +740,7 @@ components:
       payload:
         $ref: '#/components/schemas/partialDepthEvent'
 
-    combinedMarketStreamsEvent:
+    combinedMarketStreamEvent:
       name: Combined Stream Data
       title: Combined Stream Wrapper
       summary: Wrapper for combined stream data
@@ -730,7 +754,7 @@ components:
         stream: stream
         data: data
       payload:
-        $ref: '#/components/schemas/combinedMarketStreamsEvent'
+        $ref: '#/components/schemas/combinedMarketStreamEvent'
     
     # User data stream messages
     accountUpdateEvent:
@@ -1806,7 +1830,7 @@ components:
             maxItems: 2
           example: [["1000", "89"]]
 
-    combinedMarketStreamsEvent:
+    combinedMarketStreamEvent:
       type: object
       description: |
         Wrapper for combined market streams data. When connecting to combined streams,
