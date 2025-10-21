@@ -210,6 +210,53 @@ channels:
       combinedMarketStreamEvent:
         $ref: '#/components/messages/combinedMarketStreamEvent'
 
+  # User data streams connection (connect to /ws/{listenKey})
+  userDataStream:
+    address: /ws/{listenKey}
+    title: User Data Streams Connection
+    description: |
+      Connection endpoint for user data streams. Connect with a valid listenKey to receive
+      account updates, order updates, margin calls and other account-related events.
+      The listenKey is obtained from the corresponding REST API and is valid for 60 minutes.
+    parameters:
+      listenKey:
+        description: |
+          64-character authentication key for user data stream.
+          Obtained from REST API userDataStream.start request.
+          Valid for 60 minutes, can be extended with periodic keepalive.
+        examples:
+          - XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
+          - pqia91ma19a5s61cv6a81va65sdf19v8a65a1a5s61cv6a81va65sdf19v8a65a1
+    messages:
+      userDataStreamStartRequest:
+        $ref: '#/components/messages/userDataStreamStartRequest'
+      userDataStreamStartResponse:
+        $ref: '#/components/messages/userDataStreamStartResponse'
+      userDataStreamPingRequest:
+        $ref: '#/components/messages/userDataStreamPingRequest'
+      userDataStreamPingResponse:
+        $ref: '#/components/messages/userDataStreamPingResponse'
+      userDataStreamStopRequest:
+        $ref: '#/components/messages/userDataStreamStopRequest'
+      userDataStreamStopResponse:
+        $ref: '#/components/messages/userDataStreamStopResponse'
+      listenKeyExpiredEvent:
+        $ref: '#/components/messages/listenKeyExpiredEvent'
+      accountUpdateEvent:
+        $ref: '#/components/messages/accountUpdateEvent'
+      marginCallEvent:
+        $ref: '#/components/messages/marginCallEvent'
+      orderTradeUpdateEvent:
+        $ref: '#/components/messages/orderTradeUpdateEvent'
+      accountConfigUpdateEvent:
+        $ref: '#/components/messages/accountConfigUpdateEvent'
+      strategyUpdateEvent:
+        $ref: '#/components/messages/strategyUpdateEvent'
+      gridUpdateEvent:
+        $ref: '#/components/messages/gridUpdateEvent'
+      error:
+        $ref: '#/components/messages/errorMessage'
+
 operations:
   # Single market stream operations
   marketStreamSubscribe:
@@ -435,6 +482,82 @@ operations:
       $ref: '#/channels/combinedMarketStream'
     messages:
       - $ref: '#/channels/combinedMarketStream/messages/error'
+
+  # User data stream operations
+  userDataStreamStart:
+    title: Start User Data Stream
+    summary: Start a new listen key or extend existing one
+    description: Send a userDataStream.start request on the user data stream connection
+    action: send
+    x-channel-method: Start
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/userDataStreamStartRequest'
+    reply:
+      channel:
+        $ref: '#/channels/userDataStream'
+      messages:
+        - $ref: '#/channels/userDataStream/messages/userDataStreamStartResponse'
+
+  userDataStreamPing:
+    title: Keepalive User Data Stream
+    summary: Extend listen key validity
+    description: Send a userDataStream.ping request on the user data stream connection
+    action: send
+    x-channel-method: Ping
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/userDataStreamPingRequest'
+    reply:
+      channel:
+        $ref: '#/channels/userDataStream'
+      messages:
+        - $ref: '#/channels/userDataStream/messages/userDataStreamPingResponse'
+
+  userDataStreamStop:
+    title: Close User Data Stream
+    summary: Invalidate the current listen key
+    description: Send a userDataStream.stop request on the user data stream connection
+    action: send
+    x-channel-method: Stop
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/userDataStreamStopRequest'
+    reply:
+      channel:
+        $ref: '#/channels/userDataStream'
+      messages:
+        - $ref: '#/channels/userDataStream/messages/userDataStreamStopResponse'
+
+  userDataStreamReceiveEvents:
+    title: Receive User Data Stream Events
+    summary: Receive account and order events on user data stream
+    description: |
+      Receive various user data stream events after connecting with a valid listenKey.
+      This includes account updates, margin calls, order updates, and strategy/grid updates.
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/listenKeyExpiredEvent'
+      - $ref: '#/channels/userDataStream/messages/accountUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/marginCallEvent'
+      - $ref: '#/channels/userDataStream/messages/orderTradeUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/accountConfigUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/strategyUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/gridUpdateEvent'
+
+  userDataStreamReceiveError:
+    title: Receive Error Messages from User Data Streams
+    summary: Receive error messages from user data stream connection
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/error'
 
 components:
   messages:
@@ -872,6 +995,137 @@ components:
         data: data
       payload:
         $ref: '#/components/schemas/combinedMarketStreamEvent'
+
+    # User data stream messages
+    listenKeyExpiredEvent:
+      name: Listen Key Expired Event
+      title: User Data Stream Expired Event
+      summary: Sent when the listen key expires
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/listenKeyExpiredEvent'
+
+    accountUpdateEvent:
+      name: Account Update Event
+      title: Balance and Position Update Event
+      summary: Sent when account balance or position changes
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/accountUpdateEvent'
+
+    marginCallEvent:
+      name: Margin Call Event
+      title: Margin Call Event
+      summary: Sent when account is under margin call
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/marginCallEvent'
+
+    orderTradeUpdateEvent:
+      name: Order Trade Update Event
+      title: Order Update Event
+      summary: Orders are updated with orderTradeUpdate event
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/orderTradeUpdateEvent'
+
+    accountConfigUpdateEvent:
+      name: Account Configuration Update Event
+      title: Account Configuration Update Event
+      summary: Sent when account configuration changes (leverage update)
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/accountConfigUpdateEvent'
+
+    strategyUpdateEvent:
+      name: Strategy Update Event
+      title: Strategy Update Event
+      summary: Sent when strategy status changes
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/strategyUpdateEvent'
+
+    gridUpdateEvent:
+      name: Grid Update Event
+      title: Grid Update Event
+      summary: Sent when grid strategy updates
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/gridUpdateEvent'
+
+    # User data stream control messages
+    userDataStreamStartRequest:
+      name: Start User Data Stream (USER_STREAM) Request
+      title: Start User Data Stream (USER_STREAM) Request
+      summary: Send a userDataStream.start request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/userDataStreamStartRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    userDataStreamStartResponse:
+      name: Start User Data Stream (USER_STREAM) Response
+      title: Start User Data Stream (USER_STREAM) Response
+      summary: Receive response from userDataStream.start
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/userDataStreamStartResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    userDataStreamPingRequest:
+      name: Keepalive User Data Stream (USER_STREAM) Request
+      title: Keepalive User Data Stream (USER_STREAM) Request
+      summary: Send a userDataStream.ping request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/userDataStreamPingRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    userDataStreamPingResponse:
+      name: Keepalive User Data Stream (USER_STREAM) Response
+      title: Keepalive User Data Stream (USER_STREAM) Response
+      summary: Receive response from userDataStream.ping
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/userDataStreamPingResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    userDataStreamStopRequest:
+      name: Close User Data Stream (USER_STREAM) Request
+      title: Close User Data Stream (USER_STREAM) Request
+      summary: Send a userDataStream.stop request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/userDataStreamStopRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    userDataStreamStopResponse:
+      name: Close User Data Stream (USER_STREAM) Response
+      title: Close User Data Stream (USER_STREAM) Response
+      summary: Receive response from userDataStream.stop
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/userDataStreamStopResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
   schemas:
     # Common params
@@ -2255,3 +2509,699 @@ components:
           l: 105
           T: 1672304050120
           m: false
+
+    # User data stream event schemas (COIN-M)
+    listenKeyExpiredEvent:
+      type: object
+      description: User Data Stream Expired - sent when the listen key expires
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: listenKeyExpired
+        E:
+          type: integer
+          format: int64
+          description: Event time (timestamp)
+          example: 1576653824250
+        listenKey:
+          type: string
+          description: listen key
+          example: WsCMN0a4KHUPTQuX6IUnqEZfB1inxmv1qR4kbf1LuEjur5VdbzqvyxqG9TSjVVxv
+
+    accountUpdateEvent:
+      type: object
+      description: Balance and Position Update - sent when account balance or position changes
+      properties:
+        e:
+          type: string
+          description: Event type
+          const: ACCOUNT_UPDATE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1564034571105
+        T:
+          type: integer
+          format: int64
+          description: Transaction Time (milliseconds)
+          example: 1564034571073
+        i:
+          type: string
+          description: Account Alias
+          example: SgsR
+        a:
+          type: object
+          description: Update Data
+          properties:
+            m:
+              type: string
+              description: Event reason type
+              example: ORDER
+              enum: [ORDER, FUNDING_FEE, WITHDRAW, DEPOSIT, INSURANCE_CLEAR, BENEFITS, REFERRAL_KICKBACK, COMMISSION_REBATE, ADJUSTMENT]
+            B:
+              type: array
+              description: Balance updates
+              items:
+                type: object
+                properties:
+                  a:
+                    type: string
+                    description: Asset
+                    example: BTC
+                  wb:
+                    type: string
+                    description: Wallet Balance
+                    example: "1.00000000"
+                  cw:
+                    type: string
+                    description: Cross Wallet Balance
+                    example: "1.00000000"
+                  bc:
+                    type: string
+                    description: Balance Change except PnL and Commission
+                    example: "0.00000000"
+            P:
+              type: array
+              description: Position updates
+              items:
+                type: object
+                properties:
+                  s:
+                    type: string
+                    description: Symbol
+                    example: BTCUSD_PERP
+                  pa:
+                    type: string
+                    description: Position Amount
+                    example: "0"
+                  ep:
+                    type: string
+                    description: Entry Price
+                    example: "0.00000"
+                  bep:
+                    type: string
+                    description: Breakeven Price
+                    example: "0.0"
+                  cr:
+                    type: string
+                    description: Accumulated Realized
+                    example: "0"
+                  up:
+                    type: string
+                    description: Unrealized PnL
+                    example: "0.00000000"
+                  mt:
+                    type: string
+                    description: Margin Type
+                    example: cross
+                    enum: [isolated, cross]
+                  iw:
+                    type: string
+                    description: Isolated Wallet
+                    example: "0.00000000"
+                  ps:
+                    type: string
+                    description: Position Side
+                    example: BOTH
+                    enum: [LONG, SHORT, BOTH]
+
+    marginCallEvent:
+      type: object
+      description: Margin Call - sent when account is under margin call
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: MARGIN_CALL
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1587727187525
+        i:
+          type: string
+          description: Account Alias
+          example: SgsR
+        cw:
+          type: string
+          description: Cross Wallet Balance (only for cross position)
+          example: "3.16312014"
+        p:
+          type: array
+          description: Position(s) of Margin Call
+          items:
+            type: object
+            properties:
+              s:
+                type: string
+                description: Symbol
+                example: ETHUSD_PERP
+              ps:
+                type: string
+                description: Position Side
+                example: LONG
+                enum: [LONG, SHORT, BOTH]
+              pa:
+                type: string
+                description: Position Amount
+                example: "1.327"
+              mt:
+                type: string
+                description: Margin Type
+                example: cross
+                enum: [isolated, cross]
+              iw:
+                type: string
+                description: Isolated Wallet
+                example: "0"
+              mp:
+                type: string
+                description: Mark Price
+                example: "187.17127"
+              up:
+                type: string
+                description: Unrealized PnL
+                example: "-1.166074"
+              mm:
+                type: string
+                description: Maintenance Margin Required
+                example: "1.614445"
+
+    orderTradeUpdateEvent:
+      type: object
+      description: Order Update - orders are updated with orderTradeUpdate event
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: ORDER_TRADE_UPDATE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1568879465651
+        T:
+          type: integer
+          format: int64
+          description: Transaction Time (milliseconds)
+          example: 1568879465650
+        i:
+          type: string
+          description: Account Alias
+          example: SgsR
+        o:
+          type: object
+          description: Order details
+          properties:
+            s:
+              type: string
+              description: Symbol
+              example: BTCUSD_PERP
+            c:
+              type: string
+              description: Client Order ID
+              example: myOrder1
+            S:
+              type: string
+              description: Side
+              example: SELL
+              enum: [BUY, SELL]
+            o:
+              type: string
+              description: Order Type
+              example: LIMIT
+              enum: [LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET]
+            f:
+              type: string
+              description: Time in Force
+              example: GTC
+              enum: [GTC, IOC, FOK, GTX]
+            q:
+              type: string
+              description: Original Quantity
+              example: "1"
+            p:
+              type: string
+              description: Original Price
+              example: "9000"
+            ap:
+              type: string
+              description: Average Price
+              example: "0"
+            sp:
+              type: string
+              description: Stop Price
+              example: "0"
+            x:
+              type: string
+              description: Execution Type
+              example: NEW
+              enum: [NEW, CANCELED, CALCULATED, EXPIRED, TRADE]
+            X:
+              type: string
+              description: Order Status
+              example: NEW
+              enum: [NEW, PARTIALLY_FILLED, FILLED, CANCELED, EXPIRED, NEW_INSURANCE, NEW_ADL]
+            i:
+              type: integer
+              format: int64
+              description: Order ID
+              example: 8886774
+            l:
+              type: string
+              description: Order Last Filled Quantity
+              example: "0"
+            z:
+              type: string
+              description: Order Filled Accumulated Quantity
+              example: "0"
+            L:
+              type: string
+              description: Last Filled Price
+              example: "0"
+            N:
+              type: string
+              description: Commission Asset
+              example: BTC
+            n:
+              type: string
+              description: Commission
+              example: "0"
+            T:
+              type: integer
+              format: int64
+              description: Order Trade Time
+              example: 1568879465651
+            t:
+              type: integer
+              format: int64
+              description: Trade ID
+              example: 0
+            rp:
+              type: string
+              description: Realized Profit
+              example: "0"
+            b:
+              type: string
+              description: Bid quantity of base asset
+              example: "0"
+            a:
+              type: string
+              description: Ask quantity of base asset
+              example: "9"
+            m:
+              type: boolean
+              description: Is this trade the maker side
+              example: false
+            R:
+              type: boolean
+              description: Is reduce only
+              example: false
+            wt:
+              type: string
+              description: Stop Price Working Type
+              example: MARK_PRICE
+              enum: [MARK_PRICE, CONTRACT_PRICE]
+            ot:
+              type: string
+              description: Original Order Type
+              example: LIMIT
+              enum: [LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET]
+            ps:
+              type: string
+              description: Position Side
+              example: BOTH
+              enum: [LONG, SHORT, BOTH]
+            cp:
+              type: boolean
+              description: Conditional Order
+              example: false
+            AP:
+              type: string
+              description: Activation Price
+              example: "0"
+            cr:
+              type: string
+              description: Callback Rate
+              example: "0"
+            pP:
+              type: boolean
+              description: Is protected
+              example: false
+            V:
+              type: string
+              description: STP mode
+              example: "EXPIRE_TAKER"
+            pm:
+              type: string
+              description: Price match mode
+              example: "NONE"
+
+    accountConfigUpdateEvent:
+      type: object
+      description: Account Configuration Update - sent when account configuration changes (leverage update)
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: ACCOUNT_CONFIG_UPDATE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1611646737479
+        T:
+          type: integer
+          format: int64
+          description: Transaction Time (milliseconds)
+          example: 1611646737476
+        ac:
+          type: object
+          description: Account Configuration for Trade Pair
+          properties:
+            s:
+              type: string
+              description: Symbol
+              example: BTCUSD_PERP
+            l:
+              type: integer
+              description: Leverage
+              example: 125
+
+    strategyUpdateEvent:
+      type: object
+      description: Strategy Update - sent when strategy status changes
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: STRATEGY_UPDATE
+        T:
+          type: integer
+          format: int64
+          description: Transaction Time (milliseconds)
+          example: 1669693493658
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1669693493819
+        su:
+          type: object
+          description: Strategy Update
+          properties:
+            si:
+              type: integer
+              format: int64
+              description: Strategy ID
+              example: 123456789
+            st:
+              type: string
+              description: Strategy Type
+              example: GRID
+            ss:
+              type: string
+              description: Strategy Status
+              example: NEW
+              enum: [NEW, WORKING, CANCELLED, EXPIRED]
+            s:
+              type: string
+              description: Symbol
+              example: BTCUSD_PERP
+            ut:
+              type: integer
+              format: int64
+              description: Update Time (milliseconds)
+              example: 1669693493658
+            c:
+              type: integer
+              description: Operation Code
+              example: 1
+
+    gridUpdateEvent:
+      type: object
+      description: Grid Update - sent when grid strategy updates
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: GRID_UPDATE
+        T:
+          type: integer
+          format: int64
+          description: Transaction Time (milliseconds)
+          example: 1669693493658
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1669693493819
+        gu:
+          type: object
+          description: Grid Update
+          properties:
+            si:
+              type: integer
+              format: int64
+              description: Strategy ID
+              example: 123456789
+            st:
+              type: string
+              description: Strategy Type
+              example: GRID
+            ss:
+              type: string
+              description: Strategy Status
+              example: WORKING
+              enum: [NEW, WORKING, CANCELLED, EXPIRED]
+            s:
+              type: string
+              description: Symbol
+              example: BTCUSD_PERP
+            r:
+              type: string
+              description: Realized PNL
+              example: "8.59033754"
+            up:
+              type: string
+              description: Unmatched Average Price
+              example: "56999.99"
+            uq:
+              type: string
+              description: Unmatched Quantity
+              example: "0.004"
+            uf:
+              type: string
+              description: Unmatched Fee
+              example: "0.0228"
+            mp:
+              type: string
+              description: Matched PNL
+              example: "15.12345678"
+            ut:
+              type: integer
+              format: int64
+              description: Update Time (milliseconds)
+              example: 1669262908197
+
+    # User data stream control schemas
+    userDataStreamStartRequest:
+      type: object
+      description: request schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
+        method:
+          type: string
+          description: method property
+          const: userDataStream.start
+        params:
+          type: object
+          description: params property
+          properties:
+            apiKey:
+              type: string
+              description: Required if session is not authenticated via session.logon
+
+    userDataStreamStartResponse:
+      type: object
+      description: response schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
+        rateLimits:
+          type: array
+          description: rateLimits property
+          items:
+            type: object
+            description: array item
+            properties:
+              count:
+                type: integer
+                description: count property
+                example: 8
+              interval:
+                type: string
+                description: interval property
+                example: MINUTE
+              intervalNum:
+                type: integer
+                description: intervalNum property
+                example: 1
+              limit:
+                type: integer
+                description: limit property
+                example: 2400
+              rateLimitType:
+                type: string
+                description: rateLimitType property
+                example: REQUEST_WEIGHT
+        result:
+          type: object
+          description: result property
+          properties:
+            listenKey:
+              type: string
+              description: listenKey property
+              example: xs0mRXdAKlIPDRFrlPcw0qI41Eh3ixNntmymGyhrhgqo7L6FuLaWArTD7RLP
+        status:
+          type: integer
+          description: status property
+          example: 200
+
+    userDataStreamPingRequest:
+      type: object
+      description: request schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: 815d5fce-0880-4287-a567-80badf004c74
+        method:
+          type: string
+          description: method property
+          const: userDataStream.ping
+        params:
+          type: object
+          description: params property
+          properties:
+            apiKey:
+              type: string
+              description: Required if session is not authenticated via session.logon
+
+    userDataStreamPingResponse:
+      type: object
+      description: response schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: 815d5fce-0880-4287-a567-80badf004c74
+        rateLimits:
+          type: array
+          description: rateLimits property
+          items:
+            type: object
+            description: array item
+            properties:
+              count:
+                type: integer
+                description: count property
+                example: 2
+              interval:
+                type: string
+                description: interval property
+                example: MINUTE
+              intervalNum:
+                type: integer
+                description: intervalNum property
+                example: 1
+              limit:
+                type: integer
+                description: limit property
+                example: 2400
+              rateLimitType:
+                type: string
+                description: rateLimitType property
+                example: REQUEST_WEIGHT
+        result:
+          type: object
+          description: result property
+          properties:
+            listenKey:
+              type: string
+              description: listenKey property
+              example: 3HBntNTepshgEdjIwSUIBgB9keLyOCg5qv3n6bYAtktG8ejcaW5HXz9Vx1JgIieg
+        status:
+          type: integer
+          description: status property
+          example: 200
+
+    userDataStreamStopRequest:
+      type: object
+      description: request schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: 819e1b1b-8c06-485b-a13e-131326c69599
+        method:
+          type: string
+          description: method property
+          const: userDataStream.stop
+        params:
+          type: object
+          description: params property
+          properties:
+            apiKey:
+              type: string
+              description: Required if session is not authenticated via session.logon
+
+    userDataStreamStopResponse:
+      type: object
+      description: response schema
+      properties:
+        id:
+          type: string
+          description: id property
+          example: 819e1b1b-8c06-485b-a13e-131326c69599
+        rateLimits:
+          type: array
+          description: rateLimits property
+          items:
+            type: object
+            description: array item
+            properties:
+              count:
+                type: integer
+                description: count property
+                example: 2
+              interval:
+                type: string
+                description: interval property
+                example: MINUTE
+              intervalNum:
+                type: integer
+                description: intervalNum property
+                example: 1
+              limit:
+                type: integer
+                description: limit property
+                example: 2400
+              rateLimitType:
+                type: string
+                description: rateLimitType property
+                example: REQUEST_WEIGHT
+        result:
+          type: object
+          description: result property
+        status:
+          type: integer
+          description: status property
+          example: 200
