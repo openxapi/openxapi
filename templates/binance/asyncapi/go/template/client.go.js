@@ -218,15 +218,16 @@ func (c *Client) ensureReadLoop(ctx context.Context) {
     wnum := c.workerCount
     if wnum <= 0 { wnum = 1 }
     for i := 0; i < wnum; i++ {
+      mb := c.mb
       c.workerWG.Add(1)
-      go func() {
+      go func(mb *mailbox) {
         defer c.workerWG.Done()
         for {
-          msg, ok := c.mb.Dequeue()
+          msg, ok := mb.Dequeue()
           if !ok { return }
           c.dispatchMessage(ctx, msg)
         }
-      }()
+      }(mb)
     }
   }
   c.readLoopStarted = true
@@ -260,9 +261,11 @@ func (c *Client) readLoop(ctx context.Context) {
       c.done = nil
     }
     c.connMu.Unlock()
-    // close mailbox and wait for all workers to drain
-    if c.mb != nil { c.mb.Close(); c.mb = nil }
+    // close mailbox and wait for all workers to drain, then nil it
+    mb := c.mb
+    if mb != nil { mb.Close() }
     c.workerWG.Wait()
+    c.mb = nil
   }()
   for {
     c.connMu.RLock()
