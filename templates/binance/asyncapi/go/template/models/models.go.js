@@ -201,8 +201,8 @@ type MessageID struct {
 \tisNull bool
 }
 
-// NewMessageIDInt creates a MessageID from int64
-func NewMessageIDInt(v int64) MessageID { return MessageID{i64: &v} }
+// NewMessageIDInt64 creates a MessageID from int64
+func NewMessageIDInt64(v int64) MessageID { return MessageID{i64: &v} }
 
 // NewMessageIDString creates a MessageID from string (<=36 chars)
 func NewMessageIDString(v string) MessageID { return MessageID{str: &v} }
