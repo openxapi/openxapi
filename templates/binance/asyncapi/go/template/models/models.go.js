@@ -250,6 +250,25 @@ func (m *MessageID) UnmarshalJSON(b []byte) error {
 \t\treturn fmt.Errorf("invalid id type: %T", v)
 \t}
 }
+
+// ValInt64 returns the int64 value and true if MessageID holds an integer; otherwise returns 0, false
+func (m MessageID) ValInt64() (int64, bool) {
+    if m.i64 != nil {
+        return *m.i64, true
+    }
+    return 0, false
+}
+
+// ValString returns the string value and true if MessageID holds a string; otherwise returns "", false
+func (m MessageID) ValString() (string, bool) {
+    if m.str != nil {
+        return *m.str, true
+    }
+    return "", false
+}
+
+// ValNull reports whether MessageID is explicitly null
+func (m MessageID) ValNull() bool { return m.isNull }
 `}
       </Text>
     </File>

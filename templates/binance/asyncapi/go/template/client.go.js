@@ -284,6 +284,104 @@ func (c *Client) readLoop(ctx context.Context) {
   }
 }
 
+// No-event-type classification (generated from AsyncAPI x-no-event-type)
+// These helpers allow routing events that do not include an 'e' field in payload.
+type noEvtCandidate struct {
+  Key        string
+  Required   []string
+  Properties []string
+  IsArray    bool
+}
+
+// Generated from spec: x-no-event-type messages
+var noEvtCandidates = []noEvtCandidate{
+${(() => {
+  const out = [];
+  try {
+    const root = asyncapi.json ? asyncapi.json() : {};
+    const msgs = root && root.components && root.components.messages ? root.components.messages : {};
+    const schemas = root && root.components && root.components.schemas ? root.components.schemas : {};
+    const resolveRef = (ref) => {
+      if (!ref || typeof ref !== 'string' || !ref.startsWith('#/')) return null;
+      const parts = ref.slice(2).split('/');
+      let cur = root; for (const p of parts) { if (!cur) return null; cur = cur[p]; }
+      return cur || null;
+    };
+    Object.entries(msgs).forEach(([msgKey, msg]) => {
+      try {
+        if (!msg || typeof msg !== 'object') return;
+        const noEvt = msg['x-no-event-type'] === true || msg['x-no-event-type'] === 'true';
+        if (!noEvt) return;
+        const key = (msg.name && String(msg.name)) || (msg.title && String(msg.title)) || String(msgKey);
+        let payload = msg.payload || {};
+        if (payload && payload.$ref) payload = resolveRef(payload.$ref) || payload;
+        let isArray = false;
+        let schema = payload;
+        if (payload && payload.type === 'array') {
+          isArray = true;
+          const it = payload.items || {};
+          schema = it.$ref ? resolveRef(it.$ref) || it : it;
+        }
+        const props = (schema && schema.properties) ? schema.properties : {};
+        const required = Array.isArray(schema && schema.required) ? schema.required.slice() : [];
+        const allProps = Object.keys(props || {});
+        const esc = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        out.push(`  { Key: "${esc(key)}", Required: []string{${required.map(r => `"${esc(r)}"`).join(', ')}}, Properties: []string{${allProps.map(p => `"${esc(p)}"`).join(', ')}}, IsArray: ${isArray ? 'true' : 'false'} },`);
+      } catch (e) { /* ignore message */ }
+    });
+  } catch (e) { /* ignore */ }
+  return out.join('\n');
+})()}
+}
+
+func hasAllFields(obj map[string]json.RawMessage, required []string) bool {
+  if len(required) == 0 { return true }
+  for _, k := range required {
+    if _, ok := obj[k]; !ok { return false }
+  }
+  return true
+}
+
+func scoreFields(obj map[string]json.RawMessage, candidates []string) int {
+  score := 0
+  for _, k := range candidates {
+    if _, ok := obj[k]; ok { score++ }
+  }
+  return score
+}
+
+// classifyNoEventTypePayload returns a handler key for x-no-event-type messages, or empty string if none matched
+func classifyNoEventTypePayload(b []byte) string {
+  // Try object payload
+  var obj map[string]json.RawMessage
+  if err := json.Unmarshal(b, &obj); err == nil {
+    bestKey := ""
+    bestScore := -1
+    for _, cand := range noEvtCandidates {
+      if cand.IsArray { continue }
+      if !hasAllFields(obj, cand.Required) { continue }
+      sc := scoreFields(obj, cand.Properties)
+      if sc > bestScore { bestScore = sc; bestKey = cand.Key }
+    }
+    if bestScore >= 0 && bestKey != "" { return bestKey }
+  }
+  // Try array payload; inspect first element
+  var arr []map[string]json.RawMessage
+  if err := json.Unmarshal(b, &arr); err == nil && len(arr) > 0 {
+    first := arr[0]
+    bestKey := ""
+    bestScore := -1
+    for _, cand := range noEvtCandidates {
+      if !cand.IsArray { continue }
+      if !hasAllFields(first, cand.Required) { continue }
+      sc := scoreFields(first, cand.Properties)
+      if sc > bestScore { bestScore = sc; bestKey = cand.Key }
+    }
+    if bestScore >= 0 && bestKey != "" { return bestKey }
+  }
+  return ""
+}
+
 // dispatchMessage performs JSON decoding + handler routing on a worker goroutine
 func (c *Client) dispatchMessage(ctx context.Context, data []byte) {
   // Try structured dispatch first
@@ -392,6 +490,18 @@ ${(() => { return ''; })()}
             for _, h := range callList { if err := h(ctx, payload); err == nil { dispatched = true } }
           }
         }
+      }
+    }
+    // No-event-type routing based on field presence (x-no-event-type)
+    if !dispatched {
+      if key := classifyNoEventTypePayload(payload); key != "" {
+        c.handlersMu.RLock()
+        var callList []func(context.Context, []byte) error
+        for _, hm := range c.handlers {
+          if h, ok := hm[key]; ok && h != nil { callList = append(callList, h) }
+        }
+        c.handlersMu.RUnlock()
+        for _, h := range callList { if err := h(ctx, payload); err == nil { dispatched = true } }
       }
     }
   }

@@ -575,6 +575,7 @@ export default function ({ asyncapi, params }) {
             let isArrayFormat = false;
             let isErrorMessageFlag = false;
             let errorAliasKey = 'error';
+            let noEventTypeFlag = false;
             try {
               const mj0 = (typeof m.json === 'function') ? m.json() : null;
               if (mj0) {
@@ -585,6 +586,9 @@ export default function ({ asyncapi, params }) {
                 if (mj0['x-error'] === true) isErrorMessageFlag = true;
                 if (typeof mj0['x-handler-key'] === 'string' && mj0['x-handler-key'].trim()) {
                   errorAliasKey = String(mj0['x-handler-key']).trim();
+                }
+                if (mj0['x-no-event-type'] === true || mj0['x-no-event-type'] === 'true') {
+                  noEventTypeFlag = true;
                 }
                 let ps0 = mj0.payload;
                 if (!expectedEventTypeAlias && ps0 && ps0.$ref && typeof ps0.$ref === 'string' && ps0.$ref.startsWith('#/components/schemas/')) {
@@ -656,10 +660,35 @@ export default function ({ asyncapi, params }) {
                 if (isErrorMessageFlag) {
                   preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"error\"]; !ok { return fmt.Errorf(\"not error message\") }\n`;
                 } else if (isArrayFormat) {
-                  // Array payload: inspect first element's event type
+                  // Array payload: inspect first element's event type or required fields for no-event-type
                   if (expectedEventType) {
                     const esc = String(expectedEventType).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                     preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(arr[0], &typ); err != nil { return err }\n\t\tvar ev string\n\t\tif v, ok := typ[\"e\"].(string); ok { ev = v } else if evobj, ok := typ[\"event\"].(map[string]interface{}); ok { if vv, ok2 := evobj[\"e\"].(string); ok2 { ev = vv } }\n\t\tif ev != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+                  } else if (noEventTypeFlag) {
+                    // Required field validation on first element
+                    let reqKeys = [];
+                    try {
+                      let ps2 = mj && mj.payload;
+                      if (ps2 && ps2.$ref && typeof ps2.$ref === 'string' && ps2.$ref.startsWith('#/components/schemas/')) {
+                        const tail2 = ps2.$ref.split('/').pop();
+                        if (root && root.components && root.components.schemas && root.components.schemas[tail2]) {
+                          ps2 = root.components.schemas[tail2];
+                        }
+                      }
+                      if (ps2 && ps2.type === 'array') {
+                        const it2 = ps2.items || {};
+                        let sch2 = it2;
+                        if (it2.$ref && typeof it2.$ref === 'string' && it2.$ref.startsWith('#/components/schemas/')) {
+                          const tail3 = it2.$ref.split('/').pop();
+                          if (root && root.components && root.components.schemas && root.components.schemas[tail3]) {
+                            sch2 = root.components.schemas[tail3];
+                          }
+                        }
+                        if (Array.isArray(sch2 && sch2.required)) reqKeys = sch2.required.slice();
+                      }
+                    } catch (e) {}
+                    const conds = (reqKeys || []).map(k => `if _, ok := first[\"${String(k).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}\"]; !ok { return fmt.Errorf(\"missing field\") }`).join('\n\t\t');
+                    preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n\t\tvar first map[string]json.RawMessage\n\t\tif err := json.Unmarshal(arr[0], &first); err != nil { return err }\n\t\t${conds}\n`;
                   } else {
                     preCheck = `\n\t\tvar arr []json.RawMessage\n\t\tif err := json.Unmarshal(b, &arr); err != nil { return err }\n\t\tif len(arr) == 0 { return fmt.Errorf(\"empty array\") }\n`;
                   }
@@ -667,6 +696,33 @@ export default function ({ asyncapi, params }) {
                   if (expectedEventType) {
                     const esc = String(expectedEventType).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                     preCheck = `\n\t\tvar typ map[string]interface{}\n\t\tif err := json.Unmarshal(b, &typ); err != nil { return err }\n\t\tvar ev string\n\t\tif v, ok := typ[\"e\"].(string); ok { ev = v } else if evobj, ok := typ[\"event\"].(map[string]interface{}); ok { if vv, ok2 := evobj[\"e\"].(string); ok2 { ev = vv } }\n\t\tif ev != \"${esc}\" { return fmt.Errorf(\"unexpected event type\") }\n`;
+                  } else if (noEventTypeFlag) {
+                    // Validate by required fields for x-no-event-type messages
+                    let reqKeys = [];
+                    try {
+                      let ps2 = mj && mj.payload;
+                      if (ps2 && ps2.$ref && typeof ps2.$ref === 'string' && ps2.$ref.startsWith('#/components/schemas/')) {
+                        const tail2 = ps2.$ref.split('/').pop();
+                        if (root && root.components && root.components.schemas && root.components.schemas[tail2]) {
+                          ps2 = root.components.schemas[tail2];
+                        }
+                      }
+                      if (ps2 && ps2.type === 'array') {
+                        const it2 = ps2.items || {};
+                        let sch2 = it2;
+                        if (it2.$ref && typeof it2.$ref === 'string' && it2.$ref.startsWith('#/components/schemas/')) {
+                          const tail3 = it2.$ref.split('/').pop();
+                          if (root && root.components && root.components.schemas && root.components.schemas[tail3]) {
+                            sch2 = root.components.schemas[tail3];
+                          }
+                        }
+                        if (Array.isArray(sch2 && sch2.required)) reqKeys = sch2.required.slice();
+                      } else {
+                        if (Array.isArray(ps2 && ps2.required)) reqKeys = ps2.required.slice();
+                      }
+                    } catch (e) {}
+                    const conds = (reqKeys || []).map(k => `if _, ok := probe[\"${String(k).replace(/\\/g, '\\\\').replace(/"/g, '\\"')}\"]; !ok { return fmt.Errorf(\"missing field\") }`).join('\n\t\t');
+                    preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\t${conds}\n`;
                   } else {
                     // generic event presence check: has top-level 'e' or nested 'event.e'
                     preCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"e\"]; !ok {\n\t\t\tvar nested map[string]json.RawMessage\n\t\t\tif raw, ok2 := probe[\"event\"]; !ok2 { return fmt.Errorf(\"missing event type\") } else {\n\t\t\t\tif err := json.Unmarshal(raw, &nested); err != nil { return err }\n\t\t\t\tif _, ok3 := nested[\"e\"]; !ok3 { return fmt.Errorf(\"missing event type\") }\n\t\t\t}\n\t\t}\n`;
