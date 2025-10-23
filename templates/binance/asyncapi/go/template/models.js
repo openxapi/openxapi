@@ -125,6 +125,8 @@ function emitSchemaModel(schemaName, forceEvent = false) {
     const requiredSet = new Set(requiredArr);
     const useDescNaming = !!(forceEvent || (schema && schema['x-event'] === true));
     const map = (sch, name) => {
+      // Special-case the canonical request/response correlation field
+      if (String(name) === 'id') { return { t: 'MessageID', needsTime: false }; }
       if (!sch) return { t: 'interface{}', needsTime: false };
       if (sch.$ref) { const r = resolveRef(root, sch.$ref); if (r) return map(r, name); }
       const type = sch.type || (sch.properties ? 'object' : (sch.items ? 'array' : undefined));
@@ -201,6 +203,8 @@ propKeys.forEach((pk) => {
       return !!(compMsg && compMsg['x-event'] === true);
     })();
     const mapSchemaToGo = (schema, propName, isEvt, depth = 1) => {
+      // Special-case the canonical request/response correlation field
+      if (String(propName) === 'id') { return { t: 'MessageID', needsTime: false } }
       let needsTimeLocal = false;
       if (!schema) return { t: 'interface{}', needsTime: false };
       // Resolve $ref
@@ -283,6 +287,7 @@ propKeys.forEach((pk) => {
         const req = new Set(Array.isArray(items.required) ? items.required : []);
         const useDescNamingItem = preferDescTop;
         const map = (sch, name) => {
+          if (String(name) === 'id') { return { t: 'MessageID', needsTime: false } }
           if (!sch) return { t: 'interface{}', needsTime: false };
           if (sch.$ref) { const r = resolveRef(root, sch.$ref); if (r) return map(r, name); }
           const type = sch.type || (sch.properties ? 'object' : (sch.items ? 'array' : undefined));
@@ -545,8 +550,9 @@ ${fields.join('\n')}
             const req = new Set(Array.isArray(items.required) ? items.required : []);
             const compMsgRef2 = componentMessages && componentMessages[refName];
             const useDescNamingItem = (compMsgRef2 && Object.prototype.hasOwnProperty.call(compMsgRef2, 'x-use-desc-naming')) ? !!compMsgRef2['x-use-desc-naming'] : !!(compMsgRef2 && compMsgRef2['x-event'] === true);
-            const map = (sch, name) => {
-              if (!sch) return { t: 'interface{}', needsTime: false };
+      const map = (sch, name) => {
+        if (String(name) === 'id') { return { t: 'MessageID', needsTime: false } }
+        if (!sch) return { t: 'interface{}', needsTime: false };
               if (sch.$ref) { const r = resolveRef(root, sch.$ref); if (r) return map(r, name); }
               const type = sch.type || (sch.properties ? 'object' : (sch.items ? 'array' : undefined));
               const format = sch.format;
