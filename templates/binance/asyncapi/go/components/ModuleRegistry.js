@@ -8,18 +8,9 @@ import { WebSocketHandlers } from './WebSocketHandlers.js';
 import { IndividualModels } from './IndividualModels.js';
 import { MessageStructs } from './MessageStructs.js';
 
-// Import dedicated spot-streams components
-import { SpotStreamsWebSocketHandlers } from './SpotStreamsWebSocketHandlers.js';
+// Import dedicated spot-streams models component
 import { SpotStreamsIndividualModels } from './SpotStreamsIndividualModels.js';
-
-// Import dedicated umfutures-streams components
-import { UmfuturesStreamsWebSocketHandlers } from './UmfuturesStreamsWebSocketHandlers.js';
-
-// Import dedicated cmfutures-streams components
-import { CmfuturesStreamsWebSocketHandlers } from './CmfuturesStreamsWebSocketHandlers.js';
-
-// Import dedicated options-streams components
-import { OptionsStreamsWebSocketHandlers } from './OptionsStreamsWebSocketHandlers.js';
+// Use generic, spec-driven streams handlers for all *-streams modules
 import { GenericStreamsWebSocketHandlers } from './GenericStreamsWebSocketHandlers.js';
 
 // Import dedicated pmargin components
@@ -355,10 +346,11 @@ function cmfuturesMessageStructsGenerator(asyncapi, moduleConfig) {
 // Spot-Streams module generators (market data streams, no authentication)
 function spotStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
   try {
-    return SpotStreamsWebSocketHandlers({ asyncapi });
+    // Use the generic, spec-driven streams handler for consistency across all *-streams modules
+    return GenericStreamsWebSocketHandlers({ asyncapi });
   } catch (error) {
-    console.warn('Could not load SpotStreamsWebSocketHandlers for spot-streams:', error.message);
-    return '// SpotStreamsWebSocketHandlers component not available for spot-streams\n';
+    console.warn('Could not load GenericStreamsWebSocketHandlers for spot-streams:', error.message);
+    return '// GenericStreamsWebSocketHandlers component not available for spot-streams\n';
   }
 }
 
@@ -428,11 +420,11 @@ function umfuturesStreamsMessageStructsGenerator(asyncapi, moduleConfig) {
 // COIN-M Futures Streams module generators (market data streams, no authentication)
 function cmfuturesStreamsWebSocketHandlersGenerator(asyncapi, moduleConfig) {
   try {
-    // Use dedicated CmfuturesStreamsWebSocketHandlers for COIN-M futures specific event handling
-    return CmfuturesStreamsWebSocketHandlers({ asyncapi });
+    // Switch to generic, spec-driven streams handler for consistent naming (Handle{EventName}Event)
+    return GenericStreamsWebSocketHandlers({ asyncapi });
   } catch (error) {
-    console.warn('Could not load WebSocketHandlers for cmfutures-streams:', error.message);
-    return '// WebSocketHandlers component not available for cmfutures-streams\n';
+    console.warn('Could not load GenericStreamsWebSocketHandlers for cmfutures-streams:', error.message);
+    return '// GenericStreamsWebSocketHandlers component not available for cmfutures-streams\n';
   }
 }
 
