@@ -48,6 +48,8 @@ export default function ({ asyncapi, params }) {
   // 1) component message display name (name/title) -> component struct name
   const root = asyncapi.json ? asyncapi.json() : {};
   const compNameToStruct = {};
+  // Map component display name (PascalCase) -> component raw key (e.g., 'BookTickerEvent' -> 'bookTickerEvent')
+  const compNameToRawKey = {};
   if (root && root.components && root.components.messages) {
     Object.entries(root.components.messages).forEach(([compKey, compMsg]) => {
       try {
@@ -55,11 +57,14 @@ export default function ({ asyncapi, params }) {
         const displayPascal = toPascalCase(display);
         const structName = toPascalCase(compKey);
         if (displayPascal) compNameToStruct[displayPascal] = structName;
+        if (displayPascal) compNameToRawKey[displayPascal] = compKey;
       } catch (e) {}
     });
   }
   // 2) channel message key (e.g., subscribe, subscribeResponse) -> component struct name (if channel message $refers to a component message)
   const chanMsgKeyToStruct = {};
+  // Map channel message key (PascalCase) -> raw key (e.g., 'BookTickerEvent' -> 'bookTickerEvent')
+  const chanMsgPascalToRaw = {};
   try {
     if (root && root.channels) {
       Object.keys(root.channels).forEach((chKey) => {
@@ -73,6 +78,7 @@ export default function ({ asyncapi, params }) {
                 const structName = toPascalCase(compTail);
                 const keyPascal = toPascalCase(msgKey);
                 chanMsgKeyToStruct[keyPascal] = structName;
+                chanMsgPascalToRaw[keyPascal] = msgKey;
               }
             }
           });
@@ -886,8 +892,11 @@ content += `\t\tvar v ${modelType}` + "\n";
               content += `\tch.client.handlersMu.Unlock()\n`;
               content += `}\n\n`;
             } else {
+              // Default: normalize handler key to component message key when available
+              // Prefer components.messages display name mapping, then channel messages key, else fallback to lowerCamelCase of handler name
+              const rawKey = (compNameToRawKey[displayPascal] || chanMsgPascalToRaw[displayPascal] || toLowerCamelCase(handlerName));
               content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tch.msgHandlers[\"${mName}\"] = func(ctx context.Context, b []byte) error {\n`;
+              content += `\tch.msgHandlers[\"${rawKey}\"] = func(ctx context.Context, b []byte) error {\n`;
               content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
@@ -897,7 +906,7 @@ content += `\t\tvar v ${modelType}` + "\n";
               content += `}\n`;
               content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
               content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tdelete(ch.msgHandlers, \"${mName}\")\n`;
+              content += `\tdelete(ch.msgHandlers, \"${rawKey}\")\n`;
               content += `\tch.client.handlersMu.Unlock()\n`;
               content += `}\n\n`;
             }
