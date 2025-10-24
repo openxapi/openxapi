@@ -86,6 +86,7 @@ export default function ({ asyncapi, params }) {
   "log"
   "net/url"
   "runtime"
+  "strings"
   "sync"
   "github.com/gorilla/websocket"
 )`}
@@ -185,8 +186,41 @@ func (c *Client) GetURL() string { return c.GetCurrentURL() }
 func (c *Client) RegisterHandlers(channel string, m map[string]func(context.Context, []byte) error) {
   c.handlersMu.Lock()
   defer c.handlersMu.Unlock()
-  if c.handlers == nil { c.handlers = make(map[string]map[string]func(context.Context, []byte) error) }
-  c.handlers[channel] = m
+  // Expand event-type alias keys when templates provided a comma-separated list (x-event-type array)
+  // e.g. evt:1hTicker,4hTicker,1dTicker[:array] -> duplicate handlers for each value
+  expanded := make(map[string]func(context.Context, []byte) error, len(m))
+  for k, h := range m {
+    if strings.HasPrefix(k, "evt:") {
+      body := strings.TrimPrefix(k, "evt:")
+      suffix := ""
+      if strings.HasSuffix(body, ":array") {
+        body = strings.TrimSuffix(body, ":array")
+        suffix = ":array"
+      }
+      kb := strings.TrimSpace(body)
+      // strip optional bracket notation if present
+      if strings.HasPrefix(kb, "[") && strings.HasSuffix(kb, "]") {
+        kb = strings.TrimPrefix(kb, "[")
+        kb = strings.TrimSuffix(kb, "]")
+      }
+      createdAny := false
+      parts := strings.Split(kb, ",")
+      for _, p := range parts {
+        v := strings.TrimSpace(p)
+        if strings.HasPrefix(v, \`"\`) { v = strings.TrimPrefix(v, \`"\`) }
+        if strings.HasSuffix(v, \`"\`) { v = strings.TrimSuffix(v, \`"\`) }
+        if v == "" { continue }
+        expanded["evt:"+v+suffix] = h
+        createdAny = true
+      }
+      if !createdAny {
+        expanded[k] = h
+      }
+    } else {
+      expanded[k] = h
+    }
+  }
+  c.handlers[channel] = expanded
 }
 
 // StopReadLoop closes the underlying websocket connection and flips connection flags.
@@ -462,7 +496,10 @@ ${(() => {
     var typ map[string]interface{}
     if err := json.Unmarshal(payload, &typ); err == nil {
 ${(() => { return ''; })()}
-      if ev, ok := typ["e"].(string); ok && ev != "" {
+      // support nested event.e as well as top-level e
+      var ev string
+      if v, ok := typ["e"].(string); ok { ev = v } else if evobj, ok := typ["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+      if ev != "" {
         key := "evt:" + ev
         c.handlersMu.RLock()
         var callList []func(context.Context, []byte) error
@@ -479,7 +516,10 @@ ${(() => { return ''; })()}
         var first map[string]interface{}
         if err3 := json.Unmarshal(arr[0], &first); err3 == nil {
 ${(() => { return ''; })()}
-          if ev, ok := first["e"].(string); ok && ev != "" {
+          // support nested event.e as well as top-level e for array payloads
+          var ev string
+          if v, ok := first["e"].(string); ok { ev = v } else if evobj, ok := first["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+          if ev != "" {
             key := "evt:" + ev + ":array"
             c.handlersMu.RLock()
             var callList []func(context.Context, []byte) error

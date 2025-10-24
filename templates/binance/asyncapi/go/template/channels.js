@@ -99,25 +99,46 @@ export default function ({ asyncapi, params }) {
     operationsByChannelAddr.get(addr).push(op);
   });
 
-  // Collect channels
-  const channelObjs = [];
+  // Collect channels with their keys
+  const channelEntries = [];
   try {
-    asyncapi.channels().forEach((channel) => channelObjs.push(channel));
+    asyncapi.channels().forEach((channel) => {
+      let key = '';
+      try { if (typeof channel.id === 'function') { key = channel.id() || ''; } } catch (e) {}
+      channelEntries.push({ ch: channel, key });
+    });
   } catch (e) {
-    // Fallback: if forEach isn't available, try keys/get pattern
+    // Fallback: if forEach isn't available, try keys/get pattern and preserve keys
     if (asyncapi.channels().keys && asyncapi.channels().get) {
       for (const k of asyncapi.channels().keys()) {
         const ch = asyncapi.channels().get(k);
-        if (ch) channelObjs.push(ch);
+        if (ch) channelEntries.push({ ch, key: k });
       }
     }
   }
+  // Fill missing keys by matching channel address with root.channels entries
+  try {
+    if (root && root.channels) {
+      channelEntries.forEach((entry) => {
+        try {
+          if (entry.key) return;
+          const addr = entry.ch && entry.ch.address ? entry.ch.address() : '';
+          if (!addr) return;
+          for (const [ck, cj] of Object.entries(root.channels)) {
+            try { if (cj && (cj.address === addr || (cj.address && typeof cj.address === 'function' && cj.address() === addr))) { entry.key = ck; break; } } catch (e) {}
+          }
+        } catch (e) {}
+      });
+    }
+  } catch (e) {}
 
   // Iterate channels and emit a file per channel
-  for (const ch of channelObjs) {
+  for (const entry of channelEntries) {
+    const ch = entry && entry.ch;
     if (!ch) continue;
+    const chKey = (entry && entry.key) || '';
     const addr = ch.address ? ch.address() : '';
-    const nameSource = (typeof ch.id === 'function' && ch.id()) || sanitizeAddress(addr) || 'channel';
+    const nameSource = chKey || sanitizeAddress(addr) || 'channel';
     const channelPascal = toPascalCase(nameSource);
     const channelSnake = toSnakeCase(nameSource);
     const paramNames = extractPathParams(addr);
@@ -572,6 +593,7 @@ export default function ({ asyncapi, params }) {
               isCombinedWrapperFlag = (mName === 'combinedMarketStreamsEvent');
             }
             let expectedEventTypeAlias = '';
+            let expectedEventTypeAliases = [];
             let isArrayFormat = false;
             let isErrorMessageFlag = false;
             let errorAliasKey = 'error';
@@ -579,7 +601,11 @@ export default function ({ asyncapi, params }) {
             try {
               const mj0 = (typeof m.json === 'function') ? m.json() : null;
               if (mj0) {
-                if (mj0['x-event-type']) expectedEventTypeAlias = mj0['x-event-type'];
+                if (mj0['x-event-type'] && typeof mj0['x-event-type'] === 'string') expectedEventTypeAlias = mj0['x-event-type'];
+                if (mj0['x-event-type']) {
+                  const xet = mj0['x-event-type'];
+                  expectedEventTypeAliases = Array.isArray(xet) ? xet.map(String) : (typeof xet === 'string' ? [String(xet)] : expectedEventTypeAliases);
+                }
                 if (mj0['x-response-format'] && String(mj0['x-response-format']).toLowerCase() === 'array') {
                   isArrayFormat = true;
                 }
@@ -591,7 +617,7 @@ export default function ({ asyncapi, params }) {
                   noEventTypeFlag = true;
                 }
                 let ps0 = mj0.payload;
-                if (!expectedEventTypeAlias && ps0 && ps0.$ref && typeof ps0.$ref === 'string' && ps0.$ref.startsWith('#/components/schemas/')) {
+                if (!expectedEventTypeAlias && !expectedEventTypeAliases.length && ps0 && ps0.$ref && typeof ps0.$ref === 'string' && ps0.$ref.startsWith('#/components/schemas/')) {
                   const tail0 = ps0.$ref.split('/').pop();
                   if (root && root.components && root.components.schemas && root.components.schemas[tail0]) {
                     ps0 = root.components.schemas[tail0];
@@ -603,10 +629,15 @@ export default function ({ asyncapi, params }) {
                 }
                 const props0 = ps0 && ps0.properties;
                 if (props0 && Object.prototype.hasOwnProperty.call(props0, 'error')) isErrorMessageFlag = true;
-                if (!expectedEventTypeAlias && props0 && props0.e && props0.e.const) expectedEventTypeAlias = props0.e.const;
-                // Also support nested event.e.const in payload
-                if (!expectedEventTypeAlias && props0 && props0.event && props0.event.properties && props0.event.properties.e && props0.event.properties.e.const) {
-                  expectedEventTypeAlias = props0.event.properties.e.const;
+                if (!expectedEventTypeAliases.length && props0 && props0.e) {
+                  if (props0.e.const && !expectedEventTypeAlias) expectedEventTypeAlias = props0.e.const;
+                  else if (Array.isArray(props0.e.enum)) expectedEventTypeAliases = props0.e.enum.map(String);
+                }
+                // Also support nested event.e.const/enum in payload
+                if (!expectedEventTypeAliases.length && props0 && props0.event && props0.event.properties && props0.event.properties.e) {
+                  const ne = props0.event.properties.e;
+                  if (ne.const && !expectedEventTypeAlias) expectedEventTypeAlias = ne.const;
+                  else if (Array.isArray(ne.enum)) expectedEventTypeAliases = ne.enum.map(String);
                 }
               }
             } catch (e) {}
@@ -642,7 +673,7 @@ export default function ({ asyncapi, params }) {
               } else {
                 // Try to grab event type from x-event-type or payload e.const (including nested event.e)
                 let expectedEventType = '';
-                if (mj && mj['x-event-type']) expectedEventType = mj['x-event-type'];
+                if (mj && mj['x-event-type']) { const xet = mj['x-event-type']; if (!Array.isArray(xet)) expectedEventType = xet; }
                 let ps = mj && mj.payload;
                 if (!expectedEventType && ps) {
                   if (ps.$ref && typeof ps.$ref === 'string' && ps.$ref.startsWith('#/components/schemas/')) {
@@ -796,6 +827,48 @@ export default function ({ asyncapi, params }) {
               content += `\tdelete(ch.msgHandlers, \"${errorAliasKey}\")\n`;
               content += `\tch.client.handlersMu.Unlock()\n`;
               content += `}\n\n`;
+            } else if (expectedEventTypeAliases && expectedEventTypeAliases.length) {
+              content += `\tch.client.handlersMu.Lock()` + "\n";
+              expectedEventTypeAliases.forEach((__aliasVal) => {
+                const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                const __alias = isArrayFormat ? `evt:${__esc}:array` : `evt:${__esc}`;
+                content += `\tch.msgHandlers["${__alias}"] = func(ctx context.Context, b []byte) error {` + "\n";
+content += `\t\tvar v ${modelType}` + "\n";
+                if (isArrayFormat) {
+                  content += `
+		var arr []json.RawMessage
+		if err := json.Unmarshal(b, &arr); err != nil { return err }
+		if len(arr) == 0 { return fmt.Errorf("empty array") }
+		var typ map[string]interface{}
+		if err := json.Unmarshal(arr[0], &typ); err != nil { return err }
+		var ev string
+		if v, ok := typ["e"].(string); ok { ev = v } else if evobj, ok := typ["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+		if ev != "${__esc}" { return fmt.Errorf("unexpected event type") }
+`;
+                } else {
+                  content += `
+		var typ map[string]interface{}
+		if err := json.Unmarshal(b, &typ); err != nil { return err }
+		var ev string
+		if v, ok := typ["e"].(string); ok { ev = v } else if evobj, ok := typ["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+		if ev != "${__esc}" { return fmt.Errorf("unexpected event type") }
+`;
+                }
+                content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }` + "\n";
+                content += `\t\treturn fn(ctx, &v)` + "\n";
+                content += `\t}` + "\n";
+              });
+              content += `\tch.client.handlersMu.Unlock()` + "\n";
+              content += `}` + "\n";
+              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {` + "\n";
+              content += `\tch.client.handlersMu.Lock()` + "\n";
+              expectedEventTypeAliases.forEach((__aliasVal) => {
+                const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                const __alias = isArrayFormat ? `evt:${__esc}:array` : `evt:${__esc}`;
+                content += `\tdelete(ch.msgHandlers, "${__alias}")` + "\n";
+              });
+              content += `\tch.client.handlersMu.Unlock()` + "\n";
+              content += `}` + "\n\n";
             } else if (expectedEventTypeAlias) {
               const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
               content += `\tch.client.handlersMu.Lock()\n`;
@@ -836,8 +909,7 @@ export default function ({ asyncapi, params }) {
 
     // Additional unwrapped event handlers for combined streams (spec-driven)
     try {
-      const chKey = (typeof ch.id === 'function' && ch.id()) || '';
-      const chJson = (root && root.channels && chKey && root.channels[chKey]) ? root.channels[chKey] : null;
+      const chJson = (root && root.channels && (chKey || '') && root.channels[chKey]) ? root.channels[chKey] : null;
       const unwrappedList = chJson && chJson['x-unwrapped-event-messages'];
       if (Array.isArray(unwrappedList) && unwrappedList.length) {
         unwrappedList.forEach((msgKey) => {
@@ -849,13 +921,14 @@ export default function ({ asyncapi, params }) {
             const structName = toPascalCase(msgKey);
             const handlerName = structName;
             const modelType = `models.${structName}`;
-            // Determine expected event type alias from message metadata or payload schema
+            // Determine expected event type alias(es) from message metadata or payload schema
             let expectedEventTypeAlias = '';
+            let expectedEventTypeAliases = [];
             let isArrayFormat = false;
             let isErrorMessageFlag = false;
             let errorAliasKey = 'error';
             try {
-              if (compMsg['x-event-type']) expectedEventTypeAlias = compMsg['x-event-type'];
+              if (compMsg['x-event-type']) { const xet = compMsg['x-event-type']; if (Array.isArray(xet)) expectedEventTypeAliases = xet.map(String); else expectedEventTypeAlias = String(xet); }
               if (compMsg['x-response-format'] && String(compMsg['x-response-format']).toLowerCase() === 'array') isArrayFormat = true;
               if (compMsg['x-error'] === true) isErrorMessageFlag = true;
               if (typeof compMsg['x-handler-key'] === 'string' && compMsg['x-handler-key'].trim()) {
@@ -921,43 +994,139 @@ export default function ({ asyncapi, params }) {
             if (isErrorMessageFlag) {
               content += `\tch.client.handlersMu.Lock()\n`;
               content += `\tch.msgHandlers[\"${errorAliasKey}\"] = func(ctx context.Context, b []byte) error {\n`;
-            } else if (expectedEventTypeAlias) {
-              const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tch.msgHandlers[\"${alias}\"] = func(ctx context.Context, b []byte) error {\n`;
+                if (isArrayFormat) {
+                  content += `
+		var arr []json.RawMessage
+		if err := json.Unmarshal(b, &arr); err != nil { return err }
+		if len(arr) == 0 { return fmt.Errorf("empty array") }
+		var typ map[string]interface{}
+		if err := json.Unmarshal(arr[0], &typ); err != nil { return err }
+		var ev string
+		if v, ok := typ["e"].(string); ok { ev = v } else if evobj, ok := typ["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+		if ev != "${__esc}" { return fmt.Errorf("unexpected event type") }
+`;
+                } else {
+                  content += `
+		var typ map[string]interface{}
+		if err := json.Unmarshal(b, &typ); err != nil { return err }
+		var ev string
+		if v, ok := typ["e"].(string); ok { ev = v } else if evobj, ok := typ["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+		if ev != "${__esc}" { return fmt.Errorf("unexpected event type") }
+`;
+                }
+            } else if (expectedEventTypeAliases && expectedEventTypeAliases.length) {
+              content += `\tch.client.handlersMu.Lock()` + "\n";
+              expectedEventTypeAliases.forEach((__aliasVal) => {
+                const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                const __alias = isArrayFormat ? `evt:${__esc}:array` : `evt:${__esc}`;
+                content += `\tch.msgHandlers["${__alias}"] = func(ctx context.Context, b []byte) error {` + "\n";
+                if (isArrayFormat) {
+                  content += `
+		var arr []json.RawMessage
+		if err := json.Unmarshal(b, &arr); err != nil { return err }
+		if len(arr) == 0 { return fmt.Errorf("empty array") }
+		var typ map[string]interface{}
+		if err := json.Unmarshal(arr[0], &typ); err != nil { return err }
+		var ev string
+		if v, ok := typ["e"].(string); ok { ev = v } else if evobj, ok := typ["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+		if ev != "${__esc}" { return fmt.Errorf("unexpected event type") }
+`;
+                } else {
+                  content += `
+		var typ map[string]interface{}
+		if err := json.Unmarshal(b, &typ); err != nil { return err }
+		var ev string
+		if v, ok := typ["e"].(string); ok { ev = v } else if evobj, ok := typ["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+		if ev != "${__esc}" { return fmt.Errorf("unexpected event type") }
+`;
+                }
+content += `\t\tvar v ${modelType}` + "\n";
+                content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }` + "\n";
+                content += `\t\treturn fn(ctx, &v)` + "\n";
+                content += `\t}` + "\n";
+              });
+              content += `\tch.client.handlersMu.Unlock()` + "\n";
+              content += `}` + "\n";
+              content += `
+func (ch *${channelPascal}Channel) Unregister${handlerName}() {
+`;
+              content += `	ch.client.handlersMu.Lock()` + "\n";
+              expectedEventTypeAliases.forEach((__aliasVal) => {
+                const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                const __alias = isArrayFormat ? `evt:${__esc}:array` : `evt:${__esc}`;
+                content += `	delete(ch.msgHandlers, "${__alias}")` + "\n";
+              });
+              content += `	ch.client.handlersMu.Unlock()` + "\n";
+              content += `}\n\n`;
             } else {
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tch.msgHandlers[\"${msgKey}\"] = func(ctx context.Context, b []byte) error {\n`;
-            }
-            content += preCheck;
-            content += `\t\tvar v ${modelType}\n`;
-            content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
-            content += `\t\treturn fn(ctx, &v)\n`;
-            content += `\t}\n`;
-            content += `\tch.client.handlersMu.Unlock()\n`;
-            content += `}\n`;
+              if (expectedEventTypeAlias) {
+                const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
+                content += `	ch.client.handlersMu.Lock()
+`;
+                content += `	ch.msgHandlers[\"${alias}\"] = func(ctx context.Context, b []byte) error {\n`;
+              } else {
+                content += `	ch.client.handlersMu.Lock()
+`;
+                content += `	ch.msgHandlers[\"${msgKey}\"] = func(ctx context.Context, b []byte) error {\n`;
+              }
+              content += preCheck;
+              content += `		var v ${modelType}
+`;
+              content += `		if err := json.Unmarshal(b, &v); err != nil { return err }
+`;
+              content += `		return fn(ctx, &v)
+`;
+              content += `	}
+`;
+              content += `	ch.client.handlersMu.Unlock()
+`;
+              content += `}
+`;
             // Unregister counterpart
             if (isErrorMessageFlag) {
-              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tdelete(ch.msgHandlers, \"${errorAliasKey}\")\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
-              content += `}\n\n`;
+              content += `
+func (ch *${channelPascal}Channel) Unregister${handlerName}() {
+`;
+              content += `	ch.client.handlersMu.Lock()
+`;
+              content += `	delete(ch.msgHandlers, "${errorAliasKey}")
+`;
+              content += `	ch.client.handlersMu.Unlock()
+`;
+              content += `}
+
+`;
             } else if (expectedEventTypeAlias) {
               const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
-              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tdelete(ch.msgHandlers, \"${alias}\")\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
-              content += `}\n\n`;
+              content += `
+func (ch *${channelPascal}Channel) Unregister${handlerName}() {
+`;
+              content += `	ch.client.handlersMu.Lock()
+`;
+              content += `	delete(ch.msgHandlers, "${alias}")
+`;
+              content += `	ch.client.handlersMu.Unlock()
+`;
+              content += `}
+
+`;
             } else {
-              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tdelete(ch.msgHandlers, \"${msgKey}\")\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
-              content += `}\n\n`;
+              content += `
+func (ch *${channelPascal}Channel) Unregister${handlerName}() {
+`;
+              content += `	ch.client.handlersMu.Lock()
+`;
+              content += `	delete(ch.msgHandlers, "${msgKey}")
+`;
+              content += `	ch.client.handlersMu.Unlock()
+`;
+              content += `}
+
+`;
             }
+
             }
+          }
           } catch (e) { /* ignore per-msg errors */ }
         });
       }
