@@ -92,7 +92,22 @@ export default function ({ asyncapi, params }) {
 )`}
       </Text>
 
-      
+      {/* Wrapper alias keys map used to avoid treating wrapper-only handling as dispatched */}
+      <Text newLines={2}>
+        {(() => {
+          const aliases = new Set(["wrap:combined"]);
+          try {
+            wrappers.forEach(w => { if (w && w.aliasKey) aliases.add(String(w.aliasKey)); });
+          } catch (e) {}
+          const entries = Array.from(aliases).map(a => '  "' + String(a).replace(/\\/g, '\\').replace(/"/g, '\"') + '": {},').join('\n');
+          return '// Wrapper alias keys discovered from spec\n' +
+            'var wrapperAliases = map[string]struct{}{' + '\n' +
+            entries + '\n' +
+            '}';
+
+        })()}
+      </Text>
+
 
       <Text newLines={2}>
         {`// Client carries shared server manager and optional auth for per-channel connections
@@ -435,7 +450,8 @@ ${(() => {
         if h, ok := hm["${ek}"]; ok && h != nil { callList = append(callList, h) }
       }
       c.handlersMu.RUnlock()
-      for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
+      // invoke wrapper handlers but do not mark dispatched; data-level handlers should decide
+      for _, h := range callList { _ = h(ctx, data) }
       // If this error correlates to a request id, clear the pending one-shot handler
       if rawID, ok := envelope["id"]; ok && len(rawID) > 0 {
         dec := json.NewDecoder(bytes.NewReader(rawID))
@@ -471,7 +487,8 @@ ${(() => {
         if h, ok := hm[\"wrap:combined\"]; ok && h != nil { callList = append(callList, h) }
       }
       c.handlersMu.RUnlock()
-      for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
+      // invoke wrapper handlers but do not mark dispatched; data-level handlers should decide
+      for _, h := range callList { _ = h(ctx, data) }
       if raw, ok := envelope[\"data\"]; ok && len(raw) > 0 { payload = raw }
     }`;
   }
@@ -487,7 +504,8 @@ ${(() => {
         if h, ok := hm[\"${alias}\"]; ok && h != nil { callList = append(callList, h) }
       }
       c.handlersMu.RUnlock()
-      for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }
+      // invoke wrapper handlers but do not mark dispatched; data-level handlers should decide
+      for _, h := range callList { _ = h(ctx, data) }
       if raw, ok := envelope[\"${edk}\"]; ok && len(raw) > 0 { payload = raw }
     }`;
   }).join("\n");
@@ -600,7 +618,10 @@ ${(() => { return ''; })()}
     c.handlersMu.RLock()
     var callList []func(context.Context, []byte) error
     for _, hm := range c.handlers {
-      for _, h := range hm { if h != nil { callList = append(callList, h) } }
+      for k, h := range hm { if h != nil {
+        if _, isWrapper := wrapperAliases[k]; isWrapper { continue }
+        callList = append(callList, h)
+      } }
     }
     c.handlersMu.RUnlock()
     for _, h := range callList { if err := h(ctx, data); err == nil { dispatched = true } }

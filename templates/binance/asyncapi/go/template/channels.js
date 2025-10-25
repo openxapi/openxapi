@@ -568,16 +568,14 @@ export default function ({ asyncapi, params }) {
             const mName = m.name ? (m.name() || m.id && m.id()) : (m.id && m.id());
             const displayPascal = toPascalCase(mName || '');
             const byDisplay = compNameToStruct[displayPascal];
-            // Try to resolve by the channel message key as PascalCase (preserves 'Event' suffix from spec keys)
-            // Fall back to display name mapping when necessary
-            // Note: handler name should align with model struct when available (e.g., AggregateTradeEvent)
-            let tempKey = displayPascal; // legacy key attempt
-            const byKey = chanMsgKeyToStruct[tempKey];
-            const resolvedStruct = byKey || byDisplay;
+            // Try to resolve by the channel message key (spec key) in PascalCase
+            // Fall back to display name mapping, then derive from raw spec key when available
+            const byKey = chanMsgKeyToStruct[displayPascal];
+            const rawKeyMaybe = (compNameToRawKey[displayPascal] || chanMsgPascalToRaw[displayPascal] || "");
+            const resolvedStruct = byKey || byDisplay || (rawKeyMaybe ? toPascalCase(rawKeyMaybe) : undefined);
             const modelType = resolvedStruct ? `models.${resolvedStruct}` : `models.${toPascalCase(channelPascal + (mName || 'Message'))}`;
             // Prefer struct name for handler naming to keep 'Event' suffix (consistent across modules)
             const handlerName = resolvedStruct || toPascalCase(mName || 'Message');
-            // Pre-compute alias keys for client-side routing
             // Prefer spec-driven flags over name-based heuristics
             let isCombinedWrapperFlag = false;
             let wrapperAliasKey = '';
@@ -969,7 +967,7 @@ content += `\t\tvar v ${modelType}` + "\n";
             const displayPascal = toPascalCase(msgName || '');
             // Use the component raw key when available for handler normalization
             const normalizedRawKey = (compNameToRawKey[displayPascal] || rawKeyCandidate || toLowerCamelCase(displayPascal));
-            const structName = toPascalCase(rawKeyCandidate || displayPascal);
+            const structName = toPascalCase(compNameToRawKey[displayPascal] || rawKeyCandidate || displayPascal);
             const handlerName = structName;
             const modelType = `models.${structName}`;
             // Determine expected event type alias(es) and flags from message metadata or payload schema
