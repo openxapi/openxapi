@@ -346,7 +346,8 @@ ${(() => {
         if (!msg || typeof msg !== 'object') return;
         const noEvt = msg['x-no-event-type'] === true || msg['x-no-event-type'] === 'true';
         if (!noEvt) return;
-        const key = (msg.name && String(msg.name)) || (msg.title && String(msg.title)) || String(msgKey);
+        // Prefer the component raw key to match handler registration keys
+        const key = String(msgKey);
         let payload = msg.payload || {};
         if (payload && payload.$ref) payload = resolveRef(payload.$ref) || payload;
         let isArray = false;

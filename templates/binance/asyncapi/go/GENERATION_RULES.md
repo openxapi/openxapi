@@ -119,7 +119,11 @@ Implementation note:
   - Example: `{ stream: "stream", data: "data" }`.
 - `x-handler-key` (on a Message): explicit key used by client/channel dispatch for that message.
   - Example: `wrap:combined`.
-- `x-unwrapped-event-messages` (on a Channel): list of component message keys that should also generate unwrapped event handlers on that channel (useful for combined streams that carry inner events).
+- `x-unwrapped-event-messages` (on a Channel): list of messages that should also generate unwrapped event handlers on that channel (useful for combined streams that carry inner events). Entries may be any of:
+  - Component message keys (e.g., `bookTickerEvent`),
+  - `$ref` strings to `#/components/messages/*`, or
+  - `$ref` strings to channel messages under `#/channels/*/messages/*` (which may in turn `$ref` a component message).
+  The generator resolves the entry to the underlying message definition and builds handlers just like regular events, including required-field validation for `x-no-event-type` messages.
   - Example: `["newSymbolInfoEvent", "openInterestEvent", ...]`.
 - `x-use-desc-naming` (on a Message): controls whether field names in generated models use description-based naming instead of JSON keys.
   - When absent, defaults to `true` for messages with `x-event: true`, otherwise `false`.
