@@ -303,6 +303,12 @@ func (c *Client) Wait(ctx context.Context) error {
 // readLoop reads from the shared connection and dispatches to registered handlers
 func (c *Client) readLoop(ctx context.Context) {
   defer func() {
+    // close mailbox and wait for all workers to drain before signalling completion
+    mb := c.mb
+    if mb != nil { mb.Close() }
+    c.workerWG.Wait()
+    c.mb = nil
+
     c.connMu.Lock()
     c.readLoopStarted = false
     if c.done != nil {
@@ -310,11 +316,6 @@ func (c *Client) readLoop(ctx context.Context) {
       c.done = nil
     }
     c.connMu.Unlock()
-    // close mailbox and wait for all workers to drain, then nil it
-    mb := c.mb
-    if mb != nil { mb.Close() }
-    c.workerWG.Wait()
-    c.mb = nil
   }()
   for {
     c.connMu.RLock()
