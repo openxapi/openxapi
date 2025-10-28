@@ -13,18 +13,7 @@ channels:
             orderStatusResponse:
                 $ref: '#/components/messages/orderStatusResponse'
 operations:
-    receiveOrderStatus:
-        title: Receive from order.status
-        description: Receive response from order.status
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderStatusResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendOrderStatus:
+    orderStatus:
         title: Send to order.status
         description: Send a order.status request
         action: send
@@ -32,58 +21,220 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/orderStatusRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/orderStatusResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        orderStatusRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: aa62318a-5a97-4f3b-bdc7-640bbe33b291
+                method:
+                    type: string
+                    description: method property
+                    example: order.status
+                    const: order.status
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        orderId:
+                            type: integer
+                            format: int64
+                            description: Lookup order by orderId
+                        origClientOrderId:
+                            type: string
+                            description: Lookup order by clientOrderId
+                        recvWindow:
+                            type: integer
+                            format: int64
+                            description: The value cannot be greater than 60000
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+                        - apiKey
+                        - signature
+                        - timestamp
+        orderStatusResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: aa62318a-5a97-4f3b-bdc7-640bbe33b291
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 4
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        clientOrderId:
+                            type: string
+                            description: clientOrderId property
+                            example: 4d96324ff9d44481926157
+                        cummulativeQuoteQty:
+                            type: string
+                            description: cummulativeQuoteQty property
+                            example: "198.33521500"
+                        executedQty:
+                            type: string
+                            description: executedQty property
+                            example: "0.00847000"
+                        icebergQty:
+                            type: string
+                            description: icebergQty property
+                            example: "0.00000000"
+                        isWorking:
+                            type: boolean
+                            description: isWorking property
+                            example: true
+                        orderId:
+                            type: integer
+                            format: int64
+                            description: orderId property
+                            example: 12569099453
+                        orderListId:
+                            type: integer
+                            format: int64
+                            description: orderListId property
+                            example: -1
+                        origQty:
+                            type: string
+                            description: origQty property
+                            example: "0.00847000"
+                        origQuoteOrderQty:
+                            type: string
+                            description: origQuoteOrderQty property
+                            example: "0.00000000"
+                        preventedMatchId:
+                            type: integer
+                            format: int64
+                            description: preventedMatchId property
+                            example: 0
+                        preventedQuantity:
+                            type: string
+                            description: preventedQuantity property
+                            example: "1.200000"
+                        price:
+                            type: string
+                            description: price property
+                            example: "23416.10000000"
+                        selfTradePreventionMode:
+                            type: string
+                            description: selfTradePreventionMode property
+                            example: NONE
+                        side:
+                            type: string
+                            description: side property
+                            example: SELL
+                        status:
+                            type: string
+                            description: status property
+                            example: FILLED
+                        stopPrice:
+                            type: string
+                            description: stopPrice property
+                            example: "0.00000000"
+                        strategyId:
+                            type: integer
+                            format: int64
+                            description: strategyId property
+                            example: 37463720
+                        strategyType:
+                            type: integer
+                            description: strategyType property
+                            example: 1000000
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BTCUSDT
+                        time:
+                            type: integer
+                            format: int64
+                            description: time property
+                            example: 1660801715639
+                        timeInForce:
+                            type: string
+                            description: timeInForce property
+                            example: GTC
+                        trailingDelta:
+                            type: integer
+                            description: trailingDelta property
+                            example: 10
+                        trailingTime:
+                            type: integer
+                            format: int64
+                            description: trailingTime property
+                            example: -1
+                        type:
+                            type: string
+                            description: type property
+                            example: LIMIT
+                        updateTime:
+                            type: integer
+                            format: int64
+                            description: updateTime property
+                            example: 1660801717945
+                        workingTime:
+                            type: integer
+                            format: int64
+                            description: workingTime property
+                            example: 1660801715639
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         orderStatusRequest:
             name: Query order (USER_DATA) Request
             title: Query order (USER_DATA) Request
             description: Send a order.status request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: aa62318a-5a97-4f3b-bdc7-640bbe33b291
-                    method:
-                        type: string
-                        description: method property
-                        example: order.status
-                        enum:
-                            - order.status
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: Lookup order by orderId
-                            origClientOrderId:
-                                type: string
-                                description: Lookup order by clientOrderId
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - symbol
-                            - apiKey
-                            - signature
-                            - timestamp
+                $ref: '#/components/schemas/orderStatusRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -92,160 +243,7 @@ components:
             title: Query order (USER_DATA) Response
             description: Receive response from order.status
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: aa62318a-5a97-4f3b-bdc7-640bbe33b291
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 4
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            clientOrderId:
-                                type: string
-                                description: clientOrderId property
-                                example: 4d96324ff9d44481926157
-                            cummulativeQuoteQty:
-                                type: string
-                                description: cummulativeQuoteQty property
-                                example: "198.33521500"
-                            executedQty:
-                                type: string
-                                description: executedQty property
-                                example: "0.00847000"
-                            icebergQty:
-                                type: string
-                                description: icebergQty property
-                                example: "0.00000000"
-                            isWorking:
-                                type: boolean
-                                description: isWorking property
-                                example: true
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: orderId property
-                                example: 12569099453
-                            orderListId:
-                                type: integer
-                                format: int64
-                                description: orderListId property
-                                example: -1
-                            origQty:
-                                type: string
-                                description: origQty property
-                                example: "0.00847000"
-                            origQuoteOrderQty:
-                                type: string
-                                description: origQuoteOrderQty property
-                                example: "0.00000000"
-                            preventedMatchId:
-                                type: integer
-                                format: int64
-                                description: preventedMatchId property
-                                example: 0
-                            preventedQuantity:
-                                type: string
-                                description: preventedQuantity property
-                                example: "1.200000"
-                            price:
-                                type: string
-                                description: price property
-                                example: "23416.10000000"
-                            selfTradePreventionMode:
-                                type: string
-                                description: selfTradePreventionMode property
-                                example: NONE
-                            side:
-                                type: string
-                                description: side property
-                                example: SELL
-                            status:
-                                type: string
-                                description: status property
-                                example: FILLED
-                            stopPrice:
-                                type: string
-                                description: stopPrice property
-                                example: "0.00000000"
-                            strategyId:
-                                type: integer
-                                format: int64
-                                description: strategyId property
-                                example: 37463720
-                            strategyType:
-                                type: integer
-                                description: strategyType property
-                                example: 1000000
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSDT
-                            time:
-                                type: integer
-                                format: int64
-                                description: time property
-                                example: 1660801715639
-                            timeInForce:
-                                type: string
-                                description: timeInForce property
-                                example: GTC
-                            trailingDelta:
-                                type: integer
-                                description: trailingDelta property
-                                example: 10
-                            trailingTime:
-                                type: integer
-                                format: int64
-                                description: trailingTime property
-                                example: -1
-                            type:
-                                type: string
-                                description: type property
-                                example: LIMIT
-                            updateTime:
-                                type: integer
-                                format: int64
-                                description: updateTime property
-                                example: 1660801717945
-                            workingTime:
-                                type: integer
-                                format: int64
-                                description: workingTime property
-                                example: 1660801715639
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/orderStatusResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

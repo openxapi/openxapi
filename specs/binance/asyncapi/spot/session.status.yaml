@@ -15,15 +15,7 @@ channels:
             sessionStatusResponse:
                 $ref: '#/components/messages/sessionStatusResponse'
 operations:
-    receiveSessionStatus:
-        title: Receive from session.status
-        description: Receive response from session.status
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/sessionStatusResponse'
-    sendSessionStatus:
+    sessionStatus:
         title: Send to session.status
         description: Send a session.status request
         action: send
@@ -31,26 +23,74 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/sessionStatusRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/sessionStatusResponse'
 components:
+    schemas:
+        sessionStatusRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
+                method:
+                    type: string
+                    description: method property
+                    example: session.status
+                    const: session.status
+        sessionStatusResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        apiKey:
+                            type: string
+                            description: apiKey property
+                            example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
+                        authorizedSince:
+                            type: integer
+                            description: authorizedSince property
+                            example: 1649729878532
+                        connectedSince:
+                            type: integer
+                            description: connectedSince property
+                            example: 1649729873021
+                        returnRateLimits:
+                            type: boolean
+                            description: returnRateLimits property
+                            example: false
+                        serverTime:
+                            type: integer
+                            format: int64
+                            description: serverTime property
+                            example: 1649730611671
+                        userDataStream:
+                            type: boolean
+                            description: userDataStream property
+                            example: true
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         sessionStatusRequest:
             name: Query session status Request
             title: Query session status Request
             description: Send a session.status request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
-                    method:
-                        type: string
-                        description: method property
-                        example: session.status
-                        enum:
-                            - session.status
+                $ref: '#/components/schemas/sessionStatusRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -59,46 +99,7 @@ components:
             title: Query session status Response
             description: Receive response from session.status
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b50c16cd-62c9-4e29-89e4-37f10111f5bf
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            apiKey:
-                                type: string
-                                description: apiKey property
-                                example: vmPUZE6mv9SD5VNHk4HlWFsOr6aKE2zvsw0MuIgwCIPy6utIco14y7Ju91duEh8A
-                            authorizedSince:
-                                type: integer
-                                description: authorizedSince property
-                                example: 1649729878532
-                            connectedSince:
-                                type: integer
-                                description: connectedSince property
-                                example: 1649729873021
-                            returnRateLimits:
-                                type: boolean
-                                description: returnRateLimits property
-                                example: false
-                            serverTime:
-                                type: integer
-                                format: int64
-                                description: serverTime property
-                                example: 1649730611671
-                            userDataStream:
-                                type: boolean
-                                description: userDataStream property
-                                example: true
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/sessionStatusResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

@@ -1,0 +1,105 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    spot:
+        address: /
+        title: Channel userDataStream.subscribe.signature
+        messages:
+            userDataStreamSubscribeSignatureRequest:
+                $ref: '#/components/messages/userDataStreamSubscribeSignatureRequest'
+            userDataStreamSubscribeSignatureResponse:
+                $ref: '#/components/messages/userDataStreamSubscribeSignatureResponse'
+operations:
+    userDataStreamSubscribeSignature:
+        title: Send to userDataStream.subscribe.signature
+        description: Send a userDataStream.subscribe.signature request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/userDataStreamSubscribeSignatureRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/userDataStreamSubscribeSignatureResponse'
+        security:
+            - $ref: '#/components/securitySchemes/userStream'
+        x-binance-security-type: USER_STREAM
+components:
+    schemas:
+        userDataStreamSubscribeSignatureRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df8a22-98ea-4fe0-9f4e-0fcea5d418b7
+                method:
+                    type: string
+                    description: method property
+                    example: userDataStream.subscribe.signature
+                    const: userDataStream.subscribe.signature
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        signature:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - apiKey
+                        - timestamp
+                        - signature
+        userDataStreamSubscribeSignatureResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df8a22-98ea-4fe0-9f4e-0fcea5d418b7
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        subscriptionId:
+                            type: integer
+                            format: int64
+                            description: subscriptionId property
+                            example: 0
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
+    messages:
+        userDataStreamSubscribeSignatureRequest:
+            name: Subscribe to User Data Stream through signature subscription (USER_STREAM) Request
+            title: Subscribe to User Data Stream through signature subscription (USER_STREAM) Request
+            description: Send a userDataStream.subscribe.signature request
+            payload:
+                $ref: '#/components/schemas/userDataStreamSubscribeSignatureRequest'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        userDataStreamSubscribeSignatureResponse:
+            name: Subscribe to User Data Stream through signature subscription (USER_STREAM) Response
+            title: Subscribe to User Data Stream through signature subscription (USER_STREAM) Response
+            description: Receive response from userDataStream.subscribe.signature
+            payload:
+                $ref: '#/components/schemas/userDataStreamSubscribeSignatureResponse'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+    securitySchemes:
+        userStream:
+            type: apiKey
+            description: User Data Stream management - Requires API key in message parameters
+            in: user

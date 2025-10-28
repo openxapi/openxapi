@@ -21,18 +21,7 @@ channels:
             userDataStreamSubscribeResponse:
                 $ref: '#/components/messages/userDataStreamSubscribeResponse'
 operations:
-    receiveUserDataStreamSubscribe:
-        title: Receive from userDataStream.subscribe
-        description: Receive response from userDataStream.subscribe
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/userDataStreamSubscribeResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userStream'
-        x-binance-security-type: USER_STREAM
-    sendUserDataStreamSubscribe:
+    userDataStreamSubscribe:
         title: Send to userDataStream.subscribe
         description: Send a userDataStream.subscribe request
         action: send
@@ -40,29 +29,57 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamSubscribeRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/userDataStreamSubscribeResponse'
         security:
             - $ref: '#/components/securitySchemes/userStream'
         x-binance-security-type: USER_STREAM
 components:
+    schemas:
+        userDataStreamSubscribeRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                method:
+                    type: string
+                    description: method property
+                    example: userDataStream.subscribe
+                    const: userDataStream.subscribe
+        userDataStreamSubscribeResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        subscriptionId:
+                            type: integer
+                            format: int64
+                            description: subscriptionId property
+                            example: 0
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         userDataStreamSubscribeRequest:
             name: Subscribe to User Data Stream (USER_STREAM) Request
             title: Subscribe to User Data Stream (USER_STREAM) Request
             description: Send a userDataStream.subscribe request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                    method:
-                        type: string
-                        description: method property
-                        example: userDataStream.subscribe
-                        enum:
-                            - userDataStream.subscribe
+                $ref: '#/components/schemas/userDataStreamSubscribeRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -71,20 +88,7 @@ components:
             title: Subscribe to User Data Stream (USER_STREAM) Response
             description: Receive response from userDataStream.subscribe
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                    result:
-                        type: object
-                        description: result property
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/userDataStreamSubscribeResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

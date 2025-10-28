@@ -13,18 +13,7 @@ channels:
             allOrderListsResponse:
                 $ref: '#/components/messages/allOrderListsResponse'
 operations:
-    receiveAllOrderLists:
-        title: Receive from allOrderLists
-        description: Receive response from allOrderLists
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/allOrderListsResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendAllOrderLists:
+    allOrderLists:
         title: Send to allOrderLists
         description: Send a allOrderLists request
         action: send
@@ -32,61 +21,164 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/allOrderListsRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/allOrderListsResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        allOrderListsRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 8617b7b3-1b3d-4dec-94cd-eefd929b8ceb
+                method:
+                    type: string
+                    description: method property
+                    example: allOrderLists
+                    const: allOrderLists
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        endTime:
+                            type: integer
+                            format: int64
+                        fromId:
+                            type: integer
+                            format: int64
+                            description: Order list ID to begin at
+                        limit:
+                            type: integer
+                            description: 'Default: 500; Maximum: 1000'
+                        recvWindow:
+                            type: integer
+                            format: int64
+                            description: The value cannot be greater than 60000
+                        signature:
+                            type: string
+                        startTime:
+                            type: integer
+                            format: int64
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - apiKey
+                        - signature
+                        - timestamp
+        allOrderListsResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 8617b7b3-1b3d-4dec-94cd-eefd929b8ceb
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 20
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            contingencyType:
+                                type: string
+                                description: contingencyType property
+                                example: OCO
+                            listClientOrderId:
+                                type: string
+                                description: listClientOrderId property
+                                example: 08985fedd9ea2cf6b28996
+                            listOrderStatus:
+                                type: string
+                                description: listOrderStatus property
+                                example: EXECUTING
+                            listStatusType:
+                                type: string
+                                description: listStatusType property
+                                example: EXEC_STARTED
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: orderListId property
+                                example: 1274512
+                            orders:
+                                type: array
+                                description: orders property
+                                items:
+                                    type: object
+                                    description: array item
+                                    properties:
+                                        clientOrderId:
+                                            type: string
+                                            description: clientOrderId property
+                                            example: BqtFCj5odMoWtSqGk2X9tU
+                                        orderId:
+                                            type: integer
+                                            format: int64
+                                            description: orderId property
+                                            example: 12569138901
+                                        symbol:
+                                            type: string
+                                            description: symbol property
+                                            example: BTCUSDT
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            transactionTime:
+                                type: integer
+                                format: int64
+                                description: transactionTime property
+                                example: 1660801713793
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         allOrderListsRequest:
             name: Account order list history (USER_DATA) Request
             title: Account order list history (USER_DATA) Request
             description: Send a allOrderLists request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 8617b7b3-1b3d-4dec-94cd-eefd929b8ceb
-                    method:
-                        type: string
-                        description: method property
-                        example: allOrderLists
-                        enum:
-                            - allOrderLists
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            endTime:
-                                type: integer
-                                format: int64
-                            fromId:
-                                type: integer
-                                format: int64
-                                description: Order list ID to begin at
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            startTime:
-                                type: integer
-                                format: int64
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - apiKey
-                            - signature
-                            - timestamp
+                $ref: '#/components/schemas/allOrderListsRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -95,101 +187,7 @@ components:
             title: Account order list history (USER_DATA) Response
             description: Receive response from allOrderLists
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 8617b7b3-1b3d-4dec-94cd-eefd929b8ceb
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 20
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                contingencyType:
-                                    type: string
-                                    description: contingencyType property
-                                    example: OCO
-                                listClientOrderId:
-                                    type: string
-                                    description: listClientOrderId property
-                                    example: 08985fedd9ea2cf6b28996
-                                listOrderStatus:
-                                    type: string
-                                    description: listOrderStatus property
-                                    example: EXECUTING
-                                listStatusType:
-                                    type: string
-                                    description: listStatusType property
-                                    example: EXEC_STARTED
-                                orderListId:
-                                    type: integer
-                                    format: int64
-                                    description: orderListId property
-                                    example: 1274512
-                                orders:
-                                    type: array
-                                    description: orders property
-                                    items:
-                                        type: object
-                                        description: array item
-                                        properties:
-                                            clientOrderId:
-                                                type: string
-                                                description: clientOrderId property
-                                                example: BqtFCj5odMoWtSqGk2X9tU
-                                            orderId:
-                                                type: integer
-                                                format: int64
-                                                description: orderId property
-                                                example: 12569138901
-                                            symbol:
-                                                type: string
-                                                description: symbol property
-                                                example: BTCUSDT
-                                symbol:
-                                    type: string
-                                    description: symbol property
-                                    example: BTCUSDT
-                                transactionTime:
-                                    type: integer
-                                    format: int64
-                                    description: transactionTime property
-                                    example: 1660801713793
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/allOrderListsResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

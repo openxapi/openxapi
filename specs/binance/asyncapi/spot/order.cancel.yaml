@@ -13,18 +13,7 @@ channels:
             orderCancelResponse:
                 $ref: '#/components/messages/orderCancelResponse'
 operations:
-    receiveOrderCancel:
-        title: Receive from order.cancel
-        description: Receive response from order.cancel
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderCancelResponse'
-        security:
-            - $ref: '#/components/securitySchemes/trade'
-        x-binance-security-type: TRADE
-    sendOrderCancel:
+    orderCancel:
         title: Send to order.cancel
         description: Send a order.cancel request
         action: send
@@ -32,65 +21,203 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/orderCancelRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/orderCancelResponse'
         security:
             - $ref: '#/components/securitySchemes/trade'
         x-binance-security-type: TRADE
 components:
+    schemas:
+        orderCancelRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
+                method:
+                    type: string
+                    description: method property
+                    example: order.cancel
+                    const: order.cancel
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        cancelRestrictions:
+                            type: string
+                            description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED.'
+                        newClientOrderId:
+                            type: string
+                            description: New ID for the canceled order. Automatically generated if not sent
+                        orderId:
+                            type: integer
+                            format: int64
+                            description: Cancel order by orderId
+                        origClientOrderId:
+                            type: string
+                            description: Cancel order by clientOrderId
+                        recvWindow:
+                            type: integer
+                            format: int64
+                            description: The value cannot be greater than 60000
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+                        - orderId
+                        - apiKey
+                        - signature
+                        - timestamp
+        orderCancelResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 1
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        clientOrderId:
+                            type: string
+                            description: clientOrderId property
+                            example: 91fe37ce9e69c90d6358c0
+                        cummulativeQuoteQty:
+                            type: string
+                            description: cummulativeQuoteQty property
+                            example: "0.23416100"
+                        executedQty:
+                            type: string
+                            description: executedQty property
+                            example: "0.00001000"
+                        icebergQty:
+                            type: string
+                            description: icebergQty property
+                            example: "0.00000000"
+                        orderId:
+                            type: integer
+                            format: int64
+                            description: orderId property
+                            example: 12569099453
+                        orderListId:
+                            type: integer
+                            format: int64
+                            description: orderListId property
+                            example: -1
+                        origClientOrderId:
+                            type: string
+                            description: origClientOrderId property
+                            example: 4d96324ff9d44481926157
+                        origQty:
+                            type: string
+                            description: origQty property
+                            example: "0.00847000"
+                        origQuoteOrderQty:
+                            type: string
+                            description: origQuoteOrderQty property
+                            example: "0.000000"
+                        price:
+                            type: string
+                            description: price property
+                            example: "23416.10000000"
+                        selfTradePreventionMode:
+                            type: string
+                            description: selfTradePreventionMode property
+                            example: NONE
+                        side:
+                            type: string
+                            description: side property
+                            example: SELL
+                        status:
+                            type: string
+                            description: status property
+                            example: CANCELED
+                        stopPrice:
+                            type: string
+                            description: stopPrice property
+                            example: "0.00000000"
+                        strategyId:
+                            type: integer
+                            format: int64
+                            description: strategyId property
+                            example: 37463720
+                        strategyType:
+                            type: integer
+                            description: strategyType property
+                            example: 1000000
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BTCUSDT
+                        timeInForce:
+                            type: string
+                            description: timeInForce property
+                            example: GTC
+                        trailingDelta:
+                            type: integer
+                            description: trailingDelta property
+                            example: 0
+                        transactTime:
+                            type: integer
+                            format: int64
+                            description: transactTime property
+                            example: 1684804350068
+                        type:
+                            type: string
+                            description: type property
+                            example: LIMIT
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         orderCancelRequest:
             name: Cancel order (TRADE) Request
             title: Cancel order (TRADE) Request
             description: Send a order.cancel request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
-                    method:
-                        type: string
-                        description: method property
-                        example: order.cancel
-                        enum:
-                            - order.cancel
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            cancelRestrictions:
-                                type: string
-                                description: 'Supported values: ONLY_NEW - Cancel will succeed if the order status is NEW. ONLY_PARTIALLY_FILLED - Cancel will succeed if order status is PARTIALLY_FILLED.'
-                            newClientOrderId:
-                                type: string
-                                description: New ID for the canceled order. Automatically generated if not sent
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: Cancel order by orderId
-                            origClientOrderId:
-                                type: string
-                                description: Cancel order by clientOrderId
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - symbol
-                            - orderId
-                            - apiKey
-                            - signature
-                            - timestamp
+                $ref: '#/components/schemas/orderCancelRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -99,136 +226,7 @@ components:
             title: Cancel order (TRADE) Response
             description: Receive response from order.cancel
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 5633b6a2-90a9-4192-83e7-925c90b6a2fd
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 1
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            clientOrderId:
-                                type: string
-                                description: clientOrderId property
-                                example: 91fe37ce9e69c90d6358c0
-                            cummulativeQuoteQty:
-                                type: string
-                                description: cummulativeQuoteQty property
-                                example: "0.23416100"
-                            executedQty:
-                                type: string
-                                description: executedQty property
-                                example: "0.00001000"
-                            icebergQty:
-                                type: string
-                                description: icebergQty property
-                                example: "0.00000000"
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: orderId property
-                                example: 12569099453
-                            orderListId:
-                                type: integer
-                                format: int64
-                                description: orderListId property
-                                example: -1
-                            origClientOrderId:
-                                type: string
-                                description: origClientOrderId property
-                                example: 4d96324ff9d44481926157
-                            origQty:
-                                type: string
-                                description: origQty property
-                                example: "0.00847000"
-                            origQuoteOrderQty:
-                                type: string
-                                description: origQuoteOrderQty property
-                                example: "0.000000"
-                            price:
-                                type: string
-                                description: price property
-                                example: "23416.10000000"
-                            selfTradePreventionMode:
-                                type: string
-                                description: selfTradePreventionMode property
-                                example: NONE
-                            side:
-                                type: string
-                                description: side property
-                                example: SELL
-                            status:
-                                type: string
-                                description: status property
-                                example: CANCELED
-                            stopPrice:
-                                type: string
-                                description: stopPrice property
-                                example: "0.00000000"
-                            strategyId:
-                                type: integer
-                                format: int64
-                                description: strategyId property
-                                example: 37463720
-                            strategyType:
-                                type: integer
-                                description: strategyType property
-                                example: 1000000
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSDT
-                            timeInForce:
-                                type: string
-                                description: timeInForce property
-                                example: GTC
-                            trailingDelta:
-                                type: integer
-                                description: trailingDelta property
-                                example: 0
-                            transactTime:
-                                type: integer
-                                format: int64
-                                description: transactTime property
-                                example: 1684804350068
-                            type:
-                                type: string
-                                description: type property
-                                example: LIMIT
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/orderCancelResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

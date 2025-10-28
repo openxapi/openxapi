@@ -19,15 +19,7 @@ channels:
             tickerBookResponse:
                 $ref: '#/components/messages/tickerBookResponse'
 operations:
-    receiveTickerBook:
-        title: Receive from ticker.book
-        description: Receive response from ticker.book
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/tickerBookResponse'
-    sendTickerBook:
+    tickerBook:
         title: Send to ticker.book
         description: Send a ticker.book request
         action: send
@@ -35,39 +27,109 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/tickerBookRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/tickerBookResponse'
 components:
+    schemas:
+        tickerBookRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 057deb3a-2990-41d1-b58b-98ea0f09e1b4
+                method:
+                    type: string
+                    description: method property
+                    example: ticker.book
+                    const: ticker.book
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        symbol:
+                            type: string
+                            description: Query ticker for a single symbol
+                        symbols:
+                            type: array
+                            description: Query ticker for multiple symbols
+                            items:
+                                type: string
+                                description: array item
+        tickerBookResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 9d32157c-a556-4d27-9866-66760a174b57
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 2
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        askPrice:
+                            type: string
+                            description: askPrice property
+                            example: "0.01358100"
+                        askQty:
+                            type: string
+                            description: askQty property
+                            example: "17.83700000"
+                        bidPrice:
+                            type: string
+                            description: bidPrice property
+                            example: "0.01358000"
+                        bidQty:
+                            type: string
+                            description: bidQty property
+                            example: "12.53400000"
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BNBBTC
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         tickerBookRequest:
             name: Symbol order book ticker Request
             title: Symbol order book ticker Request
             description: Send a ticker.book request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 057deb3a-2990-41d1-b58b-98ea0f09e1b4
-                    method:
-                        type: string
-                        description: method property
-                        example: ticker.book
-                        enum:
-                            - ticker.book
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                                description: Query ticker for a single symbol
-                            symbols:
-                                type: array
-                                description: Query ticker for multiple symbols
-                                items:
-                                    type: string
-                                    description: array item
+                $ref: '#/components/schemas/tickerBookRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -76,68 +138,7 @@ components:
             title: Symbol order book ticker Response
             description: Receive response from ticker.book
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 9d32157c-a556-4d27-9866-66760a174b57
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 2
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            askPrice:
-                                type: string
-                                description: askPrice property
-                                example: "0.01358100"
-                            askQty:
-                                type: string
-                                description: askQty property
-                                example: "17.83700000"
-                            bidPrice:
-                                type: string
-                                description: bidPrice property
-                                example: "0.01358000"
-                            bidQty:
-                                type: string
-                                description: bidQty property
-                                example: "12.53400000"
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BNBBTC
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/tickerBookResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

@@ -17,18 +17,7 @@ channels:
             openOrderListsStatusResponse:
                 $ref: '#/components/messages/openOrderListsStatusResponse'
 operations:
-    receiveOpenOrderListsStatus:
-        title: Receive from openOrderLists.status
-        description: Receive response from openOrderLists.status
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/openOrderListsStatusResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendOpenOrderListsStatus:
+    openOrderListsStatus:
         title: Send to openOrderLists.status
         description: Send a openOrderLists.status request
         action: send
@@ -36,48 +25,151 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/openOrderListsStatusRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/openOrderListsStatusResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        openOrderListsStatusRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
+                method:
+                    type: string
+                    description: method property
+                    example: openOrderLists.status
+                    const: openOrderLists.status
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        recvWindow:
+                            type: integer
+                            format: int64
+                            description: The value cannot be greater than 60000
+                        signature:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - apiKey
+                        - signature
+                        - timestamp
+        openOrderListsStatusResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 6
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            contingencyType:
+                                type: string
+                                description: contingencyType property
+                                example: OCO
+                            listClientOrderId:
+                                type: string
+                                description: listClientOrderId property
+                                example: 08985fedd9ea2cf6b28996
+                            listOrderStatus:
+                                type: string
+                                description: listOrderStatus property
+                                example: EXECUTING
+                            listStatusType:
+                                type: string
+                                description: listStatusType property
+                                example: EXEC_STARTED
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: orderListId property
+                                example: 0
+                            orders:
+                                type: array
+                                description: orders property
+                                items:
+                                    type: object
+                                    description: array item
+                                    properties:
+                                        clientOrderId:
+                                            type: string
+                                            description: clientOrderId property
+                                            example: CUhLgTXnX5n2c0gWiLpV4d
+                                        orderId:
+                                            type: integer
+                                            format: int64
+                                            description: orderId property
+                                            example: 4
+                                        symbol:
+                                            type: string
+                                            description: symbol property
+                                            example: BTCUSDT
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            transactionTime:
+                                type: integer
+                                format: int64
+                                description: transactionTime property
+                                example: 1660801713793
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         openOrderListsStatusRequest:
             name: Current open Order lists (USER_DATA) Request
             title: Current open Order lists (USER_DATA) Request
             description: Send a openOrderLists.status request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
-                    method:
-                        type: string
-                        description: method property
-                        example: openOrderLists.status
-                        enum:
-                            - openOrderLists.status
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - apiKey
-                            - signature
-                            - timestamp
+                $ref: '#/components/schemas/openOrderListsStatusRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -86,101 +178,7 @@ components:
             title: Current open Order lists (USER_DATA) Response
             description: Receive response from openOrderLists.status
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 3a4437e2-41a3-4c19-897c-9cadc5dce8b6
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 6
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                contingencyType:
-                                    type: string
-                                    description: contingencyType property
-                                    example: OCO
-                                listClientOrderId:
-                                    type: string
-                                    description: listClientOrderId property
-                                    example: 08985fedd9ea2cf6b28996
-                                listOrderStatus:
-                                    type: string
-                                    description: listOrderStatus property
-                                    example: EXECUTING
-                                listStatusType:
-                                    type: string
-                                    description: listStatusType property
-                                    example: EXEC_STARTED
-                                orderListId:
-                                    type: integer
-                                    format: int64
-                                    description: orderListId property
-                                    example: 0
-                                orders:
-                                    type: array
-                                    description: orders property
-                                    items:
-                                        type: object
-                                        description: array item
-                                        properties:
-                                            clientOrderId:
-                                                type: string
-                                                description: clientOrderId property
-                                                example: CUhLgTXnX5n2c0gWiLpV4d
-                                            orderId:
-                                                type: integer
-                                                format: int64
-                                                description: orderId property
-                                                example: 4
-                                            symbol:
-                                                type: string
-                                                description: symbol property
-                                                example: BTCUSDT
-                                symbol:
-                                    type: string
-                                    description: symbol property
-                                    example: BTCUSDT
-                                transactionTime:
-                                    type: integer
-                                    format: int64
-                                    description: transactionTime property
-                                    example: 1660801713793
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/openOrderListsStatusResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

@@ -20,18 +20,7 @@ channels:
             orderListPlaceOtoResponse:
                 $ref: '#/components/messages/orderListPlaceOtoResponse'
 operations:
-    receiveOrderListPlaceOto:
-        title: Receive from orderList.place.oto
-        description: Receive response from orderList.place.oto
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderListPlaceOtoResponse'
-        security:
-            - $ref: '#/components/securitySchemes/trade'
-        x-binance-security-type: TRADE
-    sendOrderListPlaceOto:
+    orderListPlaceOto:
         title: Send to orderList.place.oto
         description: Send a orderList.place.oto request
         action: send
@@ -39,122 +28,297 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/orderListPlaceOtoRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/orderListPlaceOtoResponse'
         security:
             - $ref: '#/components/securitySchemes/trade'
         x-binance-security-type: TRADE
 components:
+    schemas:
+        orderListPlaceOtoRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: "1712544395950"
+                method:
+                    type: string
+                    description: method property
+                    example: orderList.place.oto
+                    const: orderList.place.oto
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        listClientOrderId:
+                            type: string
+                            description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId and the pendingClientOrderId.
+                        newOrderRespType:
+                            type: string
+                            description: 'Format of the JSON response. Supported values: Order Response Type'
+                        pendingClientOrderId:
+                            type: string
+                            description: Arbitrary unique ID among open orders for the pending order. Automatically generated if not sent.
+                        pendingIcebergQty:
+                            type: string
+                            description: This can only be used if pendingTimeInForce is GTC, or if pendingType is LIMIT_MAKER.
+                        pendingPrice:
+                            type: string
+                        pendingQuantity:
+                            type: string
+                            description: Sets the quantity for the pending order.
+                        pendingSide:
+                            type: string
+                            description: 'Supported values: Order side'
+                        pendingStopPrice:
+                            type: string
+                        pendingStrategyId:
+                            type: integer
+                            format: int64
+                            description: Arbitrary numeric value identifying the pending order within an order strategy.
+                        pendingStrategyType:
+                            type: integer
+                            description: Arbitrary numeric value identifying the pending order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                        pendingTimeInForce:
+                            type: string
+                            description: 'Supported values: Time In Force'
+                        pendingTrailingDelta:
+                            type: string
+                        pendingType:
+                            type: string
+                            description: 'Supported values: Order types.  Note that MARKET orders using quoteOrderQty are not supported.'
+                        recvWindow:
+                            type: integer
+                            format: int64
+                            description: The value cannot be greater than 60000.
+                        selfTradePreventionMode:
+                            type: string
+                            description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                        workingClientOrderId:
+                            type: string
+                            description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
+                        workingIcebergQty:
+                            type: string
+                            description: This can only be used if workingTimeInForce is GTC, or if workingType is LIMIT_MAKER.
+                        workingPrice:
+                            type: string
+                        workingQuantity:
+                            type: string
+                            description: Sets the quantity for the working order.
+                        workingSide:
+                            type: string
+                            description: 'Supported values: Order side'
+                        workingStrategyId:
+                            type: integer
+                            format: int64
+                            description: Arbitrary numeric value identifying the working order within an order strategy.
+                        workingStrategyType:
+                            type: integer
+                            description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
+                        workingTimeInForce:
+                            type: string
+                            description: 'Supported values: Time In Force'
+                        workingType:
+                            type: string
+                            description: 'Supported values: LIMIT,LIMIT_MAKER'
+                    required:
+                        - symbol
+                        - workingType
+                        - workingSide
+                        - workingPrice
+                        - workingQuantity
+                        - pendingType
+                        - pendingSide
+                        - pendingQuantity
+                        - timestamp
+                        - signature
+        orderListPlaceOtoResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: "1712544395950"
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 10
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 10000000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: ORDERS
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        contingencyType:
+                            type: string
+                            description: contingencyType property
+                            example: OTO
+                        listClientOrderId:
+                            type: string
+                            description: listClientOrderId property
+                            example: KA4EBjGnzvSwSCQsDdTrlf
+                        listOrderStatus:
+                            type: string
+                            description: listOrderStatus property
+                            example: EXECUTING
+                        listStatusType:
+                            type: string
+                            description: listStatusType property
+                            example: EXEC_STARTED
+                        orderListId:
+                            type: integer
+                            format: int64
+                            description: orderListId property
+                            example: 626
+                        orderReports:
+                            type: array
+                            description: orderReports property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    clientOrderId:
+                                        type: string
+                                        description: clientOrderId property
+                                        example: YiAUtM9yJjl1a2jXHSp9Ny
+                                    cummulativeQuoteQty:
+                                        type: string
+                                        description: cummulativeQuoteQty property
+                                        example: "0.000000"
+                                    executedQty:
+                                        type: string
+                                        description: executedQty property
+                                        example: "0.000000"
+                                    orderId:
+                                        type: integer
+                                        format: int64
+                                        description: orderId property
+                                        example: 13
+                                    orderListId:
+                                        type: integer
+                                        format: int64
+                                        description: orderListId property
+                                        example: 626
+                                    origQty:
+                                        type: string
+                                        description: origQty property
+                                        example: "1.000000"
+                                    origQuoteOrderQty:
+                                        type: string
+                                        description: origQuoteOrderQty property
+                                        example: "0.000000"
+                                    price:
+                                        type: string
+                                        description: price property
+                                        example: "1.000000"
+                                    selfTradePreventionMode:
+                                        type: string
+                                        description: selfTradePreventionMode property
+                                        example: NONE
+                                    side:
+                                        type: string
+                                        description: side property
+                                        example: SELL
+                                    status:
+                                        type: string
+                                        description: status property
+                                        example: NEW
+                                    symbol:
+                                        type: string
+                                        description: symbol property
+                                        example: LTCBNB
+                                    timeInForce:
+                                        type: string
+                                        description: timeInForce property
+                                        example: GTC
+                                    transactTime:
+                                        type: integer
+                                        format: int64
+                                        description: transactTime property
+                                        example: 1712544395981
+                                    type:
+                                        type: string
+                                        description: type property
+                                        example: LIMIT
+                                    workingTime:
+                                        type: integer
+                                        format: int64
+                                        description: workingTime property
+                                        example: 1712544395981
+                        orders:
+                            type: array
+                            description: orders property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    clientOrderId:
+                                        type: string
+                                        description: clientOrderId property
+                                        example: YiAUtM9yJjl1a2jXHSp9Ny
+                                    orderId:
+                                        type: integer
+                                        format: int64
+                                        description: orderId property
+                                        example: 13
+                                    symbol:
+                                        type: string
+                                        description: symbol property
+                                        example: LTCBNB
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: "1712544378871"
+                        transactionTime:
+                            type: integer
+                            format: int64
+                            description: transactionTime property
+                            example: 1712544395981
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         orderListPlaceOtoRequest:
             name: Place new Order list - OTO (TRADE) Request
             title: Place new Order list - OTO (TRADE) Request
             description: Send a orderList.place.oto request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: "1712544395950"
-                    method:
-                        type: string
-                        description: method property
-                        example: orderList.place.oto
-                        enum:
-                            - orderList.place.oto
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            listClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId and the pendingClientOrderId.
-                            newOrderRespType:
-                                type: string
-                                description: 'Format of the JSON response. Supported values: Order Response Type'
-                            pendingClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the pending order. Automatically generated if not sent.
-                            pendingIcebergQty:
-                                type: string
-                                description: This can only be used if pendingTimeInForce is GTC, or if pendingType is LIMIT_MAKER.
-                            pendingPrice:
-                                type: string
-                            pendingQuantity:
-                                type: string
-                                description: Sets the quantity for the pending order.
-                            pendingSide:
-                                type: string
-                                description: 'Supported values: Order side'
-                            pendingStopPrice:
-                                type: string
-                            pendingStrategyId:
-                                type: integer
-                                format: int64
-                                description: Arbitrary numeric value identifying the pending order within an order strategy.
-                            pendingStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the pending order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                            pendingTimeInForce:
-                                type: string
-                                description: 'Supported values: Time In Force'
-                            pendingTrailingDelta:
-                                type: string
-                            pendingType:
-                                type: string
-                                description: 'Supported values: Order types.  Note that MARKET orders using quoteOrderQty are not supported.'
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000.
-                            selfTradePreventionMode:
-                                type: string
-                                description: 'The allowed values are dependent on what is configured on the symbol. Supported values: STP Modes'
-                            signature:
-                                type: string
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                            workingClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders for the working order. Automatically generated if not sent.
-                            workingIcebergQty:
-                                type: string
-                                description: This can only be used if workingTimeInForce is GTC, or if workingType is LIMIT_MAKER.
-                            workingPrice:
-                                type: string
-                            workingQuantity:
-                                type: string
-                                description: Sets the quantity for the working order.
-                            workingSide:
-                                type: string
-                                description: 'Supported values: Order side'
-                            workingStrategyId:
-                                type: integer
-                                format: int64
-                                description: Arbitrary numeric value identifying the working order within an order strategy.
-                            workingStrategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the working order strategy.  Values smaller than 1000000 are reserved and cannot be used.
-                            workingTimeInForce:
-                                type: string
-                                description: 'Supported values: Time In Force'
-                            workingType:
-                                type: string
-                                description: 'Supported values: LIMIT,LIMIT_MAKER'
-                        required:
-                            - symbol
-                            - workingType
-                            - workingSide
-                            - workingPrice
-                            - workingQuantity
-                            - pendingType
-                            - pendingSide
-                            - pendingQuantity
-                            - timestamp
-                            - signature
+                $ref: '#/components/schemas/orderListPlaceOtoRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -163,173 +327,7 @@ components:
             title: Place new Order list - OTO (TRADE) Response
             description: Receive response from orderList.place.oto
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: "1712544395950"
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 10
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 10000000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: ORDERS
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            contingencyType:
-                                type: string
-                                description: contingencyType property
-                                example: OTO
-                            listClientOrderId:
-                                type: string
-                                description: listClientOrderId property
-                                example: KA4EBjGnzvSwSCQsDdTrlf
-                            listOrderStatus:
-                                type: string
-                                description: listOrderStatus property
-                                example: EXECUTING
-                            listStatusType:
-                                type: string
-                                description: listStatusType property
-                                example: EXEC_STARTED
-                            orderListId:
-                                type: integer
-                                format: int64
-                                description: orderListId property
-                                example: 626
-                            orderReports:
-                                type: array
-                                description: orderReports property
-                                items:
-                                    type: object
-                                    description: array item
-                                    properties:
-                                        clientOrderId:
-                                            type: string
-                                            description: clientOrderId property
-                                            example: YiAUtM9yJjl1a2jXHSp9Ny
-                                        cummulativeQuoteQty:
-                                            type: string
-                                            description: cummulativeQuoteQty property
-                                            example: "0.000000"
-                                        executedQty:
-                                            type: string
-                                            description: executedQty property
-                                            example: "0.000000"
-                                        orderId:
-                                            type: integer
-                                            format: int64
-                                            description: orderId property
-                                            example: 13
-                                        orderListId:
-                                            type: integer
-                                            format: int64
-                                            description: orderListId property
-                                            example: 626
-                                        origQty:
-                                            type: string
-                                            description: origQty property
-                                            example: "1.000000"
-                                        origQuoteOrderQty:
-                                            type: string
-                                            description: origQuoteOrderQty property
-                                            example: "0.000000"
-                                        price:
-                                            type: string
-                                            description: price property
-                                            example: "1.000000"
-                                        selfTradePreventionMode:
-                                            type: string
-                                            description: selfTradePreventionMode property
-                                            example: NONE
-                                        side:
-                                            type: string
-                                            description: side property
-                                            example: SELL
-                                        status:
-                                            type: string
-                                            description: status property
-                                            example: NEW
-                                        symbol:
-                                            type: string
-                                            description: symbol property
-                                            example: LTCBNB
-                                        timeInForce:
-                                            type: string
-                                            description: timeInForce property
-                                            example: GTC
-                                        transactTime:
-                                            type: integer
-                                            format: int64
-                                            description: transactTime property
-                                            example: 1712544395981
-                                        type:
-                                            type: string
-                                            description: type property
-                                            example: LIMIT
-                                        workingTime:
-                                            type: integer
-                                            format: int64
-                                            description: workingTime property
-                                            example: 1712544395981
-                            orders:
-                                type: array
-                                description: orders property
-                                items:
-                                    type: object
-                                    description: array item
-                                    properties:
-                                        clientOrderId:
-                                            type: string
-                                            description: clientOrderId property
-                                            example: YiAUtM9yJjl1a2jXHSp9Ny
-                                        orderId:
-                                            type: integer
-                                            format: int64
-                                            description: orderId property
-                                            example: 13
-                                        symbol:
-                                            type: string
-                                            description: symbol property
-                                            example: LTCBNB
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: "1712544378871"
-                            transactionTime:
-                                type: integer
-                                format: int64
-                                description: transactionTime property
-                                example: 1712544395981
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/orderListPlaceOtoResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

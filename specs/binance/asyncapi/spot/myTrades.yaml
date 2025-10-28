@@ -22,18 +22,7 @@ channels:
             myTradesResponse:
                 $ref: '#/components/messages/myTradesResponse'
 operations:
-    receiveMyTrades:
-        title: Receive from myTrades
-        description: Receive response from myTrades
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/myTradesResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendMyTrades:
+    myTrades:
         title: Send to myTrades
         description: Send a myTrades request
         action: send
@@ -41,67 +30,176 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/myTradesRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/myTradesResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        myTradesRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: f4ce6a53-a29d-4f70-823b-4ab59391d6e8
+                method:
+                    type: string
+                    description: method property
+                    example: myTrades
+                    const: myTrades
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        endTime:
+                            type: integer
+                            format: int64
+                        fromId:
+                            type: integer
+                            format: int64
+                            description: First trade ID to query
+                        limit:
+                            type: integer
+                            description: 'Default: 500; Maximum: 1000'
+                        orderId:
+                            type: integer
+                            format: int64
+                        recvWindow:
+                            type: integer
+                            format: int64
+                            description: The value cannot be greater than 60000
+                        signature:
+                            type: string
+                        startTime:
+                            type: integer
+                            format: int64
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+                        - apiKey
+                        - signature
+                        - timestamp
+        myTradesResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: f4ce6a53-a29d-4f70-823b-4ab59391d6e8
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 20
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            commission:
+                                type: string
+                                description: commission property
+                                example: "0.00000000"
+                            commissionAsset:
+                                type: string
+                                description: commissionAsset property
+                                example: BNB
+                            id:
+                                type: integer
+                                format: int64
+                                description: id property
+                                example: 1650422481
+                            isBestMatch:
+                                type: boolean
+                                description: isBestMatch property
+                                example: true
+                            isBuyer:
+                                type: boolean
+                                description: isBuyer property
+                                example: false
+                            isMaker:
+                                type: boolean
+                                description: isMaker property
+                                example: true
+                            orderId:
+                                type: integer
+                                format: int64
+                                description: orderId property
+                                example: 12569099453
+                            orderListId:
+                                type: integer
+                                format: int64
+                                description: orderListId property
+                                example: -1
+                            price:
+                                type: string
+                                description: price property
+                                example: "23416.10000000"
+                            qty:
+                                type: string
+                                description: qty property
+                                example: "0.00635000"
+                            quoteQty:
+                                type: string
+                                description: quoteQty property
+                                example: "148.69223500"
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            time:
+                                type: integer
+                                format: int64
+                                description: time property
+                                example: 1660801715793
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         myTradesRequest:
             name: Account trade history (USER_DATA) Request
             title: Account trade history (USER_DATA) Request
             description: Send a myTrades request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: f4ce6a53-a29d-4f70-823b-4ab59391d6e8
-                    method:
-                        type: string
-                        description: method property
-                        example: myTrades
-                        enum:
-                            - myTrades
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            endTime:
-                                type: integer
-                                format: int64
-                            fromId:
-                                type: integer
-                                format: int64
-                                description: First trade ID to query
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            orderId:
-                                type: integer
-                                format: int64
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            startTime:
-                                type: integer
-                                format: int64
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - symbol
-                            - apiKey
-                            - signature
-                            - timestamp
+                $ref: '#/components/schemas/myTradesRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -110,107 +208,7 @@ components:
             title: Account trade history (USER_DATA) Response
             description: Receive response from myTrades
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: f4ce6a53-a29d-4f70-823b-4ab59391d6e8
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 20
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                commission:
-                                    type: string
-                                    description: commission property
-                                    example: "0.00000000"
-                                commissionAsset:
-                                    type: string
-                                    description: commissionAsset property
-                                    example: BNB
-                                id:
-                                    type: integer
-                                    format: int64
-                                    description: id property
-                                    example: 1650422481
-                                isBestMatch:
-                                    type: boolean
-                                    description: isBestMatch property
-                                    example: true
-                                isBuyer:
-                                    type: boolean
-                                    description: isBuyer property
-                                    example: false
-                                isMaker:
-                                    type: boolean
-                                    description: isMaker property
-                                    example: true
-                                orderId:
-                                    type: integer
-                                    format: int64
-                                    description: orderId property
-                                    example: 12569099453
-                                orderListId:
-                                    type: integer
-                                    format: int64
-                                    description: orderListId property
-                                    example: -1
-                                price:
-                                    type: string
-                                    description: price property
-                                    example: "23416.10000000"
-                                qty:
-                                    type: string
-                                    description: qty property
-                                    example: "0.00635000"
-                                quoteQty:
-                                    type: string
-                                    description: quoteQty property
-                                    example: "148.69223500"
-                                symbol:
-                                    type: string
-                                    description: symbol property
-                                    example: BTCUSDT
-                                time:
-                                    type: integer
-                                    format: int64
-                                    description: time property
-                                    example: 1660801715793
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/myTradesResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

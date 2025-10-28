@@ -6,25 +6,16 @@ channels:
     spot:
         address: /
         title: Channel userDataStream.unsubscribe
-        description: Stop listening to the User Data Stream in the current WebSocket connection.
+        description: |-
+            Stop listening to the User Data Stream in the current WebSocket connection.
+            Note that session.logout will only close the subscription created with userdataStream.subscribe but not subscriptions opened with userDataStream.subscribe.signature.
         messages:
             userDataStreamUnsubscribeRequest:
                 $ref: '#/components/messages/userDataStreamUnsubscribeRequest'
             userDataStreamUnsubscribeResponse:
                 $ref: '#/components/messages/userDataStreamUnsubscribeResponse'
 operations:
-    receiveUserDataStreamUnsubscribe:
-        title: Receive from userDataStream.unsubscribe
-        description: Receive response from userDataStream.unsubscribe
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/userDataStreamUnsubscribeResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userStream'
-        x-binance-security-type: USER_STREAM
-    sendUserDataStreamUnsubscribe:
+    userDataStreamUnsubscribe:
         title: Send to userDataStream.unsubscribe
         description: Send a userDataStream.unsubscribe request
         action: send
@@ -32,56 +23,68 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/userDataStreamUnsubscribeRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/userDataStreamUnsubscribeResponse'
         security:
             - $ref: '#/components/securitySchemes/userStream'
         x-binance-security-type: USER_STREAM
 components:
+    schemas:
+        userDataStreamUnsubscribeRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                method:
+                    type: string
+                    description: method property
+                    example: userDataStream.unsubscribe
+                    const: userDataStream.unsubscribe
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        subscriptionId:
+                            type: integer
+                            format: int64
+                            description: When called with no parameter, this will close all subscriptions. When called with the subscriptionId parameter, this will attempt to close the subscription with that subscription id, if it exists.
+        userDataStreamUnsubscribeResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
+                result:
+                    type: object
+                    description: result property
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         userDataStreamUnsubscribeRequest:
-            name: Unsubscribe from User Data Stream (USER_STREAM) Request
-            title: Unsubscribe from User Data Stream (USER_STREAM) Request
+            name: Unsubscribe from User Data Stream Request
+            title: Unsubscribe from User Data Stream Request
             description: Send a userDataStream.unsubscribe request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                    method:
-                        type: string
-                        description: method property
-                        example: userDataStream.unsubscribe
-                        enum:
-                            - userDataStream.unsubscribe
+                $ref: '#/components/schemas/userDataStreamUnsubscribeRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
         userDataStreamUnsubscribeResponse:
-            name: Unsubscribe from User Data Stream (USER_STREAM) Response
-            title: Unsubscribe from User Data Stream (USER_STREAM) Response
+            name: Unsubscribe from User Data Stream Response
+            title: Unsubscribe from User Data Stream Response
             description: Receive response from userDataStream.unsubscribe
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a21-98ea-4fe0-8f4e-0fcea5d418b7
-                    result:
-                        type: object
-                        description: result property
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/userDataStreamUnsubscribeResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
-    securitySchemes:
-        userStream:
-            type: apiKey
-            description: User Data Stream management - Requires API key in message parameters
-            in: user
