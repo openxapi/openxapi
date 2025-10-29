@@ -615,6 +615,7 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_response", channelName))
 		payload := g.convertToAsyncAPISchema(receiveMsg.Payload)
 		g.convertMethodEnumsToConst(payload)
+		eventType := g.extractEventType(receiveMsg.Payload)
 		asyncMessage := &AsyncAPIMessage{
 			Name:        receiveMsg.Title,
 			Title:       receiveMsg.Title,
@@ -623,6 +624,9 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 		}
 
 		if payload != nil {
+			if eventType != "" {
+				g.ensureEventTypeConst(payload, eventType)
+			}
 			componentSchemas[messageKey] = payload
 			asyncMessage.Payload = &AsyncAPISchema{
 				Ref: fmt.Sprintf("#/components/schemas/%s", messageKey),
@@ -639,7 +643,7 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 
 		// Add x-event-type extension for event-based messages
 		// This is particularly important for userDataStream.events
-		if eventType := g.extractEventType(receiveMsg.Payload); eventType != "" {
+		if eventType != "" {
 			if asyncMessage.Extensions == nil {
 				asyncMessage.Extensions = make(map[string]interface{})
 			}
@@ -679,6 +683,61 @@ func (g *Generator) convertMethodEnumsToConst(schema *AsyncAPISchema) {
 	if schema.AdditionalProperties != nil {
 		g.convertMethodEnumsToConst(schema.AdditionalProperties)
 	}
+}
+
+// ensureEventTypeConst sets a const value for event type fields when missing
+func (g *Generator) ensureEventTypeConst(schema *AsyncAPISchema, eventType string) {
+	if schema == nil || eventType == "" {
+		return
+	}
+
+	// Handle event wrapper pattern: event.e
+	if schema.Properties != nil {
+		if eventWrapper, ok := schema.Properties["event"]; ok && eventWrapper != nil && eventWrapper.Properties != nil {
+			if g.applyConstIfMissing(eventWrapper.Properties["e"], eventType) {
+				return
+			}
+		}
+	}
+
+	// Handle direct e field at the root
+	if schema.Properties != nil {
+		g.applyConstIfMissing(schema.Properties["e"], eventType)
+	}
+}
+
+// applyConstIfMissing assigns a const to the provided schema when safe to do so.
+func (g *Generator) applyConstIfMissing(schema *AsyncAPISchema, value string) bool {
+	if schema == nil {
+		return false
+	}
+
+	if schema.Const != nil {
+		if existing, ok := schema.Const.(string); ok {
+			if existing != "" {
+				return false
+			}
+			// empty string can be replaced with the discovered event type
+		} else {
+			// Non-string const values are preserved
+			return false
+		}
+	}
+
+	if len(schema.Enum) > 1 {
+		return false
+	}
+
+	if len(schema.Enum) == 1 {
+		enumValue, ok := schema.Enum[0].(string)
+		if !ok || enumValue != value {
+			return false
+		}
+		schema.Enum = nil
+	}
+
+	schema.Const = value
+	return true
 }
 
 // populateParamsRequired ensures that the params object in the payload has the required field populated

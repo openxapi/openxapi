@@ -125,7 +125,7 @@ func TestDocumentParser_MethodEnumConstraints(t *testing.T) {
 
 // TestDocumentParser_RequestResponseStructure tests that requests and responses are properly distinguished
 func TestDocumentParser_RequestResponseStructure(t *testing.T) {
-	logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetLevel(logrus.InfoLevel)
 	parser := &DocumentParser{}
 
 	// Load the sample HTML file
