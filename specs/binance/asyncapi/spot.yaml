@@ -364,6 +364,19 @@ operations:
                 $ref: '#/channels/spot'
             messages:
                 - $ref: '#/channels/spot/messages/exchangeInfoResponse'
+    klines:
+        title: Send to klines
+        description: Send a klines request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/klinesRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/klinesResponse'
     myAllocations:
         title: Send to myAllocations
         description: Send a myAllocations request
@@ -690,22 +703,6 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/error'
-    receiveKlines:
-        title: Receive from klines
-        description: Receive response from klines
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/klinesResponse'
-    receiveUiKlines:
-        title: Receive from uiKlines
-        description: Receive response from uiKlines
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/uiKlinesResponse'
     receiveUserDataStreamEvents:
         title: Receive user data stream events
         description: Receive various user data stream events after successful subscription
@@ -719,22 +716,6 @@ operations:
             - $ref: '#/channels/spot/messages/listStatusEvent'
             - $ref: '#/channels/spot/messages/externalLockUpdateEvent'
             - $ref: '#/channels/spot/messages/eventStreamTerminatedEvent'
-    sendKlines:
-        title: Send to klines
-        description: Send a klines request
-        action: send
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/klinesRequest'
-    sendUiKlines:
-        title: Send to uiKlines
-        description: Send a uiKlines request
-        action: send
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/uiKlinesRequest'
     sessionLogon:
         title: Send to session.logon
         description: Send a session.logon request
@@ -939,6 +920,19 @@ operations:
                 $ref: '#/channels/spot'
             messages:
                 - $ref: '#/channels/spot/messages/tradesRecentResponse'
+    uiKlines:
+        title: Send to uiKlines
+        description: Send a uiKlines request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/uiKlinesRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/uiKlinesResponse'
     userDataStreamSubscribe:
         title: Send to userDataStream.subscribe
         description: Send a userDataStream.subscribe request
@@ -1836,7 +1830,7 @@ components:
                 subscriptionId:
                     type: integer
                     format: int64
-                    description: subscriptionId property
+                    description: subscriptionId
                     example: 0
             required:
                 - event
@@ -2010,7 +2004,7 @@ components:
                 subscriptionId:
                     type: integer
                     format: int64
-                    description: subscriptionId property
+                    description: subscriptionId
                     example: 0
         exchangeInfoRequest:
             type: object
@@ -2549,7 +2543,7 @@ components:
                 subscriptionId:
                     type: integer
                     format: int64
-                    description: subscriptionId property
+                    description: subscriptionId
                     example: 0
             required:
                 - event
@@ -2592,7 +2586,7 @@ components:
                 subscriptionId:
                     type: integer
                     format: int64
-                    description: subscriptionId property
+                    description: subscriptionId
                     example: 0
         id:
             description: |-
@@ -2601,6 +2595,91 @@ components:
                 - 64-bit signed integer
                 - Alphanumeric strings; max length 36
                 - null
+        klinesRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
+                method:
+                    type: string
+                    description: method property
+                    example: klines
+                    const: klines
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        endTime:
+                            type: integer
+                            format: int64
+                        interval:
+                            type: string
+                        limit:
+                            type: integer
+                            description: 'Default: 500; Maximum: 1000'
+                        startTime:
+                            type: integer
+                            format: int64
+                        symbol:
+                            type: string
+                        timeZone:
+                            type: string
+                            description: 'Default: 0 (UTC)'
+                    required:
+                        - symbol
+                        - interval
+        klinesResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 2
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: array
+                        description: array item
+                        items:
+                            type: object
+                            description: array item
+                            example: 1655971200000
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
         listStatusEvent:
             type: object
             description: List Status - sent with executionReport for order lists (OCO orders)
@@ -2677,7 +2756,7 @@ components:
                 subscriptionId:
                     type: integer
                     format: int64
-                    description: subscriptionId property
+                    description: subscriptionId
                     example: 0
         myAllocationsRequest:
             type: object
@@ -6282,7 +6361,7 @@ components:
                 subscriptionId:
                     type: integer
                     format: int64
-                    description: subscriptionId property
+                    description: subscriptionId
                     example: 0
             required:
                 - event
@@ -7896,6 +7975,92 @@ components:
                     type: integer
                     description: status property
                     example: 200
+        uiKlinesRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: b137468a-fb20-4c06-bd6b-625148eec958
+                method:
+                    type: string
+                    description: method property
+                    example: uiKlines
+                    const: uiKlines
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        endTime:
+                            type: integer
+                            format: int64
+                        interval:
+                            type: string
+                            description: See klines
+                        limit:
+                            type: integer
+                            description: 'Default: 500; Maximum: 1000'
+                        startTime:
+                            type: integer
+                            format: int64
+                        symbol:
+                            type: string
+                        timeZone:
+                            type: string
+                            description: 'Default: 0 (UTC)'
+                    required:
+                        - symbol
+                        - interval
+        uiKlinesResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: b137468a-fb20-4c06-bd6b-625148eec958
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 2
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: array
+                        description: array item
+                        items:
+                            type: object
+                            description: array item
+                            example: 1655971200000
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
         userDataStreamSubscribeRequest:
             type: object
             description: request schema
@@ -8202,42 +8367,7 @@ components:
             title: Klines Request
             description: Send a klines request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
-                    method:
-                        type: string
-                        description: method property
-                        example: klines
-                        enum:
-                            - klines
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            endTime:
-                                type: integer
-                                format: int64
-                            interval:
-                                type: string
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            startTime:
-                                type: integer
-                                format: int64
-                            symbol:
-                                type: string
-                            timeZone:
-                                type: string
-                                description: 'Default: 0 (UTC)'
-                        required:
-                            - symbol
-                            - interval
+                $ref: '#/components/schemas/klinesRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -8246,54 +8376,7 @@ components:
             title: Klines Response
             description: Receive response from klines
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 1dbbeb56-8eea-466a-8f6e-86bdcfa2fc0b
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 2
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: array
-                            description: array item
-                            items:
-                                type: object
-                                description: array item
-                                example: 1655971200000
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/klinesResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -8946,43 +9029,7 @@ components:
             title: UI Klines Request
             description: Send a uiKlines request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b137468a-fb20-4c06-bd6b-625148eec958
-                    method:
-                        type: string
-                        description: method property
-                        example: uiKlines
-                        enum:
-                            - uiKlines
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            endTime:
-                                type: integer
-                                format: int64
-                            interval:
-                                type: string
-                                description: See klines
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            startTime:
-                                type: integer
-                                format: int64
-                            symbol:
-                                type: string
-                            timeZone:
-                                type: string
-                                description: 'Default: 0 (UTC)'
-                        required:
-                            - symbol
-                            - interval
+                $ref: '#/components/schemas/uiKlinesRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -8991,54 +9038,7 @@ components:
             title: UI Klines Response
             description: Receive response from uiKlines
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b137468a-fb20-4c06-bd6b-625148eec958
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 2
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: array
-                            description: array item
-                            items:
-                                type: object
-                                description: array item
-                                example: 1655971200000
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/uiKlinesResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

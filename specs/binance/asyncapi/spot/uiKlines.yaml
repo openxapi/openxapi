@@ -16,15 +16,7 @@ channels:
             uiKlinesResponse:
                 $ref: '#/components/messages/uiKlinesResponse'
 operations:
-    receiveUiKlines:
-        title: Receive from uiKlines
-        description: Receive response from uiKlines
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/uiKlinesResponse'
-    sendUiKlines:
+    uiKlines:
         title: Send to uiKlines
         description: Send a uiKlines request
         action: send
@@ -32,50 +24,106 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/uiKlinesRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/uiKlinesResponse'
 components:
+    schemas:
+        uiKlinesRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: b137468a-fb20-4c06-bd6b-625148eec958
+                method:
+                    type: string
+                    description: method property
+                    example: uiKlines
+                    const: uiKlines
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        endTime:
+                            type: integer
+                            format: int64
+                        interval:
+                            type: string
+                            description: See klines
+                        limit:
+                            type: integer
+                            description: 'Default: 500; Maximum: 1000'
+                        startTime:
+                            type: integer
+                            format: int64
+                        symbol:
+                            type: string
+                        timeZone:
+                            type: string
+                            description: 'Default: 0 (UTC)'
+                    required:
+                        - symbol
+                        - interval
+        uiKlinesResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: b137468a-fb20-4c06-bd6b-625148eec958
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 2
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: array
+                        description: array item
+                        items:
+                            type: object
+                            description: array item
+                            example: 1655971200000
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         uiKlinesRequest:
             name: UI Klines Request
             title: UI Klines Request
             description: Send a uiKlines request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b137468a-fb20-4c06-bd6b-625148eec958
-                    method:
-                        type: string
-                        description: method property
-                        example: uiKlines
-                        enum:
-                            - uiKlines
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            endTime:
-                                type: integer
-                                format: int64
-                            interval:
-                                type: string
-                                description: See klines
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            startTime:
-                                type: integer
-                                format: int64
-                            symbol:
-                                type: string
-                            timeZone:
-                                type: string
-                                description: 'Default: 0 (UTC)'
-                        required:
-                            - symbol
-                            - interval
+                $ref: '#/components/schemas/uiKlinesRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -84,54 +132,7 @@ components:
             title: UI Klines Response
             description: Receive response from uiKlines
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: b137468a-fb20-4c06-bd6b-625148eec958
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 2
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: array
-                            description: array item
-                            items:
-                                type: object
-                                description: array item
-                                example: 1655971200000
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/uiKlinesResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
