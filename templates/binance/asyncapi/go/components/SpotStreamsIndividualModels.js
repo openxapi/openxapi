@@ -375,7 +375,8 @@ function generateSpotStreamsStructFromSchema(structName, schemaData) {
     
     // Use pointer for optional nested objects (allows nil checking)
     // This applies to objects that aren't basic types and have omitempty
-    if (prop.type === 'object' && goType !== 'interface{}' && jsonTag.includes('omitempty')) {
+    const isGenericType = goType === 'interface{}' || goType === 'any';
+    if (prop.type === 'object' && !isGenericType && jsonTag.includes('omitempty')) {
       if (!goType.startsWith('*')) {
         goType = `*${goType}`;
       }

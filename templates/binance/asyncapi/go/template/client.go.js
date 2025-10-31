@@ -29,6 +29,8 @@ export default function ({ asyncapi, params }) {
           url = host + (pathname || '');
         }
         if (!url) return;
+        // Trim trailing slash to avoid double-slash when channel templates add their segment
+        url = url.replace(/\/+$/, '');
         serversList.push({ name, url, title, summary, description });
       });
     }
@@ -191,7 +193,10 @@ func (c *Client) SetActiveServer(name string) error { return c.serverManager.Set
 func (c *Client) GetActiveServer() *ServerInfo { return c.serverManager.GetActiveServer() }
 func (c *Client) GetServer(name string) *ServerInfo { return c.serverManager.GetServer(name) }
 func (c *Client) ListServers() map[string]*ServerInfo { return c.serverManager.ListServers() }
-func (c *Client) GetCurrentURL() string { return c.serverManager.GetActiveServerURL() }
+func (c *Client) GetCurrentURL() string {
+  base := c.serverManager.GetActiveServerURL()
+  return strings.TrimRight(base, "/")
+}
 
 // Deprecated: use GetCurrentURL
 func (c *Client) GetURL() string { return c.GetCurrentURL() }
