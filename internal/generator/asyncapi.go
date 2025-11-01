@@ -582,6 +582,7 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 		// Convert the payload and ensure params object has required fields populated
 		payload := g.convertToAsyncAPISchema(sendMsg.Payload)
 		g.populateParamsRequired(payload, channel.Parameters)
+		g.ensureSecurityParams(payload, channel)
 		g.convertMethodEnumsToConst(payload)
 
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_request", channelName))
@@ -761,6 +762,65 @@ func (g *Generator) populateParamsRequired(schema *AsyncAPISchema, parameters []
 			paramsProperty.Required = requiredParams
 		}
 	}
+}
+
+// ensureSecurityParams guarantees auth parameters exist on signed/sensitive Binance operations
+func (g *Generator) ensureSecurityParams(schema *AsyncAPISchema, channel *wsParser.Channel) {
+	if schema == nil || channel == nil || channel.Extensions == nil {
+		return
+	}
+
+	extValue, exists := channel.Extensions["x-binance-security-type"]
+	if !exists {
+		return
+	}
+
+	securityType, ok := extValue.(string)
+	normalized := strings.ToLower(strings.TrimSpace(securityType))
+	if normalized == "" || normalized == "none" || normalized == "user_stream" {
+		return
+	}
+
+	if schema.Properties == nil {
+		schema.Properties = make(map[string]*AsyncAPISchema)
+	}
+
+	paramsSchema, exists := schema.Properties["params"]
+	if !exists || paramsSchema == nil {
+		paramsSchema = &AsyncAPISchema{
+			Type: "object",
+		}
+		schema.Properties["params"] = paramsSchema
+	}
+
+	if paramsSchema.Type == "" {
+		paramsSchema.Type = "object"
+	}
+
+	if paramsSchema.Properties == nil {
+		paramsSchema.Properties = make(map[string]*AsyncAPISchema)
+	}
+
+	ensureStringProp := func(name string) {
+		prop, ok := paramsSchema.Properties[name]
+		if !ok || prop == nil {
+			prop = &AsyncAPISchema{}
+			paramsSchema.Properties[name] = prop
+		}
+		prop.Type = "string"
+		prop.Format = ""
+	}
+
+	ensureStringProp("apiKey")
+	ensureStringProp("signature")
+
+	timestampProp, ok := paramsSchema.Properties["timestamp"]
+	if !ok || timestampProp == nil {
+		timestampProp = &AsyncAPISchema{}
+		paramsSchema.Properties["timestamp"] = timestampProp
+	}
+	timestampProp.Type = "integer"
+	timestampProp.Format = "int64"
 }
 
 // extractEventType extracts the event type from a schema, looking for const values in event.e or e fields

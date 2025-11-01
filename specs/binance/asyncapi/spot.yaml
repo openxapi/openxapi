@@ -90,6 +90,10 @@ channels:
                 $ref: '#/components/messages/myAllocationsRequest'
             myAllocationsResponse:
                 $ref: '#/components/messages/myAllocationsResponse'
+            myFiltersRequest:
+                $ref: '#/components/messages/myFiltersRequest'
+            myFiltersResponse:
+                $ref: '#/components/messages/myFiltersResponse'
             myPreventedMatchesRequest:
                 $ref: '#/components/messages/myPreventedMatchesRequest'
             myPreventedMatchesResponse:
@@ -390,6 +394,22 @@ operations:
                 $ref: '#/channels/spot'
             messages:
                 - $ref: '#/channels/spot/messages/myAllocationsResponse'
+        security:
+            - $ref: '#/components/securitySchemes/userData'
+        x-binance-security-type: USER_DATA
+    myFilters:
+        title: Send to myFilters
+        description: Send a myFilters request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/myFiltersRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/myFiltersResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
@@ -1000,8 +1020,15 @@ components:
                     type: object
                     description: params property
                     properties:
+                        apiKey:
+                            type: string
+                        signature:
+                            type: string
                         symbol:
                             type: string
+                        timestamp:
+                            type: integer
+                            format: int64
                     required:
                         - symbol
         accountCommissionResponse:
@@ -1063,6 +1090,26 @@ components:
                                     type: boolean
                                     description: enabledForSymbol property
                                     example: true
+                        specialCommission:
+                            type: object
+                            description: specialCommission property
+                            properties:
+                                buyer:
+                                    type: string
+                                    description: buyer property
+                                    example: "0.03000000"
+                                maker:
+                                    type: string
+                                    description: maker property
+                                    example: "0.01000000"
+                                seller:
+                                    type: string
+                                    description: seller property
+                                    example: "0.04000000"
+                                taker:
+                                    type: string
+                                    description: taker property
+                                    example: "0.02000000"
                         standardCommission:
                             type: object
                             description: standardCommission property
@@ -1131,9 +1178,8 @@ components:
                         apiKey:
                             type: string
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         timestamp:
@@ -1232,9 +1278,8 @@ components:
                             type: boolean
                             description: 'When set to true, emits only the non-zero balances of an account. Default value: false'
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         timestamp:
@@ -1416,9 +1461,8 @@ components:
                             type: integer
                             description: 'Default: 500; Maximum: 1000'
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         startTime:
@@ -1557,9 +1601,8 @@ components:
                             format: int64
                             description: Order ID to begin at
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         startTime:
@@ -2787,9 +2830,8 @@ components:
                             type: integer
                             format: int64
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         startTime:
@@ -2908,6 +2950,103 @@ components:
                     type: integer
                     description: status property
                     example: 200
+        myFiltersRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 74R4febb-d142-46a2-977d-90533eb4d97g
+                method:
+                    type: string
+                    description: method property
+                    example: myFilters
+                    const: myFilters
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        recvWindow:
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+                        - timestamp
+        myFiltersResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: "1758009606869"
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        assetFilters:
+                            type: array
+                            description: assetFilters property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    asset:
+                                        type: string
+                                        description: asset property
+                                        example: JPY
+                                    filterType:
+                                        type: string
+                                        description: filterType property
+                                        example: MAX_ASSET
+                                    limit:
+                                        type: string
+                                        description: limit property
+                                        example: "1000000.00000000"
+                        exchangeFilters:
+                            type: array
+                            description: exchangeFilters property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    filterType:
+                                        type: string
+                                        description: filterType property
+                                        example: EXCHANGE_MAX_NUM_ORDERS
+                                    maxNumOrders:
+                                        type: integer
+                                        description: maxNumOrders property
+                                        example: 1000
+                        symbolFilters:
+                            type: array
+                            description: symbolFilters property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    filterType:
+                                        type: string
+                                        description: filterType property
+                                        example: MAX_NUM_ORDER_LISTS
+                                    maxNumOrderLists:
+                                        type: integer
+                                        description: maxNumOrderLists property
+                                        example: 20
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
         myPreventedMatchesRequest:
             type: object
             description: request schema
@@ -2940,9 +3079,8 @@ components:
                             type: integer
                             format: int64
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         symbol:
@@ -3077,9 +3215,8 @@ components:
                             type: integer
                             format: int64
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         startTime:
@@ -3217,9 +3354,8 @@ components:
                         apiKey:
                             type: string
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         timestamp:
@@ -3519,9 +3655,8 @@ components:
                         apiKey:
                             type: string
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         symbol:
@@ -3682,6 +3817,8 @@ components:
                     type: object
                     description: params property
                     properties:
+                        apiKey:
+                            type: string
                         newClientOrderId:
                             type: string
                             description: The new client order ID for the order after being amended.  If not sent, one will be randomly generated.  It is possible to reuse the current clientOrderId by sending it as the newClientOrderId.
@@ -3699,6 +3836,8 @@ components:
                             type: integer
                             format: int64
                             description: The value cannot be greater than 60000.
+                        signature:
+                            type: string
                         symbol:
                             type: string
                         timestamp:
@@ -3853,6 +3992,8 @@ components:
                     type: object
                     description: params property
                     properties:
+                        apiKey:
+                            type: string
                         fromExecutionId:
                             type: integer
                             format: int64
@@ -3863,9 +4004,10 @@ components:
                             type: integer
                             format: int64
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000.
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
+                        signature:
+                            type: string
                         symbol:
                             type: string
                         timestamp:
@@ -4937,6 +5079,8 @@ components:
                     type: object
                     description: params property
                     properties:
+                        apiKey:
+                            type: string
                         listClientOrderId:
                             type: string
                             description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId and the pendingClientOrderId.
@@ -5211,6 +5355,8 @@ components:
                     type: object
                     description: params property
                     properties:
+                        apiKey:
+                            type: string
                         listClientOrderId:
                             type: string
                             description: Arbitrary unique ID among open order lists. Automatically generated if not sent. A new order list with the same listClientOrderId is accepted only when the previous one is filled or completely expired.  listClientOrderId is distinct from the workingClientOrderId, pendingAboveClientOrderId, and the pendingBelowClientOrderId.
@@ -5786,9 +5932,8 @@ components:
                             type: string
                             description: Query order list by listClientOrderId.orderListId or origClientOrderId must be provided.
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000. Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         timestamp:
@@ -6053,9 +6198,8 @@ components:
                             type: string
                             description: Lookup order by clientOrderId
                         recvWindow:
-                            type: integer
-                            format: int64
-                            description: The value cannot be greater than 60000
+                            type: string
+                            description: The value cannot be greater than 60000. Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
                         signature:
                             type: string
                         symbol:
@@ -6065,6 +6209,7 @@ components:
                             format: int64
                     required:
                         - symbol
+                        - orderId
                         - apiKey
                         - signature
                         - timestamp
@@ -8404,6 +8549,24 @@ components:
             description: Receive response from myAllocations
             payload:
                 $ref: '#/components/schemas/myAllocationsResponse'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        myFiltersRequest:
+            name: Query Relevant Filters (USER_DATA) Request
+            title: Query Relevant Filters (USER_DATA) Request
+            description: Send a myFilters request
+            payload:
+                $ref: '#/components/schemas/myFiltersRequest'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        myFiltersResponse:
+            name: Query Relevant Filters (USER_DATA) Response
+            title: Query Relevant Filters (USER_DATA) Response
+            description: Receive response from myFilters
+            payload:
+                $ref: '#/components/schemas/myFiltersResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

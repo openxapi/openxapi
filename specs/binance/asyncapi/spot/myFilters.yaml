@@ -1,0 +1,154 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    spot:
+        address: /
+        title: Channel myFilters
+        description: Retrieves the list of filters relevant to an account on a given symbol. This is the only endpoint that shows if an account has MAX_ASSET filters applied to it.
+        messages:
+            myFiltersRequest:
+                $ref: '#/components/messages/myFiltersRequest'
+            myFiltersResponse:
+                $ref: '#/components/messages/myFiltersResponse'
+operations:
+    myFilters:
+        title: Send to myFilters
+        description: Send a myFilters request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/myFiltersRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/myFiltersResponse'
+        security:
+            - $ref: '#/components/securitySchemes/userData'
+        x-binance-security-type: USER_DATA
+components:
+    schemas:
+        myFiltersRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 74R4febb-d142-46a2-977d-90533eb4d97g
+                method:
+                    type: string
+                    description: method property
+                    example: myFilters
+                    const: myFilters
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        recvWindow:
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+                        - timestamp
+        myFiltersResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: "1758009606869"
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        assetFilters:
+                            type: array
+                            description: assetFilters property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    asset:
+                                        type: string
+                                        description: asset property
+                                        example: JPY
+                                    filterType:
+                                        type: string
+                                        description: filterType property
+                                        example: MAX_ASSET
+                                    limit:
+                                        type: string
+                                        description: limit property
+                                        example: "1000000.00000000"
+                        exchangeFilters:
+                            type: array
+                            description: exchangeFilters property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    filterType:
+                                        type: string
+                                        description: filterType property
+                                        example: EXCHANGE_MAX_NUM_ORDERS
+                                    maxNumOrders:
+                                        type: integer
+                                        description: maxNumOrders property
+                                        example: 1000
+                        symbolFilters:
+                            type: array
+                            description: symbolFilters property
+                            items:
+                                type: object
+                                description: array item
+                                properties:
+                                    filterType:
+                                        type: string
+                                        description: filterType property
+                                        example: MAX_NUM_ORDER_LISTS
+                                    maxNumOrderLists:
+                                        type: integer
+                                        description: maxNumOrderLists property
+                                        example: 20
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
+    messages:
+        myFiltersRequest:
+            name: Query Relevant Filters (USER_DATA) Request
+            title: Query Relevant Filters (USER_DATA) Request
+            description: Send a myFilters request
+            payload:
+                $ref: '#/components/schemas/myFiltersRequest'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        myFiltersResponse:
+            name: Query Relevant Filters (USER_DATA) Response
+            title: Query Relevant Filters (USER_DATA) Response
+            description: Receive response from myFilters
+            payload:
+                $ref: '#/components/schemas/myFiltersResponse'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+    securitySchemes:
+        userData:
+            type: apiKey
+            description: Private user data - Requires API key, signature, and timestamp in message parameters
+            in: user
