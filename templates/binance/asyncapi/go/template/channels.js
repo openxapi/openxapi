@@ -185,6 +185,27 @@ export default function ({ asyncapi, params }) {
     content += `\tmsgHandlers  map[string]func(context.Context, []byte) error\n`;
     content += `}\n\n`;
 
+    // Handler helpers keep handler map mutations and dispatcher refresh logic centralized.
+    content += `func (ch *${channelPascal}Channel) setHandlerLocked(key string, fn func(context.Context, []byte) error) {\n`;
+    content += `\tif ch.msgHandlers == nil {\n`;
+    content += `\t\tch.msgHandlers = make(map[string]func(context.Context, []byte) error)\n`;
+    content += `\t}\n`;
+    content += `\tif fn != nil {\n`;
+    content += `\t\tch.msgHandlers[key] = fn\n`;
+    content += `\t\treturn\n`;
+    content += `\t}\n`;
+    content += `\tdelete(ch.msgHandlers, key)\n`;
+    content += `}\n\n`;
+    content += `func (ch *${channelPascal}Channel) applyHandlers() {\n`;
+    content += `\tch.mu.RLock()\n`;
+    content += `\tsnapshot := make(map[string]func(context.Context, []byte) error, len(ch.msgHandlers))\n`;
+    content += `\tfor k, v := range ch.msgHandlers {\n`;
+    content += `\t\tsnapshot[k] = v\n`;
+    content += `\t}\n`;
+    content += `\tch.mu.RUnlock()\n`;
+    content += `\tch.client.RegisterHandlers("${nameSource}", snapshot)\n`;
+    content += `}\n\n`;
+
     // Constructor
     content += `// New${channelPascal}Channel constructs a channel bound to a client\n`;
     content += `func New${channelPascal}Channel(client *Client) *${channelPascal}Channel {\n`;
@@ -199,15 +220,17 @@ export default function ({ asyncapi, params }) {
     content += `// Connect resolves the channel address and establishes a WebSocket connection\n`;
     content += `func (ch *${channelPascal}Channel) Connect(ctx context.Context${connectParamsSig ? ', ' + connectParamsSig : ''}) error {\n`;
     content += `\tch.mu.Lock()\n`;
-    content += `\tdefer ch.mu.Unlock()\n`;
     content += `\tif ch.isConnected {\n`;
+    content += `\t\tch.mu.Unlock()\n`;
     content += `\t\treturn fmt.Errorf("channel already connected")\n`;
     content += `\t}\n`;
+    content += `\ttemplatePath := ch.addrTemplate\n`;
+    content += `\tch.mu.Unlock()\n`;
     content += `\tbase := ch.client.GetCurrentURL()\n`;
-    content += `\tif base == "" {\n`;
-    content += `\t\treturn fmt.Errorf("no active server configured")\n`;
+    content += `\tif base == \"\" {\n`;
+    content += `\t\treturn fmt.Errorf(\"no active server configured\")\n`;
     content += `\t}\n`;
-    content += `\tpath := ch.addrTemplate\n`;
+    content += `\tpath := templatePath\n`;
     content += `${connectReplaceCode ? connectReplaceCode + '\n' : ''}`;
     // Normalize query: drop any empty query parameters like "streams=" and trim trailing '?'
     content += `\tif i := strings.Index(path, "?"); i >= 0 {\n`;
@@ -255,10 +278,11 @@ export default function ({ asyncapi, params }) {
     content += `\t\tch.client.isConnected = true\n`;
     content += `\t\tch.client.connMu.Unlock()\n`;
     content += `\t}\n`;
-    content += `\t// register handlers and start shared read loop\n`;
-    content += `\tch.client.RegisterHandlers("${nameSource}", ch.msgHandlers)\n`;
-    content += `\tch.client.ensureReadLoop(ctx)\n`;
+    content += `\tch.mu.Lock()\n`;
     content += `\tch.isConnected = true\n`;
+    content += `\tch.mu.Unlock()\n`;
+    content += `\tch.applyHandlers()\n`;
+    content += `\tch.client.ensureReadLoop(ctx)\n`;
     content += `\treturn nil\n`;
     content += `}\n\n`;
 
@@ -556,13 +580,18 @@ export default function ({ asyncapi, params }) {
                 emittedHandlerNames.add(handlerName);
                 content += `// Handle${handlerName} registers a handler for replies of '${opId}'\n`;
                 content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
-                content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
-                content += `\tch.msgHandlers["${rName}"] = func(ctx context.Context, b []byte) error {\n`;
+                content += `\tif fn == nil { return }\n`;
+                content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
                 content += preCheck;
                 content += `\t\tvar v ${modelType}\n`;
                 content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
                 content += `\t\treturn fn(ctx, &v)\n`;
                 content += `\t}\n`;
+                content += `\tch.mu.Lock()\n`;
+                content += `\tch.setHandlerLocked("${rName}", handler)\n`;
+                content += `\tconnected := ch.isConnected\n`;
+                content += `\tch.mu.Unlock()\n`;
+                content += `\tif connected { ch.applyHandlers() }\n`;
                 content += `}\n\n`;
               }
             });
@@ -809,46 +838,55 @@ export default function ({ asyncapi, params }) {
               content += `// Handle${handlerName} registers a handler for message '${mName}' on ${nameSource}\n`;
               content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
               content += `\tif fn == nil { return }\n`;
-              content += `\tif ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }\n`;
             // Prefer alias keys for events and wrappers to avoid duplicate handlers
             if (isCombinedWrapperFlag) {
               const aliasKey = wrapperAliasKey || 'wrap:combined';
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tch.msgHandlers["${aliasKey}"] = func(ctx context.Context, b []byte) error {\n`;
+              content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
               content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
               content += `\t\treturn fn(ctx, &v)\n`;
               content += `\t}\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `\tch.mu.Lock()\n`;
+              content += `\tch.setHandlerLocked("${aliasKey}", handler)\n`;
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               // unregister
               content += `}\n`;
               content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tdelete(ch.msgHandlers, "${aliasKey}")\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `\tch.mu.Lock()\n`;
+              content += `\tch.setHandlerLocked("${aliasKey}", nil)\n`;
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}\n\n`;
             } else if (isErrorMessageFlag) {
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tch.msgHandlers[\"${errorAliasKey}\"] = func(ctx context.Context, b []byte) error {\n`;
+              content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
               content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
               content += `\t\treturn fn(ctx, &v)\n`;
               content += `\t}\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `\tch.mu.Lock()\n`;
+              content += `\tch.setHandlerLocked(\"${errorAliasKey}\", handler)\n`;
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}\n`;
               content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tdelete(ch.msgHandlers, \"${errorAliasKey}\")\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `\tch.mu.Lock()\n`;
+              content += `\tch.setHandlerLocked(\"${errorAliasKey}\", nil)\n`;
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}\n\n`;
             } else if (expectedEventTypeAliases && expectedEventTypeAliases.length) {
-              content += `\tch.client.handlersMu.Lock()` + "\n";
+              content += `\tch.mu.Lock()\n`;
               expectedEventTypeAliases.forEach((__aliasVal) => {
                 const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 const __alias = isArrayFormat ? `evt:${__esc}:array` : `evt:${__esc}`;
-                content += `\tch.msgHandlers["${__alias}"] = func(ctx context.Context, b []byte) error {` + "\n";
+                content += `\tch.setHandlerLocked("${__alias}", func(ctx context.Context, b []byte) error {` + "\n";
 content += `\t\tvar v ${modelType}` + "\n";
                 if (isArrayFormat) {
                   content += `
@@ -872,52 +910,66 @@ content += `\t\tvar v ${modelType}` + "\n";
                 }
                 content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }` + "\n";
                 content += `\t\treturn fn(ctx, &v)` + "\n";
-                content += `\t}` + "\n";
+                content += `\t})` + "\n";
               });
-              content += `\tch.client.handlersMu.Unlock()` + "\n";
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}` + "\n";
               content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {` + "\n";
-              content += `\tch.client.handlersMu.Lock()` + "\n";
+              content += `\tch.mu.Lock()` + "\n";
               expectedEventTypeAliases.forEach((__aliasVal) => {
                 const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
                 const __alias = isArrayFormat ? `evt:${__esc}:array` : `evt:${__esc}`;
-                content += `\tdelete(ch.msgHandlers, "${__alias}")` + "\n";
+                content += `\tch.setHandlerLocked("${__alias}", nil)` + "\n";
               });
-              content += `\tch.client.handlersMu.Unlock()` + "\n";
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()` + "\n";
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}` + "\n\n";
             } else if (expectedEventTypeAlias) {
               const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tch.msgHandlers[\"${alias}\"] = func(ctx context.Context, b []byte) error {\n`;
+              content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
               content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
               content += `\t\treturn fn(ctx, &v)\n`;
               content += `\t}\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `\tch.mu.Lock()\n`;
+              content += `\tch.setHandlerLocked(\"${alias}\", handler)\n`;
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}\n`;
               content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tdelete(ch.msgHandlers, \"${alias}\")\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `\tch.mu.Lock()\n`;
+              content += `\tch.setHandlerLocked(\"${alias}\", nil)\n`;
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}\n\n`;
             } else {
               // Default: normalize handler key to component message key when available
               // Prefer components.messages display name mapping, then channel messages key, else fallback to lowerCamelCase of handler name
               const rawKey = (compNameToRawKey[displayPascal] || chanMsgPascalToRaw[displayPascal] || toLowerCamelCase(handlerName));
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tch.msgHandlers[\"${rawKey}\"] = func(ctx context.Context, b []byte) error {\n`;
+              content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
               content += preCheck;
               content += `\t\tvar v ${modelType}\n`;
               content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
               content += `\t\treturn fn(ctx, &v)\n`;
               content += `\t}\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `\tch.mu.Lock()\n`;
+              content += `\tch.setHandlerLocked(\"${rawKey}\", handler)\n`;
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}\n`;
               content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-              content += `\tch.client.handlersMu.Lock()\n`;
-              content += `\tdelete(ch.msgHandlers, \"${rawKey}\")\n`;
-              content += `\tch.client.handlersMu.Unlock()\n`;
+              content += `\tch.mu.Lock()\n`;
+              content += `\tch.setHandlerLocked(\"${rawKey}\", nil)\n`;
+              content += `\tconnected := ch.isConnected\n`;
+              content += `\tch.mu.Unlock()\n`;
+              content += `\tif connected { ch.applyHandlers() }\n`;
               content += `}\n\n`;
             }
             }
@@ -1134,125 +1186,99 @@ content += `\t\tvar v ${modelType}` + "\n";
               } catch (e) { /* ignore doc extraction errors */ }
               content += `// Handle${handlerName} registers a handler for unwrapped event '${normalizedRawKey}' on ${nameSource}
 `;
-              content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {
-`;
-              content += `	if fn == nil { return }
-`;
-              content += `	if ch.msgHandlers == nil { ch.msgHandlers = make(map[string]func(context.Context, []byte) error) }
-`;
+              content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
+              content += `\tif fn == nil { return }\n`;
               if (isErrorMessageFlag) {
-                content += `	ch.client.handlersMu.Lock()
-`;
-                content += `	ch.msgHandlers["${errorAliasKey}"] = func(ctx context.Context, b []byte) error {
-`;
+                content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
                 content += preCheck;
-                content += `		var v ${modelType}
-`;
-                content += `		if err := json.Unmarshal(b, &v); err != nil { return err }
-`;
-                content += `		return fn(ctx, &v)
-`;
-                content += `	}
-`;
-                content += `	ch.client.handlersMu.Unlock()
-`;
-                content += `}
-`;
-                content += `
-func (ch *${channelPascal}Channel) Unregister${handlerName}() {
-`;
-                content += `	ch.client.handlersMu.Lock()
-`;
-                content += `	delete(ch.msgHandlers, "${errorAliasKey}")
-`;
-                content += `	ch.client.handlersMu.Unlock()
-`;
-                content += `}
-
-`;
+                content += `\t\tvar v ${modelType}\n`;
+                content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+                content += `\t\treturn fn(ctx, &v)\n`;
+                content += `\t}\n`;
+                content += `\tch.mu.Lock()\n`;
+                content += `\tch.setHandlerLocked("${errorAliasKey}", handler)\n`;
+                content += `\tconnected := ch.isConnected\n`;
+                content += `\tch.mu.Unlock()\n`;
+                content += `\tif connected { ch.applyHandlers() }\n`;
+                content += `}\n`;
+                content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+                content += `\tch.mu.Lock()\n`;
+                content += `\tch.setHandlerLocked("${errorAliasKey}", nil)\n`;
+                content += `\tconnected := ch.isConnected\n`;
+                content += `\tch.mu.Unlock()\n`;
+                content += `\tif connected { ch.applyHandlers() }\n`;
+                content += `}\n\n`;
               } else if (expectedEventTypeAliases && expectedEventTypeAliases.length) {
-                content += `	ch.client.handlersMu.Lock()` + "\n";
+                content += `\tch.mu.Lock()\n`;
                 expectedEventTypeAliases.forEach((__aliasVal) => {
                   const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\"');
                   const __alias = isArrayFormat ? `evt:${__esc}:array` : `evt:${__esc}`;
-                  content += `	ch.msgHandlers["${__alias}"] = func(ctx context.Context, b []byte) error {` + "\n";
+                  content += `\tch.setHandlerLocked("${__alias}", func(ctx context.Context, b []byte) error {\n`;
                   content += preCheck;
-                  content += `		var v ${modelType}` + "\n";
-                  content += `		if err := json.Unmarshal(b, &v); err != nil { return err }` + "\n";
-                  content += `		return fn(ctx, &v)` + "\n";
-                  content += `	}` + "\n";
+                  content += `\t\tvar v ${modelType}\n`;
+                  content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+                  content += `\t\treturn fn(ctx, &v)\n`;
+                  content += `\t})\n`;
                 });
-                content += `	ch.client.handlersMu.Unlock()` + "\n";
-                content += `}` + "\n";
-                content += `
-func (ch *${channelPascal}Channel) Unregister${handlerName}() {` + "\n";
-                content += `	ch.client.handlersMu.Lock()` + "\n";
+                content += `\tconnected := ch.isConnected\n`;
+                content += `\tch.mu.Unlock()\n`;
+                content += `\tif connected { ch.applyHandlers() }\n`;
+                content += `}\n`;
+                content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+                content += `\tch.mu.Lock()\n`;
                 expectedEventTypeAliases.forEach((__aliasVal) => {
                   const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\"');
                   const __alias = isArrayFormat ? `evt:${__esc}:array` : `evt:${__esc}`;
-                  content += `	delete(ch.msgHandlers, "${__alias}")` + "\n";
+                  content += `\tch.setHandlerLocked("${__alias}", nil)\n`;
                 });
-                content += `	ch.client.handlersMu.Unlock()` + "\n";
-                content += `}
-
-`;
+                content += `\tconnected := ch.isConnected\n`;
+                content += `\tch.mu.Unlock()\n`;
+                content += `\tif connected { ch.applyHandlers() }\n`;
+                content += `}\n\n`;
               } else {
                 if (expectedEventTypeAlias) {
                   const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
-                  content += `	ch.client.handlersMu.Lock()
-`;
-                  content += `	ch.msgHandlers["${alias}"] = func(ctx context.Context, b []byte) error {
-`;
+                  content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
+                  content += preCheck;
+                  content += `\t\tvar v ${modelType}\n`;
+                  content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+                  content += `\t\treturn fn(ctx, &v)\n`;
+                  content += `\t}\n`;
+                  content += `\tch.mu.Lock()\n`;
+                  content += `\tch.setHandlerLocked("${alias}", handler)\n`;
+                  content += `\tconnected := ch.isConnected\n`;
+                  content += `\tch.mu.Unlock()\n`;
+                  content += `\tif connected { ch.applyHandlers() }\n`;
+                  content += `}\n`;
+                  content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+                  content += `\tch.mu.Lock()\n`;
+                  content += `\tch.setHandlerLocked("${alias}", nil)\n`;
+                  content += `\tconnected := ch.isConnected\n`;
+                  content += `\tch.mu.Unlock()\n`;
+                  content += `\tif connected { ch.applyHandlers() }\n`;
+                  content += `}\n\n`;
                 } else {
                   // Default: normalize handler key to component message key when available
                   const rawKey = normalizedRawKey;
-                  content += `	ch.client.handlersMu.Lock()
-`;
-                  content += `	ch.msgHandlers["${rawKey}"] = func(ctx context.Context, b []byte) error {
-`;
-                }
-                content += preCheck;
-                content += `		var v ${modelType}
-`;
-                content += `		if err := json.Unmarshal(b, &v); err != nil { return err }
-`;
-                content += `		return fn(ctx, &v)
-`;
-                content += `	}
-`;
-                content += `	ch.client.handlersMu.Unlock()
-`;
-                content += `}
-`;
-                // Unregister counterpart
-                if (expectedEventTypeAlias) {
-                  const alias = isArrayFormat ? `evt:${expectedEventTypeAlias}:array` : `evt:${expectedEventTypeAlias}`;
-                  content += `
-func (ch *${channelPascal}Channel) Unregister${handlerName}() {
-`;
-                  content += `	ch.client.handlersMu.Lock()
-`;
-                  content += `	delete(ch.msgHandlers, "${alias}")
-`;
-                  content += `	ch.client.handlersMu.Unlock()
-`;
-                  content += `}
-
-`;
-                } else {
-                  const rawKey = normalizedRawKey;
-                  content += `
-func (ch *${channelPascal}Channel) Unregister${handlerName}() {
-`;
-                  content += `	ch.client.handlersMu.Lock()
-`;
-                  content += `	delete(ch.msgHandlers, "${rawKey}")
-`;
-                  content += `	ch.client.handlersMu.Unlock()
-`;
-                  content += `}
-
-`;
+                  content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
+                  content += preCheck;
+                  content += `\t\tvar v ${modelType}\n`;
+                  content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
+                  content += `\t\treturn fn(ctx, &v)\n`;
+                  content += `\t}\n`;
+                  content += `\tch.mu.Lock()\n`;
+                  content += `\tch.setHandlerLocked("${rawKey}", handler)\n`;
+                  content += `\tconnected := ch.isConnected\n`;
+                  content += `\tch.mu.Unlock()\n`;
+                  content += `\tif connected { ch.applyHandlers() }\n`;
+                  content += `}\n`;
+                  content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
+                  content += `\tch.mu.Lock()\n`;
+                  content += `\tch.setHandlerLocked("${rawKey}", nil)\n`;
+                  content += `\tconnected := ch.isConnected\n`;
+                  content += `\tch.mu.Unlock()\n`;
+                  content += `\tif connected { ch.applyHandlers() }\n`;
+                  content += `}\n\n`;
                 }
               }
             }
