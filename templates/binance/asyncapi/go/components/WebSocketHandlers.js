@@ -1249,8 +1249,8 @@ function generateEventHandlersType(asyncapi) {
   return `
 // Event handler registry placeholder type
 type eventHandlers struct {
-	// This struct will be populated by module-specific handlers
-	// It serves as a placeholder to satisfy the Client struct definition
+	// This struct is populated by generated handlers based on the AsyncAPI spec.
+	// It serves as a placeholder to satisfy the Client struct definition.
 }
 
 `;

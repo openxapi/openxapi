@@ -1,6 +1,6 @@
 # Binance AsyncAPI Go WebSocket Client Template
 
-This is an AsyncAPI template for generating **Go WebSocket clients** for Binance WebSocket API. The template is based on AsyncAPI 3.0 specifications and supports generating type-safe, high-performance Go WebSocket client code with **modular architecture** for different trading modules (spot, umfutures, cmfutures).
+This AsyncAPI template generates a **Go WebSocket client** for Binance. All code is produced directly from the AsyncAPI 3.0 specification – no module-specific logic or hardcoded handlers are embedded in the templates. Whenever the spec changes (for spot, futures, options, portfolio margin, or any future module), rerun the generator and the client adapts automatically.
 
 ## Quick Start
 
@@ -22,52 +22,26 @@ npm install -g @asyncapi/cli
 npm run generate
 ```
 
-This will generate the Go client using default parameters:
-- Spec file: `../../../../specs/binance/asyncapi/spot.yaml`
-- Output directory: `./output`
-- Package name: `spot`
-- Module name: `github.com/openxapi/binance-go/ws`
-
-### Module-Based Generation
-
-```bash
-# Generate specific module (spot, umfutures, cmfutures)
-MODULE=spot npm run generate:module
-MODULE=umfutures npm run generate:module
-MODULE=cmfutures npm run generate:module
-
-# Test specific module
-MODULE=spot npm run test:module
-MODULE=umfutures npm run test:module
-MODULE=cmfutures npm run test:module
-```
+By default the script reads `../../../../specs/binance/asyncapi/spot.yaml` and writes the client to `./output` using the module/package metadata shown below. Override any of the inputs with environment variables when needed. Every file that is produced – channels, handlers, models, and stream helpers – is inferred from the spec structure.
 
 ### Custom Generation
 
-Customize generation using environment variables:
-
 ```bash
-# Custom output directory
-OUTPUT_DIR=/path/to/output npm run generate
+# Pick a different spec (e.g. USD-M futures)
+SPEC_FILE=../../../../specs/binance/asyncapi/umfutures.yaml npm run generate
 
-# Use custom spec file
-SPEC_FILE=/path/to/custom.yaml npm run generate
+# Change where files are written
+OUTPUT_DIR=./dist npm run generate
 
-# Custom module and package names
-MODULE_NAME=my-binance-client PACKAGE_NAME=client npm run generate
-
-# Use custom AsyncAPI CLI
-ASYNCAPI_CLI=/usr/local/bin/asyncapi npm run generate
-
-# Set author information
-AUTHOR="Your Name" npm run generate
-
-# Combine multiple parameters
-OUTPUT_DIR=./my-client \
-MODULE_NAME=binance-ws \
-PACKAGE_NAME=websocket \
-AUTHOR="Developer Name" \
+# Override module metadata
+MODULE_NAME=github.com/example/binance/ws \
+PACKAGE_NAME=binancews \
+VERSION=0.2.0 \
+AUTHOR="Example Dev" \
 npm run generate
+
+# Use a specific AsyncAPI CLI binary
+ASYNCAPI_CLI=/usr/local/bin/asyncapi MODULE_NAME=github.com/example/binance/ws npm run generate
 ```
 
 ## Environment Variables
@@ -92,45 +66,13 @@ The template supports the following parameters:
 | `version` | Client version | `0.1.0` | No |
 | `author` | Author name | `openxapi` | No |
 
-## Modular Architecture
+## How the Template Works
 
-The template uses a **modular component system** that provides module-specific generation while maintaining code reusability:
-
-### Module Detection
-The template automatically detects the target module from:
-1. AsyncAPI specification title (e.g., "Binance Spot WebSocket API")
-2. Server URLs (e.g., `fstream` for umfutures, `dstream` for cmfutures)
-3. Context parameters passed during generation
-
-### Supported Modules
-- **spot**: Binance Spot WebSocket API (~3,400 lines, 106 models)
-- **umfutures**: Binance USD-M Futures WebSocket API (~1,600 lines, 33 models)
-- **cmfutures**: Binance COIN-M Futures WebSocket API (~1,400 lines, 21 models)
-
-### Module Configuration
-
-The template supports module-based generation using JSON configuration files located in `generator-configs/binance/asyncapi/go/`:
-
-```json
-{
-  "generator": {
-    "parameters": {
-      "moduleName": {
-        "default": "github.com/openxapi/binance-go/ws/spot"
-      },
-      "packageName": {
-        "default": "spot"
-      },
-      "version": {
-        "default": "0.1.0"
-      },
-      "author": {
-        "default": "openxapi"
-      }
-    }
-  }
-}
-```
+- **Spec driven** – channel files, handler registration functions, request/response helpers, typed stream builders, and models all come from the AsyncAPI definition. No file is tied to a fixed module.
+- **Channels first** – every AsyncAPI channel produces its own Go file, connection helpers, and handler registry derived from channel operations.
+- **Message aware** – request/response payloads and oneOf combinations rely on component messages and schemas. Event detection uses `x-event`, `x-event-type`, and schema metadata where available.
+- **Streams support** – if the spec exposes `x-stream-pattern`, `x-stream-example`, or `x-stream-params`, the generator emits typed helpers in `streams.go` without any hardcoded stream names.
+- **Extensible** – new Binance modules or in-spec extensions automatically influence generated code without template edits.
 
 ## Generated Code Structure
 
@@ -162,11 +104,13 @@ This will:
 2. Generate a test client
 3. Build the Go client
 
-### Test Specific Module
+### Test Generated Client with Go
 
 ```bash
-MODULE=spot npm run test:module
+npm run test
 ```
+
+This runs the end-to-end template test: remove the previous build, generate a client using the current spec/configuration, initialise a temporary Go module, and build the generated sources.
 
 ### Clean Test Files
 
@@ -174,73 +118,20 @@ MODULE=spot npm run test:module
 npm run test:clean
 ```
 
-### Generate Test Client Only
+Use `npm run test:generate` or `npm run test:build` individually when troubleshooting the generator or build process. `npm run example` leaves the generated client in `test/project` and runs `go run` so you can experiment with the output.
 
-```bash
-npm run test:generate
-```
-
-### Build Test Client Only
-
-```bash
-npm run test:build
-```
-
-### Run Example
-
-```bash
-npm run example
-```
-
-### Integration Tests
-
-Integration tests have been moved to a dedicated repository:
-- **Repository**: [github.com/openxapi/integration-tests](https://github.com/openxapi/integration-tests)
-- **Location**: `binance/asyncapi/` for Binance WebSocket tests
-
-To run integration tests:
-```bash
-# Clone the integration tests repository
-git clone https://github.com/openxapi/integration-tests.git
-cd integration-tests
-
-# Run specific tests
-make test-spot        # Binance Spot WebSocket tests
-make test-umfutures   # Binance USD-M Futures WebSocket tests
-make test-cmfutures   # Binance COIN-M Futures WebSocket tests
-make test-all         # All integration tests
-
-# Run individual test categories
-cd src/binance/go/ws/spot
-go test -v -run "TestPing|TestServerTime" -short  # Basic public endpoint tests
-go test -v -run "TestExchangeInfo|TestTickerPrice" -short  # Market data tests
-```
-
-### Integration Test Results
-
-The generated SDK has been verified to work with integration tests:
-
-- ✅ **TestPing**: WebSocket connectivity test (211ms)
-- ✅ **TestServerTime**: Server time endpoint (211ms)  
-- ✅ **TestExchangeInfo**: Exchange information (1.5s)
-- ✅ **TestTickerPrice**: Price ticker data (210ms)
-
-All public endpoints are fully functional and the SDK integrates seamlessly with the existing test framework.
+Integration tests for the generated SDKs live in [`github.com/openxapi/integration-tests`](https://github.com/openxapi/integration-tests) under `binance/asyncapi/`. Those suites cover connectivity, metadata, and streaming behaviour across Binance modules, ensuring the spec-driven template remains compatible.
 
 ## Available npm Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run generate` | Generate client using default parameters |
-| `npm run generate:module` | Generate client based on module configuration |
-| `npm run test` | Run complete test workflow |
-| `npm run test:clean` | Clean test files |
-| `npm run test:generate` | Generate test client only |
-| `npm run test:build` | Build test client only |
-| `npm run test:module` | Test specific module |
-| `npm run test:module:generate` | Generate test client for specific module |
-| `npm run example` | Generate and run example code |
-| `npm run example:module` | Run example for specific module |
+| `npm run generate` | Generate a client using the current spec and parameter defaults |
+| `npm run test` | Clean, regenerate, and build the sample client |
+| `npm run test:clean` | Remove the `test/project` workspace |
+| `npm run test:generate` | Generate into `test/project` without building |
+| `npm run test:build` | Build the previously generated client |
+| `npm run example` | Generate into `test/project` and run `go run` |
 
 ## Direct AsyncAPI CLI Usage
 
@@ -275,7 +166,7 @@ asyncapi generate fromTemplate \
 The generated Go client includes the following features:
 
 - ✅ **AsyncAPI 3.0 Compatible**: Full support for AsyncAPI 3.0 specifications
-- ✅ **Modular Architecture**: Module-specific generation with isolation (spot, umfutures, cmfutures)
+- ✅ **Spec-Driven Generation**: All handlers, channels, and models derive directly from the spec
 - ✅ **OneOf Support**: Automatic handling of multiple response types in a single endpoint
 - ✅ **High-Performance Architecture**: Optimized with sync.Map, pre-allocated buffers, and concurrent-safe operations
 - ✅ **Enhanced Error Handling**: Comprehensive API error handling with HTTP-like status codes
@@ -347,26 +238,6 @@ For module path issues, update the module name:
 MODULE_NAME=github.com/your-org/your-client npm run generate
 ```
 
-### ES Module Issues
-
-If you encounter ES module compatibility issues:
-
-```bash
-# Use Node.js LTS for better ES module support
-nvm use --lts
-
-# Ensure all template components use ES module syntax
-npm run test  # This will validate the template components
-```
-
-### Modular Component Issues
-
-The template uses modular components for module-specific generation. If you encounter issues:
-
-1. **Module Detection Problems**: Check AsyncAPI spec title and server URLs
-2. **Component Loading Errors**: Ensure all imports use ES module syntax
-3. **Generation Failures**: Verify the module registry is properly configured
-
 ## Dependencies
 
 Generated code dependencies:
@@ -377,12 +248,7 @@ Generated code dependencies:
 
 ## Contributing
 
-When adding new event types:
-
-1. Add the schema to your AsyncAPI specification
-2. Add the event type mapping in `mapEventTypeToStruct()`
-3. Register the type in `RegisterAllEventTypes()`
-4. Update the global handler setup in `SetupDefaultUserDataStreamHandlers()`
+Updates to generated behaviour should start from the AsyncAPI document. Add channels, messages, schemas, and `x-*` extensions in the spec and rerun the template. If template changes are required, keep them spec-driven and avoid reintroducing module-specific branches.
 
 ## License
 
