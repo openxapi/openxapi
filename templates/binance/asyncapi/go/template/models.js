@@ -362,11 +362,15 @@ ${fields.join('\n')}
     content += `package models\n\n`;
     // Import only when needed to avoid unused imports
     const needsJSONImport = propKeys.length === 0;
-    if (needsJSONImport || needsTime) {
+    const isErrorMessage = !!(compMsg && compMsg['x-error'] === true && modelName === 'ErrorMessage');
+    const importLines = [];
+    if (needsJSONImport) importLines.push(`\t"encoding/json"`);
+    if (needsTime) importLines.push(`\t"time"`);
+    if (isErrorMessage) importLines.push(`\t"fmt"`);
+    if (importLines.length) {
       content += `import (\n`;
-      if (needsJSONImport) content += `\t"encoding/json"\n`;
-      if (needsTime) content += `\t"time"\n`;
-      content += `)\n\n`;
+      content += importLines.join('\n');
+      content += `\n)\n\n`;
     }
 
     content += `// ${modelName} represents global message '#/components/messages/${compKey}'\n`;
@@ -378,7 +382,13 @@ ${fields.join('\n')}
       for (const pk of propKeys) {
         const prop = properties[pk] || {};
         const mapped = mapSchemaToGo(prop, pk, preferDescTop);
-        const goField = deriveGoFieldName(pk, prop, preferDescTop, usedNames);
+      let goField;
+      if (isErrorMessage && pk === 'error') {
+        goField = 'ErrorPayload';
+        usedNames.add(goField);
+      } else {
+        goField = deriveGoFieldName(pk, prop, preferDescTop, usedNames);
+      }
         const tag = requiredSet.has(pk) ? `json:"${pk}"` : `json:"${pk},omitempty"`;
         const desc = (prop && (prop.description || '')) || '';
         const comment = desc ? ` // ${desc.replace(/\n/g, ' ')}` : '';
@@ -389,6 +399,27 @@ ${fields.join('\n')}
 
     if (propKeys.length === 0) {
       content += `func (m *${modelName}) UnmarshalJSON(b []byte) error { m.Raw = append(m.Raw[:0], b...); return nil }\n`;
+    }
+    if (isErrorMessage) {
+      content += `\n// Error implements the error interface for ${modelName}\n`;
+      content += `func (m *${modelName}) Error() string {\n`;
+      content += `\tif m == nil {\n`;
+      content += `\t\treturn \"\"\n`;
+      content += `\t}\n`;
+      content += `\tpayload := m.ErrorPayload\n`;
+      content += `\tswitch {\n`;
+      content += `\tcase payload.Msg != \"\" && payload.Code != 0:\n`;
+      content += `\t\treturn fmt.Sprintf(\"%d: %s\", payload.Code, payload.Msg)\n`;
+      content += `\tcase payload.Msg != \"\":\n`;
+      content += `\t\treturn payload.Msg\n`;
+      content += `\tcase payload.Code != 0:\n`;
+      content += `\t\treturn fmt.Sprintf(\"%d\", payload.Code)\n`;
+      content += `\tcase m.Status != 0:\n`;
+      content += `\t\treturn fmt.Sprintf(\"status=%d\", m.Status)\n`;
+      content += `\tdefault:\n`;
+      content += `\t\treturn \"unknown error\"\n`;
+      content += `\t}\n`;
+      content += `}\n`;
     }
 
     files.push(

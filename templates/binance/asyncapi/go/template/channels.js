@@ -449,7 +449,7 @@ export default function ({ asyncapi, params }) {
 
       // Prepare reply model and precheck for id-based response handlers
       let replyModelType = '';
-      let replyPreCheck = '';
+      let replySuccessGuard = '';
       let reqIDField = 'Id';
       try {
         // infer request id field name
@@ -488,16 +488,14 @@ export default function ({ asyncapi, params }) {
               if (root && root.components && root.components.schemas) psr = root.components.schemas[tail] || psr;
             }
             const props = psr && psr.properties;
-            if (props && props.error) {
-              replyPreCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"error\"]; !ok { return fmt.Errorf(\"not error response\") }\n`;
-            } else if (props && props.result) {
+            if (props && props.result) {
               const r = props.result;
               if (r && r.type === 'array') {
-                replyPreCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif v, ok := probe[\"result\"]; !ok || len(v) == 0 || v[0] != '[' { return fmt.Errorf(\"not array result\") }\n`;
+                replySuccessGuard = `\n\t\t\tif v, ok := envelope[\"result\"]; !ok || len(v) == 0 || v[0] != '[' { return fmt.Errorf(\"not array result\") }\n`;
               } else if (r && (r.type === 'string' || r.type === 'boolean' || (r.oneOf && r.oneOf.length))) {
-                replyPreCheck = `\n\t\tvar probe map[string]interface{}\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"result\"]; !ok { return fmt.Errorf(\"no result field\") }\n`;
+                replySuccessGuard = `\n\t\t\tif _, ok := envelope[\"result\"]; !ok { return fmt.Errorf(\"no result field\") }\n`;
               } else {
-                replyPreCheck = `\n\t\tvar probe map[string]json.RawMessage\n\t\tif err := json.Unmarshal(b, &probe); err != nil { return err }\n\t\tif _, ok := probe[\"result\"]; !ok { return fmt.Errorf(\"no result field\") }\n`;
+                replySuccessGuard = `\n\t\t\tif _, ok := envelope[\"result\"]; !ok { return fmt.Errorf(\"no result field\") }\n`;
               }
             }
           }
@@ -506,7 +504,7 @@ export default function ({ asyncapi, params }) {
 
       content += `// ${methodName} sends a message for operation '${opId}' on ${nameSource}\n`;
       content += replyModelType
-        ? `func (ch *${channelPascal}Channel) ${methodName}(ctx context.Context, req *${reqModelName}, handler *func(context.Context, *${replyModelType}) error) error {\n`
+        ? `func (ch *${channelPascal}Channel) ${methodName}(ctx context.Context, req *${reqModelName}, handler *func(context.Context, *${replyModelType}, error) error) error {\n`
         : `func (ch *${channelPascal}Channel) ${methodName}(ctx context.Context, req *${reqModelName}) error {\n`;
       // function signature already emitted above based on replyModelType
       content += `\tch.client.connMu.RLock()\n`;
@@ -518,11 +516,20 @@ export default function ({ asyncapi, params }) {
         content += `\t\tidStr := fmt.Sprintf(\"%v\", req.${reqIDField})\n`;
         // store one-shot handler in client-level pendingByID to avoid per-channel map aliasing issues
         content += `\t\tch.client.pendingByID.Store(idStr, func(ctx context.Context, b []byte) error {\n`;
-        content += replyPreCheck;
+        content += `\t\t\tvar envelope map[string]json.RawMessage\n`;
+        content += `\t\t\tif err := json.Unmarshal(b, &envelope); err != nil { return err }\n`;
+        content += `\t\t\tif handler == nil || *handler == nil { return nil }\n`;
+        content += `\t\t\tif rawErr, ok := envelope[\"error\"]; ok && len(rawErr) > 0 {\n`;
+        content += `\t\t\t\tvar errMsg models.ErrorMessage\n`;
+        content += `\t\t\t\tif err := json.Unmarshal(b, &errMsg); err != nil { return err }\n`;
+        content += `\t\t\t\treturn (*handler)(ctx, nil, &errMsg)\n`;
+        content += `\t\t\t}\n`;
+        if (replySuccessGuard) {
+          content += replySuccessGuard;
+        }
         content += `\t\t\tvar v ${replyModelType}\n`;
         content += `\t\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
-        content += `\t\t\tif handler == nil || *handler == nil { return nil }\n`;
-        content += `\t\t\treturn (*handler)(ctx, &v)\n`;
+        content += `\t\t\treturn (*handler)(ctx, &v, nil)\n`;
         content += `\t\t})\n`;
         content += `\t}\n`;
       }
@@ -832,6 +839,9 @@ export default function ({ asyncapi, params }) {
                 }
               }
             } catch (e) { /* ignore doc extraction errors */ }
+            if (isErrorMessageFlag) {
+              return;
+            }
             if (!emittedHandlerNames.has(handlerName)) {
               emittedHandlerNames.add(handlerName);
               if (docLines.length) { content += docLines.join('\n') + `\n`; }
@@ -857,26 +867,6 @@ export default function ({ asyncapi, params }) {
               content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
               content += `\tch.mu.Lock()\n`;
               content += `\tch.setHandlerLocked("${aliasKey}", nil)\n`;
-              content += `\tconnected := ch.isConnected\n`;
-              content += `\tch.mu.Unlock()\n`;
-              content += `\tif connected { ch.applyHandlers() }\n`;
-              content += `}\n\n`;
-            } else if (isErrorMessageFlag) {
-              content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
-              content += preCheck;
-              content += `\t\tvar v ${modelType}\n`;
-              content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
-              content += `\t\treturn fn(ctx, &v)\n`;
-              content += `\t}\n`;
-              content += `\tch.mu.Lock()\n`;
-              content += `\tch.setHandlerLocked(\"${errorAliasKey}\", handler)\n`;
-              content += `\tconnected := ch.isConnected\n`;
-              content += `\tch.mu.Unlock()\n`;
-              content += `\tif connected { ch.applyHandlers() }\n`;
-              content += `}\n`;
-              content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-              content += `\tch.mu.Lock()\n`;
-              content += `\tch.setHandlerLocked(\"${errorAliasKey}\", nil)\n`;
               content += `\tconnected := ch.isConnected\n`;
               content += `\tch.mu.Unlock()\n`;
               content += `\tif connected { ch.applyHandlers() }\n`;
@@ -1167,6 +1157,9 @@ content += `\t\tvar v ${modelType}` + "\n";
 `;
               }
             }
+            if (isErrorMessageFlag) {
+              return;
+            }
             if (!emittedHandlerNames.has(handlerName)) {
               emittedHandlerNames.add(handlerName);
               // Compose documentation for unwrapped event
@@ -1188,27 +1181,7 @@ content += `\t\tvar v ${modelType}` + "\n";
 `;
               content += `func (ch *${channelPascal}Channel) Handle${handlerName}(fn func(context.Context, *${modelType}) error) {\n`;
               content += `\tif fn == nil { return }\n`;
-              if (isErrorMessageFlag) {
-                content += `\thandler := func(ctx context.Context, b []byte) error {\n`;
-                content += preCheck;
-                content += `\t\tvar v ${modelType}\n`;
-                content += `\t\tif err := json.Unmarshal(b, &v); err != nil { return err }\n`;
-                content += `\t\treturn fn(ctx, &v)\n`;
-                content += `\t}\n`;
-                content += `\tch.mu.Lock()\n`;
-                content += `\tch.setHandlerLocked("${errorAliasKey}", handler)\n`;
-                content += `\tconnected := ch.isConnected\n`;
-                content += `\tch.mu.Unlock()\n`;
-                content += `\tif connected { ch.applyHandlers() }\n`;
-                content += `}\n`;
-                content += `\nfunc (ch *${channelPascal}Channel) Unregister${handlerName}() {\n`;
-                content += `\tch.mu.Lock()\n`;
-                content += `\tch.setHandlerLocked("${errorAliasKey}", nil)\n`;
-                content += `\tconnected := ch.isConnected\n`;
-                content += `\tch.mu.Unlock()\n`;
-                content += `\tif connected { ch.applyHandlers() }\n`;
-                content += `}\n\n`;
-              } else if (expectedEventTypeAliases && expectedEventTypeAliases.length) {
+              if (expectedEventTypeAliases && expectedEventTypeAliases.length) {
                 content += `\tch.mu.Lock()\n`;
                 expectedEventTypeAliases.forEach((__aliasVal) => {
                   const __esc = String(__aliasVal).replace(/\\/g, '\\\\').replace(/"/g, '\"');
