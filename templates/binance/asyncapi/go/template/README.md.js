@@ -52,6 +52,13 @@ export default function ({ asyncapi, params }) {
   const exampleStreams = eventMetas.flatMap(ev => ev.examples || []).filter(Boolean);
   const defaultSingleStream = exampleStreams[0] || 'btcusdt@trade';
   const defaultSecondStream = exampleStreams[1] || exampleStreams[0] || 'btcusdt@ticker';
+  const hasErrorMessage = Object.values(messages || {}).some(m => m && m['x-error'] === true);
+  let errorStructName = 'ErrorMessage';
+  Object.entries(messages || {}).forEach(([key, m]) => {
+    if (m && m['x-error'] === true) {
+      errorStructName = toPascalCase(key);
+    }
+  });
 
   const singleArgs = extractPlaceholders(singleChanAddr).map(p => {
     if (p === 'streamName') return JSON.stringify(defaultSingleStream);
@@ -143,6 +150,25 @@ export default function ({ asyncapi, params }) {
     } catch (e) {}
     return idL.includes('listsubscriptions') && addr === combinedChanAddr;
   });
+  const combinedReqStruct = (listCombinedOp && listCombinedOp.reqStruct) ? listCombinedOp.reqStruct : 'ListSubscriptionsRequest';
+  const combinedReplyStruct = (listCombinedOp && listCombinedOp.replyStruct) ? listCombinedOp.replyStruct : 'ListSubscriptionsResponse';
+  const combinedMethodName = (listCombinedOp && listCombinedOp.methodName) ? listCombinedOp.methodName : 'ListSubscriptionsFromCombinedMarketStreams';
+  const subscribeCombinedOp = opInfoFor(o => {
+    const id = (o.id && o.id()) || '';
+    const idL = id.toLowerCase();
+    let addr = '';
+    try {
+      let chan = null;
+      if (typeof o.channel === 'function') chan = o.channel();
+      else if (typeof o.channels === 'function') { const cs = o.channels(); chan = cs && cs[0]; }
+      addr = chan && chan.address ? chan.address() : '';
+    } catch (e) {}
+    return idL.includes('subscribe') && addr === combinedChanAddr;
+  });
+  const subscribeReqStruct = (subscribeCombinedOp && subscribeCombinedOp.reqStruct && subscribeCombinedOp.reqStruct !== 'interface{}')
+    ? subscribeCombinedOp.reqStruct
+    : 'SubscribeRequest';
+  const subscribeMethodName = (subscribeCombinedOp && subscribeCombinedOp.methodName) ? subscribeCombinedOp.methodName : 'Subscribe';
 
   return (
     <File name="README.md">
@@ -159,6 +185,7 @@ Version: ${version}
 - Single and combined connections (/ws/{streamName}, /stream)
 - Subscribe/Unsubscribe/ListSubscriptions over WebSocket
 - Typed handler registration per event
+- Request/reply helpers surface server errors through the handler's \`error\` parameter
 - Combined-stream wrapper routing
 - Stream-name builders from x-stream-pattern(s), examples, and speeds
 - Server management (multiple endpoints, active server switching)
@@ -220,7 +247,7 @@ comb := ws.New${combinedChanPascal}Channel(client)
 if err := comb.Connect(ctx${combinedArgs ? ', ' : ''}${combinedArgs}); err != nil {
   log.Fatalf("connect combined failed: %v", err)
 }
-\n+// User Data Streams channel (requires listenKey)
+// User Data Streams channel (requires listenKey)
 ${userDataEntry ? `uds := ws.New${userDataChanPascal}Channel(client)
 // Example handler
 uds.HandleAccountUpdateEvent(func(ctx context.Context, ev *wsmodels.AccountUpdateEvent) error {
@@ -255,7 +282,11 @@ if many, err := ws.BuildTradeEventStreams(map[string]string{"symbol": "BTC-21063
 }
 
 // Subscribe on the active connection
-if err := client.Subscribe(ctx, streams); err != nil {
+subReq := &wsmodels.${subscribeReqStruct}{
+  Id:     wsmodels.NewMessageIDInt64(1),
+  Params: streams,
+}
+if err := comb.${subscribeMethodName}(ctx, subReq, nil); err != nil {
   log.Fatalf("subscribe failed: %v", err)
 }
 \`\`\`
@@ -266,16 +297,23 @@ Most control actions use one-shot request/response via an id field. The SDK regi
 
 \`\`\`go
 // Build request (method const set automatically by the SDK)
-${(listCombinedOp && listCombinedOp.reqStruct) ? `req := &wsmodels.${listCombinedOp.reqStruct}{ Id: 1 }` : `req := &wsmodels.ListSubscriptionsRequest{ Id: 1 }`}
+req := &wsmodels.${combinedReqStruct}{ Id: wsmodels.NewMessageIDInt64(1) }
 
-// Define reply handler
-${(listCombinedOp && listCombinedOp.replyStruct) ? `onReply := func(ctx context.Context, res *wsmodels.${listCombinedOp.replyStruct}) error {` : `onReply := func(ctx context.Context, res *wsmodels.ListSubscriptionsResponse) error {`}
+// Define reply handler (note the error parameter)
+onReply := func(ctx context.Context, res *wsmodels.${combinedReplyStruct}, wsErr error) error {
+  if wsErr != nil {
+${hasErrorMessage ? `    if apiErr, ok := wsErr.(*wsmodels.${errorStructName}); ok {
+      log.Printf("request failed: %s", apiErr.Error())
+    }
+` : ''}
+    return wsErr
+  }
   log.Printf("active subscriptions: %+v", res.Result)
   return nil
 }
 
 // Send on combined channel (similar methods exist for single channel)
-${(listCombinedOp && listCombinedOp.methodName) ? `if err := comb.${listCombinedOp.methodName}(ctx, req, &onReply); err != nil {` : `if err := comb.ListSubscriptionsFromCombinedMarketStreams(ctx, req, &onReply); err != nil {`}
+if err := comb.${combinedMethodName}(ctx, req, &onReply); err != nil {
   log.Fatalf("list subscriptions failed: %v", err)
 }
 \`\`\`
@@ -336,9 +374,29 @@ _ = mps
 
 ## Handler Registration
 
-- Register per-channel handlers using \`Handle<Event>(func(ctx, *models.Event) error)\`.
+- Register per-channel event handlers using \`Handle<Event>(func(ctx, *models.Event) error)\`.
+- Request/reply methods accept handlers of the form \`func(context.Context, *models.Reply, error) error\`; check the error argument before using the reply payload.
 - Combined stream wrappers are routed via alias keys; unwrapped events are dispatched by event type.
 - RegisterHandlers replaces the handler map for a channel key (subsequent calls overwrite the previous map for that channel).
+
+${hasErrorMessage ? `
+## Error Responses
+
+Request/reply error payloads are decoded into \`*wsmodels.${errorStructName}\`, which implements \`error\`. Always check the handler's error argument before using the reply value:
+
+\`\`\`go
+errAware := func(ctx context.Context, res *wsmodels.${combinedReplyStruct}, wsErr error) error {
+  if wsErr != nil {
+    log.Printf("request failed: %v", wsErr)
+    return wsErr
+  }
+  // handle success
+  return nil
+}
+\`\`\`
+
+There is no separate \`HandleErrorMessage\` hook; server errors flow directly to the request handler.
+` : ''}
 
 ## Performance & Dispatch
 
