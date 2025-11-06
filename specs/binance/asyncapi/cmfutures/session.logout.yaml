@@ -7,13 +7,19 @@ channels:
         address: /
         title: Channel session.logout
         description: |-
-            A sample code in Python to show how to sign the payload with an Ed25519 key is available below.
-            A sample code in Python to show how to sign the payload with an Ed25519 key is available on the right side.
+            Forget the API key previously authenticated.
+            If the connection is not authenticated, this request does nothing.
+            Note that the WebSocket connection stays open after session.logout request.
+            You can continue using the connection,
+            but now you will have to explicitly provide the apiKey and signature parameters where needed.
+            Only Ed25519 signatures are supported for this feature.
         messages:
             sessionLogoutRequest:
                 $ref: '#/components/messages/sessionLogoutRequest'
+            sessionLogoutResponse:
+                $ref: '#/components/messages/sessionLogoutResponse'
 operations:
-    sendSessionLogout:
+    sessionLogout:
         title: Send to session.logout
         description: Send a session.logout request
         action: send
@@ -21,26 +27,81 @@ operations:
             $ref: '#/channels/cmfutures'
         messages:
             - $ref: '#/channels/cmfutures/messages/sessionLogoutRequest'
+        reply:
+            channel:
+                $ref: '#/channels/cmfutures'
+            messages:
+                - $ref: '#/channels/cmfutures/messages/sessionLogoutResponse'
 components:
+    schemas:
+        sessionLogoutRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: c174a2b1-3f51-4580-b200-8528bd237cb7
+                method:
+                    type: string
+                    description: method property
+                    example: session.logout
+                    const: session.logout
+        sessionLogoutResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: c174a2b1-3f51-4580-b200-8528bd237cb7
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        apiKey:
+                            type: string
+                            description: apiKey property
+                        authorizedSince:
+                            type: string
+                            description: authorizedSince property
+                        connectedSince:
+                            type: integer
+                            description: connectedSince property
+                            example: 1649729873021
+                        returnRateLimits:
+                            type: boolean
+                            description: returnRateLimits property
+                            example: false
+                        serverTime:
+                            type: integer
+                            format: int64
+                            description: serverTime property
+                            example: 1649730611671
+                        userDataStream:
+                            type: boolean
+                            description: userDataStream property
+                            example: false
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         sessionLogoutRequest:
-            name: SIGNED request example (Ed25519) Request
-            title: SIGNED request example (Ed25519) Request
+            name: Log out of the session Request
+            title: Log out of the session Request
             description: Send a session.logout request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: c174a2b1-3f51-4580-b200-8528bd237cb7
-                    method:
-                        type: string
-                        description: method property
-                        example: session.logout
-                        enum:
-                            - session.logout
+                $ref: '#/components/schemas/sessionLogoutRequest'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionLogoutResponse:
+            name: Log out of the session Response
+            title: Log out of the session Response
+            description: Receive response from session.logout
+            payload:
+                $ref: '#/components/schemas/sessionLogoutResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

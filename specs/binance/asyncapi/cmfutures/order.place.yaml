@@ -15,18 +15,7 @@ channels:
             orderPlaceResponse:
                 $ref: '#/components/messages/orderPlaceResponse'
 operations:
-    receiveOrderPlace:
-        title: Receive from order.place
-        description: Receive response from order.place
-        action: receive
-        channel:
-            $ref: '#/channels/cmfutures'
-        messages:
-            - $ref: '#/channels/cmfutures/messages/orderPlaceResponse'
-        security:
-            - $ref: '#/components/securitySchemes/trade'
-        x-binance-security-type: TRADE
-    sendOrderPlace:
+    orderPlace:
         title: Send to order.place
         description: Send a order.place request
         action: send
@@ -34,93 +23,238 @@ operations:
             $ref: '#/channels/cmfutures'
         messages:
             - $ref: '#/channels/cmfutures/messages/orderPlaceRequest'
+        reply:
+            channel:
+                $ref: '#/channels/cmfutures'
+            messages:
+                - $ref: '#/channels/cmfutures/messages/orderPlaceResponse'
         security:
             - $ref: '#/components/securitySchemes/trade'
         x-binance-security-type: TRADE
 components:
+    schemas:
+        orderPlaceRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 60fa4366-f96e-42fe-a82b-f819952c6db4
+                method:
+                    type: string
+                    description: method property
+                    example: order.place
+                    const: order.place
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        activationPrice:
+                            type: string
+                            description: Used with TRAILING_STOP_MARKET orders, default as the latest price(supporting different workingType)
+                        apiKey:
+                            type: string
+                        callbackRate:
+                            type: string
+                            description: Used with TRAILING_STOP_MARKET orders, min 0.1, max 10 where 1 for 1%
+                        closePosition:
+                            type: string
+                            description: true, false；Close-All，used with STOP_MARKET or TAKE_PROFIT_MARKET.
+                        newClientOrderId:
+                            type: string
+                            description: 'A unique id among open orders. Automatically generated if not sent. Can only be string following the rule: ^[\.A-Z\:/a-z0-9_-]{1,36}$'
+                        newOrderRespType:
+                            type: string
+                            description: ACK,RESULT, default ACK
+                        positionSide:
+                            type: string
+                            description: Default BOTH for One-way Mode; LONG or SHORT for Hedge Mode.  It must be sent in Hedge Mode.
+                        price:
+                            type: string
+                        priceMatch:
+                            type: string
+                            description: 'only available for LIMIT/STOP/TAKE_PROFIT order; can be set to OPPONENT/ OPPONENT_5/ OPPONENT_10/ OPPONENT_20: /QUEUE/ QUEUE_5/ QUEUE_10/ QUEUE_20; Can''t be passed together with price'
+                        priceProtect:
+                            type: string
+                            description: '"TRUE" or "FALSE", default "FALSE". Used with STOP/STOP_MARKET or TAKE_PROFIT/TAKE_PROFIT_MARKET orders.'
+                        quantity:
+                            type: string
+                            description: Quantity measured by contract number, Cannot be sent with closePosition=true
+                        recvWindow:
+                            type: integer
+                        reduceOnly:
+                            type: string
+                            description: true or false. default false. Cannot be sent in Hedge Mode; cannot be sent with closePosition=true (Close-All)
+                        selfTradePreventionMode:
+                            type: string
+                            description: 'NONE: No STP / EXPIRE_TAKER:expire taker order when STP triggers/ EXPIRE_MAKER:expire taker order when STP triggers/ EXPIRE_BOTH:expire both orders when STP triggers; default NONE'
+                        side:
+                            type: string
+                            description: BUY or SELL
+                        signature:
+                            type: string
+                        stopPrice:
+                            type: string
+                            description: Used with STOP/STOP_MARKET or TAKE_PROFIT/TAKE_PROFIT_MARKET orders.
+                        symbol:
+                            type: string
+                        timeInForce:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                        type:
+                            type: string
+                            description: LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET
+                        workingType:
+                            type: string
+                            description: 'stopPrice triggered by: "MARK_PRICE", "CONTRACT_PRICE". Default "CONTRACT_PRICE"'
+                    required:
+                        - symbol
+                        - side
+                        - type
+                        - timestamp
+        orderPlaceResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 60fa4366-f96e-42fe-a82b-f819952c6db4
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 6
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 2400
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        avgPrice:
+                            type: string
+                            description: avgPrice property
+                            example: "0.00"
+                        clientOrderId:
+                            type: string
+                            description: clientOrderId property
+                            example: 5SztZiGFAxgAqw4J9EN9fA
+                        closePosition:
+                            type: boolean
+                            description: closePosition property
+                            example: false
+                        cumBase:
+                            type: string
+                            description: cumBase property
+                            example: "0"
+                        cumQty:
+                            type: string
+                            description: cumQty property
+                            example: "0"
+                        executedQty:
+                            type: string
+                            description: executedQty property
+                            example: "0"
+                        orderId:
+                            type: integer
+                            format: int64
+                            description: orderId property
+                            example: 333245211
+                        origQty:
+                            type: string
+                            description: origQty property
+                            example: "1"
+                        origType:
+                            type: string
+                            description: origType property
+                            example: LIMIT
+                        pair:
+                            type: string
+                            description: pair property
+                            example: BTCUSD
+                        positionSide:
+                            type: string
+                            description: positionSide property
+                            example: BOTH
+                        price:
+                            type: string
+                            description: price property
+                            example: "50000"
+                        priceProtect:
+                            type: boolean
+                            description: priceProtect property
+                            example: false
+                        reduceOnly:
+                            type: boolean
+                            description: reduceOnly property
+                            example: false
+                        side:
+                            type: string
+                            description: side property
+                            example: BUY
+                        status:
+                            type: string
+                            description: status property
+                            example: NEW
+                        stopPrice:
+                            type: string
+                            description: stopPrice property
+                            example: "0"
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BTCUSD_PERP
+                        timeInForce:
+                            type: string
+                            description: timeInForce property
+                            example: GTC
+                        type:
+                            type: string
+                            description: type property
+                            example: LIMIT
+                        updateTime:
+                            type: integer
+                            format: int64
+                            description: updateTime property
+                            example: 1728413795125
+                        workingType:
+                            type: string
+                            description: workingType property
+                            example: CONTRACT_PRICE
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         orderPlaceRequest:
             name: New Order(TRADE) Request
             title: New Order(TRADE) Request
             description: Send a order.place request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 60fa4366-f96e-42fe-a82b-f819952c6db4
-                    method:
-                        type: string
-                        description: method property
-                        example: order.place
-                        enum:
-                            - order.place
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            activationPrice:
-                                type: string
-                                description: Used with TRAILING_STOP_MARKET orders, default as the latest price(supporting different workingType)
-                            callbackRate:
-                                type: string
-                                description: Used with TRAILING_STOP_MARKET orders, min 0.1, max 10 where 1 for 1%
-                            closePosition:
-                                type: string
-                                description: true, false；Close-All，used with STOP_MARKET or TAKE_PROFIT_MARKET.
-                            newClientOrderId:
-                                type: string
-                                description: 'A unique id among open orders. Automatically generated if not sent. Can only be string following the rule: ^[\.A-Z\:/a-z0-9_-]{1,36}$'
-                            newOrderRespType:
-                                type: string
-                                description: ACK,RESULT, default ACK
-                            positionSide:
-                                type: string
-                                description: Default BOTH for One-way Mode; LONG or SHORT for Hedge Mode.  It must be sent in Hedge Mode.
-                            price:
-                                type: string
-                            priceMatch:
-                                type: string
-                                description: 'only available for LIMIT/STOP/TAKE_PROFIT order; can be set to OPPONENT/ OPPONENT_5/ OPPONENT_10/ OPPONENT_20: /QUEUE/ QUEUE_5/ QUEUE_10/ QUEUE_20; Can''t be passed together with price'
-                            priceProtect:
-                                type: string
-                                description: '"TRUE" or "FALSE", default "FALSE". Used with STOP/STOP_MARKET or TAKE_PROFIT/TAKE_PROFIT_MARKET orders.'
-                            quantity:
-                                type: string
-                                description: Quantity measured by contract number, Cannot be sent with closePosition=true
-                            recvWindow:
-                                type: integer
-                            reduceOnly:
-                                type: string
-                                description: true or false. default false. Cannot be sent in Hedge Mode; cannot be sent with closePosition=true (Close-All)
-                            selfTradePreventionMode:
-                                type: string
-                                description: 'NONE: No STP / EXPIRE_TAKER:expire taker order when STP triggers/ EXPIRE_MAKER:expire taker order when STP triggers/ EXPIRE_BOTH:expire both orders when STP triggers; default NONE'
-                            side:
-                                type: string
-                                description: BUY or SELL
-                            stopPrice:
-                                type: string
-                                description: Used with STOP/STOP_MARKET or TAKE_PROFIT/TAKE_PROFIT_MARKET orders.
-                            symbol:
-                                type: string
-                            timeInForce:
-                                type: string
-                            timestamp:
-                                type: integer
-                            type:
-                                type: string
-                                description: LIMIT, MARKET, STOP, STOP_MARKET, TAKE_PROFIT, TAKE_PROFIT_MARKET, TRAILING_STOP_MARKET
-                            workingType:
-                                type: string
-                                description: 'stopPrice triggered by: "MARK_PRICE", "CONTRACT_PRICE". Default "CONTRACT_PRICE"'
-                        required:
-                            - symbol
-                            - side
-                            - type
-                            - timestamp
+                $ref: '#/components/schemas/orderPlaceRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -129,138 +263,7 @@ components:
             title: New Order(TRADE) Response
             description: Receive response from order.place
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 60fa4366-f96e-42fe-a82b-f819952c6db4
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 6
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 2400
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            avgPrice:
-                                type: string
-                                description: avgPrice property
-                                example: "0.00"
-                            clientOrderId:
-                                type: string
-                                description: clientOrderId property
-                                example: 5SztZiGFAxgAqw4J9EN9fA
-                            closePosition:
-                                type: boolean
-                                description: closePosition property
-                                example: false
-                            cumBase:
-                                type: string
-                                description: cumBase property
-                                example: "0"
-                            cumQty:
-                                type: string
-                                description: cumQty property
-                                example: "0"
-                            executedQty:
-                                type: string
-                                description: executedQty property
-                                example: "0"
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: orderId property
-                                example: 333245211
-                            origQty:
-                                type: string
-                                description: origQty property
-                                example: "1"
-                            origType:
-                                type: string
-                                description: origType property
-                                example: LIMIT
-                            pair:
-                                type: string
-                                description: pair property
-                                example: BTCUSD
-                            positionSide:
-                                type: string
-                                description: positionSide property
-                                example: BOTH
-                            price:
-                                type: string
-                                description: price property
-                                example: "50000"
-                            priceProtect:
-                                type: boolean
-                                description: priceProtect property
-                                example: false
-                            reduceOnly:
-                                type: boolean
-                                description: reduceOnly property
-                                example: false
-                            side:
-                                type: string
-                                description: side property
-                                example: BUY
-                            status:
-                                type: string
-                                description: status property
-                                example: NEW
-                            stopPrice:
-                                type: string
-                                description: stopPrice property
-                                example: "0"
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSD_PERP
-                            timeInForce:
-                                type: string
-                                description: timeInForce property
-                                example: GTC
-                            type:
-                                type: string
-                                description: type property
-                                example: LIMIT
-                            updateTime:
-                                type: integer
-                                format: int64
-                                description: updateTime property
-                                example: 1728413795125
-                            workingType:
-                                type: string
-                                description: workingType property
-                                example: CONTRACT_PRICE
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/orderPlaceResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

@@ -1,0 +1,135 @@
+asyncapi: 3.0.0
+info:
+    title: "Binance CM Futures WebSocket Errors"
+    version: "1.0.0"
+    description: |-
+        Common error message definition for Binance CM Futures WebSocket APIs.
+channels:
+    cmfutures:
+        address: /
+        title: Channel error
+        description: |-
+            Channel exposing the reusable error message definition for CM Futures WebSocket APIs.
+        messages:
+            error:
+                $ref: '#/components/messages/errorMessage'
+operations:
+    receiveError:
+        title: Receive error messages
+        summary: Receive error messages from CM Futures WebSocket API
+        description: Receive error messages in response to invalid requests or other issues.
+        action: receive
+        channel:
+            $ref: '#/channels/cmfutures'
+        messages:
+            - $ref: '#/channels/cmfutures/messages/error'
+components:
+    schemas:
+        id:
+            description: |-
+                Unique identifier used to correlate requests and responses.
+                Accepted formats:
+                - 64-bit signed integer
+                - Alphanumeric strings; max length 36
+                - null
+            oneOf:
+                - type: integer
+                  format: int64
+                - type: string
+                  maxLength: 36
+                - type: 'null'
+        errorPayload:
+            type: object
+            description: Details about the error that occurred.
+            required:
+                - code
+                - msg
+            properties:
+                code:
+                    type: integer
+                    description: Binance-specific error code.
+                msg:
+                    type: string
+                    description: Human-readable error message.
+        rateLimit:
+            type: object
+            description: Rate limit usage details captured for the request.
+            required:
+                - rateLimitType
+                - interval
+                - intervalNum
+                - limit
+                - count
+            properties:
+                rateLimitType:
+                    type: string
+                    description: Rate limit type affected by the request.
+                    example: ORDERS
+                interval:
+                    type: string
+                    description: Time interval unit for the rate limit window.
+                    example: SECOND
+                intervalNum:
+                    type: integer
+                    description: Number of intervals the rate limit covers.
+                    example: 10
+                limit:
+                    type: integer
+                    description: Maximum number of allowed operations for the interval.
+                    example: 50
+                count:
+                    type: integer
+                    description: Current usage count within the interval.
+                    example: 13
+        errorResponse:
+            type: object
+            description: Error payload returned by the WebSocket API.
+            required:
+                - id
+                - status
+                - error
+            properties:
+                id:
+                    $ref: '#/components/schemas/id'
+                status:
+                    type: integer
+                    description: HTTP-style status code describing the error.
+                error:
+                    $ref: '#/components/schemas/errorPayload'
+                rateLimits:
+                    type: array
+                    description: Rate limit counters associated with the request.
+                    items:
+                        $ref: '#/components/schemas/rateLimit'
+            example:
+                id: "e2a85d9f-07a5-4f94-8d5f-789dc3deb097"
+                status: 400
+                error:
+                    code: -2010
+                    msg: "Account has insufficient balance for requested action."
+                rateLimits:
+                    - rateLimitType: ORDERS
+                      interval: SECOND
+                      intervalNum: 10
+                      limit: 50
+                      count: 13
+                    - rateLimitType: ORDERS
+                      interval: DAY
+                      intervalNum: 1
+                      limit: 160000
+                      count: 4044
+                    - rateLimitType: REQUEST_WEIGHT
+                      interval: MINUTE
+                      intervalNum: 1
+                      limit: 6000
+                      count: 322
+    messages:
+        errorMessage:
+            name: Error Message
+            title: Error Response
+            summary: Error response from server
+            x-error: true
+            x-handler-key: error
+            contentType: application/json
+            payload:
+                $ref: '#/components/schemas/errorResponse'

@@ -21,18 +21,7 @@ channels:
             orderModifyResponse:
                 $ref: '#/components/messages/orderModifyResponse'
 operations:
-    receiveOrderModify:
-        title: Receive from order.modify
-        description: Receive response from order.modify
-        action: receive
-        channel:
-            $ref: '#/channels/cmfutures'
-        messages:
-            - $ref: '#/channels/cmfutures/messages/orderModifyResponse'
-        security:
-            - $ref: '#/components/securitySchemes/trade'
-        x-binance-security-type: TRADE
-    sendOrderModify:
+    orderModify:
         title: Send to order.modify
         description: Send a order.modify request
         action: send
@@ -40,63 +29,207 @@ operations:
             $ref: '#/channels/cmfutures'
         messages:
             - $ref: '#/channels/cmfutures/messages/orderModifyRequest'
+        reply:
+            channel:
+                $ref: '#/channels/cmfutures'
+            messages:
+                - $ref: '#/channels/cmfutures/messages/orderModifyResponse'
         security:
             - $ref: '#/components/securitySchemes/trade'
         x-binance-security-type: TRADE
 components:
+    schemas:
+        orderModifyRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 88601d02-bd0d-430d-8733-2708a569ebda
+                method:
+                    type: string
+                    description: method property
+                    example: order.modify
+                    const: order.modify
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        orderId:
+                            type: integer
+                            format: int64
+                        origClientOrderId:
+                            type: string
+                        price:
+                            type: string
+                        priceMatch:
+                            type: string
+                            description: 'only avaliable for LIMIT/STOP/TAKE_PROFIT order; can be set to OPPONENT/ OPPONENT_5/ OPPONENT_10/ OPPONENT_20: /QUEUE/ QUEUE_5/ QUEUE_10/ QUEUE_20; Can''t be passed together with price'
+                        quantity:
+                            type: string
+                            description: Order quantity, cannot be sent with closePosition=true
+                        recvWindow:
+                            type: integer
+                            format: int64
+                        side:
+                            type: string
+                            description: SELL, BUY
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+                        - side
+                        - quantity
+                        - price
+                        - timestamp
+        orderModifyResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 88601d02-bd0d-430d-8733-2708a569ebda
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 6
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 2400
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        avgPrice:
+                            type: string
+                            description: avgPrice property
+                            example: "0.00"
+                        clientOrderId:
+                            type: string
+                            description: clientOrderId property
+                            example: 5SztZiGFAxgAqw4J9EN9fA
+                        closePosition:
+                            type: boolean
+                            description: closePosition property
+                            example: false
+                        cumBase:
+                            type: string
+                            description: cumBase property
+                            example: "0"
+                        cumQty:
+                            type: string
+                            description: cumQty property
+                            example: "0"
+                        executedQty:
+                            type: string
+                            description: executedQty property
+                            example: "0"
+                        orderId:
+                            type: integer
+                            format: int64
+                            description: orderId property
+                            example: 333245211
+                        origQty:
+                            type: string
+                            description: origQty property
+                            example: "1"
+                        origType:
+                            type: string
+                            description: origType property
+                            example: LIMIT
+                        pair:
+                            type: string
+                            description: pair property
+                            example: BTCUSD
+                        positionSide:
+                            type: string
+                            description: positionSide property
+                            example: BOTH
+                        price:
+                            type: string
+                            description: price property
+                            example: "51000"
+                        priceProtect:
+                            type: boolean
+                            description: priceProtect property
+                            example: false
+                        reduceOnly:
+                            type: boolean
+                            description: reduceOnly property
+                            example: false
+                        side:
+                            type: string
+                            description: side property
+                            example: BUY
+                        status:
+                            type: string
+                            description: status property
+                            example: NEW
+                        stopPrice:
+                            type: string
+                            description: stopPrice property
+                            example: "0"
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BTCUSD_PERP
+                        timeInForce:
+                            type: string
+                            description: timeInForce property
+                            example: GTC
+                        type:
+                            type: string
+                            description: type property
+                            example: LIMIT
+                        updateTime:
+                            type: integer
+                            format: int64
+                            description: updateTime property
+                            example: 1728415765493
+                        workingType:
+                            type: string
+                            description: workingType property
+                            example: CONTRACT_PRICE
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         orderModifyRequest:
             name: Modify Order (TRADE) Request
             title: Modify Order (TRADE) Request
             description: Send a order.modify request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 88601d02-bd0d-430d-8733-2708a569ebda
-                    method:
-                        type: string
-                        description: method property
-                        example: order.modify
-                        enum:
-                            - order.modify
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            orderId:
-                                type: integer
-                                format: int64
-                            origClientOrderId:
-                                type: string
-                            price:
-                                type: string
-                            priceMatch:
-                                type: string
-                                description: 'only avaliable for LIMIT/STOP/TAKE_PROFIT order; can be set to OPPONENT/ OPPONENT_5/ OPPONENT_10/ OPPONENT_20: /QUEUE/ QUEUE_5/ QUEUE_10/ QUEUE_20; Can''t be passed together with price'
-                            quantity:
-                                type: string
-                                description: Order quantity, cannot be sent with closePosition=true
-                            recvWindow:
-                                type: integer
-                                format: int64
-                            side:
-                                type: string
-                                description: SELL, BUY
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - symbol
-                            - side
-                            - quantity
-                            - price
-                            - timestamp
+                $ref: '#/components/schemas/orderModifyRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -105,138 +238,7 @@ components:
             title: Modify Order (TRADE) Response
             description: Receive response from order.modify
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 88601d02-bd0d-430d-8733-2708a569ebda
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 6
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 2400
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            avgPrice:
-                                type: string
-                                description: avgPrice property
-                                example: "0.00"
-                            clientOrderId:
-                                type: string
-                                description: clientOrderId property
-                                example: 5SztZiGFAxgAqw4J9EN9fA
-                            closePosition:
-                                type: boolean
-                                description: closePosition property
-                                example: false
-                            cumBase:
-                                type: string
-                                description: cumBase property
-                                example: "0"
-                            cumQty:
-                                type: string
-                                description: cumQty property
-                                example: "0"
-                            executedQty:
-                                type: string
-                                description: executedQty property
-                                example: "0"
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: orderId property
-                                example: 333245211
-                            origQty:
-                                type: string
-                                description: origQty property
-                                example: "1"
-                            origType:
-                                type: string
-                                description: origType property
-                                example: LIMIT
-                            pair:
-                                type: string
-                                description: pair property
-                                example: BTCUSD
-                            positionSide:
-                                type: string
-                                description: positionSide property
-                                example: BOTH
-                            price:
-                                type: string
-                                description: price property
-                                example: "51000"
-                            priceProtect:
-                                type: boolean
-                                description: priceProtect property
-                                example: false
-                            reduceOnly:
-                                type: boolean
-                                description: reduceOnly property
-                                example: false
-                            side:
-                                type: string
-                                description: side property
-                                example: BUY
-                            status:
-                                type: string
-                                description: status property
-                                example: NEW
-                            stopPrice:
-                                type: string
-                                description: stopPrice property
-                                example: "0"
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSD_PERP
-                            timeInForce:
-                                type: string
-                                description: timeInForce property
-                                example: GTC
-                            type:
-                                type: string
-                                description: type property
-                                example: LIMIT
-                            updateTime:
-                                type: integer
-                                format: int64
-                                description: updateTime property
-                                example: 1728415765493
-                            workingType:
-                                type: string
-                                description: workingType property
-                                example: CONTRACT_PRICE
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/orderModifyResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
