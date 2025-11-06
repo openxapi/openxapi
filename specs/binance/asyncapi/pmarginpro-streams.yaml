@@ -1,0 +1,142 @@
+asyncapi: 3.0.0
+info:
+  title: Binance Portfolio Margin Pro WebSocket Streams
+  version: 1.0.0
+  description: |
+    AsyncAPI specification for Binance Portfolio Margin Pro user data streams.
+
+    Portfolio Margin Pro accounts connect to the `wss://fstream.binance.com/pm-classic`
+    WebSocket endpoint and access user data streams under the `/ws/` path. A valid
+    listenKey obtained from the REST API is required to receive Portfolio Margin Pro
+    risk guidance notifications.
+servers:
+  mainnet:
+    host: fstream.binance.com
+    protocol: wss
+    pathname: /pm-classic
+    title: Binance Portfolio Margin Pro Server
+    summary: Binance Portfolio Margin Pro WebSocket API Server (Mainnet)
+    description: WebSocket server for Binance Portfolio Margin Pro accounts (mainnet environment)
+channels:
+  userDataStream:
+    address: /ws/{listenKey}
+    title: Portfolio Margin Pro User Data Stream
+    description: |
+      Authenticated connection delivering Portfolio Margin Pro risk guidance updates.
+      Connect with a valid listenKey obtained from the REST API userDataStream.start
+      endpoint to receive real-time risk level change notifications.
+    parameters:
+      listenKey:
+        description: |
+          64-character authentication key for the Portfolio Margin Pro user data stream.
+          Obtained from the REST API userDataStream.start request. Valid for 60 minutes
+          and extendable with userDataStream.ping.
+        examples:
+          - XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
+    messages:
+      riskLevelChangeEvent:
+        $ref: '#/components/messages/riskLevelChangeEvent'
+      error:
+        $ref: '#/components/messages/errorMessage'
+operations:
+  userDataStreamReceiveEvents:
+    title: Receive Portfolio Margin Pro Events
+    summary: Receive Portfolio Margin Pro user data stream events
+    description: |
+      Receive risk level change notifications after connecting with a valid listenKey.
+      Each event is sent when the user's position risk ratio is too high and provides
+      guidance on the margin status.
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/riskLevelChangeEvent'
+
+  userDataStreamReceiveError:
+    title: Receive Portfolio Margin Pro Errors
+    summary: Receive error messages from the Portfolio Margin Pro stream
+    description: Receive error messages returned when requests are invalid or the listenKey expires.
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/error'
+components:
+  messages:
+    riskLevelChangeEvent:
+      name: Risk Level Change Event
+      title: Risk Level Change Event
+      summary: Sent when the user's position risk ratio is too high
+      description: |
+        Published as guidance when the user's Portfolio Margin Pro position risk ratio
+        exceeds safe thresholds. The notification may be accompanied by margin call,
+        reduce-only, or force liquidation actions in volatile markets.
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/riskLevelChangeEvent'
+
+    errorMessage:
+      name: Error Message
+      title: Error Response
+      summary: Error response from server
+      contentType: application/json
+      x-error: true
+      x-handler-key: error
+      payload:
+        $ref: '#/components/schemas/errorResponse'
+
+  schemas:
+    riskLevelChangeEvent:
+      type: object
+      description: Risk Level Change - sent when user's position risk ratio is too high
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: riskLevelChange
+          example: riskLevelChange
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1587727187525
+        u:
+          type: string
+          description: UniMMR level
+          example: "1.99999999"
+        s:
+          type: string
+          description: Risk level status
+          example: MARGIN_CALL
+          enum:
+            - MARGIN_CALL
+            - REDUCE_ONLY
+            - FORCE_LIQUIDATION
+        eq:
+          type: string
+          description: Account equity in USD
+          example: "30.23416728"
+        ae:
+          type: string
+          description: Actual equity without collateral rate in USD
+          example: "30.23416728"
+        m:
+          type: string
+          description: Total maintenance margin in USD
+          example: "15.11708371"
+
+    errorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Error code
+            msg:
+              type: string
+              description: Error message
+        id:
+          type: integer
