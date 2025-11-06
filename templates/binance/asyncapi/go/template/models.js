@@ -111,6 +111,25 @@ export default function ({ asyncapi, params }) {
     });
     return map;
   })();
+  const dereferenceSchema = (schema) => {
+    let current = schema;
+    const visited = new Set();
+    while (current && current.$ref && typeof current.$ref === 'string') {
+      if (visited.has(current.$ref)) break;
+      visited.add(current.$ref);
+      const resolved = resolveRef(root, current.$ref);
+      if (!resolved || resolved === current) break;
+      current = resolved;
+    }
+    return current || schema;
+  };
+  const schemaPrimaryType = (schema) => {
+    if (!schema || typeof schema !== 'object') return undefined;
+    if (schema.type) return schema.type;
+    if (schema.properties) return 'object';
+    if (schema.items) return 'array';
+    return undefined;
+  };
 
   // Emit a struct model for a named component schema under #/components/schemas
 function emitSchemaModel(schemaName, forceEvent = false) {
@@ -363,10 +382,47 @@ ${fields.join('\n')}
     // Import only when needed to avoid unused imports
     const needsJSONImport = propKeys.length === 0;
     const isErrorMessage = !!(compMsg && compMsg['x-error'] === true && modelName === 'ErrorMessage');
+    let resolvedErrorSchema = null;
+    let errorProps = null;
+    let errorPropKeys = [];
+    let hasErrorProp = false;
+    let codeSchemaType;
+    let msgSchemaType;
+    const hasStatusProp = !!(properties && Object.prototype.hasOwnProperty.call(properties, 'status'));
+    let statusSchemaType;
+    let supportsCode = false;
+    let supportsMsg = false;
+    let supportsStatus = false;
+    if (isErrorMessage && properties) {
+      if (Object.prototype.hasOwnProperty.call(properties, 'error')) {
+        hasErrorProp = true;
+        resolvedErrorSchema = dereferenceSchema(properties.error);
+        errorProps = resolvedErrorSchema && resolvedErrorSchema.properties ? resolvedErrorSchema.properties : null;
+        if (errorProps) {
+          errorPropKeys = Object.keys(errorProps);
+          if (Object.prototype.hasOwnProperty.call(errorProps, 'code')) {
+            const resolvedCode = dereferenceSchema(errorProps.code);
+            codeSchemaType = schemaPrimaryType(resolvedCode);
+            supportsCode = codeSchemaType === 'integer' || codeSchemaType === 'number' || codeSchemaType === 'string' || codeSchemaType === 'boolean';
+          }
+          if (Object.prototype.hasOwnProperty.call(errorProps, 'msg')) {
+            const resolvedMsg = dereferenceSchema(errorProps.msg);
+            msgSchemaType = schemaPrimaryType(resolvedMsg);
+            supportsMsg = msgSchemaType === 'string';
+          }
+        }
+      }
+      if (hasStatusProp) {
+        const resolvedStatus = dereferenceSchema(properties.status);
+        statusSchemaType = schemaPrimaryType(resolvedStatus);
+        supportsStatus = statusSchemaType === 'integer' || statusSchemaType === 'number' || statusSchemaType === 'string' || statusSchemaType === 'boolean';
+      }
+    }
+    const needsFmtImport = isErrorMessage && (supportsCode || supportsStatus);
     const importLines = [];
     if (needsJSONImport) importLines.push(`\t"encoding/json"`);
     if (needsTime) importLines.push(`\t"time"`);
-    if (isErrorMessage) importLines.push(`\t"fmt"`);
+    if (needsFmtImport) importLines.push(`\t"fmt"`);
     if (importLines.length) {
       content += `import (\n`;
       content += importLines.join('\n');
@@ -375,6 +431,7 @@ ${fields.join('\n')}
 
     content += `// ${modelName} represents global message '#/components/messages/${compKey}'\n`;
     content += `type ${modelName} struct {\n`;
+    const goFieldNames = {};
     if (propKeys.length === 0) { content += `	Raw json.RawMessage ${'`json:"-"`'}\n`; }
     else {
       const isEvent = !!(compMsg && compMsg['x-event'] === true);
@@ -389,6 +446,7 @@ ${fields.join('\n')}
       } else {
         goField = deriveGoFieldName(pk, prop, preferDescTop, usedNames);
       }
+        goFieldNames[pk] = goField;
         const tag = requiredSet.has(pk) ? `json:"${pk}"` : `json:"${pk},omitempty"`;
         const desc = (prop && (prop.description || '')) || '';
         const comment = desc ? ` // ${desc.replace(/\n/g, ' ')}` : '';
@@ -406,19 +464,71 @@ ${fields.join('\n')}
       content += `\tif m == nil {\n`;
       content += `\t\treturn \"\"\n`;
       content += `\t}\n`;
-      content += `\tpayload := m.ErrorPayload\n`;
-      content += `\tswitch {\n`;
-      content += `\tcase payload.Msg != \"\" && payload.Code != 0:\n`;
-      content += `\t\treturn fmt.Sprintf(\"%d: %s\", payload.Code, payload.Msg)\n`;
-      content += `\tcase payload.Msg != \"\":\n`;
-      content += `\t\treturn payload.Msg\n`;
-      content += `\tcase payload.Code != 0:\n`;
-      content += `\t\treturn fmt.Sprintf(\"%d\", payload.Code)\n`;
-      content += `\tcase m.Status != 0:\n`;
-      content += `\t\treturn fmt.Sprintf(\"status=%d\", m.Status)\n`;
-      content += `\tdefault:\n`;
-      content += `\t\treturn \"unknown error\"\n`;
-      content += `\t}\n`;
+      const caseLines = [];
+      let usesPayload = false;
+      const errorFieldName = goFieldNames['error'] || 'ErrorPayload';
+      const statusFieldName = goFieldNames['status'];
+      if (hasErrorProp && (supportsMsg || supportsCode) && errorProps) {
+        const errorFieldNames = {};
+        const errorUsedNames = new Set();
+        for (const key of errorPropKeys) {
+          const schema = errorProps[key] || {};
+          errorFieldNames[key] = deriveGoFieldName(key, schema, preferDescTop, errorUsedNames);
+        }
+        const msgFieldName = supportsMsg ? errorFieldNames['msg'] : null;
+        const codeFieldName = supportsCode ? errorFieldNames['code'] : null;
+        let msgCondition = null;
+        if (supportsMsg && msgFieldName && msgSchemaType === 'string') {
+          msgCondition = `payload.${msgFieldName} != \"\"`;
+        }
+        let codeCondition = null;
+        if (supportsCode && codeFieldName) {
+          if (codeSchemaType === 'integer' || codeSchemaType === 'number') {
+            codeCondition = `payload.${codeFieldName} != 0`;
+          } else if (codeSchemaType === 'string') {
+            codeCondition = `payload.${codeFieldName} != \"\"`;
+          } else if (codeSchemaType === 'boolean') {
+            codeCondition = `payload.${codeFieldName}`;
+          }
+        }
+        if (codeCondition && msgCondition && needsFmtImport) {
+          caseLines.push(`\tcase ${msgCondition} && ${codeCondition}:\n\t\treturn fmt.Sprintf(\"%v: %s\", payload.${codeFieldName}, payload.${msgFieldName})\n`);
+          usesPayload = true;
+        }
+        if (msgCondition) {
+          caseLines.push(`\tcase ${msgCondition}:\n\t\treturn payload.${msgFieldName}\n`);
+          usesPayload = true;
+        }
+        if (codeCondition && needsFmtImport) {
+          caseLines.push(`\tcase ${codeCondition}:\n\t\treturn fmt.Sprintf(\"%v\", payload.${codeFieldName})\n`);
+          usesPayload = true;
+        }
+      }
+      if (supportsStatus && statusFieldName && needsFmtImport) {
+        let statusCondition = null;
+        if (statusSchemaType === 'integer' || statusSchemaType === 'number') {
+          statusCondition = `m.${statusFieldName} != 0`;
+        } else if (statusSchemaType === 'string') {
+          statusCondition = `m.${statusFieldName} != \"\"`;
+        } else if (statusSchemaType === 'boolean') {
+          statusCondition = `m.${statusFieldName}`;
+        }
+        if (statusCondition) {
+          caseLines.push(`\tcase ${statusCondition}:\n\t\treturn fmt.Sprintf(\"status=%v\", m.${statusFieldName})\n`);
+        }
+      }
+      if (caseLines.length) {
+        if (usesPayload) {
+          content += `\tpayload := m.${errorFieldName}\n`;
+        }
+        content += `\tswitch {\n`;
+        content += caseLines.join('');
+        content += `\tdefault:\n`;
+        content += `\t\treturn \"unknown error\"\n`;
+        content += `\t}\n`;
+      } else {
+        content += `\treturn \"unknown error\"\n`;
+      }
       content += `}\n`;
     }
 
