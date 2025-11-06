@@ -15,18 +15,7 @@ channels:
             accountPositionResponse:
                 $ref: '#/components/messages/accountPositionResponse'
 operations:
-    receiveAccountPosition:
-        title: Receive from account.position
-        description: Receive response from account.position
-        action: receive
-        channel:
-            $ref: '#/channels/umfutures'
-        messages:
-            - $ref: '#/channels/umfutures/messages/accountPositionResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendAccountPosition:
+    accountPosition:
         title: Send to account.position
         description: Send a account.position request
         action: send
@@ -34,43 +23,165 @@ operations:
             $ref: '#/channels/umfutures'
         messages:
             - $ref: '#/channels/umfutures/messages/accountPositionRequest'
+        reply:
+            channel:
+                $ref: '#/channels/umfutures'
+            messages:
+                - $ref: '#/channels/umfutures/messages/accountPositionResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        accountPositionRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
+                method:
+                    type: string
+                    description: method property
+                    example: account.position
+                    const: account.position
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        recvWindow:
+                            type: integer
+                            format: int64
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - timestamp
+        accountPositionResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 20
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 2400
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            breakEvenPrice:
+                                type: string
+                                description: breakEvenPrice property
+                                example: "0.0"
+                            entryPrice:
+                                type: string
+                                description: entryPrice property
+                                example: "0.00000"
+                            isAutoAddMargin:
+                                type: string
+                                description: isAutoAddMargin property
+                                example: "false"
+                            isolatedMargin:
+                                type: string
+                                description: isolatedMargin property
+                                example: "0.00000000"
+                            isolatedWallet:
+                                type: string
+                                description: isolatedWallet property
+                                example: "0"
+                            leverage:
+                                type: string
+                                description: leverage property
+                                example: "10"
+                            liquidationPrice:
+                                type: string
+                                description: liquidationPrice property
+                                example: "0"
+                            marginType:
+                                type: string
+                                description: marginType property
+                                example: isolated
+                            markPrice:
+                                type: string
+                                description: markPrice property
+                                example: "6679.50671178"
+                            maxNotionalValue:
+                                type: string
+                                description: maxNotionalValue property
+                                example: "20000000"
+                            notional:
+                                type: string
+                                description: notional property
+                                example: "0"
+                            positionAmt:
+                                type: string
+                                description: positionAmt property
+                                example: "0.000"
+                            positionSide:
+                                type: string
+                                description: positionSide property
+                                example: BOTH
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            unRealizedProfit:
+                                type: string
+                                description: unRealizedProfit property
+                                example: "0.00000000"
+                            updateTime:
+                                type: integer
+                                format: int64
+                                description: updateTime property
+                                example: 0
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         accountPositionRequest:
             name: Position Information (USER_DATA) Request
             title: Position Information (USER_DATA) Request
             description: Send a account.position request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
-                    method:
-                        type: string
-                        description: method property
-                        example: account.position
-                        enum:
-                            - account.position
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            recvWindow:
-                                type: integer
-                                format: int64
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - timestamp
+                $ref: '#/components/schemas/accountPositionRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -79,116 +190,7 @@ components:
             title: Position Information (USER_DATA) Response
             description: Receive response from account.position
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 20
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 2400
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                breakEvenPrice:
-                                    type: string
-                                    description: breakEvenPrice property
-                                    example: "0.0"
-                                entryPrice:
-                                    type: string
-                                    description: entryPrice property
-                                    example: "0.00000"
-                                isAutoAddMargin:
-                                    type: string
-                                    description: isAutoAddMargin property
-                                    example: "false"
-                                isolatedMargin:
-                                    type: string
-                                    description: isolatedMargin property
-                                    example: "0.00000000"
-                                isolatedWallet:
-                                    type: string
-                                    description: isolatedWallet property
-                                    example: "0"
-                                leverage:
-                                    type: string
-                                    description: leverage property
-                                    example: "10"
-                                liquidationPrice:
-                                    type: string
-                                    description: liquidationPrice property
-                                    example: "0"
-                                marginType:
-                                    type: string
-                                    description: marginType property
-                                    example: isolated
-                                markPrice:
-                                    type: string
-                                    description: markPrice property
-                                    example: "6679.50671178"
-                                maxNotionalValue:
-                                    type: string
-                                    description: maxNotionalValue property
-                                    example: "20000000"
-                                notional:
-                                    type: string
-                                    description: notional property
-                                    example: "0"
-                                positionAmt:
-                                    type: string
-                                    description: positionAmt property
-                                    example: "0.000"
-                                positionSide:
-                                    type: string
-                                    description: positionSide property
-                                    example: BOTH
-                                symbol:
-                                    type: string
-                                    description: symbol property
-                                    example: BTCUSDT
-                                unRealizedProfit:
-                                    type: string
-                                    description: unRealizedProfit property
-                                    example: "0.00000000"
-                                updateTime:
-                                    type: integer
-                                    format: int64
-                                    description: updateTime property
-                                    example: 0
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/accountPositionResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

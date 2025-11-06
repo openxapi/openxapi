@@ -19,18 +19,7 @@ channels:
             orderStatusResponse:
                 $ref: '#/components/messages/orderStatusResponse'
 operations:
-    receiveOrderStatus:
-        title: Receive from order.status
-        description: Receive response from order.status
-        action: receive
-        channel:
-            $ref: '#/channels/umfutures'
-        messages:
-            - $ref: '#/channels/umfutures/messages/orderStatusResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendOrderStatus:
+    orderStatus:
         title: Send to order.status
         description: Send a order.status request
         action: send
@@ -38,49 +27,171 @@ operations:
             $ref: '#/channels/umfutures'
         messages:
             - $ref: '#/channels/umfutures/messages/orderStatusRequest'
+        reply:
+            channel:
+                $ref: '#/channels/umfutures'
+            messages:
+                - $ref: '#/channels/umfutures/messages/orderStatusResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        orderStatusRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 0ce5d070-a5e5-4ff2-b57f-1556741a4204
+                method:
+                    type: string
+                    description: method property
+                    example: order.status
+                    const: order.status
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        orderId:
+                            type: integer
+                            format: int64
+                        origClientOrderId:
+                            type: string
+                        recvWindow:
+                            type: integer
+                            format: int64
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+                        - timestamp
+        orderStatusResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        activatePrice:
+                            type: string
+                            description: activatePrice property
+                            example: "9020"
+                        avgPrice:
+                            type: string
+                            description: avgPrice property
+                            example: "0.00000"
+                        clientOrderId:
+                            type: string
+                            description: clientOrderId property
+                            example: abc
+                        closePosition:
+                            type: boolean
+                            description: closePosition property
+                            example: false
+                        cumQuote:
+                            type: string
+                            description: cumQuote property
+                            example: "0"
+                        executedQty:
+                            type: string
+                            description: executedQty property
+                            example: "0"
+                        orderId:
+                            type: integer
+                            format: int64
+                            description: orderId property
+                            example: 1917641
+                        origQty:
+                            type: string
+                            description: origQty property
+                            example: "0.40"
+                        origType:
+                            type: string
+                            description: origType property
+                            example: TRAILING_STOP_MARKET
+                        positionSide:
+                            type: string
+                            description: positionSide property
+                            example: SHORT
+                        price:
+                            type: string
+                            description: price property
+                            example: "0"
+                        priceProtect:
+                            type: boolean
+                            description: priceProtect property
+                            example: false
+                        priceRate:
+                            type: string
+                            description: priceRate property
+                            example: "0.3"
+                        reduceOnly:
+                            type: boolean
+                            description: reduceOnly property
+                            example: false
+                        side:
+                            type: string
+                            description: side property
+                            example: BUY
+                        status:
+                            type: string
+                            description: status property
+                            example: NEW
+                        stopPrice:
+                            type: string
+                            description: stopPrice property
+                            example: "9300"
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BTCUSDT
+                        time:
+                            type: integer
+                            format: int64
+                            description: time property
+                            example: 1579276756075
+                        timeInForce:
+                            type: string
+                            description: timeInForce property
+                            example: GTC
+                        type:
+                            type: string
+                            description: type property
+                            example: TRAILING_STOP_MARKET
+                        updateTime:
+                            type: integer
+                            format: int64
+                            description: updateTime property
+                            example: 1579276756075
+                        workingType:
+                            type: string
+                            description: workingType property
+                            example: CONTRACT_PRICE
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         orderStatusRequest:
             name: Query Order (USER_DATA) Request
             title: Query Order (USER_DATA) Request
             description: Send a order.status request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 0ce5d070-a5e5-4ff2-b57f-1556741a4204
-                    method:
-                        type: string
-                        description: method property
-                        example: order.status
-                        enum:
-                            - order.status
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            orderId:
-                                type: integer
-                                format: int64
-                            origClientOrderId:
-                                type: string
-                            recvWindow:
-                                type: integer
-                                format: int64
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - symbol
-                            - timestamp
+                $ref: '#/components/schemas/orderStatusRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -89,116 +200,7 @@ components:
             title: Query Order (USER_DATA) Response
             description: Receive response from order.status
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 605a6d20-6588-4cb9-afa0-b0ab087507ba
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            activatePrice:
-                                type: string
-                                description: activatePrice property
-                                example: "9020"
-                            avgPrice:
-                                type: string
-                                description: avgPrice property
-                                example: "0.00000"
-                            clientOrderId:
-                                type: string
-                                description: clientOrderId property
-                                example: abc
-                            closePosition:
-                                type: boolean
-                                description: closePosition property
-                                example: false
-                            cumQuote:
-                                type: string
-                                description: cumQuote property
-                                example: "0"
-                            executedQty:
-                                type: string
-                                description: executedQty property
-                                example: "0"
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: orderId property
-                                example: 1917641
-                            origQty:
-                                type: string
-                                description: origQty property
-                                example: "0.40"
-                            origType:
-                                type: string
-                                description: origType property
-                                example: TRAILING_STOP_MARKET
-                            positionSide:
-                                type: string
-                                description: positionSide property
-                                example: SHORT
-                            price:
-                                type: string
-                                description: price property
-                                example: "0"
-                            priceProtect:
-                                type: boolean
-                                description: priceProtect property
-                                example: false
-                            priceRate:
-                                type: string
-                                description: priceRate property
-                                example: "0.3"
-                            reduceOnly:
-                                type: boolean
-                                description: reduceOnly property
-                                example: false
-                            side:
-                                type: string
-                                description: side property
-                                example: BUY
-                            status:
-                                type: string
-                                description: status property
-                                example: NEW
-                            stopPrice:
-                                type: string
-                                description: stopPrice property
-                                example: "9300"
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSDT
-                            time:
-                                type: integer
-                                format: int64
-                                description: time property
-                                example: 1579276756075
-                            timeInForce:
-                                type: string
-                                description: timeInForce property
-                                example: GTC
-                            type:
-                                type: string
-                                description: type property
-                                example: TRAILING_STOP_MARKET
-                            updateTime:
-                                type: integer
-                                format: int64
-                                description: updateTime property
-                                example: 1579276756075
-                            workingType:
-                                type: string
-                                description: workingType property
-                                example: CONTRACT_PRICE
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/orderStatusResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
