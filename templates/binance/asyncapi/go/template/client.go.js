@@ -55,6 +55,81 @@ export default function ({ asyncapi, params }) {
     }
   } catch (e) {}
 
+  const hasNestedEventStruct = (() => {
+    try {
+      if (!root || typeof root !== 'object') return false;
+      const decodePointer = (seg) => String(seg || '').replace(/~1/g, '/').replace(/~0/g, '~');
+      const resolvePointer = (ref) => {
+        if (typeof ref !== 'string' || !ref.startsWith('#/')) return null;
+        const parts = ref.slice(2).split('/').map(decodePointer);
+        let cur = root;
+        for (const part of parts) {
+          if (!cur || typeof cur !== 'object') return null;
+          cur = cur[part];
+        }
+        return (cur && typeof cur === 'object') ? cur : null;
+      };
+      const visited = new Set();
+      const refVisited = new Set();
+      const inspect = (node) => {
+        if (!node || typeof node !== 'object' || visited.has(node)) return false;
+        visited.add(node);
+        const props = node.properties;
+        if (props && typeof props === 'object' && props.event) {
+          const evt = props.event;
+          if (evt && typeof evt === 'object') {
+            if (evt.properties && typeof evt.properties === 'object' && evt.properties.e) return true;
+            if (typeof evt.$ref === 'string' && !refVisited.has(evt.$ref)) {
+              refVisited.add(evt.$ref);
+              const resolvedEvt = resolvePointer(evt.$ref);
+              if (resolvedEvt && inspect(resolvedEvt)) return true;
+            }
+          }
+        }
+        if (typeof node.$ref === 'string' && !refVisited.has(node.$ref)) {
+          refVisited.add(node.$ref);
+          const resolved = resolvePointer(node.$ref);
+          if (resolved && inspect(resolved)) return true;
+        }
+        const children = Array.isArray(node) ? node : Object.values(node);
+        for (const child of children) {
+          if (inspect(child)) return true;
+        }
+        return false;
+      };
+      return inspect(root);
+    } catch (e) { return false; }
+  })();
+
+  const toIndent = (count) => {
+    if (!Number.isFinite(count) || count <= 0) return '';
+    return ' '.repeat(count);
+  };
+
+  const renderEventComment = (indentSpaces, suffix = '') => {
+    const pad = toIndent(indentSpaces);
+    const extra = suffix ? ` ${suffix}` : '';
+    return hasNestedEventStruct
+      ? `${pad}// support nested event.e as well as top-level e${extra}`
+      : `${pad}// event type derived from top-level e${extra}`;
+  };
+
+  const renderEventExtractor = (objName, indentSpaces) => {
+    const pad = toIndent(indentSpaces);
+    const target = objName || 'typ';
+    const lines = [];
+    lines.push(`${pad}if v, ok := ${target}["e"].(string); ok {`);
+    lines.push(`${pad}  ev = v`);
+    if (hasNestedEventStruct) {
+      lines.push(`${pad}} else if evobj, ok := ${target}["event"].(map[string]interface{}); ok {`);
+      lines.push(`${pad}  if vv, ok2 := evobj["e"].(string); ok2 {`);
+      lines.push(`${pad}    ev = vv`);
+      lines.push(`${pad}  }`);
+    }
+    lines.push(`${pad}}`);
+    return lines.join('\n');
+  };
+
   // Discover error message handling from spec extensions
   let hasErrorModel = false;
   let errorAlias = 'error';
@@ -478,21 +553,7 @@ ${(() => {
     // Support multiple wrapper shapes if declared in spec
     payload := data
 ${(() => {
-  if (!wrappers.length) {
-    // keep a small fallback for backward-compat (stream/data)
-    return `    if _, hasStream := envelope[\"stream\"]; hasStream {
-      c.handlersMu.RLock()
-      var callList []func(context.Context, []byte) error
-      for _, hm := range c.handlers {
-        if h, ok := hm[\"wrap:combined\"]; ok && h != nil { callList = append(callList, h) }
-      }
-      c.handlersMu.RUnlock()
-      // invoke wrapper handlers but do not mark dispatched; data-level handlers should decide
-      for _, h := range callList { _ = h(ctx, data) }
-      if raw, ok := envelope[\"data\"]; ok && len(raw) > 0 { payload = raw }
-    }`;
-  }
-  // Generate explicit checks per wrapper discovered
+  if (!wrappers.length) { return ''; }
   return wrappers.map((w, idx) => {
     const esk = String(w.streamKey).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     const edk = String(w.dataKey).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
@@ -514,10 +575,9 @@ ${(() => {
     // 1) Try object payload
     var typ map[string]interface{}
     if err := json.Unmarshal(payload, &typ); err == nil {
-${(() => { return ''; })()}
-      // support nested event.e as well as top-level e
+${(() => renderEventComment(6))()}
       var ev string
-      if v, ok := typ["e"].(string); ok { ev = v } else if evobj, ok := typ["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+${(() => renderEventExtractor('typ', 6))()}
       if ev != "" {
         key := "evt:" + ev
         c.handlersMu.RLock()
@@ -534,10 +594,9 @@ ${(() => { return ''; })()}
       if err2 := json.Unmarshal(payload, &arr); err2 == nil && len(arr) > 0 {
         var first map[string]interface{}
         if err3 := json.Unmarshal(arr[0], &first); err3 == nil {
-${(() => { return ''; })()}
-          // support nested event.e as well as top-level e for array payloads
+${(() => renderEventComment(10, 'for array payloads'))()}
           var ev string
-          if v, ok := first["e"].(string); ok { ev = v } else if evobj, ok := first["event"].(map[string]interface{}); ok { if vv, ok2 := evobj["e"].(string); ok2 { ev = vv } }
+${(() => renderEventExtractor('first', 10))()}
           if ev != "" {
             key := "evt:" + ev + ":array"
             c.handlersMu.RLock()
