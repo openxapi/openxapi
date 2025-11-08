@@ -98,10 +98,10 @@ func TestRealSamplesSecurity(t *testing.T) {
 			filename: "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_user-data-stream-requests.html",
 			url:      "https://developers.binance.com/docs/binance-spot-api-docs/websocket-api/user-data-stream-requests",
 			expectedMethods: map[string]string{
-				"userDataStream.start": "userStream", // USER_STREAM
-				"userDataStream.ping":  "userStream", // USER_STREAM
-				"userDataStream.stop":  "userStream", // USER_STREAM
-				// Note: subscribe/unsubscribe might not have explicit security in titles
+				"userDataStream.subscribe":           "userStream", // USER_STREAM
+				"userDataStream.subscribe.signature": "userStream", // USER_STREAM
+				"userDataStream.unsubscribe":         "userStream", // USER_STREAM
+				"session.subscriptions":              "",           // No security (list subscriptions)
 			},
 		},
 	}
@@ -183,9 +183,9 @@ func TestSpecificSecurityTypes(t *testing.T) {
 			expectedExtension: "USER_DATA",
 		},
 		{
-			name:              "USER_STREAM security in userDataStream.start",
+			name:              "USER_STREAM security in userDataStream.subscribe",
 			filename:          "https_developers.binance.com_docs_binance-spot-api-docs_websocket-api_user-data-stream-requests.html",
-			methodName:        "userDataStream.start",
+			methodName:        "userDataStream.subscribe",
 			expectedSecurity:  "userStream",
 			expectedExtension: "USER_STREAM",
 		},

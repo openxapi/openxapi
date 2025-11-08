@@ -20,15 +20,7 @@ channels:
             tickerPriceResponse:
                 $ref: '#/components/messages/tickerPriceResponse'
 operations:
-    receiveTickerPrice:
-        title: Receive from ticker.price
-        description: Receive response from ticker.price
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/tickerPriceResponse'
-    sendTickerPrice:
+    tickerPrice:
         title: Send to ticker.price
         description: Send a ticker.price request
         action: send
@@ -36,39 +28,97 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/tickerPriceRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/tickerPriceResponse'
 components:
+    schemas:
+        tickerPriceRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
+                method:
+                    type: string
+                    description: method property
+                    example: ticker.price
+                    const: ticker.price
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        symbol:
+                            type: string
+                            description: Query price for a single symbol
+                        symbols:
+                            type: array
+                            description: Query price for multiple symbols
+                            items:
+                                type: string
+                                description: array item
+        tickerPriceResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 2
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        price:
+                            type: string
+                            description: price property
+                            example: "0.01361900"
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BNBBTC
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         tickerPriceRequest:
             name: Symbol price ticker Request
             title: Symbol price ticker Request
             description: Send a ticker.price request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
-                    method:
-                        type: string
-                        description: method property
-                        example: ticker.price
-                        enum:
-                            - ticker.price
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                                description: Query price for a single symbol
-                            symbols:
-                                type: array
-                                description: Query price for multiple symbols
-                                items:
-                                    type: string
-                                    description: array item
+                $ref: '#/components/schemas/tickerPriceRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -77,56 +127,7 @@ components:
             title: Symbol price ticker Response
             description: Receive response from ticker.price
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 043a7cf2-bde3-4888-9604-c8ac41fcba4d
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 2
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            price:
-                                type: string
-                                description: price property
-                                example: "0.01361900"
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BNBBTC
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/tickerPriceResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

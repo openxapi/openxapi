@@ -89,6 +89,15 @@ type Auth struct {
       </Text>
 
       <Text newLines={2}>
+        {`// contextKey is a private type for request context keys
+type contextKey string
+
+// ContextBinanceAuth is the context key used to attach Auth to a context
+var ContextBinanceAuth = contextKey("binanceAuth")
+`}
+      </Text>
+
+      <Text newLines={2}>
         {`// NewAuth creates a new Auth instance with the specified API key
 func NewAuth(apiKey string) *Auth {
 	return &Auth{

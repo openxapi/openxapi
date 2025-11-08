@@ -9,6 +9,7 @@ export default function ({ asyncapi, params }) {
       <Text>package models</Text>
       <Text newLines={2}>
         {`import (
+\t"bytes"
 \t"encoding/json"
 \t"fmt"
 \t"reflect"
@@ -147,15 +148,14 @@ func ParseOneOfResult(data []byte) (interface{}, string, error) {
 
 // mapEventTypeToStruct maps Binance event types to Go struct types
 func mapEventTypeToStruct(eventType string) string {
-\t// This function will be populated based on actual event types in the spec
-\t// For APIs that don't define event types (like umfutures), this returns empty string
+\t// This function is populated from event types declared in the AsyncAPI spec.
+\t// When the spec omits explicit event identifiers, return empty string.
 \treturn ""
 }
 
 // RegisterAllEventTypes registers all known event types with the global registry
 func RegisterAllEventTypes() {
-\t// Event types will be registered here based on what's actually defined in the AsyncAPI spec
-\t// For APIs that don't define event types (like umfutures), this is a no-op function
+\t// Event types are registered here when provided by the specification.
 }
 
 // MessageValidator interface for messages that can validate themselves
@@ -188,7 +188,87 @@ func DetectResponseType(msg interface{}) string {
 func init() {
 \t// This will be called when the package is loaded
 \t// Individual model files will call their registration functions
-}`}
+}
+
+// MessageID represents a request/response id that can be either:
+// - 64-bit signed integer
+// - alphanumeric string (max length 36)
+// - null
+type MessageID struct {
+\ti64   *int64
+\tstr   *string
+\tisNull bool
+}
+
+// NewMessageIDInt64 creates a MessageID from int64
+func NewMessageIDInt64(v int64) MessageID { return MessageID{i64: &v} }
+
+// NewMessageIDString creates a MessageID from string (<=36 chars)
+func NewMessageIDString(v string) MessageID { return MessageID{str: &v} }
+
+// NewMessageIDNull creates a null MessageID
+func NewMessageIDNull() MessageID { return MessageID{isNull: true} }
+
+// String returns a canonical string form used for correlation maps
+func (m MessageID) String() string {
+\tif m.isNull { return "" }
+\tif m.str != nil { return *m.str }
+\tif m.i64 != nil { return fmt.Sprintf("%d", *m.i64) }
+\treturn ""
+}
+
+// MarshalJSON encodes MessageID as number, string, or null
+func (m MessageID) MarshalJSON() ([]byte, error) {
+\tif m.isNull { return []byte("null"), nil }
+\tif m.str != nil { return json.Marshal(*m.str) }
+\tif m.i64 != nil { return json.Marshal(*m.i64) }
+\treturn []byte("null"), nil
+}
+
+// UnmarshalJSON decodes MessageID from number, string, or null
+func (m *MessageID) UnmarshalJSON(b []byte) error {
+\t// reset
+\t*m = MessageID{}
+\t// Handle null
+\tif len(b) == 0 || string(b) == "null" { m.isNull = true; return nil }
+\tdec := json.NewDecoder(bytes.NewReader(b))
+\tdec.UseNumber()
+\tvar v interface{}
+\tif err := dec.Decode(&v); err != nil { return err }
+\tswitch t := v.(type) {
+\tcase json.Number:
+\t\ti, err := t.Int64()
+\t\tif err != nil { return fmt.Errorf("invalid id number: %w", err) }
+\t\tm.i64 = &i
+\t\treturn nil
+\tcase string:
+\t\tif len(t) > 36 { return fmt.Errorf("id string too long: %d", len(t)) }
+\t\tm.str = &t
+\t\treturn nil
+\tdefault:
+\t\treturn fmt.Errorf("invalid id type: %T", v)
+\t}
+}
+
+// ValInt64 returns the int64 value and true if MessageID holds an integer; otherwise returns 0, false
+func (m MessageID) ValInt64() (int64, bool) {
+    if m.i64 != nil {
+        return *m.i64, true
+    }
+    return 0, false
+}
+
+// ValString returns the string value and true if MessageID holds a string; otherwise returns "", false
+func (m MessageID) ValString() (string, bool) {
+    if m.str != nil {
+        return *m.str, true
+    }
+    return "", false
+}
+
+// ValNull reports whether MessageID is explicitly null
+func (m MessageID) ValNull() bool { return m.isNull }
+`}
       </Text>
     </File>
   );

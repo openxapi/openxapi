@@ -97,6 +97,16 @@ func TestAsyncAPIOperationSecurityGeneration(t *testing.T) {
 			Extensions: map[string]interface{}{
 				"x-binance-security-type": "TRADE",
 			},
+			Messages: map[string]*wsparser.Message{
+				"request": {
+					Title:       "Place order request",
+					Description: "Send place order request",
+				},
+				"response": {
+					Title:       "Place order response",
+					Description: "Receive place order response",
+				},
+			},
 		},
 		{
 			Name:    "account.status",
@@ -107,10 +117,30 @@ func TestAsyncAPIOperationSecurityGeneration(t *testing.T) {
 			Extensions: map[string]interface{}{
 				"x-binance-security-type": "USER_DATA",
 			},
+			Messages: map[string]*wsparser.Message{
+				"request": {
+					Title:       "Account status request",
+					Description: "Send account status request",
+				},
+				"response": {
+					Title:       "Account status response",
+					Description: "Receive account status response",
+				},
+			},
 		},
 		{
 			Name:    "time",
 			Summary: "Get server time",
+			Messages: map[string]*wsparser.Message{
+				"request": {
+					Title:       "Server time request",
+					Description: "Send server time request",
+				},
+				"response": {
+					Title:       "Server time response",
+					Description: "Receive server time response",
+				},
+			},
 			// No security
 		},
 	}
@@ -122,7 +152,7 @@ func TestAsyncAPIOperationSecurityGeneration(t *testing.T) {
 
 		// Generate expected operation IDs using the same logic as createOperationsFromChannel
 		channelName := g.sanitizeChannelName(channel.Name)
-		sendOpID := g.toCamelCase(fmt.Sprintf("send_%s", channelName))
+		sendOpID := g.toCamelCase(channelName)
 		receiveOpID := g.toCamelCase(fmt.Sprintf("receive_%s", channelName))
 
 		// Should have both send and receive operations (only if there are messages)
@@ -138,6 +168,11 @@ func TestAsyncAPIOperationSecurityGeneration(t *testing.T) {
 		if !hasSend && !hasReceive {
 			// No operations were created for this channel (e.g., no messages defined)
 			continue
+		}
+
+		// If reply is expected (request/response pattern), ensure it's present
+		if hasSend && channel.Messages["response"] != nil {
+			require.NotNil(t, sendOp.Reply, "Send operation should include reply for %s", channel.Name)
 		}
 
 		if channel.Security != nil && len(channel.Security) > 0 {

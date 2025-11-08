@@ -1181,6 +1181,11 @@ func (p *DocumentParser) convertTypeToJSONSchema(name, paramType, description st
 			Type:        "string",
 			Description: description,
 		}
+	case strings.Contains(paramType, "decimal"):
+		return &parser.Schema{
+			Type:        "string",
+			Description: description,
+		}
 	default:
 		return &parser.Schema{
 			Type:        "string",

@@ -13,55 +13,18 @@ channels:
             Channel for receiving user data stream events after successful subscription.
             These events are sent automatically by the server when relevant account or order events occur.
         messages:
-            outboundAccountPositionEvent:
-                name: Outbound Account Position Event
-                title: Account Update Event
-                description: Sent when account balance changes
-                x-event-type: outboundAccountPosition
-                payload:
-                    $ref: '#/components/schemas/OutboundAccountPositionEvent'
+            accountUpdateEvent:
+                $ref: '#/components/messages/accountUpdateEvent'
             balanceUpdateEvent:
-                name: Balance Update Event
-                title: Balance Update Event
-                description: Occurs during deposits, withdrawals, or transfers
-                x-event-type: balanceUpdate
-                payload:
-                    $ref: '#/components/schemas/BalanceUpdateEvent'
-            executionReportEvent:
-                name: Execution Report Event
-                title: Order Update Event
-                description: Orders are updated with executionReport event
-                x-event-type: executionReport
-                payload:
-                    $ref: '#/components/schemas/ExecutionReportEvent'
+                $ref: '#/components/messages/balanceUpdateEvent'
+            orderUpdateEvent:
+                $ref: '#/components/messages/orderUpdateEvent'
             listStatusEvent:
-                name: List Status Event
-                title: List Status Event
-                description: Sent with executionReport for order lists (OCO orders)
-                x-event-type: listStatus
-                payload:
-                    $ref: '#/components/schemas/ListStatusEvent'
-            listenKeyExpiredEvent:
-                name: Listen Key Expired Event
-                title: Listen Key Expired Event
-                description: Sent when the listen key expires
-                x-event-type: listenKeyExpired
-                payload:
-                    $ref: '#/components/schemas/ListenKeyExpiredEvent'
+                $ref: '#/components/messages/listStatusEvent'
             externalLockUpdateEvent:
-                name: External Lock Update Event
-                title: External Lock Update Event
-                description: Sent when spot wallet balance is locked/unlocked by external system
-                x-event-type: externalLockUpdate
-                payload:
-                    $ref: '#/components/schemas/ExternalLockUpdateEvent'
+                $ref: '#/components/messages/externalLockUpdateEvent'
             eventStreamTerminatedEvent:
-                name: Event Stream Terminated Event
-                title: Event Stream Terminated Event
-                description: Sent when User Data Stream is stopped (WebSocket API only)
-                x-event-type: eventStreamTerminated
-                payload:
-                    $ref: '#/components/schemas/EventStreamTerminatedEvent'
+                $ref: '#/components/messages/eventStreamTerminatedEvent'
 operations:
     receiveUserDataStreamEvents:
         title: Receive user data stream events
@@ -70,20 +33,63 @@ operations:
         channel:
             $ref: '#/channels/spot'
         messages:
-            - $ref: '#/channels/spot/messages/outboundAccountPositionEvent'
+            - $ref: '#/channels/spot/messages/accountUpdateEvent'
             - $ref: '#/channels/spot/messages/balanceUpdateEvent'
-            - $ref: '#/channels/spot/messages/executionReportEvent'
+            - $ref: '#/channels/spot/messages/orderUpdateEvent'
             - $ref: '#/channels/spot/messages/listStatusEvent'
-            - $ref: '#/channels/spot/messages/listenKeyExpiredEvent'
             - $ref: '#/channels/spot/messages/externalLockUpdateEvent'
             - $ref: '#/channels/spot/messages/eventStreamTerminatedEvent'
 components:
+    messages:
+        accountUpdateEvent:
+            name: Outbound Account Position Event
+            title: Account Update Event
+            description: Sent when account balance changes
+            x-event: true
+            payload:
+                $ref: '#/components/schemas/accountUpdateEvent'
+        balanceUpdateEvent:
+            name: Balance Update Event
+            title: Balance Update Event
+            description: Occurs during deposits, withdrawals, or transfers
+            x-event: true
+            payload:
+                $ref: '#/components/schemas/balanceUpdateEvent'
+        orderUpdateEvent:
+            name: Execution Report Event
+            title: Order Update Event
+            description: Orders are updated with executionReport event
+            x-event: true
+            payload:
+                $ref: '#/components/schemas/orderUpdateEvent'
+        listStatusEvent:
+            name: List Status Event
+            title: List Status Event
+            description: Sent with executionReport for order lists (OCO orders)
+            x-event: true
+            payload:
+                $ref: '#/components/schemas/listStatusEvent'
+        externalLockUpdateEvent:
+            name: External Lock Update Event
+            title: External Lock Update Event
+            description: Sent when spot wallet balance is locked/unlocked by external system
+            x-event: true
+            payload:
+                $ref: '#/components/schemas/externalLockUpdateEvent'
+        eventStreamTerminatedEvent:
+            name: Event Stream Terminated Event
+            title: Event Stream Terminated Event
+            description: Sent when User Data Stream is stopped (WebSocket API only)
+            x-event: true
+            payload:
+                $ref: '#/components/schemas/eventStreamTerminatedEvent'
     schemas:
-        OutboundAccountPositionEvent:
+        accountUpdateEvent:
             type: object
             description: Account Update - sent when account balance changes
             required:
                 - event
+                - subscriptionId
             properties:
                 event:
                     type: object
@@ -125,12 +131,23 @@ components:
                                         type: string
                                         description: Locked
                                         example: "0.000000"
-        BalanceUpdateEvent:
+                subscriptionId:
+                    type: integer
+                    format: int64
+                    description: subscriptionId
+                    example: 0
+        balanceUpdateEvent:
             type: object
             description: Balance Update - occurs during deposits, withdrawals, or transfers
             required:
                 - event
+                - subscriptionId
             properties:
+                subscriptionId:
+                    type: integer
+                    format: int64
+                    description: subscriptionId
+                    example: 0
                 event:
                     type: object
                     required:
@@ -162,12 +179,24 @@ components:
                             format: int64
                             description: Clear Time (milliseconds)
                             example: 1573200697068
-        ExecutionReportEvent:
+        orderUpdateEvent:
             type: object
             description: Order Update - orders are updated with executionReport event
+            required:
+                - event
+                - subscriptionId
             properties:
+                subscriptionId:
+                    type: integer
+                    format: int64
+                    description: subscriptionId
+                    example: 0
                 event:
                     type: object
+                    required:
+                        - e
+                        - E
+                        - T
                     properties:
                         e:
                             type: string
@@ -393,12 +422,38 @@ components:
                             type: boolean
                             description: UsedSor (for orders that used SOR)
                             example: true
-        ListStatusEvent:
+                        gP:
+                            type: string
+                            description: Pegged Price Type (for pegged orders)
+                            example: POLICY_A
+                        gOT:
+                            type: string
+                            description: Pegged offset Type (for pegged orders)
+                            example: TYPE_X
+                        gOV:
+                            type: integer
+                            format: int64
+                            description: Pegged Offset Value (for pegged orders)
+                            example: 5
+                        gp:
+                            type: string
+                            description: Pegged Price (for pegged orders)
+                            example: "0.12345678"
+        listStatusEvent:
             type: object
             description: List Status - sent with executionReport for order lists (OCO orders)
             properties:
+                subscriptionId:
+                    type: integer
+                    format: int64
+                    description: subscriptionId
+                    example: 0
                 event:
                     type: object
+                    required:
+                        - e
+                        - E
+                        - T
                     properties:
                         e:
                             type: string
@@ -462,32 +517,23 @@ components:
                                         type: string
                                         description: ClientOrderId
                                         example: AJYsMjErWJesZvqlJCTUgL
-        ListenKeyExpiredEvent:
-            type: object
-            description: Listen Key Expired - sent when the listen key expires
-            properties:
-                event:
-                    type: object
-                    properties:
-                        e:
-                            type: string
-                            description: Event type
-                            const: listenKeyExpired
-                        E:
-                            type: integer
-                            format: int64
-                            description: Event time (milliseconds)
-                            example: 1699596037418
-                        listenKey:
-                            type: string
-                            description: The expired listen key
-                            example: OfYGbUzi3PraNagEkdKuFwUHn48brFsItTdsuiIXrucEvD0rhRXZ7I6URWfE8YE8
-        ExternalLockUpdateEvent:
+        externalLockUpdateEvent:
             type: object
             description: External Lock Update - sent when spot wallet balance is locked/unlocked by external system
             properties:
+                subscriptionId:
+                    type: integer
+                    format: int64
+                    description: subscriptionId
+                    example: 0
                 event:
                     type: object
+                    required:
+                        - e
+                        - E
+                        - a
+                        - d
+                        - T
                     properties:
                         e:
                             type: string
@@ -511,12 +557,20 @@ components:
                             format: int64
                             description: Transaction Time (milliseconds)
                             example: 1581557507268
-        EventStreamTerminatedEvent:
+        eventStreamTerminatedEvent:
             type: object
             description: Event Stream Terminated - sent when User Data Stream is stopped (WebSocket API only)
             properties:
+                subscriptionId:
+                    type: integer
+                    format: int64
+                    description: subscriptionId
+                    example: 0
                 event:
                     type: object
+                    required:
+                        - e
+                        - E
                     properties:
                         e:
                             type: string

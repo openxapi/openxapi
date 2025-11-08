@@ -216,8 +216,8 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 		// Convert channel to AsyncAPI 3.0.0 format
 		asyncChannel := g.convertChannelToAsyncAPIChannel(&channel)
 
-		// Convert channel messages to component messages
-		componentMessages := g.convertChannelMessagesToComponentMessages(&channel)
+		// Convert channel messages to component messages and schemas
+		componentMessages, componentSchemas := g.convertChannelMessagesToComponentMessages(&channel)
 
 		// Create operations for this channel
 		operations := g.createOperationsFromChannel(&channel, apiType)
@@ -237,9 +237,16 @@ func (g *Generator) GenerateWebSocketEndpoints(exchange, version, apiType string
 			},
 		}
 
-		// Add schemas
+		// Add schemas generated from messages
+		for name, schema := range componentSchemas {
+			channelSpec.Components.Schemas[name] = schema
+		}
+
+		// Add additional schemas provided on the channel
 		for _, schema := range channel.Schemas {
-			channelSpec.Components.Schemas[schema.Title] = g.convertToAsyncAPISchema(schema)
+			asyncSchema := g.convertToAsyncAPISchema(schema)
+			g.convertMethodEnumsToConst(asyncSchema)
+			channelSpec.Components.Schemas[schema.Title] = asyncSchema
 		}
 
 		// Add security schemes
@@ -462,91 +469,79 @@ func (g *Generator) createOperationsFromChannel(channel *wsParser.Channel, apiTy
 	operations := make(map[string]*AsyncAPIOperation)
 	channelRef := fmt.Sprintf("#/channels/%s", apiType)
 	channelName := g.sanitizeChannelName(channel.Name)
+	requestMessageKey := g.toCamelCase(fmt.Sprintf("%s_request", channelName))
+	responseMessageKey := g.toCamelCase(fmt.Sprintf("%s_response", channelName))
 
-	// Create operations based on the messages in the channel
-	if sendMsg, exists := channel.Messages["request"]; exists {
-		operationID := g.toCamelCase(fmt.Sprintf("send_%s", channelName))
-		messageKey := g.toCamelCase(fmt.Sprintf("%s_request", channelName))
+	requestMsg, hasRequest := channel.Messages["request"]
+	responseMsg, hasResponse := channel.Messages["response"]
+
+	// Create primary send operation (with optional reply) when a request message exists
+	if hasRequest {
+		operationID := g.toCamelCase(channelName)
 		operation := &AsyncAPIOperation{
 			Title:       fmt.Sprintf("Send to %s", channel.Name),
-			Summary:     sendMsg.Summary,
-			Description: sendMsg.Description,
+			Summary:     requestMsg.Summary,
+			Description: requestMsg.Description,
 			Action:      "send",
 			Channel:     map[string]string{"$ref": channelRef},
-			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, messageKey)}},
+			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, requestMessageKey)}},
 		}
 
-		// Add security if defined in the channel
-		// Convert to AsyncAPI 3.0 format with $ref
-		if channel.Security != nil && len(channel.Security) > 0 {
-			operation.Security = []map[string]interface{}{}
-			for _, sec := range channel.Security {
-				for schemeName := range sec {
-					// Create a reference to the security scheme
-					secRef := map[string]interface{}{
-						"$ref": fmt.Sprintf("#/components/securitySchemes/%s", schemeName),
-					}
-					operation.Security = append(operation.Security, secRef)
-				}
+		if hasResponse {
+			operation.Reply = &AsyncAPIOperationReply{
+				Channel:  map[string]string{"$ref": channelRef},
+				Messages: []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, responseMessageKey)}},
 			}
 		}
 
-		// Add extensions if defined in the channel
-		if channel.Extensions != nil && len(channel.Extensions) > 0 {
-			operation.Extensions = make(map[string]interface{})
-			for key, value := range channel.Extensions {
-				// Only copy x-* extensions
-				if strings.HasPrefix(key, "x-") {
-					operation.Extensions[key] = value
-				}
-			}
-		}
-
+		g.applyChannelSecurityAndExtensions(channel, operation)
 		operations[operationID] = operation
 	}
 
-	if receiveMsg, exists := channel.Messages["response"]; exists {
+	// Create receive operation when no request exists (pure receive channels)
+	if !hasRequest && hasResponse {
 		operationID := g.toCamelCase(fmt.Sprintf("receive_%s", channelName))
-		messageKey := g.toCamelCase(fmt.Sprintf("%s_response", channelName))
 		operation := &AsyncAPIOperation{
 			Title:       fmt.Sprintf("Receive from %s", channel.Name),
-			Summary:     receiveMsg.Summary,
-			Description: receiveMsg.Description,
+			Summary:     responseMsg.Summary,
+			Description: responseMsg.Description,
 			Action:      "receive",
 			Channel:     map[string]string{"$ref": channelRef},
-			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, messageKey)}},
+			Messages:    []map[string]string{{"$ref": fmt.Sprintf("#/channels/%s/messages/%s", apiType, responseMessageKey)}},
 		}
 
-		// Add security if defined in the channel (receive operations typically inherit the same security)
-		// Convert to AsyncAPI 3.0 format with $ref
-		if channel.Security != nil && len(channel.Security) > 0 {
-			operation.Security = []map[string]interface{}{}
-			for _, sec := range channel.Security {
-				for schemeName := range sec {
-					// Create a reference to the security scheme
-					secRef := map[string]interface{}{
-						"$ref": fmt.Sprintf("#/components/securitySchemes/%s", schemeName),
-					}
-					operation.Security = append(operation.Security, secRef)
-				}
-			}
-		}
-
-		// Add extensions if defined in the channel
-		if channel.Extensions != nil && len(channel.Extensions) > 0 {
-			operation.Extensions = make(map[string]interface{})
-			for key, value := range channel.Extensions {
-				// Only copy x-* extensions
-				if strings.HasPrefix(key, "x-") {
-					operation.Extensions[key] = value
-				}
-			}
-		}
-
+		g.applyChannelSecurityAndExtensions(channel, operation)
 		operations[operationID] = operation
 	}
 
 	return operations
+}
+
+// applyChannelSecurityAndExtensions copies security requirements and x-* extensions from a channel to an operation
+func (g *Generator) applyChannelSecurityAndExtensions(channel *wsParser.Channel, operation *AsyncAPIOperation) {
+	// Add security if defined in the channel
+	if channel.Security != nil && len(channel.Security) > 0 {
+		for _, sec := range channel.Security {
+			for schemeName := range sec {
+				secRef := map[string]interface{}{
+					"$ref": fmt.Sprintf("#/components/securitySchemes/%s", schemeName),
+				}
+				operation.Security = append(operation.Security, secRef)
+			}
+		}
+	}
+
+	// Add extensions if defined in the channel
+	if channel.Extensions != nil && len(channel.Extensions) > 0 {
+		if operation.Extensions == nil {
+			operation.Extensions = make(map[string]interface{})
+		}
+		for key, value := range channel.Extensions {
+			if strings.HasPrefix(key, "x-") {
+				operation.Extensions[key] = value
+			}
+		}
+	}
 }
 
 // convertChannelToAsyncAPIChannel converts a WebSocket channel to AsyncAPI 3.0.0 channel
@@ -577,23 +572,33 @@ func (g *Generator) convertChannelToAsyncAPIChannel(channel *wsParser.Channel) *
 	return asyncChannel
 }
 
-// convertChannelMessagesToComponentMessages converts channel messages to component messages
-func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.Channel) map[string]*AsyncAPIMessage {
+// convertChannelMessagesToComponentMessages converts channel messages to component-level messages and schemas
+func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.Channel) (map[string]*AsyncAPIMessage, map[string]*AsyncAPISchema) {
 	componentMessages := make(map[string]*AsyncAPIMessage)
+	componentSchemas := make(map[string]*AsyncAPISchema)
 	channelName := g.sanitizeChannelName(channel.Name)
 
 	if sendMsg, exists := channel.Messages["request"]; exists {
 		// Convert the payload and ensure params object has required fields populated
 		payload := g.convertToAsyncAPISchema(sendMsg.Payload)
 		g.populateParamsRequired(payload, channel.Parameters)
+		g.ensureSecurityParams(payload, channel)
+		g.convertMethodEnumsToConst(payload)
 
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_request", channelName))
+		schemaRef := fmt.Sprintf("#/components/schemas/%s", messageKey)
 		asyncMessage := &AsyncAPIMessage{
 			Name:        sendMsg.Title,
 			Title:       sendMsg.Title,
 			Summary:     sendMsg.Summary,
 			Description: sendMsg.Description,
-			Payload:     payload,
+		}
+
+		if payload != nil {
+			componentSchemas[messageKey] = payload
+			asyncMessage.Payload = &AsyncAPISchema{
+				Ref: schemaRef,
+			}
 		}
 
 		// Set correlation ID if present in the parser message
@@ -609,12 +614,24 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 
 	if receiveMsg, exists := channel.Messages["response"]; exists {
 		messageKey := g.toCamelCase(fmt.Sprintf("%s_response", channelName))
+		payload := g.convertToAsyncAPISchema(receiveMsg.Payload)
+		g.convertMethodEnumsToConst(payload)
+		eventType := g.extractEventType(receiveMsg.Payload)
 		asyncMessage := &AsyncAPIMessage{
 			Name:        receiveMsg.Title,
 			Title:       receiveMsg.Title,
 			Summary:     receiveMsg.Summary,
 			Description: receiveMsg.Description,
-			Payload:     g.convertToAsyncAPISchema(receiveMsg.Payload),
+		}
+
+		if payload != nil {
+			if eventType != "" {
+				g.ensureEventTypeConst(payload, eventType)
+			}
+			componentSchemas[messageKey] = payload
+			asyncMessage.Payload = &AsyncAPISchema{
+				Ref: fmt.Sprintf("#/components/schemas/%s", messageKey),
+			}
 		}
 
 		// Set correlation ID if present in the parser message
@@ -627,7 +644,7 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 
 		// Add x-event-type extension for event-based messages
 		// This is particularly important for userDataStream.events
-		if eventType := g.extractEventType(receiveMsg.Payload); eventType != "" {
+		if eventType != "" {
 			if asyncMessage.Extensions == nil {
 				asyncMessage.Extensions = make(map[string]interface{})
 			}
@@ -638,7 +655,90 @@ func (g *Generator) convertChannelMessagesToComponentMessages(channel *wsParser.
 		componentMessages[messageKey] = asyncMessage
 	}
 
-	return componentMessages
+	return componentMessages, componentSchemas
+}
+
+// convertMethodEnumsToConst converts enum single values on method properties to const
+func (g *Generator) convertMethodEnumsToConst(schema *AsyncAPISchema) {
+	if schema == nil {
+		return
+	}
+
+	if schema.Properties != nil {
+		for name, prop := range schema.Properties {
+			if prop == nil {
+				continue
+			}
+			if name == "method" && len(prop.Enum) == 1 {
+				prop.Const = prop.Enum[0]
+				prop.Enum = nil
+			}
+			g.convertMethodEnumsToConst(prop)
+		}
+	}
+
+	if schema.Items != nil {
+		g.convertMethodEnumsToConst(schema.Items)
+	}
+
+	if schema.AdditionalProperties != nil {
+		g.convertMethodEnumsToConst(schema.AdditionalProperties)
+	}
+}
+
+// ensureEventTypeConst sets a const value for event type fields when missing
+func (g *Generator) ensureEventTypeConst(schema *AsyncAPISchema, eventType string) {
+	if schema == nil || eventType == "" {
+		return
+	}
+
+	// Handle event wrapper pattern: event.e
+	if schema.Properties != nil {
+		if eventWrapper, ok := schema.Properties["event"]; ok && eventWrapper != nil && eventWrapper.Properties != nil {
+			if g.applyConstIfMissing(eventWrapper.Properties["e"], eventType) {
+				return
+			}
+		}
+	}
+
+	// Handle direct e field at the root
+	if schema.Properties != nil {
+		g.applyConstIfMissing(schema.Properties["e"], eventType)
+	}
+}
+
+// applyConstIfMissing assigns a const to the provided schema when safe to do so.
+func (g *Generator) applyConstIfMissing(schema *AsyncAPISchema, value string) bool {
+	if schema == nil {
+		return false
+	}
+
+	if schema.Const != nil {
+		if existing, ok := schema.Const.(string); ok {
+			if existing != "" {
+				return false
+			}
+			// empty string can be replaced with the discovered event type
+		} else {
+			// Non-string const values are preserved
+			return false
+		}
+	}
+
+	if len(schema.Enum) > 1 {
+		return false
+	}
+
+	if len(schema.Enum) == 1 {
+		enumValue, ok := schema.Enum[0].(string)
+		if !ok || enumValue != value {
+			return false
+		}
+		schema.Enum = nil
+	}
+
+	schema.Const = value
+	return true
 }
 
 // populateParamsRequired ensures that the params object in the payload has the required field populated
@@ -662,6 +762,65 @@ func (g *Generator) populateParamsRequired(schema *AsyncAPISchema, parameters []
 			paramsProperty.Required = requiredParams
 		}
 	}
+}
+
+// ensureSecurityParams guarantees auth parameters exist on signed/sensitive Binance operations
+func (g *Generator) ensureSecurityParams(schema *AsyncAPISchema, channel *wsParser.Channel) {
+	if schema == nil || channel == nil || channel.Extensions == nil {
+		return
+	}
+
+	extValue, exists := channel.Extensions["x-binance-security-type"]
+	if !exists {
+		return
+	}
+
+	securityType, ok := extValue.(string)
+	normalized := strings.ToLower(strings.TrimSpace(securityType))
+	if normalized == "" || normalized == "none" || normalized == "user_stream" {
+		return
+	}
+
+	if schema.Properties == nil {
+		schema.Properties = make(map[string]*AsyncAPISchema)
+	}
+
+	paramsSchema, exists := schema.Properties["params"]
+	if !exists || paramsSchema == nil {
+		paramsSchema = &AsyncAPISchema{
+			Type: "object",
+		}
+		schema.Properties["params"] = paramsSchema
+	}
+
+	if paramsSchema.Type == "" {
+		paramsSchema.Type = "object"
+	}
+
+	if paramsSchema.Properties == nil {
+		paramsSchema.Properties = make(map[string]*AsyncAPISchema)
+	}
+
+	ensureStringProp := func(name string) {
+		prop, ok := paramsSchema.Properties[name]
+		if !ok || prop == nil {
+			prop = &AsyncAPISchema{}
+			paramsSchema.Properties[name] = prop
+		}
+		prop.Type = "string"
+		prop.Format = ""
+	}
+
+	ensureStringProp("apiKey")
+	ensureStringProp("signature")
+
+	timestampProp, ok := paramsSchema.Properties["timestamp"]
+	if !ok || timestampProp == nil {
+		timestampProp = &AsyncAPISchema{}
+		paramsSchema.Properties["timestamp"] = timestampProp
+	}
+	timestampProp.Type = "integer"
+	timestampProp.Format = "int64"
 }
 
 // extractEventType extracts the event type from a schema, looking for const values in event.e or e fields

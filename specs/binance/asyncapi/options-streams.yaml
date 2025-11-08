@@ -1,33 +1,44 @@
 asyncapi: 3.0.0
 info:
   title: Binance Options WebSocket Streams
-  version: 1.0.0
+  version: 2.0.0
   description: |
-    AsyncAPI specification for Binance Options WebSocket Streams (Market Data).
+    AsyncAPI specification for Binance Options WebSocket Streams (Market Data and User Data).
     
-    WebSocket Streams provide real-time options market data without authentication.
-    These are different from WebSocket API and User Data Streams.
+    This specification covers both:
+    1. **Market Data Streams**: Real-time options market data without authentication
+    2. **User Data Streams**: Account and order updates requiring authentication via listenKey
     
     ## Connection Types
     
-    ### Single Streams
+    ### Market Data Streams
+    
+    #### Single Streams
     - **Connection**: Connect to `/ws/<streamName>` directly
     - **Data Format**: Direct stream data (not wrapped)
     - **Property**: `combined = false`
     - **Example**: `wss://nbstream.binance.com/eoptions/ws/BTC-210630-9000-P@ticker`
     
-    ### Combined Streams (Multiple Streams)  
-    - **Connection**: Connect to `/stream?streams=<streamName1>/<streamName2>`
+    #### Combined Streams (Multiple Streams)  
+    - **Connection**: Connect to `/stream?streams=<streamName1>/<streamName2>/<streamName3>`
     - **Data Format**: Wrapped as `{"stream":"<streamName>","data":<rawPayload>}`
     - **Property**: `combined = true`
     - **Max Streams**: 200 streams per connection
     - **Example**: `wss://nbstream.binance.com/eoptions/stream?streams=BTC-210630-9000-P@trade/BTC-210630-9000-P@ticker`
     
+    ### User Data Streams
+    
+    - **Connection**: Connect to `/ws/<listenKey>`
+    - **Authentication**: Requires valid listenKey obtained from REST API
+    - **Data Format**: Direct event data for account updates, order updates, and risk level changes
+    - **Example**: `wss://nbstream.binance.com/eoptions/ws/XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh`
+    
     ## Connection Management
     
     ### Initial Connection
-    - Connect to `/ws/<streamName>` for single streams or `/stream` for combined streams
-    - Use SUBSCRIBE method to add streams dynamically
+    - Market Streams: Connect to `/ws/<streamName>` for single streams or `/stream` for combined streams
+    - User Data Streams: Connect to `/ws/<listenKey>` with valid listenKey
+    - Use SUBSCRIBE method to add streams dynamically (market streams only)
     
     ### Heartbeat
     - Server sends ping frame every 5 minutes
@@ -36,44 +47,36 @@ info:
     - Unsolicited pong frames are allowed
     
     ### Limits and Validity
-    - **Connection Validity**: 24 hours maximum
+    - **Connection Validity**: 24 hours maximum for market streams, 60 minutes for user data streams
     - **Rate Limit**: 10 incoming messages per second
-    - **Streams per Connection**: Maximum 200 streams
+    - **Streams per Connection**: Maximum 200 streams (market streams)
     - **Connections per IP**: Rate limiting applies
     - **IP Banning**: Repeated disconnections may result in IP ban
+    - **ListenKey Validity**: 60 minutes, can be extended with userDataStream.ping
     
     ### Stream Naming Conventions
     - All symbols must be provided in UPPERCASE
     - All stream names are lowercase (except symbol parts)
     - Multiple streams can be combined in a single connection
     - Options use specific naming patterns (e.g., BTC-210630-9000-P, ETH-220930-1500-C)
+    - ListenKey is a 64-character string obtained from REST API
 
 servers:
   mainnet:
     host: nbstream.binance.com
     protocol: wss
-    pathname: /eoptions/{streamPath}
+    pathname: /eoptions
     title: Binance Options Server
     summary: Binance Options WebSocket Streams Server (Mainnet)
-    description: WebSocket server for binance exchange options market data streams (mainnet environment)
-    variables:
-      streamPath:
-        description: |
-          WebSocket stream path for different connection types.
-          
-          - Single Stream: '/ws/<streamName>' - Connect to individual stream
-          - Combined Stream: '/stream?streams=<streamName1>/<streamName2>' - Connect to combined streams
-        examples:
-          - /ws/BTC-210630-9000-P@ticker
-          - /stream?streams=BTC-210630-9000-P@trade/BTC-210630-9000-P@ticker
+    description: WebSocket server for binance exchange options market data and user data streams (mainnet environment)
 
 channels:
-  # Single stream connection (connect to /ws/<streamName> directly)
-  singleStreamConnection:
+  # Single market stream connection (connect to /ws/<streamName> directly)
+  marketStream:
     address: /ws/{streamName}
-    title: Single Stream Connection
+    title: Single Market Streams Connection
     description: |
-      Direct connection endpoint for individual streams. Connect here to receive
+      Direct connection endpoint for individual market streams. Connect here to receive
       data from a specific stream. Each stream returns direct data.
     parameters:
       streamName:
@@ -88,9 +91,9 @@ channels:
       unsubscribe:
         $ref: '#/components/messages/unsubscribeRequest'
       subscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/subscribeResponse'
       unsubscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/unsubscribeResponse'
       listSubscriptions:
         $ref: '#/components/messages/listSubscriptionsRequest'
       listSubscriptionsResponse:
@@ -106,42 +109,62 @@ channels:
       error:
         $ref: '#/components/messages/errorMessage'
       # Single stream data messages (direct, not wrapped)
-      newSymbolInfo:
+      newSymbolInfoEvent:
         $ref: '#/components/messages/newSymbolInfoEvent'
-      openInterest:
+      openInterestEvent:
         $ref: '#/components/messages/openInterestEvent'
-      markPrice:
+      markPriceEvent:
         $ref: '#/components/messages/markPriceEvent'
-      kline:
+      klineEvent:
         $ref: '#/components/messages/klineEvent'
-      ticker:
+      tickerEvent:
         $ref: '#/components/messages/tickerEvent'
-      tickerByUnderlying:
+      tickerByUnderlyingEvent:
         $ref: '#/components/messages/tickerByUnderlyingEvent'
-      indexPrice:
+      indexPriceEvent:
         $ref: '#/components/messages/indexPriceEvent'
-      trade:
+      tradeEvent:
         $ref: '#/components/messages/tradeEvent'
-      partialDepth:
+      partialDepthEvent:
         $ref: '#/components/messages/partialDepthEvent'
 
-  # Combined stream connection (connect to /stream)
-  combinedStreamConnection:
-    address: /stream
-    title: Combined Stream Connection
+  # Combined stream connection (connect to /stream?streams=...)
+  combinedMarketStream:
+    address: /stream?streams={streams}
+    title: Combined Market Streams Connection
     description: |
-      Initial connection endpoint for combined streams. Connect here first, then use
+      Initial connection endpoint for combined market streams. Connect here first, then use
       query parameters or SUBSCRIBE method to add multiple streams. Each stream returns wrapped data
       with format: {"stream":"<streamName>","data":<rawPayload>}
+    x-unwrapped-event-messages:
+      - newSymbolInfoEvent
+      - openInterestEvent
+      - markPriceEvent
+      - klineEvent
+      - tickerByUnderlyingEvent
+      - indexPriceEvent
+      - tickerEvent
+      - tradeEvent
+      - partialDepthEvent
+    parameters:
+      streams:
+        description: |
+          Slash-separated list of stream names to subscribe on connect.
+          Format: `<streamName1>/<streamName2>/<streamName3>`.
+          Stream names follow the same patterns as single streams (see `channels/marketStream`).
+        examples:
+          - BTC-210630-9000-P@trade/BTC-210630-9000-P@ticker
+          - ETH@markPrice/ETH@openInterest@221125
+          - BTC-200630-9000-P@kline_1m/ETHUSDT@index
     messages:
       subscribe:
         $ref: '#/components/messages/subscribeRequest'
       unsubscribe:
         $ref: '#/components/messages/unsubscribeRequest'
       subscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/subscribeResponse'
       unsubscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/unsubscribeResponse'
       listSubscriptions:
         $ref: '#/components/messages/listSubscriptionsRequest'
       listSubscriptionsResponse:
@@ -156,58 +179,124 @@ channels:
         $ref: '#/components/messages/getPropertyResponse'
       error:
         $ref: '#/components/messages/errorMessage'
-      # Combined stream data messages (wrapped format)
-      combinedData:
-        $ref: '#/components/messages/combinedStreamEvent'
+      # Combined market streams data messages (wrapped format)
+      combinedMarketStreamEvent:
+        $ref: '#/components/messages/combinedMarketStreamEvent'
+  
+  # User data streams connection (connect to /ws/{listenKey})
+  userDataStream:
+    address: /ws/{listenKey}
+    title: User Data Streams Connection
+    description: |
+      Connection endpoint for user data streams. Connect with a valid listenKey to receive
+      account updates, order updates, and risk level changes. The listenKey is obtained from
+      the REST API endpoint userDataStream.start and is valid for 60 minutes.
+    parameters:
+      listenKey:
+        description: |
+          64-character authentication key for user data stream.
+          Obtained from REST API userDataStream.start request.
+          Valid for 60 minutes, can be extended with userDataStream.ping.
+        examples:
+          - XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
+          - pqia91ma19a5s61cv6a81va65sdf19v8a65a1a5s61cv6a81va65sdf19v8a65a1
+    messages:
+      accountUpdateEvent:
+        $ref: '#/components/messages/accountUpdateEvent'
+      orderTradeUpdateEvent:
+        $ref: '#/components/messages/orderTradeUpdateEvent'
+      riskLevelChangeEvent:
+        $ref: '#/components/messages/riskLevelChangeEvent'
+      error:
+        $ref: '#/components/messages/errorMessage'
 
 operations:
-  # Single stream operations
-  subscribeToSingleStreams:
-    title: Subscribe to Single Streams
-    summary: Subscribe to streams on single connection
+  # Single market stream operations
+  marketStreamSubscribe:
+    title: Subscribe to Single Market Streams
+    summary: Subscribe to market streams on single connection
     description: |
       Subscribe to market data streams on single connection. Each stream returns
       direct data without wrapping. Maximum 200 streams per connection.
     action: send
+    x-channel-method: Subscribe
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/subscribe'
+      - $ref: '#/channels/marketStream/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/subscribeResponse'
+        - $ref: '#/channels/marketStream/messages/subscribeResponse'
 
-  unsubscribeFromSingleStreams:
-    title: Unsubscribe from Single Streams
-    summary: Unsubscribe from streams on single connection
+  marketStreamUnsubscribe:
+    title: Unsubscribe from Single Market Streams
+    summary: Unsubscribe from market streams on single connection
     action: send
+    x-channel-method: Unsubscribe
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/unsubscribe'
+      - $ref: '#/channels/marketStream/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/unsubscribeResponse'
+        - $ref: '#/channels/marketStream/messages/unsubscribeResponse'
 
-  listSingleSubscriptions:
+  marketStreamListSubscriptions:
     title: List Single Stream Subscriptions
     summary: Get list of active single stream subscriptions
     action: send
+    x-channel-method: ListSubscriptions
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/listSubscriptions'
+      - $ref: '#/channels/marketStream/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/marketStream/messages/listSubscriptionsResponse'
 
-  receiveSingleStreamData:
+  marketStreamSetProperty:
+    title: Set Property on Single Market Streams
+    summary: Set a property on the single market stream connection
+    description: |
+      Set a property on the single market stream connection. Currently only
+      the `combined` property is supported to switch between single and combined modes.
+    action: send
+    x-channel-method: SetProperty
+    channel:
+      $ref: '#/channels/marketStream'
+    messages:
+      - $ref: '#/channels/marketStream/messages/setProperty'
+    reply:
+      channel:
+        $ref: '#/channels/marketStream'
+      messages:
+        - $ref: '#/channels/marketStream/messages/setPropertyResponse'
+
+  marketStreamGetProperty:
+    title: Get Property from Single Market Streams
+    summary: Get a property from the single market stream connection
+    description: |
+      Get a property from the single market stream connection. Currently only
+      the `combined` property is supported to check if in single or combined mode.
+    action: send
+    x-channel-method: GetProperty
+    channel:
+      $ref: '#/channels/marketStream'
+    messages:
+      - $ref: '#/channels/marketStream/messages/getProperty'
+    reply:
+      channel:
+        $ref: '#/channels/marketStream'
+      messages:
+        - $ref: '#/channels/marketStream/messages/getPropertyResponse'
+
+  marketStreamReceiveEvents:
     title: Receive Single Stream Data
     summary: Receive direct stream data from single connection
     description: |
@@ -215,56 +304,117 @@ operations:
       without wrapping. Stream type can be determined by the event structure.
     action: receive
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStream'
+    messages:
+      - $ref: '#/channels/marketStream/messages/newSymbolInfoEvent'
+      - $ref: '#/channels/marketStream/messages/openInterestEvent'
+      - $ref: '#/channels/marketStream/messages/markPriceEvent'
+      - $ref: '#/channels/marketStream/messages/klineEvent'
+      - $ref: '#/channels/marketStream/messages/tickerByUnderlyingEvent'
+      - $ref: '#/channels/marketStream/messages/indexPriceEvent'
+      - $ref: '#/channels/marketStream/messages/tickerEvent'
+      - $ref: '#/channels/marketStream/messages/tradeEvent'
+      - $ref: '#/channels/marketStream/messages/partialDepthEvent'
+
+  marketStreamReceiveError:
+    title: Receive Error Messages from Single Market Streams
+    summary: Receive error messages from single market stream connection
+    description: |
+      Receive error messages in response to invalid requests or other issues.
+      Error messages contain an error code and descriptive message.
+    action: receive
+    channel:
+      $ref: '#/channels/marketStream'
+    messages:
+      - $ref: '#/channels/marketStream/messages/error'
 
   # Combined stream operations
-    
-  subscribeToCombinedStreams:
-    title: Subscribe to Combined Streams
-    summary: Subscribe to streams on combined connection
+
+  combinedMarketStreamSubscribe:
+    title: Subscribe to Combined Market Streams
+    summary: Subscribe to market streams on combined connection
     description: |
       Subscribe to market data streams on combined connection. Each stream returns
       wrapped data with stream name identifier. Maximum 200 streams per connection.
     action: send
+    x-channel-method: Subscribe
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/subscribe'
+      - $ref: '#/channels/combinedMarketStream/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/subscribeResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/subscribeResponse'
 
-  unsubscribeFromCombinedStreams:
-    title: Unsubscribe from Combined Streams
-    summary: Unsubscribe from streams on combined connection
+  combinedMarketStreamUnsubscribe:
+    title: Unsubscribe from Combined Market Streams
+    summary: Unsubscribe from market streams on combined connection
     action: send
+    x-channel-method: Unsubscribe
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/unsubscribe'
+      - $ref: '#/channels/combinedMarketStream/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/unsubscribeResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/unsubscribeResponse'
 
-  listCombinedSubscriptions:
+  combinedMarketStreamListSubscriptions:
     title: List Combined Stream Subscriptions
     summary: Get list of active combined stream subscriptions
     action: send
+    x-channel-method: ListSubscriptions
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptions'
+      - $ref: '#/channels/combinedMarketStream/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/listSubscriptionsResponse'
 
-  receiveCombinedStreamData:
+  combinedMarketStreamSetProperty:
+    title: Set Property on Combined Market Streams
+    summary: Set a property on the combined market stream connection
+    description: |
+      Set a property on the combined market stream connection. Currently only
+      the `combined` property is supported to switch between single and combined modes.
+    action: send
+    x-channel-method: SetProperty
+    channel:
+      $ref: '#/channels/combinedMarketStream'
+    messages:
+      - $ref: '#/channels/combinedMarketStream/messages/setProperty'
+    reply:
+      channel:
+        $ref: '#/channels/combinedMarketStream'
+      messages:
+        - $ref: '#/channels/combinedMarketStream/messages/setPropertyResponse'
+
+  combinedMarketStreamGetProperty:
+    title: Get Property from Combined Market Streams
+    summary: Get a property from the combined market stream connection
+    description: |
+      Get a property from the combined market stream connection. Currently only
+      the `combined` property is supported to check if in single or combined mode.
+    action: send
+    x-channel-method: GetProperty
+    channel:
+      $ref: '#/channels/combinedMarketStream'
+    messages:
+      - $ref: '#/channels/combinedMarketStream/messages/getProperty'
+    reply:
+      channel:
+        $ref: '#/channels/combinedMarketStream'
+      messages:
+        - $ref: '#/channels/combinedMarketStream/messages/getPropertyResponse'
+
+  combinedMarketStreamReceiveEvents:
     title: Receive Combined Stream Data
     summary: Receive wrapped stream data from combined connection
     description: |
@@ -272,7 +422,50 @@ operations:
       stream name and original data: {"stream":"<streamName>","data":<rawPayload>}
     action: receive
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStream'
+    messages:
+      - $ref: '#/channels/combinedMarketStream/messages/combinedMarketStreamEvent'
+
+  combinedMarketStreamReceiveError:
+    title: Receive Error Messages from Combined Market Streams
+    summary: Receive error messages from combined market stream connection
+    description: |
+      Receive error messages in response to invalid requests or other issues.
+      Error messages contain an error code and descriptive message.
+    action: receive
+    channel:
+      $ref: '#/channels/combinedMarketStream'
+    messages:
+      - $ref: '#/channels/combinedMarketStream/messages/error'
+  
+  # User data stream operations
+  
+  userDataStreamReceiveEvents:
+    title: Receive User Data Stream Events
+    summary: Receive user data stream events
+    description: |
+      Receive various user data stream events after connecting with a valid listenKey.
+      Events include account updates, order updates, and risk level changes.
+      The listenKey must be obtained from REST API and kept alive with periodic pings.
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/accountUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/orderTradeUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/riskLevelChangeEvent'
+
+  userDataStreamReceiveError:
+    title: Receive Error Messages from User Data Streams
+    summary: Receive error messages from user data stream connection
+    description: |
+      Receive error messages in response to invalid requests or other issues.
+      Error messages contain an error code and descriptive message.
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/error'
 
 components:
   messages:
@@ -283,7 +476,10 @@ components:
       summary: Request to subscribe to one or more streams
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/SubscribeRequest'
+        $ref: '#/components/schemas/subscribeRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     unsubscribeRequest:
       name: Unsubscribe Request
@@ -291,15 +487,32 @@ components:
       summary: Request to unsubscribe from one or more streams
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/UnsubscribeRequest'
+        $ref: '#/components/schemas/unsubscribeRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
-    subscriptionResponse:
+    subscribeResponse:
       name: Subscription Response
       title: Subscription Response
       summary: Response to subscription/unsubscription request
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/SubscriptionResponse'
+        $ref: '#/components/schemas/subscribeResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    unsubscribeResponse:
+      name: Unsubscribe Response
+      title: Unsubscribe Response
+      summary: Response to unsubscription request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/unsubscribeResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     listSubscriptionsRequest:
       name: List Subscriptions Request
@@ -307,7 +520,10 @@ components:
       summary: Request list of active subscriptions
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/ListSubscriptionsRequest'
+        $ref: '#/components/schemas/listSubscriptionsRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     listSubscriptionsResponse:
       name: List Subscriptions Response
@@ -315,7 +531,10 @@ components:
       summary: List of currently active subscriptions
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/ListSubscriptionsResponse'
+        $ref: '#/components/schemas/listSubscriptionsResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     setPropertyRequest:
       name: Set Property Request
@@ -323,7 +542,10 @@ components:
       summary: Request to set a stream property
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/SetPropertyRequest'
+        $ref: '#/components/schemas/setPropertyRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     setPropertyResponse:
       name: Set Property Response
@@ -331,7 +553,10 @@ components:
       summary: Response to set property request
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/SetPropertyResponse'
+        $ref: '#/components/schemas/setPropertyResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     getPropertyRequest:
       name: Get Property Request
@@ -339,7 +564,10 @@ components:
       summary: Request to get a stream property
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/GetPropertyRequest'
+        $ref: '#/components/schemas/getPropertyRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     getPropertyResponse:
       name: Get Property Response
@@ -347,15 +575,20 @@ components:
       summary: Response to get property request
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/GetPropertyResponse'
+        $ref: '#/components/schemas/getPropertyResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     errorMessage:
       name: Error Message
       title: Error Response
       summary: Error response from server
+      x-error: true
+      x-handler-key: error
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/ErrorResponse'
+        $ref: '#/components/schemas/errorResponse'
 
     # Stream data messages (raw format)
     newSymbolInfoEvent:
@@ -363,84 +596,231 @@ components:
       title: New Symbol Info Event
       summary: New option symbol information stream (option_pair)
       contentType: application/json
+      x-event: true
+      x-stream-pattern: ['option_pair']
+      x-update-speed: ['50ms']
       payload:
-        $ref: '#/components/schemas/NewSymbolInfoEvent'
+        $ref: '#/components/schemas/newSymbolInfoEvent'
 
     openInterestEvent:
       name: Open Interest Event
       title: Open Interest Event
       summary: Open interest information for options contracts
       contentType: application/json
+      x-event: true
+      x-response-format: array
+      x-event-type: openInterest
+      x-stream-pattern: ['{underlyingAsset}@openInterest@{expirationDate}']
+      x-stream-params:
+        underlyingAsset:
+          $ref: '#/components/schemas/underlyingAsset'
+        expirationDate:
+          $ref: '#/components/schemas/expirationDate'
+      x-stream-example: ['ETH@openInterest@221125']
+      x-update-speed: ['60s']
       payload:
-        $ref: '#/components/schemas/OpenInterestEvent'
+        $ref: '#/components/schemas/openInterestEvent'
 
     markPriceEvent:
       name: Mark Price Event
       title: Mark Price Event
       summary: Mark price information for options contracts
       contentType: application/json
+      x-event: true
+      x-response-format: array
+      x-event-type: markPrice
+      x-stream-pattern: ['{underlyingAsset}@markPrice']
+      x-stream-params:
+        underlyingAsset:
+          $ref: '#/components/schemas/underlyingAsset'
+      x-stream-example: ['ETH@markPrice']
+      x-update-speed: ['1000ms']
       payload:
-        $ref: '#/components/schemas/MarkPriceEvent'
+        $ref: '#/components/schemas/markPriceEvent'
 
     klineEvent:
       name: Kline Event
       title: Kline Event
       summary: Kline/candlestick information for options contracts
       contentType: application/json
+      x-event: true
+      x-stream-pattern: ['{symbol}@kline_{interval}']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        interval:
+          $ref: '#/components/schemas/interval'
+      x-stream-example: ['BTC-200630-9000-P@kline_1m']
+      x-update-speed: ['1000ms']
       payload:
-        $ref: '#/components/schemas/KlineEvent'
+        $ref: '#/components/schemas/klineEvent'
 
     tickerByUnderlyingEvent:
       name: Ticker by Underlying Event
       title: 24hr Ticker by Underlying and Expiration Event
       summary: 24hr ticker statistics for options by underlying asset and expiration
       contentType: application/json
+      x-event: true
+      x-stream-pattern: ['{underlyingAsset}@ticker@{expirationDate}']
+      x-stream-params:
+        underlyingAsset:
+          $ref: '#/components/schemas/underlyingAsset'
+        expirationDate:
+          $ref: '#/components/schemas/expirationDate'
+      x-stream-example: ['ETH@ticker@220930']
+      x-update-speed: ['1000ms']
+      x-event-type: "24hrTicker"
+      x-response-format: array
       payload:
-        $ref: '#/components/schemas/TickerByUnderlyingEvent'
+        $ref: '#/components/schemas/tickerByUnderlyingEvent'
 
     indexPriceEvent:
       name: Index Price Event
       title: Index Price Event
       summary: Index price information for underlying assets
       contentType: application/json
+      x-event: true
+      x-stream-pattern: ['{symbol}@index']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['ETHUSDT@index']
+      x-update-speed: ['1000ms']
       payload:
-        $ref: '#/components/schemas/IndexPriceEvent'
+        $ref: '#/components/schemas/indexPriceEvent'
 
     tickerEvent:
       name: Ticker Event
       title: 24hr Ticker Event
       summary: 24hr ticker statistics for individual option symbols
       contentType: application/json
+      x-event: true
+      x-stream-pattern: ['{symbol}@ticker']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['BTC-210630-9000-P@ticker']
+      x-update-speed: ['1000ms']
       payload:
-        $ref: '#/components/schemas/TickerEvent'
+        $ref: '#/components/schemas/tickerEvent'
 
     tradeEvent:
       name: Trade Event
       title: Trade Event
       summary: Real-time trade information for options contracts
       contentType: application/json
+      x-event: true
+      x-stream-pattern: ['{symbol}@trade', '{underlyingAsset}@trade']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        underlyingAsset:
+          $ref: '#/components/schemas/underlyingAsset'
+      x-stream-example: ['BTC-210630-9000-P@trade', 'ETH@trade']
+      x-update-speed: ['50ms']
       payload:
-        $ref: '#/components/schemas/TradeEvent'
+        $ref: '#/components/schemas/tradeEvent'
 
     partialDepthEvent:
       name: Partial Depth Event
       title: Partial Book Depth Event
       summary: Partial order book depth information for options contracts
       contentType: application/json
+      x-event: true
+      x-stream-pattern: ['{symbol}@depth{levels}', '{symbol}@depth{levels}@{speed}']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        levels:
+          $ref: '#/components/schemas/depthLevels'
+        speed:
+          $ref: '#/components/schemas/depthSpeed'
+      x-stream-example: ['BTC-210630-9000-P@depth10', 'BTC-210630-9000-P@depth10@100ms']
+      x-update-speed: ['100ms', '1000ms', '500ms']
       payload:
-        $ref: '#/components/schemas/PartialDepthEvent'
+        $ref: '#/components/schemas/partialDepthEvent'
 
-    combinedStreamEvent:
+    combinedMarketStreamEvent:
       name: Combined Stream Data
       title: Combined Stream Wrapper
       summary: Wrapper for combined stream data
       contentType: application/json
+      x-event: true
+      # This wrapper should not use description-based field naming for its payload model
+      x-use-desc-naming: false
+      x-wrapper: combined
+      x-handler-key: wrap:combined
+      x-wrapper-keys:
+        stream: stream
+        data: data
       payload:
-        $ref: '#/components/schemas/CombinedStreamEvent'
+        $ref: '#/components/schemas/combinedMarketStreamEvent'
+    
+    # User data stream messages
+    accountUpdateEvent:
+      name: Account Update Event
+      title: Account Data Update Event
+      summary: Sent when account balance or position changes
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/accountUpdateEvent'
+    
+    orderTradeUpdateEvent:
+      name: Order Trade Update Event
+      title: Order Update Event
+      summary: Orders are updated with orderTradeUpdate event
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/orderTradeUpdateEvent'
+    
+    riskLevelChangeEvent:
+      name: Risk Level Change Event
+      title: Risk Level Change Event
+      summary: Sent when risk level changes (applicable only to VIP and Market Maker accounts)
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/riskLevelChangeEvent'
 
   schemas:
+    underlyingAsset:
+      type: string
+      description: Underlying asset symbol (e.g., BTC, ETH)
+      example: ETH
+    symbol:
+      type: string
+      description: Full option symbol (e.g., BTC-210630-9000-P)
+      example: BTC-210630-9000-P
+    expirationDate:
+      type: string
+      description: Expiration date in YYMMDD format (e.g., 221125 for Nov 25, 2022)
+      example: 221125
+    interval:
+      type: string
+      description: Kline interval (e.g., 1m, 5m, 1h, 1d)
+      example: 1m
+    depthLevels:
+      type: integer
+      description: Depth levels (e.g., 5, 10, 20)
+      example: 10
+      enum:
+        - 10
+        - 20
+        - 50
+        - 100
+    depthSpeed:
+      type: string
+      description: Update speed (e.g., 100ms, 500ms, 1000ms)
+      example: 100ms
+      enum:
+        - 100ms
+        - 500ms
+        - 1000ms
+      default: 500ms
     # Control schemas (same patterns as other Binance streams)
-    SubscribeRequest:
+    subscribeRequest:
       type: object
       description: |
         Request to subscribe to one or more streams. Stream names should follow
@@ -482,11 +862,11 @@ components:
             - ["ETH@trade"]
         id:
           type: integer
-          format: uint64
+          format: int64
           description: Request ID
           example: 1
 
-    UnsubscribeRequest:
+    unsubscribeRequest:
       type: object
       required:
         - method
@@ -505,21 +885,33 @@ components:
           example: ["BTC-210630-9000-P@ticker"]
         id:
           type: integer
-          format: uint64
+          format: int64
           description: Request ID
           example: 2
 
-    SubscriptionResponse:
+    subscribeResponse:
       type: object
       properties:
         result:
-          type: "null"
+          type: object
+          nullable: true
           description: Always null for successful subscription
         id:
           type: integer
-          format: uint64
+          format: int64
 
-    ListSubscriptionsRequest:
+    unsubscribeResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          nullable: true
+          description: Always null for successful unsubscription
+        id:
+          type: integer
+          format: int64
+
+    listSubscriptionsRequest:
       type: object
       required:
         - method
@@ -531,11 +923,11 @@ components:
           description: Method name
         id:
           type: integer
-          format: uint64
+          format: int64
           description: Request ID
           example: 3
 
-    ListSubscriptionsResponse:
+    listSubscriptionsResponse:
       type: object
       properties:
         result:
@@ -546,10 +938,10 @@ components:
           example: ["BTC-210630-9000-P@ticker", "ETH@markPrice"]
         id:
           type: integer
-          format: uint64
+          format: int64
           
 
-    ErrorResponse:
+    errorResponse:
       type: object
       properties:
         error:
@@ -563,10 +955,10 @@ components:
               description: Error message
         id:
           type: integer
-          format: uint64
+          format: int64
           
 
-    SetPropertyRequest:
+    setPropertyRequest:
       type: object
       required:
         - method
@@ -589,11 +981,11 @@ components:
           example: ["combined", true]
         id:
           type: integer
-          format: uint64
+          format: int64
           description: Request ID
           example: 5
 
-    SetPropertyResponse:
+    setPropertyResponse:
       type: object
       properties:
         result:
@@ -601,10 +993,9 @@ components:
           description: Always null for successful property setting
         id:
           type: integer
-          format: uint64
-          
+          format: int64
 
-    GetPropertyRequest:
+    getPropertyRequest:
       type: object
       required:
         - method
@@ -625,11 +1016,11 @@ components:
           example: ["combined"]
         id:
           type: integer
-          format: uint64
+          format: int64
           description: Request ID
           example: 2
 
-    GetPropertyResponse:
+    getPropertyResponse:
       type: object
       properties:
         result:
@@ -639,11 +1030,10 @@ components:
           description: Property value (currently only 'combined' property supported)
         id:
           type: integer
-          format: uint64
-          
+          format: int64
 
     # Stream event schemas
-    NewSymbolInfoEvent:
+    newSymbolInfoEvent:
       type: object
       description: |
         New option symbol information event (option_pair stream).
@@ -665,8 +1055,8 @@ components:
         e:
           type: string
           description: Event type
-          const: OPTION_PAIR
-          example: OPTION_PAIR
+          const: option_pair
+          example: option_pair
         E:
           type: integer
           format: int64
@@ -707,7 +1097,17 @@ components:
           description: Expiration time (timestamp)
           example: 1668585600000
 
-    OpenInterestEvent:
+    openInterestEvent:
+      type: array
+      description: |
+        Array of open interest information events for options contracts.
+        Stream name pattern: {underlyingAsset}@openInterest@{expirationDate}
+        Example: ETH@openInterest@221125
+        Update frequency: 60s (once per minute)
+      items:
+        $ref: '#/components/schemas/openInterestEventItem'
+
+    openInterestEventItem:
       type: object
       description: |
         Open interest information event for options contracts.
@@ -744,7 +1144,18 @@ components:
           description: Open interest in USDT
           example: "1912992.178168204"
 
-    MarkPriceEvent:
+    markPriceEvent:
+      type: array
+      description: |
+        Array of mark price information events for options contracts.
+        Stream name pattern: {underlyingAsset}@markPrice
+        Example: ETH@markPrice
+        Update frequency: 1000ms (1 second)
+        Provides mark prices for all option symbols on a specific underlying asset.
+      items:
+        $ref: '#/components/schemas/markPriceEventItem'
+
+    markPriceEventItem:
       type: object
       description: |
         Mark price information event for options contracts.
@@ -777,7 +1188,7 @@ components:
           description: Option mark price
           example: "30.3"
 
-    KlineEvent:
+    klineEvent:
       type: object
       description: |
         Kline/candlestick information event for options contracts.
@@ -894,8 +1305,20 @@ components:
               description: Taker trade amount
               example: "0"
 
-    TickerByUnderlyingEvent:
+    tickerByUnderlyingEvent:
+      type: array
+      description: |
+        Array of 24-hour ticker statistics for options by underlying asset and expiration date.
+        Stream name pattern: {underlyingAsset}@ticker@{expirationDate}
+        Example: ETH@ticker@220930
+        Update frequency: 1000ms (1 second)
+        Only symbols with changed ticker info are sent.
+      items:
+        $ref: '#/components/schemas/tickerByUnderlyingEventItem'
+
+    tickerByUnderlyingEventItem:
       type: object
+      x-event: true
       description: |
         24-hour ticker statistics for options by underlying asset and expiration date.
         Stream name pattern: {underlyingAsset}@ticker@{expirationDate}
@@ -1061,7 +1484,7 @@ components:
           description: Estimated exercise price
           example: "0"
 
-    TradeEvent:
+    tradeEvent:
       type: object
       description: |
         Real-time trade information for options contracts.
@@ -1097,8 +1520,7 @@ components:
           description: Option trading symbol
           example: BTC-200630-9000-P
         t:
-          type: integer
-          format: int64
+          type: string
           description: Trade ID
           example: 1
         p:
@@ -1110,15 +1532,13 @@ components:
           description: Quantity (can be negative)
           example: "-2"
         b:
-          type: integer
-          format: int64
+          type: string
           description: Buy order ID
-          example: 4611781675939004417
+          example: "4611781675939004417"
         a:
-          type: integer
-          format: int64
+          type: string
           description: Sell order ID
-          example: 4611781675939004418
+          example: "4611781675939004418"
         T:
           type: integer
           format: int64
@@ -1134,7 +1554,7 @@ components:
           enum: [MARKET, BLOCK]
           example: MARKET
 
-    IndexPriceEvent:
+    indexPriceEvent:
       type: object
       description: |
         Index price information event for underlying assets.
@@ -1166,7 +1586,7 @@ components:
           description: Index price
           example: "1707.89008607"
 
-    TickerEvent:
+    tickerEvent:
       type: object
       description: |
         24-hour ticker statistics for individual option symbols.
@@ -1175,7 +1595,7 @@ components:
         Update frequency: 1000ms (1 second)
         Only symbols with changed ticker info are sent.
         
-        This is the same schema as TickerByUnderlyingEvent but for individual symbols.
+        This is the same schema as tickerByUnderlyingEventItem but for individual symbols.
       required:
         - e
         - E
@@ -1335,7 +1755,7 @@ components:
           description: Estimated exercise price
           example: "0"
 
-    PartialDepthEvent:
+    partialDepthEvent:
       type: object
       description: |
         Partial order book depth information for options contracts.
@@ -1407,10 +1827,10 @@ components:
             maxItems: 2
           example: [["1000", "89"]]
 
-    CombinedStreamEvent:
+    combinedMarketStreamEvent:
       type: object
       description: |
-        Wrapper for combined stream data. When connecting to combined streams,
+        Wrapper for combined market streams data. When connecting to combined streams,
         all events are wrapped with this structure to identify the source stream.
         
         The "stream" field contains the original stream name, and "data" contains
@@ -1440,15 +1860,15 @@ components:
             that would be received when connecting to the individual stream directly.
             The event type can be determined by examining the "stream" field.
           oneOf:
-            - $ref: "#/components/schemas/NewSymbolInfoEvent"
-            - $ref: "#/components/schemas/OpenInterestEvent"
-            - $ref: "#/components/schemas/MarkPriceEvent"
-            - $ref: "#/components/schemas/KlineEvent"
-            - $ref: "#/components/schemas/TickerByUnderlyingEvent"
-            - $ref: "#/components/schemas/IndexPriceEvent"
-            - $ref: "#/components/schemas/TickerEvent"
-            - $ref: "#/components/schemas/TradeEvent"
-            - $ref: "#/components/schemas/PartialDepthEvent"
+            - $ref: "#/components/schemas/newSymbolInfoEvent"
+            - $ref: "#/components/schemas/openInterestEvent"
+            - $ref: "#/components/schemas/markPriceEvent"
+            - $ref: "#/components/schemas/klineEvent"
+            - $ref: "#/components/schemas/tickerByUnderlyingEvent"
+            - $ref: "#/components/schemas/indexPriceEvent"
+            - $ref: "#/components/schemas/tickerEvent"
+            - $ref: "#/components/schemas/tradeEvent"
+            - $ref: "#/components/schemas/partialDepthEvent"
       example:
         stream: "BTC-210630-9000-P@ticker"
         data:
@@ -1483,3 +1903,288 @@ components:
           hl: "0"
           ll: "0"
           eep: "0"
+    
+    # User data stream event schemas
+    accountUpdateEvent:
+      type: object
+      description: Account Data Update - sent when account balance or position changes
+      required:
+        - e
+        - E
+        - uid
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: ACCOUNT_UPDATE
+          example: ACCOUNT_UPDATE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1564034571105
+        uid:
+          type: number
+          description: User ID
+          example: 12345678
+        B:
+          type: array
+          description: Account Balance Array
+          items:
+            type: object
+            properties:
+              a:
+                type: string
+                description: Margin asset
+                example: USDT
+              b:
+                type: string
+                description: Account balance
+                example: "1000.00000000"
+              m:
+                type: string
+                description: Position value
+                example: "500.00000000"
+              u:
+                type: string
+                description: Unrealized profit/loss
+                example: "50.00000000"
+              i:
+                type: string
+                description: Initial margin
+                example: "200.00000000"
+              M:
+                type: string
+                description: Maintenance margin
+                example: "100.00000000"
+              U:
+                type: number
+                description: Positive unrealized profit for long position
+                example: 25.5
+        P:
+          type: array
+          description: Positions Array
+          items:
+            type: object
+            properties:
+              s:
+                type: string
+                description: Contract symbol
+                example: BTC-220930-18000-C
+              c:
+                type: string
+                description: Current positions
+                example: "10"
+              r:
+                type: string
+                description: Positions that can be reduced
+                example: "5"
+              p:
+                type: string
+                description: Position value
+                example: "1000.00000000"
+              a:
+                type: string
+                description: Average entry price
+                example: "100.00000000"
+        G:
+          type: array
+          description: Greeks Array
+          items:
+            type: object
+            properties:
+              ui:
+                type: string
+                description: Underlying
+                example: BTCUSDT
+              d:
+                type: number
+                description: Delta
+                example: 0.5
+              g:
+                type: number
+                description: Gamma
+                example: 0.01
+              t:
+                type: number
+                description: Theta
+                example: -0.1
+              v:
+                type: number
+                description: Vega
+                example: 0.05
+    
+    orderTradeUpdateEvent:
+      type: object
+      description: Order Update - orders are updated with orderTradeUpdate event
+      required:
+        - e
+        - E
+        - o
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: ORDER_TRADE_UPDATE
+          example: ORDER_TRADE_UPDATE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1657613775883
+        o:
+          type: array
+          description: Order details array
+          items:
+            type: object
+            required:
+              - s
+              - oid
+            properties:
+              s:
+                type: string
+                description: Symbol
+                example: BTC-220930-18000-C
+              oid:
+                type: string
+                description: Order ID
+                example: "4611869636869226548"
+              c:
+                type: string
+                description: Client Order ID
+                example: ""
+              p:
+                type: string
+                description: Order Price
+                example: "1993"
+              q:
+                type: string
+                description: Order Quantity (+ve for BUY, -ve for SELL)
+                example: "1"
+              e:
+                type: string
+                description: Completed Trade Volume
+                example: "0.1"
+              ec:
+                type: string
+                description: Completed Trade Amount
+                example: "199.3"
+              f:
+                type: string
+                description: Fee
+                example: "2"
+              T:
+                type: integer
+                format: int64
+                description: Order Create Time (milliseconds)
+                example: 1657613342918
+              t:
+                type: integer
+                format: int64
+                description: Order Update Time (milliseconds)
+                example: 1657613342918
+              oty:
+                type: string
+                description: Order Type
+                example: LIMIT
+                enum:
+                  - LIMIT
+                  - MARKET
+              S:
+                type: string
+                description: Order Status
+                example: PARTIALLY_FILLED
+                enum:
+                  - NEW
+                  - PARTIALLY_FILLED
+                  - FILLED
+                  - CANCELED
+                  - EXPIRED
+              tif:
+                type: string
+                description: Time in Force
+                example: GTC
+                enum:
+                  - GTC
+                  - IOC
+                  - FOK
+              po:
+                type: boolean
+                description: Post Only flag
+                example: true
+              r:
+                type: boolean
+                description: Reduce Only flag
+                example: false
+              stp:
+                type: integer
+                description: Not used currently
+                example: 0
+              fi:
+                type: array
+                description: Fills Array
+                items:
+                  type: object
+                  properties:
+                    t:
+                      type: string
+                      description: Trade ID
+                      example: "20"
+                    p:
+                      type: string
+                      description: Trade Price
+                      example: "1993"
+                    q:
+                      type: string
+                      description: Trade Quantity
+                      example: "0.1"
+                    f:
+                      type: string
+                      description: Commission/Rebate
+                      example: "0.0002"
+                    T:
+                      type: integer
+                      format: int64
+                      description: Trade Time (milliseconds)
+                      example: 1657613774336
+                    m:
+                      type: string
+                      description: Taker/Maker
+                      example: TAKER
+                      enum:
+                        - TAKER
+                        - MAKER
+    
+    riskLevelChangeEvent:
+      type: object
+      description: Risk Level Change - sent when risk level changes (applicable only to VIP and Market Maker accounts)
+      required:
+        - e
+        - E
+        - s
+      properties:
+        e:
+          type: string
+          description: Event Type
+          const: RISK_LEVEL_CHANGE
+          example: RISK_LEVEL_CHANGE
+        E:
+          type: integer
+          format: int64
+          description: Event Time (milliseconds)
+          example: 1587727187525
+        mb:
+          type: string
+          description: Margin Balance
+          example: "1534.11708371"
+        mm:
+          type: string
+          description: Maintenance Margin
+          example: "254789.11708371"
+        s:
+          type: string
+          description: Risk Level
+          example: REDUCE_ONLY
+          enum:
+            - NORMAL
+            - REDUCE_ONLY

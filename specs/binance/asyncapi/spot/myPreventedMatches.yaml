@@ -19,18 +19,7 @@ channels:
             myPreventedMatchesResponse:
                 $ref: '#/components/messages/myPreventedMatchesResponse'
 operations:
-    receiveMyPreventedMatches:
-        title: Receive from myPreventedMatches
-        description: Receive response from myPreventedMatches
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/myPreventedMatchesResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendMyPreventedMatches:
+    myPreventedMatches:
         title: Send to myPreventedMatches
         description: Send a myPreventedMatches request
         action: send
@@ -38,57 +27,158 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/myPreventedMatchesRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/myPreventedMatchesResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        myPreventedMatchesRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                method:
+                    type: string
+                    description: method property
+                    example: myPreventedMatches
+                    const: myPreventedMatches
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        fromPreventedMatchId:
+                            type: integer
+                            format: int64
+                        limit:
+                            type: integer
+                            description: 'Default: 500; Maximum: 1000'
+                        orderId:
+                            type: integer
+                            format: int64
+                        preventedMatchId:
+                            type: integer
+                            format: int64
+                        recvWindow:
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+                        - timestamp
+        myPreventedMatchesResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 20
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            makerOrderId:
+                                type: integer
+                                format: int64
+                                description: makerOrderId property
+                                example: 3
+                            makerPreventedQuantity:
+                                type: string
+                                description: makerPreventedQuantity property
+                                example: "1.300000"
+                            makerSymbol:
+                                type: string
+                                description: makerSymbol property
+                                example: BTCUSDT
+                            preventedMatchId:
+                                type: integer
+                                format: int64
+                                description: preventedMatchId property
+                                example: 1
+                            price:
+                                type: string
+                                description: price property
+                                example: "1.100000"
+                            selfTradePreventionMode:
+                                type: string
+                                description: selfTradePreventionMode property
+                                example: EXPIRE_MAKER
+                            symbol:
+                                type: string
+                                description: symbol property
+                                example: BTCUSDT
+                            takerOrderId:
+                                type: integer
+                                format: int64
+                                description: takerOrderId property
+                                example: 5
+                            tradeGroupId:
+                                type: integer
+                                format: int64
+                                description: tradeGroupId property
+                                example: 1
+                            transactTime:
+                                type: integer
+                                format: int64
+                                description: transactTime property
+                                example: 1669101687094
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         myPreventedMatchesRequest:
             name: Account prevented matches (USER_DATA) Request
             title: Account prevented matches (USER_DATA) Request
             description: Send a myPreventedMatches request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
-                    method:
-                        type: string
-                        description: method property
-                        example: myPreventedMatches
-                        enum:
-                            - myPreventedMatches
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            fromPreventedMatchId:
-                                type: integer
-                                format: int64
-                            limit:
-                                type: integer
-                                description: 'Default: 500; Maximum: 1000'
-                            orderId:
-                                type: integer
-                                format: int64
-                            preventedMatchId:
-                                type: integer
-                                format: int64
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000
-                            symbol:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - symbol
-                            - timestamp
+                $ref: '#/components/schemas/myPreventedMatchesRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -97,96 +187,7 @@ components:
             title: Account prevented matches (USER_DATA) Response
             description: Receive response from myPreventedMatches
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: g4ce6a53-a39d-4f71-823b-4ab5r391d6y8
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 20
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                makerOrderId:
-                                    type: integer
-                                    format: int64
-                                    description: makerOrderId property
-                                    example: 3
-                                makerPreventedQuantity:
-                                    type: string
-                                    description: makerPreventedQuantity property
-                                    example: "1.300000"
-                                makerSymbol:
-                                    type: string
-                                    description: makerSymbol property
-                                    example: BTCUSDT
-                                preventedMatchId:
-                                    type: integer
-                                    format: int64
-                                    description: preventedMatchId property
-                                    example: 1
-                                price:
-                                    type: string
-                                    description: price property
-                                    example: "1.100000"
-                                selfTradePreventionMode:
-                                    type: string
-                                    description: selfTradePreventionMode property
-                                    example: EXPIRE_MAKER
-                                symbol:
-                                    type: string
-                                    description: symbol property
-                                    example: BTCUSDT
-                                takerOrderId:
-                                    type: integer
-                                    format: int64
-                                    description: takerOrderId property
-                                    example: 5
-                                tradeGroupId:
-                                    type: integer
-                                    format: int64
-                                    description: tradeGroupId property
-                                    example: 1
-                                transactTime:
-                                    type: integer
-                                    format: int64
-                                    description: transactTime property
-                                    example: 1669101687094
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/myPreventedMatchesResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

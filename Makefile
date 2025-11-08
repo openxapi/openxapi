@@ -127,13 +127,20 @@ generate-rest-sdk:
 
 generate-ws-sdk:
 	@if [ -z "${EXCHANGE}" -o -z "${LANGUAGE}" -o -z "${OUTPUT_DIR}" ]; then \
-		echo "Usage: make generate-ws-sdk EXCHANGE=<exchange> LANGUAGE=<language> OUTPUT_DIR=<output_dir>"; \
+		echo "Usage: make generate-ws-sdk EXCHANGE=<exchange> LANGUAGE=<language> OUTPUT_DIR=<output_dir> [MODULE=<module>]"; \
 		exit 1; \
 	fi
-	@if [ "${EXCHANGE}" == "binance" ]; then \
-		if [ "${LANGUAGE}" == "go" ]; then \
-			for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
-				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
+	@if [ "${EXCHANGE}" = "binance" ]; then \
+		if [ "${LANGUAGE}" = "go" ]; then \
+			if [ -n "${MODULE}" ]; then \
+				file="specs/${EXCHANGE}/asyncapi/${MODULE}.yaml"; \
+				if [ ! -f "$$file" ]; then \
+					echo "Module '${MODULE}' spec not found at $$file"; \
+					echo "Available modules:"; \
+					ls -1 specs/${EXCHANGE}/asyncapi/*.yaml 2>/dev/null | sed -n 's|.*/\(.*\)\.yaml|\1|p'; \
+					exit 1; \
+				fi; \
+				subdir=${MODULE}; \
 				echo "Generating ${EXCHANGE} ${LANGUAGE} WebSocket SDK for module: $$subdir"; \
 				rm -rf ${OUTPUT_DIR}/$$subdir; \
 				(cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
@@ -141,10 +148,28 @@ generate-ws-sdk:
 				OUTPUT_DIR=${OUTPUT_DIR}/$$subdir \
 				ASYNCAPI_CLI=${ASYNCAPI_CLI:-asyncapi} \
 				npm run --silent generate:module 2>&1 | grep -v "ExperimentalWarning: CommonJS module" | grep -v "Support for loading ES Module in require()" | grep -v "Use \`node --trace-warnings"); \
-			done \
-		elif [ "${LANGUAGE}" == "python" ]; then \
-			for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
-				subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
+			else \
+				for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
+					subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
+					echo "Generating ${EXCHANGE} ${LANGUAGE} WebSocket SDK for module: $$subdir"; \
+					rm -rf ${OUTPUT_DIR}/$$subdir; \
+					(cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
+					MODULE=$$subdir \
+					OUTPUT_DIR=${OUTPUT_DIR}/$$subdir \
+					ASYNCAPI_CLI=${ASYNCAPI_CLI:-asyncapi} \
+					npm run --silent generate:module 2>&1 | grep -v "ExperimentalWarning: CommonJS module" | grep -v "Support for loading ES Module in require()" | grep -v "Use \`node --trace-warnings"); \
+				done; \
+			fi; \
+		elif [ "${LANGUAGE}" = "python" ]; then \
+			if [ -n "${MODULE}" ]; then \
+				file="specs/${EXCHANGE}/asyncapi/${MODULE}.yaml"; \
+				if [ ! -f "$$file" ]; then \
+					echo "Module '${MODULE}' spec not found at $$file"; \
+					echo "Available modules:"; \
+					ls -1 specs/${EXCHANGE}/asyncapi/*.yaml 2>/dev/null | sed -n 's|.*/\(.*\)\.yaml|\1|p'; \
+					exit 1; \
+				fi; \
+				subdir=${MODULE}; \
 				python_subdir=$$(echo "$$subdir" | tr '-' '_'); \
 				echo "Generating ${EXCHANGE} ${LANGUAGE} WebSocket SDK for module: $$subdir (output: $$python_subdir)"; \
 				rm -rf ${OUTPUT_DIR}/$$python_subdir; \
@@ -159,8 +184,26 @@ generate-ws-sdk:
 				-p version=$${VERSION:-0.1.0} \
 				-p author=$${AUTHOR:-openxapi} \
 				2>&1 | grep -v "ExperimentalWarning: CommonJS module" | grep -v "Support for loading ES Module in require()" | grep -v "Use \`node --trace-warnings"); \
-			done \
-		fi \
+			else \
+				for file in $(shell find specs/${EXCHANGE}/asyncapi -name "*.yaml" -depth 1); do \
+					subdir=$$(echo "$$file" | sed -n 's|.*asyncapi/\(.*\)\.yaml|\1|p'); \
+					python_subdir=$$(echo "$$subdir" | tr '-' '_'); \
+					echo "Generating ${EXCHANGE} ${LANGUAGE} WebSocket SDK for module: $$subdir (output: $$python_subdir)"; \
+					rm -rf ${OUTPUT_DIR}/$$python_subdir; \
+					(cd templates/${EXCHANGE}/asyncapi/${LANGUAGE} && \
+					$${ASYNCAPI_CLI:-asyncapi} generate fromTemplate \
+					../../../../specs/${EXCHANGE}/asyncapi/$$subdir.yaml \
+					./ \
+					--output ${OUTPUT_DIR}/$$python_subdir \
+					--force-write \
+					-p moduleName=$${MODULE_NAME:-binance-websocket-client} \
+					-p packageName=$$python_subdir \
+					-p version=$${VERSION:-0.1.0} \
+					-p author=$${AUTHOR:-openxapi} \
+					2>&1 | grep -v "ExperimentalWarning: CommonJS module" | grep -v "Support for loading ES Module in require()" | grep -v "Use \`node --trace-warnings"); \
+				done; \
+			fi; \
+		fi; \
 	fi
 
 release:

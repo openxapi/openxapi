@@ -13,18 +13,7 @@ channels:
             accountRateLimitsOrdersResponse:
                 $ref: '#/components/messages/accountRateLimitsOrdersResponse'
 operations:
-    receiveAccountRateLimitsOrders:
-        title: Receive from account.rateLimits.orders
-        description: Receive response from account.rateLimits.orders
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/accountRateLimitsOrdersResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendAccountRateLimitsOrders:
+    accountRateLimitsOrders:
         title: Send to account.rateLimits.orders
         description: Send a account.rateLimits.orders request
         action: send
@@ -32,48 +21,120 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/accountRateLimitsOrdersRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/accountRateLimitsOrdersResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        accountRateLimitsOrdersRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3783d8d-f8d1-4d2c-b8a0-b7596af5a664
+                method:
+                    type: string
+                    description: method property
+                    example: account.rateLimits.orders
+                    const: account.rateLimits.orders
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        recvWindow:
+                            type: string
+                            description: The value cannot be greater than 60000.  Supports up to three decimal places of precision (e.g., 6000.346) so that microseconds may be specified.
+                        signature:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - apiKey
+                        - signature
+                        - timestamp
+        accountRateLimitsOrdersResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3783d8d-f8d1-4d2c-b8a0-b7596af5a664
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 40
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 0
+                            interval:
+                                type: string
+                                description: interval property
+                                example: SECOND
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 10
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 50
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: ORDERS
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         accountRateLimitsOrdersRequest:
             name: Unfilled Order Count (USER_DATA) Request
             title: Unfilled Order Count (USER_DATA) Request
             description: Send a account.rateLimits.orders request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3783d8d-f8d1-4d2c-b8a0-b7596af5a664
-                    method:
-                        type: string
-                        description: method property
-                        example: account.rateLimits.orders
-                        enum:
-                            - account.rateLimits.orders
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000
-                            signature:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                        required:
-                            - apiKey
-                            - signature
-                            - timestamp
+                $ref: '#/components/schemas/accountRateLimitsOrdersRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -82,71 +143,7 @@ components:
             title: Unfilled Order Count (USER_DATA) Response
             description: Receive response from account.rateLimits.orders
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3783d8d-f8d1-4d2c-b8a0-b7596af5a664
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 40
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: array
-                        description: result property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 0
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: SECOND
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 10
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 50
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: ORDERS
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/accountRateLimitsOrdersResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

@@ -1028,7 +1028,7 @@ function generateHelperMethods(structName, isEvent = false, isRequestMessage = f
  */
 function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage = false, isRequired = false, paramsRequiredFields = [], isEvent = false) {
   if (!property) {
-    return 'interface{}';
+    return 'any';
   }
   
   // Handle oneOf with simple types first (before processing type)
@@ -1057,7 +1057,7 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
     if (simpleTypes.length === propertyOneOf.length && simpleTypes.length > 1) {
       const shouldUsePointer = (isRequestMessage && !isRequired && propName !== 'id' && propName !== 'method') ||
                               (!isRequired && propName !== 'id' && propName !== 'method');
-      return shouldUsePointer ? '*interface{}' : 'interface{}';
+      return 'any';
     }
   }
   
@@ -1144,7 +1144,7 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
       return shouldUsePointer ? `*${structName}` : structName;
     }
     
-    return shouldUsePointer ? '*interface{}' : 'interface{}';
+    return 'any';
   }
 
   let baseType = '';
@@ -1292,8 +1292,29 @@ function mapJsonTypeToGo(property, propName, parentStructName, isRequestMessage 
       baseType = 'interface{}';
   }
   
-  // Return with pointer if needed
-  return shouldUsePointer ? `*${baseType}` : baseType;
+  const normalizeAnyType = (typeStr) => {
+    if (!typeStr) {
+      return typeStr;
+    }
+
+    let result = typeStr;
+    result = result.replace(/\[\]interface\{\}/g, '[]any');
+    result = result.replace(/map\[([^\]]+)\]interface\{\}/g, 'map[$1]any');
+
+    if (result === 'interface{}') {
+      return 'any';
+    }
+
+    return result.replace(/\binterface\{\}/g, 'any');
+  };
+
+  const normalizedType = normalizeAnyType(baseType);
+
+  if (shouldUsePointer) {
+    return normalizedType === 'any' ? 'any' : `*${normalizedType}`;
+  }
+
+  return normalizedType;
 }
 
 /*

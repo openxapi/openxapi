@@ -1,136 +1,219 @@
 asyncapi: 3.0.0
 info:
-  title: ""
-  version: 0.1.0
-  description: AsyncAPI specification for Binance exchange - Portfolio Margin WebSocket API
+  title: Binance Portfolio Margin WebSocket Streams
+  version: 1.0.0
+  description: |
+    AsyncAPI specification for Binance Portfolio Margin WebSocket Streams.
+    
+    This specification covers the authenticated user data stream that delivers
+    conditional order updates, margin account changes, liability adjustments,
+    cross-venue futures balances, and stream expiration notices for portfolio
+    margin accounts. A valid listenKey obtained from the REST API is required to
+    connect and receive real-time events.
 servers:
   mainnet:
     host: fstream.binance.com
-    pathname: /pm/ws/{listenKey}
     protocol: wss
+    pathname: /pm
     title: Binance Portfolio Margin Server
     summary: Binance Portfolio Margin WebSocket API Server (Mainnet)
     description: WebSocket server for binance exchange portfolio margin API (mainnet environment)
-    variables:
+channels:
+  userDataStream:
+    address: /ws/{listenKey}
+    title: Portfolio Margin User Data Stream
+    description: |
+      Authenticated connection delivering real-time portfolio margin account,
+      order, and liability updates. Connect with a valid listenKey obtained from
+      the REST API userDataStream.start endpoint to receive events.
+    parameters:
       listenKey:
         description: |
-          Listen key for user data stream authentication.
-          
-          - Obtained from userDataStream.start request
-          - Valid for 60 minutes after creation
-          - Can be extended with userDataStream.ping
-          - Required for receiving user data events
-        default: 'YOUR_LISTEN_KEY'
+          64-character authentication key for the portfolio margin user data stream.
+          Obtained from the REST API userDataStream.start request. Valid for 60
+          minutes and extendable with userDataStream.ping. Required for receiving
+          account, order, and margin updates.
         examples:
           - XaEAKTsQSRLZAGH9tuIu37plSRsdjmlAVBoNYPUITlTAko1WI22PgmBMpI1rS8Yh
           - pqia91ma19a5s61cv6a81va65sdf19v8a65a1a5s61cv6a81va65sdf19v8a65a1
-channels:
-  pmargin:
-    address: /
-    title: Channel pmargin
-    description: Portfolio Margin WebSocket API Channel
     messages:
       conditionalOrderTradeUpdateEvent:
-        name: Conditional Order Trade Update Event
-        title: Conditional Order Trade Update Event
-        description: Sent when new order created or order status changed
-        payload:
-          $ref: '#/components/schemas/ConditionalOrderTradeUpdateEvent'
+        $ref: '#/components/messages/conditionalOrderTradeUpdateEvent'
       openOrderLossEvent:
-        name: Open Order Loss Update Event
-        title: Open Order Loss Update Event
-        description: Cross margin order margin stream updates
-        payload:
-          $ref: '#/components/schemas/OpenOrderLossEvent'
+        $ref: '#/components/messages/openOrderLossEvent'
       marginAccountUpdateEvent:
-        name: Margin Account Update Event
-        title: Margin Account Update Event
-        description: Sent when account balance has changed
-        payload:
-          $ref: '#/components/schemas/MarginAccountUpdateEvent'
+        $ref: '#/components/messages/marginAccountUpdateEvent'
       liabilityUpdateEvent:
-        name: Liability Update Event
-        title: Liability Update Event
-        description: Margin liability update event
-        payload:
-          $ref: '#/components/schemas/LiabilityUpdateEvent'
+        $ref: '#/components/messages/liabilityUpdateEvent'
       marginOrderUpdateEvent:
-        name: Margin Order Update Event
-        title: Margin Order Update Event
-        description: Margin order execution report event
-        payload:
-          $ref: '#/components/schemas/MarginOrderUpdateEvent'
+        $ref: '#/components/messages/marginOrderUpdateEvent'
       futuresOrderUpdateEvent:
-        name: Futures Order Update Event
-        title: Futures Order Update Event
-        description: Futures order trade update event
-        payload:
-          $ref: '#/components/schemas/FuturesOrderUpdateEvent'
+        $ref: '#/components/messages/futuresOrderUpdateEvent'
       futuresBalancePositionUpdateEvent:
-        name: Futures Balance and Position Update Event
-        title: Futures Balance and Position Update Event
-        description: Futures balance and position update event
-        payload:
-          $ref: '#/components/schemas/FuturesBalancePositionUpdateEvent'
+        $ref: '#/components/messages/futuresBalancePositionUpdateEvent'
       futuresAccountConfigUpdateEvent:
-        name: Futures Account Configuration Update Event
-        title: Futures Account Configuration Update Event
-        description: Futures account configuration update event
-        payload:
-          $ref: '#/components/schemas/FuturesAccountConfigUpdateEvent'
+        $ref: '#/components/messages/futuresAccountConfigUpdateEvent'
       riskLevelChangeEvent:
-        name: Risk Level Change Event
-        title: Risk Level Change Event
-        description: Sent when user's position risk ratio is too high
-        payload:
-          $ref: '#/components/schemas/RiskLevelChangeEvent'
+        $ref: '#/components/messages/riskLevelChangeEvent'
       marginBalanceUpdateEvent:
-        name: Margin Balance Update Event
-        title: Margin Balance Update Event
-        description: Margin balance update event
-        payload:
-          $ref: '#/components/schemas/MarginBalanceUpdateEvent'
+        $ref: '#/components/messages/marginBalanceUpdateEvent'
       userDataStreamExpiredEvent:
-        name: User Data Stream Expired Event
-        title: User Data Stream Expired Event
-        description: Sent when listen key has expired
-        payload:
-          $ref: '#/components/schemas/UserDataStreamExpiredEvent'
-      errorMessageEvent:
-        name: Error Message
-        title: Error Response
-        summary: Error response from server
-        payload:
-          $ref: '#/components/schemas/ErrorResponse'
+        $ref: '#/components/messages/userDataStreamExpiredEvent'
+      error:
+        $ref: '#/components/messages/errorMessage'
 operations:
-  receiveUserDataStreamEvents:
-    title: Receive user data stream events
-    description: Receive various user data stream events after successful subscription
+  userDataStreamReceiveEvents:
+    title: Receive Portfolio Margin Events
+    summary: Receive portfolio margin user data stream events
+    description: |
+      Receive various user data stream events after connecting with a valid
+      listenKey. Events include conditional order updates, risk level changes,
+      margin balance updates, and futures hedging information.
     action: receive
     channel:
-      $ref: '#/channels/pmargin'
+      $ref: '#/channels/userDataStream'
     messages:
-      - $ref: '#/channels/pmargin/messages/conditionalOrderTradeUpdateEvent'
-      - $ref: '#/channels/pmargin/messages/openOrderLossEvent'
-      - $ref: '#/channels/pmargin/messages/marginAccountUpdateEvent'
-      - $ref: '#/channels/pmargin/messages/liabilityUpdateEvent'
-      - $ref: '#/channels/pmargin/messages/marginOrderUpdateEvent'
-      - $ref: '#/channels/pmargin/messages/futuresOrderUpdateEvent'
-      - $ref: '#/channels/pmargin/messages/futuresBalancePositionUpdateEvent'
-      - $ref: '#/channels/pmargin/messages/futuresAccountConfigUpdateEvent'
-      - $ref: '#/channels/pmargin/messages/riskLevelChangeEvent'
-      - $ref: '#/channels/pmargin/messages/marginBalanceUpdateEvent'
-      - $ref: '#/channels/pmargin/messages/userDataStreamExpiredEvent'
-      - $ref: '#/channels/pmargin/messages/errorMessageEvent'
+      - $ref: '#/channels/userDataStream/messages/conditionalOrderTradeUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/openOrderLossEvent'
+      - $ref: '#/channels/userDataStream/messages/marginAccountUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/liabilityUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/marginOrderUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/futuresOrderUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/futuresBalancePositionUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/futuresAccountConfigUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/riskLevelChangeEvent'
+      - $ref: '#/channels/userDataStream/messages/marginBalanceUpdateEvent'
+      - $ref: '#/channels/userDataStream/messages/userDataStreamExpiredEvent'
+
+  userDataStreamReceiveError:
+    title: Receive Portfolio Margin Errors
+    summary: Receive error messages from the portfolio margin stream
+    description: Receive error messages returned when requests are invalid or the listenKey expires.
+    action: receive
+    channel:
+      $ref: '#/channels/userDataStream'
+    messages:
+      - $ref: '#/channels/userDataStream/messages/error'
 components:
+  messages:
+    conditionalOrderTradeUpdateEvent:
+      name: Conditional Order Trade Update Event
+      title: Conditional Order Trade Update Event
+      summary: Sent when a conditional order is created or changes status
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/conditionalOrderTradeUpdateEvent'
+
+    openOrderLossEvent:
+      name: Open Order Loss Update Event
+      title: Open Order Loss Update Event
+      summary: Reports cross margin order loss updates
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/openOrderLossEvent'
+
+    marginAccountUpdateEvent:
+      name: Margin Account Update Event
+      title: Margin Account Update Event
+      summary: Sent when the portfolio margin account balance changes
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/marginAccountUpdateEvent'
+
+    liabilityUpdateEvent:
+      name: Liability Update Event
+      title: Liability Update Event
+      summary: Portfolio margin liability adjustment notification
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/liabilityUpdateEvent'
+
+    marginOrderUpdateEvent:
+      name: Margin Order Update Event
+      title: Margin Order Update Event
+      summary: Margin order execution report updates
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/marginOrderUpdateEvent'
+
+    futuresOrderUpdateEvent:
+      name: Futures Order Update Event
+      title: Futures Order Update Event
+      summary: Futures order trade update event
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/futuresOrderUpdateEvent'
+
+    futuresBalancePositionUpdateEvent:
+      name: Futures Balance and Position Update Event
+      title: Futures Balance and Position Update Event
+      summary: Futures balance and position update event
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/futuresBalancePositionUpdateEvent'
+
+    futuresAccountConfigUpdateEvent:
+      name: Futures Account Configuration Update Event
+      title: Futures Account Configuration Update Event
+      summary: Futures account configuration update event
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/futuresAccountConfigUpdateEvent'
+
+    riskLevelChangeEvent:
+      name: Risk Level Change Event
+      title: Risk Level Change Event
+      summary: Sent when the user's position risk ratio is too high
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/riskLevelChangeEvent'
+
+    marginBalanceUpdateEvent:
+      name: Margin Balance Update Event
+      title: Margin Balance Update Event
+      summary: Margin balance update event
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/marginBalanceUpdateEvent'
+
+    userDataStreamExpiredEvent:
+      name: User Data Stream Expired Event
+      title: User Data Stream Expired Event
+      summary: Sent when the listenKey has expired
+      contentType: application/json
+      x-event: true
+      payload:
+        $ref: '#/components/schemas/userDataStreamExpiredEvent'
+
+    errorMessage:
+      name: Error Message
+      title: Error Response
+      summary: Error response from server
+      contentType: application/json
+      x-error: true
+      x-handler-key: error
+      payload:
+        $ref: '#/components/schemas/errorResponse'
+
   schemas:
-    ConditionalOrderTradeUpdateEvent:
+    conditionalOrderTradeUpdateEvent:
       type: object
       description: Conditional Order Trade Update - sent when new order created or order status changed
       properties:
         e:
           type: string
           description: Event Type
+          const: CONDITIONAL_ORDER_TRADE_UPDATE
           example: CONDITIONAL_ORDER_TRADE_UPDATE
         T:
           type: integer
@@ -256,13 +339,14 @@ components:
               type: integer
               description: Good Till Date
               example: 0
-    OpenOrderLossEvent:
+    openOrderLossEvent:
       type: object
       description: Open Order Loss Update - cross margin order margin stream updates
       properties:
         e:
           type: string
           description: Event Type
+          const: openOrderLoss
           example: openOrderLoss
         E:
           type: integer
@@ -283,13 +367,14 @@ components:
                 type: string
                 description: Loss Amount (negative number)
                 example: "-0.1232313"
-    MarginAccountUpdateEvent:
+    marginAccountUpdateEvent:
       type: object
       description: Margin Account Update - sent when account balance has changed
       properties:
         e:
           type: string
           description: Event Type
+          const: outboundAccountPosition
           example: outboundAccountPosition
         E:
           type: integer
@@ -324,13 +409,14 @@ components:
                 type: string
                 description: Locked balance
                 example: "0.000000"
-    LiabilityUpdateEvent:
+    liabilityUpdateEvent:
       type: object
       description: Liability Update - margin liability update event
       properties:
         e:
           type: string
           description: Event Type
+          const: liabilityChange
           example: liabilityChange
         E:
           type: integer
@@ -362,13 +448,14 @@ components:
           type: string
           description: Total Liability
           example: "1.03476851"
-    MarginOrderUpdateEvent:
+    marginOrderUpdateEvent:
       type: object
       description: Margin Order Update - margin order execution report event
       properties:
         e:
           type: string
           description: Event Type
+          const: executionReport
           example: executionReport
         E:
           type: integer
@@ -543,13 +630,14 @@ components:
           type: string
           description: Prevented Quantity
           example: "3.000000"
-    FuturesOrderUpdateEvent:
+    futuresOrderUpdateEvent:
       type: object
       description: Futures Order Update - futures order trade update event
       properties:
         e:
           type: string
           description: Event Type
+          const: ORDER_TRADE_UPDATE
           example: ORDER_TRADE_UPDATE
         fs:
           type: string
@@ -668,13 +756,66 @@ components:
               type: string
               description: Commission
               example: "0"
-    FuturesBalancePositionUpdateEvent:
+            T:
+              type: integer
+              format: int64
+              description: Order Trade Time (milliseconds)
+              example: 1568879465650
+            t:
+              type: integer
+              format: int64
+              description: Trade Id
+              example: 0
+            b:
+              type: string
+              description: Bids Notional
+              example: "0"
+            a:
+              type: string
+              description: Ask Notional
+              example: "0"
+            m:
+              type: boolean
+              description: Is this trade the maker side
+              example: false
+            R:
+              type: boolean
+              description: Is this reduce only
+              example: false
+            ps:
+              type: string
+              description: Position Side
+              example: LONG
+            rp:
+              type: string
+              description: Realized Profit
+              example: "0"
+            st:
+              type: string
+              description: Stratgy Type
+              example: C_TAKE_PROFIT
+            si:
+              type: integer
+              format: int64
+              description: Strategy Id
+              example: 176057039
+            V:
+              type: string
+              description: Self Trade Prevention Mode
+              example: EXPIRE_TAKER
+            gtd:
+              type: integer
+              format: int64
+              description: Good Till Date
+              example: 0
+    futuresBalancePositionUpdateEvent:
       type: object
       description: Futures Balance and Position Update - balance and position update event
       properties:
         e:
           type: string
           description: Event Type
+          const: ACCOUNT_UPDATE
           example: ACCOUNT_UPDATE
         fs:
           type: string
@@ -707,7 +848,7 @@ components:
               example: ORDER
             B:
               type: array
-              description: Balances Array
+              description: Balances
               items:
                 type: object
                 properties:
@@ -729,7 +870,7 @@ components:
                     example: "50.12345678"
             P:
               type: array
-              description: Positions Array
+              description: Positions
               items:
                 type: object
                 properties:
@@ -761,13 +902,14 @@ components:
                     type: string
                     description: Breakeven Price
                     example: "0.00000"
-    FuturesAccountConfigUpdateEvent:
+    futuresAccountConfigUpdateEvent:
       type: object
       description: Futures Account Configuration Update - account configuration update event
       properties:
         e:
           type: string
           description: Event Type
+          const: ACCOUNT_CONFIG_UPDATE
           example: ACCOUNT_CONFIG_UPDATE
         fs:
           type: string
@@ -795,13 +937,14 @@ components:
               type: integer
               description: Leverage
               example: 25
-    RiskLevelChangeEvent:
+    riskLevelChangeEvent:
       type: object
       description: Risk Level Change - sent when user's position risk ratio is too high
       properties:
         e:
           type: string
           description: Event Type
+          const: riskLevelChange
           example: riskLevelChange
         E:
           type: integer
@@ -832,13 +975,14 @@ components:
           type: string
           description: Total maintenance margin in USD
           example: "15.11708371"
-    MarginBalanceUpdateEvent:
+    marginBalanceUpdateEvent:
       type: object
       description: Margin Balance Update - margin balance update event
       properties:
         e:
           type: string
           description: Event Type
+          const: balanceUpdate
           example: balanceUpdate
         E:
           type: integer
@@ -862,20 +1006,21 @@ components:
           format: int64
           description: Clear Time (milliseconds)
           example: 1573200697068
-    UserDataStreamExpiredEvent:
+    userDataStreamExpiredEvent:
       type: object
       description: User Data Stream Expired - sent when listen key has expired
       properties:
         e:
           type: string
           description: Event Type
+          const: listenKeyExpired
           example: listenKeyExpired
         E:
           type: integer
           format: int64
           description: Event Time (milliseconds)
           example: 1576653824250
-    ErrorResponse:
+    errorResponse:
       type: object
       properties:
         error:

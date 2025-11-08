@@ -4,361 +4,376 @@ info:
   version: 1.0.0
   description: |
     AsyncAPI specification for Binance Spot WebSocket Streams (Market Data).
-    
-    WebSocket Streams provide real-time spot market data without authentication.
-    These are different from WebSocket API and User Data Streams.
-    
+
+    This specification covers:
+    1. Market Data Streams: Real-time spot market data without authentication
+
     ## Connection Types
-    
-    ### Single Streams
-    - **Connection**: Connect to `/ws` first, then use SUBSCRIBE to add streams
-    - **Data Format**: Direct stream data (not wrapped)
-    - **Property**: `combined = false`
-    - **Example**: `wss://stream.binance.com:9443/ws` → SUBSCRIBE to `btcusdt@aggTrade`
-    
-    ### Combined Streams (Multiple Streams)  
-    - **Connection**: Connect to `/stream` first, then use SUBSCRIBE to add streams
-    - **Data Format**: Wrapped as `{"stream":"<streamName>","data":<rawPayload>}`
-    - **Property**: `combined = true`
-    - **Max Streams**: 1024 streams per connection
-    - **Example**: `wss://stream.binance.com:9443/stream` → SUBSCRIBE to multiple streams
-    - **Optional**: Add `?timeUnit=MICROSECOND` for microsecond precision
-    
+
+    ### Single Market Streams
+    - Connection: Connect to `/ws/{streamName}` directly (or connect to `/ws` and SUBSCRIBE)
+    - Data Format: Direct stream data (not wrapped)
+    - Property: `combined = false`
+    - Example: `wss://stream.binance.com:9443/ws/btcusdt@aggTrade`
+
+    ### Combined Market Streams (Multiple Streams)
+    - Connection: Connect to `/stream?streams=<streamName1>/<streamName2>`
+    - Data Format: Wrapped as `{"stream":"<streamName>","data":<rawPayload>}`
+    - Property: `combined = true`
+    - Max Streams: 1024 streams per connection
+    - Example: `wss://stream.binance.com:9443/stream?streams=btcusdt@aggTrade/ethusdt@kline_1m`
+    - Optional: Add `&timeUnit=MICROSECOND` for microsecond precision
+
     ## Connection Management
-    
+
     ### Initial Connection
-    - Connect to `/ws` for single streams or `/stream` for combined streams
-    - No streams are active initially
+    - Market Streams: Connect to `/ws/{streamName}` for single streams or `/stream` for combined streams
     - Use SUBSCRIBE method to add streams dynamically
-    
+
     ### Heartbeat
-    - Server sends ping frame every 20 seconds
+    - Server sends ping periodically (about every 20s)
     - Client must respond with pong within 1 minute
     - Connection will be disconnected if no pong received
-    
+
     ### Limits and Validity
-    - **Connection Validity**: 24 hours maximum
-    - **Rate Limit**: 5 incoming messages per second
-    - **Streams per Connection**: Maximum 1024 streams
-    - **Connections per IP**: Maximum 300 connections per 5 minutes
-    
+    - Connection Validity: up to 24 hours
+    - Rate Limit: 5 incoming messages per second
+    - Streams per Connection: Maximum 1024 streams (market streams)
+    - Connections per IP: Rate limiting applies
+
     ### Stream Naming Conventions
-    - All symbols must be provided in lowercase
-    - All stream names are lowercase
+    - Symbols are lowercase (e.g., btcusdt)
+    - Stream names are lowercase
     - Multiple streams can be combined in a single connection
-    - Update speeds: Standard (1000ms) or Fast (@100ms suffix)
-    
-    ### Available Stream Types
-    
-    #### Individual Symbol Streams (return single object):
-    - `<symbol>@aggTrade` - Aggregated trade information
-    - `<symbol>@trade` - Raw trade information
-    - `<symbol>@kline_<interval>` - Kline/candlestick data (intervals: 1s, 1m, 3m, 5m, 15m, 30m, 1h, 2h, 4h, 6h, 8h, 12h, 1d, 3d, 1w, 1M)
-    - `<symbol>@kline_<interval>@+08:00` - Kline/candlestick data with UTC+8 timezone
-    - `<symbol>@miniTicker` - 24hr rolling mini-ticker statistics
-    - `<symbol>@ticker` - 24hr rolling ticker statistics
-    - `<symbol>@ticker_<window>` - Rolling window ticker statistics (windows: 1h, 4h, 1d)
-    - `<symbol>@bookTicker` - Best bid/ask price and quantity
-    - `<symbol>@avgPrice` - Average price
-    - `<symbol>@depth<levels>` - Partial book depth (levels: 5, 10, 20)
-    - `<symbol>@depth<levels>@<speed>` - Partial book depth with update speed (speed: 100ms, 1000ms)
-    - `<symbol>@depth` - Differential depth stream
-    - `<symbol>@depth@<speed>` - Differential depth stream with update speed (speed: 100ms, 1000ms)
-    
-    #### All Market Streams (return arrays):
-    - `!ticker@arr` - Array of 24hr ticker events for all symbols
-    - `!miniTicker@arr` - Array of mini ticker events for all symbols
-    - `!ticker_<window>@arr` - Array of rolling window ticker events (windows: 1h, 4h, 1d)
-    
-    These array responses are delivered as a single message containing multiple events.
-    
-    ### Stream to Event Mapping
-    Each message definition includes `x-stream-pattern` or `x-stream-patterns` metadata that maps 
-    stream names to their corresponding event schemas. Messages with `x-no-event-type: true` 
-    indicate that the event does not include an 'e' field for event type identification.
 
 servers:
-  mainnet1:
+  mainnet:
     host: stream.binance.com:9443
     protocol: wss
-    pathname: /{streamPath}
-    title: Binance Mainnet Server
+    pathname: /
+    title: Binance Spot Server
     summary: Binance Spot WebSocket Streams Server (Mainnet)
-    description: WebSocket server for binance exchange spot market data streams (mainnet environment)
-    variables:
-      streamPath:
-        description: |
-          WebSocket stream path for different connection types.
-          
-          - Single Stream: 'ws' - Connect to individual stream endpoint
-          - Combined Stream: 'stream' - Connect to combined stream endpoint
-        enum: ['ws', 'stream']
-        default: 'ws'
-        examples:
-          - ws
-          - stream
-      
-  mainnet2:
+    description: WebSocket server for Binance spot market data streams (mainnet)
+
+  mainnetAlt:
     host: stream.binance.com:443
     protocol: wss
-    pathname: /{streamPath}
-    title: Binance Mainnet Server (Alternative)
+    pathname: /
+    title: Binance Spot Server (Alternative)
     summary: Binance Spot WebSocket Streams Server (Mainnet Alternative)
-    description: Alternative WebSocket server for binance exchange spot market data streams (mainnet environment)
-    variables:
-      streamPath:
-        description: |
-          WebSocket stream path for different connection types.
-          
-          - Single Stream: 'ws' - Connect to individual stream endpoint
-          - Combined Stream: 'stream' - Connect to combined stream endpoint
-        enum: ['ws', 'stream']
-        default: 'ws'
-        examples:
-          - ws
-          - stream
-    
-  mainnet3:
+    description: Alternative WebSocket server for Binance spot market data streams (mainnet)
+
+  mainnetData:
     host: data-stream.binance.vision
     protocol: wss
-    pathname: /{streamPath}
-    title: Binance Mainnet Server (Market Data Only)
+    pathname: /
+    title: Binance Spot Market Data Server
     summary: Binance Spot WebSocket Streams Server (Market Data Only)
-    description: WebSocket server for binance exchange spot market data streams (mainnet environment, market data only)
-    variables:
-      streamPath:
-        description: |
-          WebSocket stream path for different connection types.
-          
-          - Single Stream: 'ws' - Connect to individual stream endpoint
-          - Combined Stream: 'stream' - Connect to combined stream endpoint
-        enum: ['ws', 'stream']
-        default: 'ws'
-        examples:
-          - ws
-          - stream
-    
-  testnet1:
+    description: WebSocket server for Binance spot market data streams (market data only)
+
+  testnet:
     host: stream.testnet.binance.vision
     protocol: wss
-    pathname: /{streamPath}
-    title: Binance Testnet Server
+    pathname: /
+    title: Binance Spot Testnet Server
     summary: Binance Spot WebSocket Streams Server (Testnet)
-    description: WebSocket server for binance exchange spot market data streams (testnet environment)
-    variables:
-      streamPath:
-        description: |
-          WebSocket stream path for different connection types.
-          
-          - Single Stream: 'ws' - Connect to individual stream endpoint
-          - Combined Stream: 'stream' - Connect to combined stream endpoint
-        enum: ['ws', 'stream']
-        default: 'ws'
-        examples:
-          - ws
-          - stream
+    description: WebSocket server for Binance spot market data streams (testnet)
 
 channels:
-  # Single stream connection (connect to /ws first, then subscribe)
-  singleStreamConnection:
-    address: /ws{timeUnit}
-    title: Single Stream Connection
+  # Single market stream connection (connect to /ws/<streamName> directly)
+  marketStream:
+    address: /ws/{streamName}
+    title: Single Market Streams Connection
     description: |
-      Initial connection endpoint for single streams. Connect here first, then use
-      SUBSCRIBE method to add individual streams. Each stream returns direct data.
+      Direct connection endpoint for individual market streams. Connect here to receive
+      data from a specific stream. Each stream returns direct data. Alternatively, connect
+      to `/ws` and use SUBSCRIBE to add streams dynamically.
       
-      Optional timeUnit parameter for microsecond precision: ?timeUnit=MICROSECOND
+      Optional time unit for timestamps can be specified as an additional query parameter
+      on the URL: `&timeUnit=MICROSECOND`.
     parameters:
-      timeUnit:
-        description: |
-          Optional parameter to specify time unit for timestamps.
-          Default is milliseconds if not specified.
-        enum: ['', '?timeUnit=MICROSECOND', '?timeUnit=microsecond', '?timeUnit=millisecond']
-        default: ''
+      streamName:
+        description: The specific stream name to connect to
+        examples:
+          - 'btcusdt@aggTrade'
+          - 'btcusdt@kline_1m'
+          - 'btcusdt@bookTicker'
+          - '!ticker@arr'
     messages:
       subscribe:
         $ref: '#/components/messages/subscribeRequest'
       unsubscribe:
         $ref: '#/components/messages/unsubscribeRequest'
       subscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/subscribeResponse'
       unsubscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/unsubscribeResponse'
       listSubscriptions:
         $ref: '#/components/messages/listSubscriptionsRequest'
       listSubscriptionsResponse:
         $ref: '#/components/messages/listSubscriptionsResponse'
+      setProperty:
+        $ref: '#/components/messages/setPropertyRequest'
+      setPropertyResponse:
+        $ref: '#/components/messages/setPropertyResponse'
+      getProperty:
+        $ref: '#/components/messages/getPropertyRequest'
+      getPropertyResponse:
+        $ref: '#/components/messages/getPropertyResponse'
       error:
         $ref: '#/components/messages/errorMessage'
       # Single stream data messages (direct, not wrapped)
-      aggTrade:
+      aggregateTradeEvent:
         $ref: '#/components/messages/aggregateTradeEvent'
-      trade:
+      tradeEvent:
         $ref: '#/components/messages/tradeEvent'
-      kline:
+      klineEvent:
         $ref: '#/components/messages/klineEvent'
-      miniTicker:
+      miniTickerEvent:
         $ref: '#/components/messages/miniTickerEvent'
-      allMiniTickers:
+      allMiniTickersEvent:
         $ref: '#/components/messages/allMiniTickersEvent'
-      ticker:
+      tickerEvent:
         $ref: '#/components/messages/tickerEvent'
-      allTickers:
+      allTickersEvent:
         $ref: '#/components/messages/allTickersEvent'
-      rollingWindowTicker:
+      rollingWindowTickerEvent:
         $ref: '#/components/messages/rollingWindowTickerEvent'
-      allRollingWindowTickers:
+      allRollingWindowTickersEvent:
         $ref: '#/components/messages/allRollingWindowTickersEvent'
-      bookTicker:
+      bookTickerEvent:
         $ref: '#/components/messages/bookTickerEvent'
-      avgPrice:
-        $ref: '#/components/messages/avgPriceEvent'
-      partialDepth:
+      averagePriceEvent:
+        $ref: '#/components/messages/averagePriceEvent'
+      partialDepthEvent:
         $ref: '#/components/messages/partialDepthEvent'
-      diffDepth:
+      diffDepthEvent:
         $ref: '#/components/messages/diffDepthEvent'
 
-  # Combined stream connection (connect to /stream first, then subscribe)
-  combinedStreamConnection:
-    address: /stream{timeUnit}
-    title: Combined Stream Connection
+  # Combined stream connection (connect to /stream?streams=...)
+  combinedMarketStream:
+    address: /stream?streams={streams}
+    title: Combined Market Streams Connection
     description: |
-      Initial connection endpoint for combined streams. Connect here first, then use
-      SUBSCRIBE method to add multiple streams. Each stream returns wrapped data
-      with format: {"stream":"<streamName>","data":<rawPayload>}
-      
-      Optional timeUnit parameter for microsecond precision: ?timeUnit=MICROSECOND
+      Initial connection endpoint for combined market streams. Connect here first, then use
+      query parameters or SUBSCRIBE method to add multiple streams. Each stream returns wrapped data
+      with format: {"stream":"<streamName>","data":<rawPayload>}. Optional timestamp precision can be
+      specified via `&timeUnit=MICROSECOND`.
+    x-unwrapped-event-messages:
+      - $ref: '#/channels/marketStream/messages/aggregateTradeEvent'
+      - $ref: '#/channels/marketStream/messages/tradeEvent'
+      - $ref: '#/channels/marketStream/messages/klineEvent'
+      - $ref: '#/channels/marketStream/messages/miniTickerEvent'
+      - $ref: '#/channels/marketStream/messages/allMiniTickersEvent'
+      - $ref: '#/channels/marketStream/messages/tickerEvent'
+      - $ref: '#/channels/marketStream/messages/allTickersEvent'
+      - $ref: '#/channels/marketStream/messages/rollingWindowTickerEvent'
+      - $ref: '#/channels/marketStream/messages/allRollingWindowTickersEvent'
+      - $ref: '#/channels/marketStream/messages/bookTickerEvent'
+      - $ref: '#/channels/marketStream/messages/averagePriceEvent'
+      - $ref: '#/channels/marketStream/messages/partialDepthEvent'
+      - $ref: '#/channels/marketStream/messages/diffDepthEvent'
     parameters:
-      timeUnit:
+      streams:
         description: |
-          Optional parameter to specify time unit for timestamps.
-          Default is milliseconds if not specified.
-        enum: ['', '?timeUnit=MICROSECOND', '?timeUnit=microsecond', '?timeUnit=millisecond']
-        default: ''
+          Slash-separated list of stream names to subscribe on connect.
+          Format: `<streamName1>/<streamName2>/<streamName3>`.
+        examples:
+          - btcusdt@aggTrade/ethusdt@kline_1m
+          - btcusdt@bookTicker/!miniTicker@arr
+          - btcusdt@depth5@100ms/ethusdt@ticker_4h
     messages:
       subscribe:
         $ref: '#/components/messages/subscribeRequest'
       unsubscribe:
         $ref: '#/components/messages/unsubscribeRequest'
       subscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/subscribeResponse'
       unsubscribeResponse:
-        $ref: '#/components/messages/subscriptionResponse'
+        $ref: '#/components/messages/unsubscribeResponse'
       listSubscriptions:
         $ref: '#/components/messages/listSubscriptionsRequest'
       listSubscriptionsResponse:
         $ref: '#/components/messages/listSubscriptionsResponse'
+      setProperty:
+        $ref: '#/components/messages/setPropertyRequest'
+      setPropertyResponse:
+        $ref: '#/components/messages/setPropertyResponse'
+      getProperty:
+        $ref: '#/components/messages/getPropertyRequest'
+      getPropertyResponse:
+        $ref: '#/components/messages/getPropertyResponse'
       error:
         $ref: '#/components/messages/errorMessage'
-      # Combined stream data messages (wrapped format)
-      combinedData:
-        $ref: '#/components/messages/combinedStreamEvent'
+      # Combined market streams data messages (wrapped format)
+      combinedMarketStreamEvent:
+        $ref: '#/components/messages/combinedMarketStreamEvent'
 
 operations:
-  # Single stream operations
-  subscribeToSingleStreams:
-    title: Subscribe to Single Streams
-    summary: Subscribe to streams on single connection
+  # Single market stream operations
+  marketStreamSubscribe:
+    title: Subscribe to Single Market Streams
+    summary: Subscribe to market streams on single connection
     description: |
       Subscribe to market data streams on single connection. Each stream returns
       direct data without wrapping. Maximum 1024 streams per connection.
     action: send
+    x-channel-method: Subscribe
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/subscribe'
+      - $ref: '#/channels/marketStream/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/subscribeResponse'
+        - $ref: '#/channels/marketStream/messages/subscribeResponse'
 
-  unsubscribeFromSingleStreams:
-    title: Unsubscribe from Single Streams
-    summary: Unsubscribe from streams on single connection
+  marketStreamUnsubscribe:
+    title: Unsubscribe from Single Market Streams
+    summary: Unsubscribe from market streams on single connection
     action: send
+    x-channel-method: Unsubscribe
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/unsubscribe'
+      - $ref: '#/channels/marketStream/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/unsubscribeResponse'
+        - $ref: '#/channels/marketStream/messages/unsubscribeResponse'
 
-  listSingleSubscriptions:
+  marketStreamListSubscriptions:
     title: List Single Stream Subscriptions
     summary: Get list of active single stream subscriptions
     action: send
+    x-channel-method: ListSubscriptions
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStream'
     messages:
-      - $ref: '#/channels/singleStreamConnection/messages/listSubscriptions'
+      - $ref: '#/channels/marketStream/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/singleStreamConnection'
+        $ref: '#/channels/marketStream'
       messages:
-        - $ref: '#/channels/singleStreamConnection/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/marketStream/messages/listSubscriptionsResponse'
 
-  receiveSingleStreamData:
+  marketStreamReceiveEvents:
     title: Receive Single Stream Data
     summary: Receive direct stream data from single connection
     description: |
       Receive market data from subscribed streams. Data is returned directly
-      without wrapping. Stream type can be determined by the event structure.
+      without wrapping.
     action: receive
     channel:
-      $ref: '#/channels/singleStreamConnection'
+      $ref: '#/channels/marketStream'
+    messages:
+      - $ref: '#/channels/marketStream/messages/aggregateTradeEvent'
+      - $ref: '#/channels/marketStream/messages/tradeEvent'
+      - $ref: '#/channels/marketStream/messages/klineEvent'
+      - $ref: '#/channels/marketStream/messages/miniTickerEvent'
+      - $ref: '#/channels/marketStream/messages/allMiniTickersEvent'
+      - $ref: '#/channels/marketStream/messages/tickerEvent'
+      - $ref: '#/channels/marketStream/messages/allTickersEvent'
+      - $ref: '#/channels/marketStream/messages/rollingWindowTickerEvent'
+      - $ref: '#/channels/marketStream/messages/allRollingWindowTickersEvent'
+      - $ref: '#/channels/marketStream/messages/bookTickerEvent'
+      - $ref: '#/channels/marketStream/messages/averagePriceEvent'
+      - $ref: '#/channels/marketStream/messages/partialDepthEvent'
+      - $ref: '#/channels/marketStream/messages/diffDepthEvent'
 
-  # Combined stream operations
-    
-  subscribeToCombinedStreams:
-    title: Subscribe to Combined Streams
-    summary: Subscribe to streams on combined connection
+  marketStreamReceiveError:
+    title: Receive Error Messages from Single Market Streams
+    summary: Receive error messages from single market stream connection
+    description: Receive error messages in response to invalid requests or other issues.
+    action: receive
+    channel:
+      $ref: '#/channels/marketStream'
+    messages:
+      - $ref: '#/channels/marketStream/messages/error'
+
+  # Property control operations for single stream connection
+  marketStreamSetProperty:
+    title: Set Property on Single Market Streams
+    summary: Set a property on the single market stream connection
+    action: send
+    x-channel-method: SetProperty
+    channel:
+      $ref: '#/channels/marketStream'
+    messages:
+      - $ref: '#/channels/marketStream/messages/setProperty'
+    reply:
+      channel:
+        $ref: '#/channels/marketStream'
+      messages:
+        - $ref: '#/channels/marketStream/messages/setPropertyResponse'
+
+  marketStreamGetProperty:
+    title: Get Property from Single Market Streams
+    summary: Get a property from the single market stream connection
+    action: send
+    x-channel-method: GetProperty
+    channel:
+      $ref: '#/channels/marketStream'
+    messages:
+      - $ref: '#/channels/marketStream/messages/getProperty'
+    reply:
+      channel:
+        $ref: '#/channels/marketStream'
+      messages:
+        - $ref: '#/channels/marketStream/messages/getPropertyResponse'
+
+  # Combined market stream operations
+  combinedMarketStreamSubscribe:
+    title: Subscribe to Combined Market Streams
+    summary: Subscribe to market streams on combined connection
     description: |
       Subscribe to market data streams on combined connection. Each stream returns
       wrapped data with stream name identifier. Maximum 1024 streams per connection.
     action: send
+    x-channel-method: Subscribe
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/subscribe'
+      - $ref: '#/channels/combinedMarketStream/messages/subscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/subscribeResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/subscribeResponse'
 
-  unsubscribeFromCombinedStreams:
-    title: Unsubscribe from Combined Streams
-    summary: Unsubscribe from streams on combined connection
+  combinedMarketStreamUnsubscribe:
+    title: Unsubscribe from Combined Market Streams
+    summary: Unsubscribe from market streams on combined connection
     action: send
+    x-channel-method: Unsubscribe
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/unsubscribe'
+      - $ref: '#/channels/combinedMarketStream/messages/unsubscribe'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/unsubscribeResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/unsubscribeResponse'
 
-  listCombinedSubscriptions:
+  combinedMarketStreamListSubscriptions:
     title: List Combined Stream Subscriptions
     summary: Get list of active combined stream subscriptions
     action: send
+    x-channel-method: ListSubscriptions
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStream'
     messages:
-      - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptions'
+      - $ref: '#/channels/combinedMarketStream/messages/listSubscriptions'
     reply:
       channel:
-        $ref: '#/channels/combinedStreamConnection'
+        $ref: '#/channels/combinedMarketStream'
       messages:
-        - $ref: '#/channels/combinedStreamConnection/messages/listSubscriptionsResponse'
+        - $ref: '#/channels/combinedMarketStream/messages/listSubscriptionsResponse'
 
-  receiveCombinedStreamData:
+  combinedMarketStreamReceiveEvents:
     title: Receive Combined Stream Data
     summary: Receive wrapped stream data from combined connection
     description: |
@@ -366,7 +381,49 @@ operations:
       stream name and original data: {"stream":"<streamName>","data":<rawPayload>}
     action: receive
     channel:
-      $ref: '#/channels/combinedStreamConnection'
+      $ref: '#/channels/combinedMarketStream'
+    messages:
+      - $ref: '#/channels/combinedMarketStream/messages/combinedMarketStreamEvent'
+
+  # Property control operations for combined stream connection
+  combinedMarketStreamSetProperty:
+    title: Set Property on Combined Market Streams
+    summary: Set a property on the combined market stream connection
+    action: send
+    x-channel-method: SetProperty
+    channel:
+      $ref: '#/channels/combinedMarketStream'
+    messages:
+      - $ref: '#/channels/combinedMarketStream/messages/setProperty'
+    reply:
+      channel:
+        $ref: '#/channels/combinedMarketStream'
+      messages:
+        - $ref: '#/channels/combinedMarketStream/messages/setPropertyResponse'
+
+  combinedMarketStreamGetProperty:
+    title: Get Property from Combined Market Streams
+    summary: Get a property from the combined market stream connection
+    action: send
+    x-channel-method: GetProperty
+    channel:
+      $ref: '#/channels/combinedMarketStream'
+    messages:
+      - $ref: '#/channels/combinedMarketStream/messages/getProperty'
+    reply:
+      channel:
+        $ref: '#/channels/combinedMarketStream'
+      messages:
+        - $ref: '#/channels/combinedMarketStream/messages/getPropertyResponse'
+
+  combinedMarketStreamsReceiveError:
+    title: Receive Error Messages from Combined Market Streams
+    summary: Receive error messages from combined market stream connection
+    action: receive
+    channel:
+      $ref: '#/channels/combinedMarketStream'
+    messages:
+      - $ref: '#/channels/combinedMarketStream/messages/error'
 
 components:
   messages:
@@ -377,7 +434,10 @@ components:
       summary: Request to subscribe to one or more streams
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/SubscribeRequest'
+        $ref: '#/components/schemas/subscribeRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     unsubscribeRequest:
       name: Unsubscribe Request
@@ -385,15 +445,32 @@ components:
       summary: Request to unsubscribe from one or more streams
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/UnsubscribeRequest'
+        $ref: '#/components/schemas/unsubscribeRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
-    subscriptionResponse:
+    subscribeResponse:
       name: Subscription Response
-      title: Subscription Response
-      summary: Response to subscription/unsubscription request
+      title: Subscribe Response
+      summary: Response to subscription request
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/SubscriptionResponse'
+        $ref: '#/components/schemas/subscriptionResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    unsubscribeResponse:
+      name: Unsubscription Response
+      title: Unsubscribe Response
+      summary: Response to unsubscription request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/subscriptionResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     listSubscriptionsRequest:
       name: List Subscriptions Request
@@ -401,7 +478,10 @@ components:
       summary: Request list of active subscriptions
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/ListSubscriptionsRequest'
+        $ref: '#/components/schemas/listSubscriptionsRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     listSubscriptionsResponse:
       name: List Subscriptions Response
@@ -409,157 +489,329 @@ components:
       summary: List of currently active subscriptions
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/ListSubscriptionsResponse'
+        $ref: '#/components/schemas/listSubscriptionsResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    setPropertyRequest:
+      name: Set Property Request
+      title: Set Property Request
+      summary: Send a SET_PROPERTY request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/setPropertyRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    setPropertyResponse:
+      name: Set Property Response
+      title: Set Property Response
+      summary: Response to set property request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/setPropertyResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    getPropertyRequest:
+      name: Get Property Request
+      title: Get Property Request
+      summary: Send a GET_PROPERTY request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/getPropertyRequest'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
+
+    getPropertyResponse:
+      name: Get Property Response
+      title: Get Property Response
+      summary: Response to get property request
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/getPropertyResponse'
+      correlationId:
+        location: $message.payload#/id
+        description: Message correlation ID
 
     errorMessage:
       name: Error Message
       title: Error Response
       summary: Error response from server
+      x-error: true
+      x-handler-key: error
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/ErrorResponse'
+        $ref: '#/components/schemas/errorResponse'
 
     # Stream data messages (raw format)
     aggregateTradeEvent:
-      name: Aggregate Trade
+      name: Aggregate Trade Event
       title: Aggregate Trade Event
-      summary: Aggregate trade information
+      summary: The Aggregate Trade Streams push trade information that is aggregated for a single taker order.
+      x-event: true
+      x-stream-pattern: ['{symbol}@aggTrade']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['btcusdt@aggTrade']
       contentType: application/json
-      x-stream-pattern: '{symbol}@aggTrade'
       payload:
-        $ref: '#/components/schemas/AggregateTradeEvent'
+        $ref: '#/components/schemas/aggregateTradeEvent'
 
     tradeEvent:
-      name: Trade
+      name: Trade Event
       title: Trade Event
-      summary: Individual trade information
+      summary: The Trade Streams push raw trade information; each trade has a unique buyer and seller.
+      x-event: true
+      x-stream-pattern: ['{symbol}@trade']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['btcusdt@trade']
       contentType: application/json
-      x-stream-pattern: '{symbol}@trade'
       payload:
-        $ref: '#/components/schemas/TradeEvent'
+        $ref: '#/components/schemas/tradeEvent'
 
     klineEvent:
-      name: Kline
+      name: Kline Event
       title: Kline Event
-      summary: Kline/candlestick information
+      summary: The Kline/Candlestick Stream push updates to the current klines/candlestick every second in UTC+0/UTC+8 timezone.
+      x-event: true
+      x-stream-pattern: ['{symbol}@kline_{interval}', '{symbol}@kline_{interval}@+08:00']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        interval:
+          $ref: '#/components/schemas/interval'
+      x-stream-example: ['btcusdt@kline_1m']
+      x-update-speed: ['1000ms', '2000ms']
       contentType: application/json
-      x-stream-patterns: ['{symbol}@kline_{interval}', '{symbol}@kline_{interval}@+08:00']
       payload:
-        $ref: '#/components/schemas/KlineEvent'
+        $ref: '#/components/schemas/klineEvent'
 
     miniTickerEvent:
-      name: Mini Ticker
+      name: Mini Ticker Event
       title: 24hr Mini Ticker Event
-      summary: 24hr rolling window mini ticker statistics
+      summary: 24hr rolling window mini-ticker statistics. These are NOT the statistics of the UTC day, but a 24hr rolling window for the previous 24hrs.
+      x-event: true
+      x-stream-pattern: ['{symbol}@miniTicker']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['btcusdt@miniTicker']
+      x-update-speed: ['1000ms']
       contentType: application/json
-      x-stream-pattern: '{symbol}@miniTicker'
       payload:
-        $ref: '#/components/schemas/MiniTickerEvent'
+        $ref: '#/components/schemas/miniTickerEvent'
 
     allMiniTickersEvent:
-      name: All Mini Tickers
+      name: All Mini Tickers Event
       title: All Market Mini Tickers
-      summary: Array of 24hr mini ticker stats for all symbols
-      contentType: application/json
+      summary: 24hr rolling window mini-ticker statistics for all symbols that changed in an array. These are NOT the statistics of the UTC day, but a 24hr rolling window for the previous 24hrs. Note that only tickers that have changed will be present in the array.
+      x-event: true
       x-response-format: array
-      x-stream-pattern: '!miniTicker@arr'
+      x-event-type: 24hrMiniTicker
+      x-stream-pattern: ['!miniTicker@arr']
+      x-stream-example: ['!miniTicker@arr']
+      x-update-speed: ['1000ms']
+      contentType: application/json
       payload:
-        type: array
-        items:
-          $ref: '#/components/schemas/MiniTickerEvent'
+        $ref: '#/components/schemas/allMiniTickersEvent'
 
     tickerEvent:
-      name: Ticker
+      name: Ticker Event
       title: 24hr Ticker Event
-      summary: 24hr rolling window ticker statistics
+      summary: 24hr rolling window ticker statistics for a single symbol. These are NOT the statistics of the UTC day, but a 24hr rolling window for the previous 24hrs.
+      x-event: true
+      x-stream-pattern: ['{symbol}@ticker']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['btcusdt@ticker']
+      x-update-speed: ['1000ms']
       contentType: application/json
-      x-stream-pattern: '{symbol}@ticker'
       payload:
-        $ref: '#/components/schemas/TickerEvent'
+        $ref: '#/components/schemas/tickerEvent'
 
     allTickersEvent:
-      name: All Tickers
+      name: All Tickers Event
       title: All Market Tickers
-      summary: Array of 24hr ticker stats for all symbols
-      contentType: application/json
+      summary: 24hr rolling window ticker statistics for all symbols that changed in an array. These are NOT the statistics of the UTC day, but a 24hr rolling window for the previous 24hrs. Note that only tickers that have changed will be present in the array.
+      x-event: true
       x-response-format: array
-      x-stream-pattern: '!ticker@arr'
+      x-event-type: 24hrTicker
+      x-stream-pattern: ['!ticker@arr']
+      x-stream-example: ['!ticker@arr']
+      x-update-speed: ['1000ms']
+      contentType: application/json
       payload:
-        type: array
-        items:
-          $ref: '#/components/schemas/TickerEvent'
+        $ref: '#/components/schemas/allTickersEvent'
 
     rollingWindowTickerEvent:
-      name: Rolling Window Ticker
+      name: Rolling Window Ticker Event
       title: Rolling Window Statistics Event
-      summary: Rolling window ticker statistics
+      summary: Rolling window ticker statistics for a single symbol, computed over multiple windows.
+      x-event: true
+      x-event-type: ['1hTicker', '4hTicker', '1dTicker']
+      x-stream-pattern: ['{symbol}@ticker_{windowSize}']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        windowSize:
+          $ref: '#/components/schemas/windowSize'
+      x-stream-example: ['btcusdt@ticker_1h']
+      x-update-speed: ['1000ms']
       contentType: application/json
-      x-stream-patterns: ['{symbol}@ticker_1h', '{symbol}@ticker_4h', '{symbol}@ticker_1d']
       payload:
-        $ref: '#/components/schemas/RollingWindowTickerEvent'
+        $ref: '#/components/schemas/rollingWindowTickerEvent'
 
     allRollingWindowTickersEvent:
-      name: All Rolling Window Tickers
+      name: All Rolling Window Tickers Event
       title: All Market Rolling Window Statistics
-      summary: Array of rolling window stats for all symbols
-      contentType: application/json
+      summary: Rolling window ticker statistics for all market symbols, computed over multiple windows. Note that only tickers that have changed will be present in the array.
+      x-event: true
       x-response-format: array
-      x-stream-patterns: ['!ticker_1h@arr', '!ticker_4h@arr', '!ticker_1d@arr']
+      x-event-type: ['1hTicker', '4hTicker', '1dTicker']
+      x-stream-pattern: ['!ticker_{windowSize}@arr']
+      x-stream-params:
+        windowSize:
+          $ref: '#/components/schemas/windowSize'
+      x-stream-example: ['!ticker_1h@arr']
+      x-update-speed: ['1000ms']
+      contentType: application/json
       payload:
-        type: array
-        items:
-          $ref: '#/components/schemas/RollingWindowTickerEvent'
+        $ref: '#/components/schemas/allRollingWindowTickersEvent'
 
     bookTickerEvent:
-      name: Book Ticker
+      name: Book Ticker Event
       title: Book Ticker Event
-      summary: Best bid/ask information
-      contentType: application/json
-      x-stream-pattern: '{symbol}@bookTicker'
+      summary: Pushes any update to the best bid or ask's price or quantity in real-time for a specified symbol. Multiple <symbol>@bookTicker streams can be subscribed to over one connection.
+      x-event: true
+      x-stream-pattern: ['{symbol}@bookTicker']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
       x-no-event-type: true
-      payload:
-        $ref: '#/components/schemas/BookTickerEvent'
-
-    avgPriceEvent:
-      name: Average Price
-      title: Average Price Event
-      summary: Average price information
+      x-stream-example: ['btcusdt@bookTicker']
       contentType: application/json
-      x-stream-pattern: '{symbol}@avgPrice'
       payload:
-        $ref: '#/components/schemas/AvgPriceEvent'
+        $ref: '#/components/schemas/bookTickerEvent'
+
+    averagePriceEvent:
+      name: Average Price Event
+      title: Average Price Event
+      summary: Average price streams push changes in the average price over a fixed time interval.
+      x-event: true
+      x-stream-pattern: ['{symbol}@avgPrice']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+      x-stream-example: ['btcusdt@avgPrice']
+      x-update-speed: ['1000ms']
+      contentType: application/json
+      payload:
+        $ref: '#/components/schemas/averagePriceEvent'
 
     partialDepthEvent:
-      name: Partial Depth
+      name: Partial Depth Event
       title: Partial Book Depth Event
       summary: Partial book depth information
-      contentType: application/json
-      x-stream-patterns: ['{symbol}@depth5', '{symbol}@depth10', '{symbol}@depth20', '{symbol}@depth5@100ms', '{symbol}@depth10@100ms', '{symbol}@depth20@100ms', '{symbol}@depth5@1000ms', '{symbol}@depth10@1000ms', '{symbol}@depth20@1000ms']
+      x-event: true
+      x-stream-pattern: ['{symbol}@depth{levels}', '{symbol}@depth{levels}@{speed}']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        levels:
+          $ref: '#/components/schemas/depthLevels'
+        speed:
+          $ref: '#/components/schemas/depthSpeed'
       x-no-event-type: true
+      x-stream-example: ['btcusdt@depth5@100ms']
+      x-update-speed: ['100ms', '1000ms']
+      contentType: application/json
       payload:
-        $ref: '#/components/schemas/PartialDepthEvent'
+        $ref: '#/components/schemas/partialDepthEvent'
 
     diffDepthEvent:
-      name: Diff Depth
+      name: Diff Depth Event
       title: Depth Update Event
       summary: Order book depth update
+      x-event: true
+      x-stream-pattern: ['{symbol}@depth', '{symbol}@depth@{speed}']
+      x-stream-params:
+        symbol:
+          $ref: '#/components/schemas/symbol'
+        speed:
+          $ref: '#/components/schemas/depthSpeed'
+      x-stream-example: ['btcusdt@depth@100ms']
+      x-update-speed: ['100ms', '1000ms']
       contentType: application/json
-      x-stream-patterns: ['{symbol}@depth', '{symbol}@depth@100ms', '{symbol}@depth@1000ms']
       payload:
-        $ref: '#/components/schemas/DiffDepthEvent'
+        $ref: '#/components/schemas/diffDepthEvent'
 
     # Combined stream message (wrapped format)
-    combinedStreamEvent:
-      name: Combined Stream Data
+    combinedMarketStreamEvent:
+      name: Combined Stream Data Event
       title: Combined Stream Wrapper
-      summary: Wrapper for combined stream data
+      summary: Wrapper for combined stream data (combined connection)
       contentType: application/json
+      x-event: true
+      x-use-desc-naming: false
+      x-wrapper: combined
+      x-handler-key: wrap:combined
+      x-wrapper-keys:
+        stream: stream
+        data: data
       payload:
-        $ref: '#/components/schemas/CombinedStreamEvent'
+        $ref: '#/components/schemas/combinedMarketStreamEvent'
 
   schemas:
+    # Reusable message id schema for requests/responses
+    id:
+      description: |
+        The id is used as an identifier to uniquely identify the messages going back and forth.
+        Accepted formats:
+        - 64-bit signed integer
+        - Alphanumeric strings; max length 36
+        - null
+      oneOf:
+        - type: integer
+          format: int64
+        - type: string
+          maxLength: 36
+        - type: 'null'
+
+    # Simple parameter schemas used in stream patterns
+    symbol:
+      type: string
+      description: Trading pair symbol in lowercase (e.g., btcusdt)
+    interval:
+      type: string
+      description: Kline/Candlestick interval
+    windowSize:
+      type: string
+      description: Rolling window for statistics (e.g., 1h, 4h, 1d)
+    depthSpeed:
+      type: string
+      description: Update speed for depth streams
+      enum:
+        - 100ms
+        - 1000ms
+    depthLevels:
+      type: integer
+      description: Number of levels for partial depth streams
+      enum:
+        - 5
+        - 10
+        - 20
+
     # Control schemas
-    SubscribeRequest:
+    subscribeRequest:
       type: object
       description: |
         Request to subscribe to one or more streams. Stream names should follow
@@ -570,12 +822,12 @@ components:
         Individual Symbol Streams:
         - Trade: `{symbol}@aggTrade`, `{symbol}@trade`
         - Kline: `{symbol}@kline_{interval}`, `{symbol}@kline_{interval}@+08:00`
-        - Ticker: `{symbol}@miniTicker`, `{symbol}@ticker`, `{symbol}@ticker_{window}`
+        - Ticker: `{symbol}@miniTicker`, `{symbol}@ticker`, `{symbol}@ticker_{windowSize}`
         - Book: `{symbol}@bookTicker`, `{symbol}@avgPrice`
         - Depth: `{symbol}@depth`, `{symbol}@depth{levels}`, with optional @{speed}
         
         All Market Streams (arrays):
-        - `!ticker@arr`, `!miniTicker@arr`, `!ticker_{window}@arr`
+        - `!ticker@arr`, `!miniTicker@arr`, `!ticker_{windowSize}@arr`
       required:
         - method
         - params
@@ -601,11 +853,9 @@ components:
             - ["!miniTicker@arr"]
             - ["btcusdt@ticker_4h", "ethusdt@depth20@1000ms"]
         id:
-          type: string
-          description: Request ID
-          example: 1
+          $ref: '#/components/schemas/id'
 
-    UnsubscribeRequest:
+    unsubscribeRequest:
       type: object
       required:
         - method
@@ -623,20 +873,18 @@ components:
             type: string
           example: ["btcusdt@depth"]
         id:
-          type: string
-          description: Request ID
-          example: 2
+          $ref: '#/components/schemas/id'
 
-    SubscriptionResponse:
+    subscriptionResponse:
       type: object
       properties:
         result:
           type: "null"
           description: Always null for successful subscription
         id:
-          type: string
+          $ref: '#/components/schemas/id'
 
-    ListSubscriptionsRequest:
+    listSubscriptionsRequest:
       type: object
       required:
         - method
@@ -647,11 +895,9 @@ components:
           const: LIST_SUBSCRIPTIONS
           description: Method name
         id:
-          type: string
-          description: Request ID
-          example: 3
+          $ref: '#/components/schemas/id'
 
-    ListSubscriptionsResponse:
+    listSubscriptionsResponse:
       type: object
       properties:
         result:
@@ -661,10 +907,75 @@ components:
             type: string
           example: ["btcusdt@aggTrade", "btcusdt@ticker"]
         id:
-          type: string
-          
+          $ref: '#/components/schemas/id'
 
-    ErrorResponse:
+    setPropertyRequest:
+      type: object
+      required:
+        - method
+        - params
+        - id
+      properties:
+        method:
+          type: string
+          const: SET_PROPERTY
+          description: Method name
+        params:
+          type: array
+          description: Array containing property name and value
+          items:
+            oneOf:
+              - type: string
+              - type: boolean
+          minItems: 2
+          maxItems: 2
+          example: ["combined", true]
+        id:
+          $ref: '#/components/schemas/id'
+
+    setPropertyResponse:
+      type: object
+      properties:
+        result:
+          type: "null"
+          description: Always null for successful property setting
+        id:
+          $ref: '#/components/schemas/id'
+
+    getPropertyRequest:
+      type: object
+      required:
+        - method
+        - params
+        - id
+      properties:
+        method:
+          type: string
+          const: GET_PROPERTY
+          description: Method name
+        params:
+          type: array
+          description: Array containing property name to retrieve
+          items:
+            type: string
+          minItems: 1
+          maxItems: 1
+          example: ["combined"]
+        id:
+          $ref: '#/components/schemas/id'
+
+    getPropertyResponse:
+      type: object
+      properties:
+        result:
+          oneOf:
+            - type: boolean
+            - type: string
+          description: Property value (currently only 'combined' property supported)
+        id:
+          $ref: '#/components/schemas/id'
+          
+    errorResponse:
       type: object
       properties:
         error:
@@ -677,11 +988,10 @@ components:
               type: string
               description: Error message
         id:
-          type: string
-          
+          $ref: '#/components/schemas/id'
 
     # Stream event schemas
-    AggregateTradeEvent:
+    aggregateTradeEvent:
       type: object
       required:
         - e
@@ -694,6 +1004,7 @@ components:
         - l
         - T
         - m
+        - M
       properties:
         e:
           type: string
@@ -740,8 +1051,12 @@ components:
           type: boolean
           description: Is the buyer the market maker
           example: false
+        M:
+          type: boolean
+          description: Ignore
+          example: true
 
-    TradeEvent:
+    tradeEvent:
       type: object
       required:
         - e
@@ -754,6 +1069,7 @@ components:
         - a
         - T
         - m
+        - M
       properties:
         e:
           type: string
@@ -805,7 +1121,7 @@ components:
           description: Ignore
           example: true
 
-    KlineEvent:
+    klineEvent:
       type: object
       required:
         - e
@@ -846,6 +1162,7 @@ components:
             - q
             - V
             - Q
+            - B
           properties:
             t:
               type: integer
@@ -915,8 +1232,12 @@ components:
               type: string
               description: Taker buy quote asset volume
               example: "1008300.00000000"
+            B:
+              type: string
+              description: Ignore
+              example: "0"
 
-    MiniTickerEvent:
+    miniTickerEvent:
       type: object
       required:
         - e
@@ -967,7 +1288,12 @@ components:
           description: Total traded quote asset volume
           example: "168050000.00000000"
 
-    TickerEvent:
+    allMiniTickersEvent:
+      type: array
+      items:
+        $ref: '#/components/schemas/miniTickerEvent'
+
+    tickerEvent:
       type: object
       required:
         - e
@@ -1092,7 +1418,12 @@ components:
           description: Total number of trades
           example: 9901
 
-    RollingWindowTickerEvent:
+    allTickersEvent:
+      type: array
+      items:
+        $ref: '#/components/schemas/tickerEvent'
+
+    rollingWindowTickerEvent:
       type: object
       required:
         - e
@@ -1117,6 +1448,10 @@ components:
           type: string
           description: Event type
           example: 1hTicker
+          enum:
+            - 1hTicker
+            - 4hTicker
+            - 1dTicker
         E:
           type: integer
           format: int64
@@ -1187,7 +1522,12 @@ components:
           description: Total number of trades
           example: 18151
 
-    BookTickerEvent:
+    allRollingWindowTickersEvent:
+      type: array
+      items:
+        $ref: '#/components/schemas/rollingWindowTickerEvent'
+
+    bookTickerEvent:
       type: object
       required:
         - u
@@ -1223,7 +1563,7 @@ components:
           description: Best ask quantity
           example: "10.00000000"
 
-    AvgPriceEvent:
+    averagePriceEvent:
       type: object
       required:
         - e
@@ -1248,8 +1588,8 @@ components:
           example: BTCUSDT
         i:
           type: string
-          description: Average price interval (minutes)
-          example: "5"
+          description: Average price interval
+          example: "5m"
         w:
           type: string
           description: Average price
@@ -1260,7 +1600,7 @@ components:
           description: Last trade time
           example: 1672304050120
 
-    PartialDepthEvent:
+    partialDepthEvent:
       type: object
       required:
         - lastUpdateId
@@ -1293,7 +1633,7 @@ components:
             maxItems: 2
           example: [["16805.10000000", "10.00000000"], ["16805.20000000", "15.00000000"]]
 
-    DiffDepthEvent:
+    diffDepthEvent:
       type: object
       required:
         - e
@@ -1348,7 +1688,7 @@ components:
             maxItems: 2
           example: [["16805.10000000", "10.00000000"]]
 
-    CombinedStreamEvent:
+    combinedMarketStreamEvent:
       type: object
       description: |
         Wrapper for combined stream data. When connecting to combined streams,
@@ -1378,29 +1718,20 @@ components:
             an array of events instead of a single event object.
           oneOf:
             # Single event objects
-            - $ref: '#/components/schemas/AggregateTradeEvent'
-            - $ref: '#/components/schemas/TradeEvent'
-            - $ref: '#/components/schemas/KlineEvent'
-            - $ref: '#/components/schemas/MiniTickerEvent'
-            - $ref: '#/components/schemas/TickerEvent'
-            - $ref: '#/components/schemas/RollingWindowTickerEvent'
-            - $ref: '#/components/schemas/BookTickerEvent'
-            - $ref: '#/components/schemas/AvgPriceEvent'
-            - $ref: '#/components/schemas/PartialDepthEvent'
-            - $ref: '#/components/schemas/DiffDepthEvent'
-            # Array of events for all-market streams
-            - type: array
-              description: Array of ticker events for !ticker@arr stream
-              items:
-                $ref: '#/components/schemas/TickerEvent'
-            - type: array
-              description: Array of mini ticker events for !miniTicker@arr stream
-              items:
-                $ref: '#/components/schemas/MiniTickerEvent'
-            - type: array
-              description: Array of rolling window ticker events for !ticker_{window}@arr streams
-              items:
-                $ref: '#/components/schemas/RollingWindowTickerEvent'
+            - $ref: '#/components/schemas/aggregateTradeEvent'
+            - $ref: '#/components/schemas/tradeEvent'
+            - $ref: '#/components/schemas/klineEvent'
+            - $ref: '#/components/schemas/miniTickerEvent'
+            - $ref: '#/components/schemas/allMiniTickersEvent'
+            - $ref: '#/components/schemas/tickerEvent'
+            - $ref: '#/components/schemas/allTickersEvent'
+            - $ref: '#/components/schemas/rollingWindowTickerEvent'
+            - $ref: '#/components/schemas/allRollingWindowTickersEvent'
+            - $ref: '#/components/schemas/bookTickerEvent'
+            - $ref: '#/components/schemas/averagePriceEvent'
+            - $ref: '#/components/schemas/partialDepthEvent'
+            - $ref: '#/components/schemas/diffDepthEvent'
+
       examples:
         - stream: "btcusdt@aggTrade"
           data:
@@ -1433,22 +1764,3 @@ components:
               C: 1672304050123
               F: 1000
               L: 2000
-              n: 1001
-            - e: "24hrTicker"
-              E: 1672304050123
-              s: "ETHUSDT"
-              p: "50.00000000"
-              P: "1.5"
-              w: "3300.00000000"
-              c: "3350.00000000"
-              Q: "1.0"
-              o: "3300.00000000"
-              h: "3400.00000000"
-              l: "3200.00000000"
-              v: "100000.00000000"
-              q: "330000000.00000000"
-              O: 1672217650123
-              C: 1672304050123
-              F: 3000
-              L: 4000
-              n: 1001

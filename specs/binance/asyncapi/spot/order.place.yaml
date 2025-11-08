@@ -15,18 +15,7 @@ channels:
             orderPlaceResponse:
                 $ref: '#/components/messages/orderPlaceResponse'
 operations:
-    receiveOrderPlace:
-        title: Receive from order.place
-        description: Receive response from order.place
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/orderPlaceResponse'
-        security:
-            - $ref: '#/components/securitySchemes/trade'
-        x-binance-security-type: TRADE
-    sendOrderPlace:
+    orderPlace:
         title: Send to order.place
         description: Send a order.place request
         action: send
@@ -34,89 +23,162 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/orderPlaceRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/orderPlaceResponse'
         security:
             - $ref: '#/components/securitySchemes/trade'
         x-binance-security-type: TRADE
 components:
+    schemas:
+        orderPlaceRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 56374a46-3061-486b-a311-99ee972eb648
+                method:
+                    type: string
+                    description: method property
+                    example: order.place
+                    const: order.place
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        icebergQty:
+                            type: string
+                        newClientOrderId:
+                            type: string
+                            description: Arbitrary unique ID among open orders. Automatically generated if not sent
+                        newOrderRespType:
+                            type: string
+                            description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default, other order types default to ACK.'
+                        price:
+                            type: string
+                        quantity:
+                            type: string
+                        quoteOrderQty:
+                            type: string
+                        recvWindow:
+                            type: integer
+                            format: int64
+                            description: The value cannot be greater than 60000
+                        selfTradePreventionMode:
+                            type: string
+                            description: 'The allowed enums is dependent on what is configured on the symbol. Supported values: STP Modes'
+                        side:
+                            type: string
+                            description: BUY or SELL
+                        signature:
+                            type: string
+                        stopPrice:
+                            type: string
+                        strategyId:
+                            type: integer
+                            format: int64
+                            description: Arbitrary numeric value identifying the order within an order strategy.
+                        strategyType:
+                            type: integer
+                            description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
+                        symbol:
+                            type: string
+                        timeInForce:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                        trailingDelta:
+                            type: integer
+                            description: See Trailing Stop order FAQ
+                        type:
+                            type: string
+                    required:
+                        - symbol
+                        - side
+                        - type
+                        - apiKey
+                        - signature
+                        - timestamp
+        orderPlaceResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: 56374a46-3061-486b-a311-99ee972eb648
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 1
+                            interval:
+                                type: string
+                                description: interval property
+                                example: SECOND
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 10
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 50
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: ORDERS
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        clientOrderId:
+                            type: string
+                            description: clientOrderId property
+                            example: 4d96324ff9d44481926157ec08158a40
+                        orderId:
+                            type: integer
+                            format: int64
+                            description: orderId property
+                            example: 12569099453
+                        orderListId:
+                            type: integer
+                            format: int64
+                            description: orderListId property
+                            example: -1
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BTCUSDT
+                        transactTime:
+                            type: integer
+                            format: int64
+                            description: transactTime property
+                            example: 1660801715639
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         orderPlaceRequest:
             name: Place new order (TRADE) Request
             title: Place new order (TRADE) Request
             description: Send a order.place request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 56374a46-3061-486b-a311-99ee972eb648
-                    method:
-                        type: string
-                        description: method property
-                        example: order.place
-                        enum:
-                            - order.place
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            apiKey:
-                                type: string
-                            icebergQty:
-                                type: string
-                            newClientOrderId:
-                                type: string
-                                description: Arbitrary unique ID among open orders. Automatically generated if not sent
-                            newOrderRespType:
-                                type: string
-                                description: 'Select response format: ACK, RESULT, FULL.MARKET and LIMIT orders use FULL by default, other order types default to ACK.'
-                            price:
-                                type: string
-                            quantity:
-                                type: string
-                            quoteOrderQty:
-                                type: string
-                            recvWindow:
-                                type: integer
-                                format: int64
-                                description: The value cannot be greater than 60000
-                            selfTradePreventionMode:
-                                type: string
-                                description: 'The allowed enums is dependent on what is configured on the symbol. Supported values: STP Modes'
-                            side:
-                                type: string
-                                description: BUY or SELL
-                            signature:
-                                type: string
-                            stopPrice:
-                                type: string
-                            strategyId:
-                                type: integer
-                                format: int64
-                                description: Arbitrary numeric value identifying the order within an order strategy.
-                            strategyType:
-                                type: integer
-                                description: Arbitrary numeric value identifying the order strategy.Values smaller than 1000000 are reserved and cannot be used.
-                            symbol:
-                                type: string
-                            timeInForce:
-                                type: string
-                            timestamp:
-                                type: integer
-                                format: int64
-                            trailingDelta:
-                                type: integer
-                                description: See Trailing Stop order FAQ
-                            type:
-                                type: string
-                        required:
-                            - symbol
-                            - side
-                            - type
-                            - apiKey
-                            - signature
-                            - timestamp
+                $ref: '#/components/schemas/orderPlaceRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -125,71 +187,7 @@ components:
             title: Place new order (TRADE) Response
             description: Receive response from order.place
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: 56374a46-3061-486b-a311-99ee972eb648
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 1
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: SECOND
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 10
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 50
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: ORDERS
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            clientOrderId:
-                                type: string
-                                description: clientOrderId property
-                                example: 4d96324ff9d44481926157ec08158a40
-                            orderId:
-                                type: integer
-                                format: int64
-                                description: orderId property
-                                example: 12569099453
-                            orderListId:
-                                type: integer
-                                format: int64
-                                description: orderListId property
-                                example: -1
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSDT
-                            transactTime:
-                                type: integer
-                                format: int64
-                                description: transactTime property
-                                example: 1660801715639
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/orderPlaceResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID

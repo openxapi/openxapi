@@ -1,0 +1,91 @@
+asyncapi: 3.0.0
+info:
+    title: ""
+    version: ""
+channels:
+    spot:
+        address: /
+        title: Channel session.subscriptions
+        description: |-
+            Note:
+            - Users are expected to track on their side which subscription corresponds to which account.
+        messages:
+            sessionSubscriptionsRequest:
+                $ref: '#/components/messages/sessionSubscriptionsRequest'
+            sessionSubscriptionsResponse:
+                $ref: '#/components/messages/sessionSubscriptionsResponse'
+operations:
+    sessionSubscriptions:
+        title: Send to session.subscriptions
+        description: Send a session.subscriptions request
+        action: send
+        channel:
+            $ref: '#/channels/spot'
+        messages:
+            - $ref: '#/channels/spot/messages/sessionSubscriptionsRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/sessionSubscriptionsResponse'
+components:
+    schemas:
+        sessionSubscriptionsRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df5a22-88ea-4fe0-9f4e-0fcea5d418b7
+                method:
+                    type: string
+                    description: method property
+                    example: session.subscriptions
+                    const: session.subscriptions
+                params:
+                    type: object
+                    description: params property
+        sessionSubscriptionsResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df5a22-88ea-4fe0-9f4e-0fcea5d418b7
+                result:
+                    type: array
+                    description: result property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            subscriptionId:
+                                type: integer
+                                format: int64
+                                description: subscriptionId property
+                                example: 0
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
+    messages:
+        sessionSubscriptionsRequest:
+            name: Listing all subscriptions Request
+            title: Listing all subscriptions Request
+            description: Send a session.subscriptions request
+            payload:
+                $ref: '#/components/schemas/sessionSubscriptionsRequest'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID
+        sessionSubscriptionsResponse:
+            name: Listing all subscriptions Response
+            title: Listing all subscriptions Response
+            description: Receive response from session.subscriptions
+            payload:
+                $ref: '#/components/schemas/sessionSubscriptionsResponse'
+            correlationId:
+                location: $message.payload#/id
+                description: Message correlation ID

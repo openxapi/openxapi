@@ -13,18 +13,7 @@ channels:
             accountCommissionResponse:
                 $ref: '#/components/messages/accountCommissionResponse'
 operations:
-    receiveAccountCommission:
-        title: Receive from account.commission
-        description: Receive response from account.commission
-        action: receive
-        channel:
-            $ref: '#/channels/spot'
-        messages:
-            - $ref: '#/channels/spot/messages/accountCommissionResponse'
-        security:
-            - $ref: '#/components/securitySchemes/userData'
-        x-binance-security-type: USER_DATA
-    sendAccountCommission:
+    accountCommission:
         title: Send to account.commission
         description: Send a account.commission request
         action: send
@@ -32,37 +21,178 @@ operations:
             $ref: '#/channels/spot'
         messages:
             - $ref: '#/channels/spot/messages/accountCommissionRequest'
+        reply:
+            channel:
+                $ref: '#/channels/spot'
+            messages:
+                - $ref: '#/channels/spot/messages/accountCommissionResponse'
         security:
             - $ref: '#/components/securitySchemes/userData'
         x-binance-security-type: USER_DATA
 components:
+    schemas:
+        accountCommissionRequest:
+            type: object
+            description: request schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
+                method:
+                    type: string
+                    description: method property
+                    example: account.commission
+                    const: account.commission
+                params:
+                    type: object
+                    description: params property
+                    properties:
+                        apiKey:
+                            type: string
+                        signature:
+                            type: string
+                        symbol:
+                            type: string
+                        timestamp:
+                            type: integer
+                            format: int64
+                    required:
+                        - symbol
+        accountCommissionResponse:
+            type: object
+            description: response schema
+            properties:
+                id:
+                    type: string
+                    description: id property
+                    example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
+                rateLimits:
+                    type: array
+                    description: rateLimits property
+                    items:
+                        type: object
+                        description: array item
+                        properties:
+                            count:
+                                type: integer
+                                description: count property
+                                example: 20
+                            interval:
+                                type: string
+                                description: interval property
+                                example: MINUTE
+                            intervalNum:
+                                type: integer
+                                description: intervalNum property
+                                example: 1
+                            limit:
+                                type: integer
+                                description: limit property
+                                example: 6000
+                            rateLimitType:
+                                type: string
+                                description: rateLimitType property
+                                example: REQUEST_WEIGHT
+                result:
+                    type: object
+                    description: result property
+                    properties:
+                        discount:
+                            type: object
+                            description: discount property
+                            properties:
+                                discount:
+                                    type: string
+                                    description: discount property
+                                    example: "0.75000000"
+                                discountAsset:
+                                    type: string
+                                    description: discountAsset property
+                                    example: BNB
+                                enabledForAccount:
+                                    type: boolean
+                                    description: enabledForAccount property
+                                    example: true
+                                enabledForSymbol:
+                                    type: boolean
+                                    description: enabledForSymbol property
+                                    example: true
+                        specialCommission:
+                            type: object
+                            description: specialCommission property
+                            properties:
+                                buyer:
+                                    type: string
+                                    description: buyer property
+                                    example: "0.03000000"
+                                maker:
+                                    type: string
+                                    description: maker property
+                                    example: "0.01000000"
+                                seller:
+                                    type: string
+                                    description: seller property
+                                    example: "0.04000000"
+                                taker:
+                                    type: string
+                                    description: taker property
+                                    example: "0.02000000"
+                        standardCommission:
+                            type: object
+                            description: standardCommission property
+                            properties:
+                                buyer:
+                                    type: string
+                                    description: buyer property
+                                    example: "0.00000030"
+                                maker:
+                                    type: string
+                                    description: maker property
+                                    example: "0.00000010"
+                                seller:
+                                    type: string
+                                    description: seller property
+                                    example: "0.00000040"
+                                taker:
+                                    type: string
+                                    description: taker property
+                                    example: "0.00000020"
+                        symbol:
+                            type: string
+                            description: symbol property
+                            example: BTCUSDT
+                        taxCommission:
+                            type: object
+                            description: taxCommission property
+                            properties:
+                                buyer:
+                                    type: string
+                                    description: buyer property
+                                    example: "0.00000118"
+                                maker:
+                                    type: string
+                                    description: maker property
+                                    example: "0.00000112"
+                                seller:
+                                    type: string
+                                    description: seller property
+                                    example: "0.00000116"
+                                taker:
+                                    type: string
+                                    description: taker property
+                                    example: "0.00000114"
+                status:
+                    type: integer
+                    description: status property
+                    example: 200
     messages:
         accountCommissionRequest:
             name: Account Commission Rates (USER_DATA) Request
             title: Account Commission Rates (USER_DATA) Request
             description: Send a account.commission request
             payload:
-                type: object
-                description: request schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
-                    method:
-                        type: string
-                        description: method property
-                        example: account.commission
-                        enum:
-                            - account.commission
-                    params:
-                        type: object
-                        description: params property
-                        properties:
-                            symbol:
-                                type: string
-                        required:
-                            - symbol
+                $ref: '#/components/schemas/accountCommissionRequest'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
@@ -71,112 +201,7 @@ components:
             title: Account Commission Rates (USER_DATA) Response
             description: Receive response from account.commission
             payload:
-                type: object
-                description: response schema
-                properties:
-                    id:
-                        type: string
-                        description: id property
-                        example: d3df8a61-98ea-4fe0-8f4e-0fcea5d418b0
-                    rateLimits:
-                        type: array
-                        description: rateLimits property
-                        items:
-                            type: object
-                            description: array item
-                            properties:
-                                count:
-                                    type: integer
-                                    description: count property
-                                    example: 20
-                                interval:
-                                    type: string
-                                    description: interval property
-                                    example: MINUTE
-                                intervalNum:
-                                    type: integer
-                                    description: intervalNum property
-                                    example: 1
-                                limit:
-                                    type: integer
-                                    description: limit property
-                                    example: 6000
-                                rateLimitType:
-                                    type: string
-                                    description: rateLimitType property
-                                    example: REQUEST_WEIGHT
-                    result:
-                        type: object
-                        description: result property
-                        properties:
-                            discount:
-                                type: object
-                                description: discount property
-                                properties:
-                                    discount:
-                                        type: string
-                                        description: discount property
-                                        example: "0.75000000"
-                                    discountAsset:
-                                        type: string
-                                        description: discountAsset property
-                                        example: BNB
-                                    enabledForAccount:
-                                        type: boolean
-                                        description: enabledForAccount property
-                                        example: true
-                                    enabledForSymbol:
-                                        type: boolean
-                                        description: enabledForSymbol property
-                                        example: true
-                            standardCommission:
-                                type: object
-                                description: standardCommission property
-                                properties:
-                                    buyer:
-                                        type: string
-                                        description: buyer property
-                                        example: "0.00000030"
-                                    maker:
-                                        type: string
-                                        description: maker property
-                                        example: "0.00000010"
-                                    seller:
-                                        type: string
-                                        description: seller property
-                                        example: "0.00000040"
-                                    taker:
-                                        type: string
-                                        description: taker property
-                                        example: "0.00000020"
-                            symbol:
-                                type: string
-                                description: symbol property
-                                example: BTCUSDT
-                            taxCommission:
-                                type: object
-                                description: taxCommission property
-                                properties:
-                                    buyer:
-                                        type: string
-                                        description: buyer property
-                                        example: "0.00000118"
-                                    maker:
-                                        type: string
-                                        description: maker property
-                                        example: "0.00000112"
-                                    seller:
-                                        type: string
-                                        description: seller property
-                                        example: "0.00000116"
-                                    taker:
-                                        type: string
-                                        description: taker property
-                                        example: "0.00000114"
-                    status:
-                        type: integer
-                        description: status property
-                        example: 200
+                $ref: '#/components/schemas/accountCommissionResponse'
             correlationId:
                 location: $message.payload#/id
                 description: Message correlation ID
